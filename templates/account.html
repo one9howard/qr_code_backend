@@ -1,0 +1,179 @@
+{% extends "base.html" %}
+
+{% block title %}Account Settings - InSite Signs{% endblock %}
+
+{% block content %}
+<div class="account-container fade-in-up">
+    <div class="glass-card">
+        <h2 class="section-title">Account Settings</h2>
+
+        <div class="tabs">
+            <button class="glass-button tab-btn active" onclick="showTab('profile', this)">Profile</button>
+            <button class="glass-button tab-btn" onclick="showTab('security', this)">Security</button>
+        </div>
+
+        <!-- PROFILE TAB -->
+        <div id="profile" class="tab-content active">
+            <form method="POST" enctype="multipart/form-data">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                <input type="hidden" name="action" value="update_profile">
+
+                <div class="form-group">
+                    <label class="form-label">Profile Photo</label>
+                    <div class="photo-upload-preview">
+                        {% if agent and agent['photo_filename'] %}
+                        <img src="{{ get_storage_url(agent['photo_filename']) }}" alt="Current Photo"
+                            class="current-photo">
+                        {% else %}
+                        <div class="photo-placeholder">No Photo</div>
+                        {% endif %}
+                        <input type="file" name="photo" id="photo-upload" accept="image/*" class="file-input"
+                            style="display: none;" onchange="updateFileName(this)">
+                        <label for="photo-upload" class="glass-button secondary" style="cursor: pointer;">
+                            <span id="file-label-text">Choose Photo</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Full Name</label>
+                    <input type="text" name="name" class="glass-input"
+                        value="{{ agent['name'] if agent else current_user.full_name }}" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Phone Number</label>
+                    <input type="tel" name="phone" class="glass-input" value="{{ agent['phone'] if agent else '' }}"
+                        placeholder="(555) 123-4567">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Brokerage</label>
+                    <input type="text" name="brokerage" class="glass-input"
+                        value="{{ agent['brokerage'] if agent else '' }}" placeholder="Realty One Group">
+                </div>
+
+                <div style="display: flex; gap: 1rem;">
+                    <button type="submit" class="glass-button accent" style="flex: 1;">Save Profile</button>
+                    <a href="{{ url_for('auth.logout') }}" class="glass-button accent"
+                        style="flex: 1; text-align: center; text-decoration: none; line-height: normal; display: flex; align-items: center; justify-content: center;">
+                        Logout
+                    </a>
+                </div>
+            </form>
+        </div>
+
+        <!-- SECURITY TAB -->
+        <div id="security" class="tab-content" style="display: none;">
+            <form method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                <input type="hidden" name="action" value="update_security">
+
+                <div class="form-group">
+                    <label class="form-label">Email Address</label>
+                    <input type="email" name="email" class="glass-input" value="{{ current_user.email }}" required>
+                </div>
+
+                <div class="divider">Change Password</div>
+
+                <div class="form-group">
+                    <label class="form-label">Current Password</label>
+                    <input type="password" name="current_password" class="glass-input">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">New Password</label>
+                    <input type="password" name="new_password" class="glass-input">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Confirm New Password</label>
+                    <input type="password" name="confirm_password" class="glass-input">
+                </div>
+
+                <button type="submit" class="glass-button full-width">Update Security</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+    .account-container {
+        max-width: 600px;
+        margin: 2rem auto;
+    }
+
+    .tabs {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+
+    .tab-btn {
+        flex: 1;
+        opacity: 0.7;
+    }
+
+    .tab-btn.active {
+        opacity: 1;
+        border-color: var(--accent-color);
+        background: rgba(var(--accent-rgb), 0.1);
+    }
+
+    .photo-upload-preview {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .current-photo {
+        width: 64px;
+        height: 64px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 2px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .photo-placeholder {
+        width: 64px;
+        height: 64px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.1);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.7rem;
+        color: rgba(255, 255, 255, 0.5);
+    }
+
+    .divider {
+        margin: 1.5rem 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        font-size: 0.9rem;
+        color: rgba(255, 255, 255, 0.6);
+        padding-bottom: 0.5rem;
+    }
+</style>
+
+<script>
+    function showTab(tabId, btnElement) {
+        // Hide all contents
+        document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
+        document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+
+        // Show selected
+        document.getElementById(tabId).style.display = 'block';
+
+        // Highlight button
+        if (btnElement) {
+            btnElement.classList.add('active');
+        }
+    }
+
+    function updateFileName(input) {
+        if (input.files && input.files[0]) {
+            document.getElementById('file-label-text').textContent = input.files[0].name;
+        }
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block body_class %}submit bg-image{% endblock %}
+{% block content %}
+<div class="submit-container" style="margin-top: 2rem; position: relative;">
+    <!-- Close Button -->
+    <a href="{{ url_for('dashboard.index') }}"
+        style="position: absolute; top: 0px; right: 0px; text-decoration: none; color: white; font-size: 2rem; opacity: 0.5; transition: opacity 0.3s;"
+        onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.5">
+        &times;
+    </a>
+
+    <div class="form-container">
+        <h2>Edit Property</h2>
+        <form method="POST" class="form" enctype="multipart/form-data">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input name="address" placeholder="Property Address" value="{{ property.address }}" required>
+
+            <div style="display: flex; gap: 10px;">
+                <input name="beds" placeholder="Beds (e.g. 3)" value="{{ property.beds }}" required style="flex: 1;">
+                <input name="baths" placeholder="Baths (e.g. 2.5)" value="{{ property.baths }}" required
+                    style="flex: 1;">
+            </div>
+
+            <div style="display: flex; gap: 10px;">
+                <input name="sqft" placeholder="Square Footage" value="{{ property.sqft or '' }}" style="flex: 1;">
+                <input name="price" placeholder="Asking Price" value="{{ property.price or '' }}" style="flex: 1;">
+            </div>
+
+            <textarea name="description" placeholder="Property Description"
+                rows="4">{{ property.description or '' }}</textarea>
+
+            <!-- Image Management -->
+            <div style="margin-top: 1.5rem; text-align: left;">
+                <h3 style="color: white; font-size: 1.1rem; margin-bottom: 1rem;">Property Images</h3>
+
+                {% if photos %}
+                <div
+                    style="display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 15px; margin-bottom: 1.5rem;">
+                    {% for photo in photos %}
+                    <div style="position: relative; border-radius: 8px; overflow: hidden; border: 1px solid #444;">
+                        <img src="{{ get_storage_url(photo.filename) }}"
+                            style="width: 100%; height: 100px; object-fit: cover;">
+                        <label
+                            style="position: absolute; top: 5px; left: 5px; background: rgba(0,0,0,0.6); padding: 2px 5px; border-radius: 4px; cursor: pointer; display: flex; align-items: center; gap: 5px; font-size: 0.8rem; color: #ff4d4d;">
+                            <input type="checkbox" name="delete_photos" value="{{ photo.id }}">
+                            Delete
+                        </label>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                <label style="display: block; color: #888; margin-bottom: 0.5rem; font-size: 0.9rem;">Upload New
+                    Photos</label>
+                <input type="file" name="property_photos" multiple accept="image/*"
+                    style="background: rgba(255,255,255,0.05); border: 1px dashed #444; padding: 10px; border-radius: 8px; width: 100%; box-sizing: border-box; color: #ccc;">
+            </div>
+
+            <div style="display: flex; gap: 10px; margin-top: 1.5rem;">
+                <a href="{{ url_for('dashboard.index') }}" class="glass-button"
+                    style="flex: 1; text-align: center; background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); text-decoration: none; color: white; display: flex; align-items: center; justify-content: center;">
+                    Cancel
+                </a>
+                <button class="glass-button"
+                    style="flex: 1; text-align: center; background: #4facfe; border: none;">Save
+                    Changes</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

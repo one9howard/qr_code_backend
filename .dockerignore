@@ -1,0 +1,79 @@
+# =============================================================================
+# Docker Build Exclusions (Railway Docker)
+# Dockerfile does: COPY . /app
+# Keep repo tooling for local/home server, but keep image lean and safe.
+# =============================================================================
+
+# --- VCS / CI ---
+.git
+.github
+
+# --- Python cache / bytecode ---
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.Python
+
+# --- Virtual environments ---
+.venv/
+venv/
+env/
+ENV/
+
+# --- Local env / secrets ---
+.env
+.env.*
+!.env.example
+
+# --- Local databases / runtime state ---
+*.db
+
+instance/
+releases/
+
+# --- Tests / dev-only inputs ---
+tests/
+test_inbox/
+sample_pdfs/
+dev_assets/
+
+# --- Logs / ad-hoc artifacts ---
+*.log
+*.tmp
+error.txt
+result_security.txt
+test_results*.txt
+
+# --- Home server / local ops (KEEP in repo, EXCLUDE from image) ---
+ops/
+systemd/
+
+# --- AWS Copilot leftovers (if present) ---
+copilot/
+
+# --- Scripts: exclude all by default ---
+scripts/*
+# ...but include the Docker entrypoint referenced by the Dockerfile ENTRYPOINT:
+!scripts/docker-entrypoint.sh
+!scripts/wait_for_db.py
+
+# --- Editor / OS junk ---
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# --- Node / front-end caches (if any appear) ---
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# --- Build artifacts ---
+dist/
+build/
+coverage/

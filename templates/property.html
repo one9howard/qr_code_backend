@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ property.address }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/pages/property.css') }}">
+</head>
+
+<body class="property-page bg-image" style="display: block; min-height: 100vh;">
+    <!-- Using 'bg-image' class from main style to match theme -->
+
+    <div class="submit-container" style="position: relative;">
+        <!-- Close Button -->
+        <a href="#" id="close-property" role="button" aria-label="Close"
+            style="position: fixed; top: 20px; right: 20px; text-decoration: none; color: white; font-size: 2.5rem; opacity: 0.5; transition: opacity 0.3s; z-index: 1000;"
+            onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.5">
+            &times;
+        </a>
+
+        <script>
+            function exitPropertyPage() {
+                // 1) Try to find explicit return instruction
+                const urlParams = new URLSearchParams(window.location.search);
+                const returnTo = urlParams.get('return_to');
+
+                // 2) Close if the window is script-opened
+                // Note: verification of window.opener is flaky on mobile
+                if (window.opener && !window.opener.closed) {
+                    window.close();
+
+                    // If window.close() worked, we stop here. 
+                    // If it was blocked/ignored by browser, we continue to fallback below.
+                    // We can check if we are still open after a microtask, but simplest is to fallback if we are still running?
+                    // Actually, if window.close() fails, the script continues immediately? 
+                    // Let's assume if we are script-opened, we TRY to close. 
+                    // If we have a returnTo, we can also try to redirect there as a fallback?
+                    // It's ambiguous. Let's do: try close. If we have returnTo, redirect there as well (browser might close or redirect).
+                }
+
+                // 3) Explicit Return (Highest priority fallback)
+                if (returnTo) {
+                    window.location.href = returnTo;
+                    return;
+                }
+
+                // 4) Referrer fallback
+                const ref = document.referrer;
+                if (ref && ref !== window.location.href) {
+                    window.location.href = ref;
+                    return;
+                }
+
+                // 5) History fallback
+                if (window.history.length > 1) {
+                    window.history.back();
+                    return;
+                }
+
+                // 6) Last resort
+                window.location.href = "/";
+            }
+
+            document.addEventListener("DOMContentLoaded", () => {
+                const closeBtn = document.getElementById("close-property");
+                if (closeBtn) {
+                    closeBtn.addEventListener("click", (e) => {
+                        e.preventDefault();
+                        exitPropertyPage();
+                    });
+                }
+            });
+
+            document.addEventListener("keydown", (e) => {
+                if (e.key === "Escape") exitPropertyPage();
+            });
+        </script>
+
+        <!-- Open Graph Tags -->
+        <meta property="og:title" content="{{ property.address }}">
+        <meta property="og:description"
+            content="{{ property.beds }} Bed, {{ property.baths }} Bath in {{ property.brokerage }}">
+        {% if photos %}
+        <meta property="og:image" content="{{ get_storage_url(photos[0]) }}">
+        {% endif %}
+        <meta property="og:url" content="{{ request.url }}">
+        <meta name="twitter:card" content="summary_large_image">
+
+        <div class="submit-container" style="position: relative; padding-bottom: 100px;">
+            <!-- Padding for sticky bar -->
+            <!-- Close Button -->
+            <a href="#" id="close-property" role="button" aria-label="Close"
+                style="position: fixed; top: 20px; right: 20px; text-decoration: none; color: white; font-size: 2.5rem; opacity: 0.8; z-index: 1000; text-shadow: 0 2px 4px rgba(0,0,0,0.5);">
+                &times;
+            </a>
+
+            <!-- Hero Section -->
+            {% if photos %}
+            {% set hero_bg_url = get_storage_url(photos[0]) %}
+            <div class="hero-banner"
+                style="background-image: url('{{ hero_bg_url }}'); height: 40vh; min-height: 300px;">
+                <div class="hero-overlay"
+                    style="background: linear-gradient(to bottom, rgba(0,0,0,0.3), rgba(0,0,0,0.8));"></div>
+            </div>
+            {% else %}
+            <div style="height: 100px;"></div>
+            {% endif %}
+
+            <div class="form-container" style="margin-top: -60px; position: relative; z-index: 2;">
+
+                <!-- Header -->
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <h1 class="property-title" style="font-size: 2rem; margin-bottom: 10px;">{{ property.address }}</h1>
+
+                    {% if gating.is_paid and property.price %}
+                    <div class="price-section">
+                        <span class="price-value" style="font-size: 1.5rem;">{{ property.price }}</span>
+                    </div>
+                    {% endif %}
+
+                    <p class="property-stats-line" style="font-size: 1.1rem; opacity: 0.9;">
+                        {{ property.beds }} Beds &bull; {{ property.baths }} Baths {% if property.sqft %}&bull; {{
+                        property.sqft }} Sq Ft{% endif %}
+                    </p>
+
+                    {% if open_house_mode %}
+                    <div class="open-house-badge"
+                        style="background: #e74c3c; color: white; display: inline-block; padding: 5px 15px; border-radius: 20px; margin-top: 10px; font-weight: bold;">
+                        🏠 Open House Check-In
+                    </div>
+                    {% endif %}
+                </div>
+
+                {% if gating.is_paid %}
+                <!-- ===== PAID: Full Experience ===== -->
+
+                <!-- Description -->
+                <div class="description-box" style="margin-bottom: 20px;">
+                    {{ property.description or "No description provided." }}
+                </div>
+
+                <!-- Gallery Preview -->
+                {% if photos and gating.show_gallery %}
+                <div class="gallery"
+                    style="display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 10px; margin-bottom: 20px;">
+                    {% for photo in photos[:4] %}
+                    <img src="{{ get_storage_url(photo) }}" alt="Property Photo"
+                        style="width: 100%; height: 100px; object-fit: cover; border-radius: 8px;">
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                {% else %}
+                <!-- ===== UNPAID: Minimal Page (Teaser) ===== -->
+                <div class="glass-card"
+                    style="padding: 30px; text-align: center; margin-bottom: 30px; border: 1px solid rgba(255, 193, 7, 0.3); background: rgba(255, 193, 7, 0.05);">
+                    <h3 style="color: #ffc107; margin-bottom: 15px;">🔒 Listing Locked</h3>
+                    <p style="color: #ccc; margin-bottom: 25px;">
+                        This listing is currently in <strong>Free Mode</strong>. Photos and gallery are hidden from the
+                        public.
+                    </p>
+
+                    <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
+                        <!-- Option 1: Unlock Listing -->
+                        <div
+                            style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 10px; flex: 1; min-width: 200px;">
+                            <h4 style="color: white; margin-bottom: 5px;">Unlock Listing</h4>
+                            <p style="font-size: 0.8rem; color: #aaa; margin-bottom: 10px;">Enable photos & gallery
+                                instantly.</p>
+                            <!-- Note: Link goes to dashboard/billing logic, or generic upgrade page -->
+                            <span style="color: #4facfe; font-weight: bold;">One-time Fee</span>
+                        </div>
+
+                        <!-- Option 2: Order Sign -->
+                        <div
+                            style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 10px; flex: 1; min-width: 200px;">
+                            <h4 style="color: white; margin-bottom: 5px;">Order Sign</h4>
+                            <p style="font-size: 0.8rem; color: #aaa; margin-bottom: 10px;">Includes digital unlock +
+                                physical sign.</p>
+                            <span style="color: #00f260; font-weight: bold;">Best Value</span>
+                        </div>
+                    </div>
+
+                    <p style="margin-top: 20px; font-size: 0.9rem; color: #888;">
+                        Are you the owner? <a href="{{ url_for('dashboard.index') }}" style="color: var(--primary);">Go
+                            to Dashboard</a> to manage.
+                    </p>
+                </div>
+                {% endif %}
+
+                <!-- Agent Contact Card (Inline) -->
+                <div class="agent-footer"
+                    style="background: rgba(255,255,255,0.05); padding: 20px; border-radius: 15px; text-align: center; margin-bottom: 40px;">
+                    {% if property.agent_photo %}
+                    <img src="{{ get_storage_url(property.agent_photo) }}" class="agent-photo" alt="Agent"
+                        style="width: 80px; height: 80px; border-radius: 50%; margin-bottom: 10px;">
+                    {% endif %}
+                    <h3 style="color: white; margin: 0;">{{ property.agent_name }}</h3>
+                    <p style="color: #bbb; margin: 5px 0 0;">{{ property.brokerage }}</p>
+
+                    <div style="margin-top: 20px; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+                        {% if property.agent_phone %}
+                        <a href="tel:{{ property.agent_phone }}" class="glass-button secondary"
+                            style="min-width: 100px;">Call</a>
+                        {% endif %}
+                        <a href="mailto:{{ property.agent_email }}" class="glass-button secondary"
+                            style="min-width: 100px;">Email</a>
+                        <button onclick="openLeadModal()" class="glass-button accent" style="min-width: 120px;">Request
+                            Info</button>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+
+
+        <!-- Lead Capture Modal -->
+        <div id="lead-modal" class="lead-modal" style="display: none;">
+            <div class="lead-modal-content">
+                <span class="lead-modal-close" onclick="closeLeadModal()">&times;</span>
+                <h2 style="color: white; margin-bottom: 20px;">Request a Call from {{ property.agent_name }}</h2>
+
+                <form id="lead-form" onsubmit="submitLeadForm(event)">
+                    <input type="hidden" name="property_id" value="{{ property.id }}">
+
+                    <!-- Honeypot (hidden, bot detection) -->
+                    <div style="display: none;">
+                        <input type="text" name="website" id="website" tabindex="-1" autocomplete="off">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="buyer_name">Your Name *</label>
+                        <input type="text" id="buyer_name" name="buyer_name" required
+                            style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #444; background: rgba(255,255,255,0.1); color: white; font-size: 1rem;">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="buyer_email">Your Email *</label>
+                        <input type="email" id="buyer_email" name="buyer_email" required
+                            style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #444; background: rgba(255,255,255,0.1); color: white; font-size: 1rem;">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="buyer_phone">Phone (optional)</label>
+                        <input type="tel" id="buyer_phone" name="buyer_phone"
+                            style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #444; background: rgba(255,255,255,0.1); color: white; font-size: 1rem;">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="preferred_contact">Preferred Contact Method</label>
+                        <select id="preferred_contact" name="preferred_contact"
+                            style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #444; background: rgba(255,255,255,0.1); color: white; font-size: 1rem;">
+                            <option value="call">Phone Call</option>
+                            <option value="text">Text Message</option>
+                            <option value="email">Email</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="best_time">Best Time to Call</label>
+                        <select id="best_time" name="best_time"
+                            style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #444; background: rgba(255,255,255,0.1); color: white; font-size: 1rem;">
+                            <option value="">Any time</option>
+                            <option value="morning">Morning (9am-12pm)</option>
+                            <option value="afternoon">Afternoon (12pm-5pm)</option>
+                            <option value="evening">Evening (5pm-8pm)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="message">Message (optional)</label>
+                        <textarea id="message" name="message" rows="3"
+                            style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #444; background: rgba(255,255,255,0.1); color: white; font-size: 1rem; resize: vertical;"
+                            placeholder="Any questions or details..."></textarea>
+                    </div>
+
+                    <div class="form-group" style="display: flex; align-items: flex-start; gap: 10px;">
+                        <input type="checkbox" id="consent" name="consent" required
+                            style="margin-top: 4px; width: 18px; height: 18px;">
+                        <label for="consent" style="font-size: 0.9rem; color: #aaa;">
+                            I consent to {{ property.agent_name }} contacting me about this property. *
+                        </label>
+                    </div>
+
+                    <div id="lead-form-error" style="color: #ff6b6b; margin-bottom: 10px; display: none;"></div>
+                    <div id="lead-form-success" style="color: #2ed573; margin-bottom: 10px; display: none;"></div>
+
+                    <button type="submit" class="glass-button accent shimmer-btn" id="lead-submit-btn"
+                        style="width: 100%; font-size: 1rem; padding: 15px;">
+                        Submit Request
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <style>
+            .lead-modal {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.8);
+                z-index: 2000;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+            .lead-modal-content {
+                background: rgba(30, 30, 35, 0.95);
+                backdrop-filter: blur(20px);
+                padding: 40px;
+                padding-bottom: 60px;
+                /* Extra padding for mobile bottom bar */
+                border-radius: 15px;
+                border: 1px solid #444;
+                max-width: 500px;
+                width: 90%;
+                max-height: 85vh;
+                /* Slightly reduced to avoid toolbar overlap */
+                overflow-y: auto;
+                -webkit-overflow-scrolling: touch;
+                /* Smooth scrolling on iOS */
+                position: relative;
+                box-sizing: border-box;
+                /* Ensure padding is included */
+            }
+
+            .lead-modal-close {
+                position: absolute;
+                top: 15px;
+                right: 20px;
+                font-size: 2rem;
+                color: #888;
+                cursor: pointer;
+                transition: color 0.3s;
+            }
+
+            .lead-modal-close:hover {
+                color: white;
+            }
+
+            .form-group {
+                margin-bottom: 15px;
+            }
+
+            .form-group label {
+                display: block;
+                color: #ccc;
+                margin-bottom: 5px;
+                font-size: 0.9rem;
+            }
+        </style>
+
+        <script>
+            function openLeadModal() {
+                document.getElementById('lead-modal').style.display = 'flex';
+                document.body.style.overflow = 'hidden';
+            }
+
+            function closeLeadModal() {
+                document.getElementById('lead-modal').style.display = 'none';
+                document.body.style.overflow = '';
+            }
+
+            // Close on outside click
+            document.getElementById('lead-modal')?.addEventListener('click', (e) => {
+                if (e.target.id === 'lead-modal') closeLeadModal();
+            });
+
+            // Close on Escape
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') closeLeadModal();
+            });
+
+            async function submitLeadForm(e) {
+                e.preventDefault();
+
+                const form = document.getElementById('lead-form');
+                const errorEl = document.getElementById('lead-form-error');
+                const successEl = document.getElementById('lead-form-success');
+                const submitBtn = document.getElementById('lead-submit-btn');
+
+                errorEl.style.display = 'none';
+                successEl.style.display = 'none';
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Submitting...';
+
+                const formData = {
+                    property_id: form.property_id.value,
+                    buyer_name: form.buyer_name.value,
+                    buyer_email: form.buyer_email.value,
+                    buyer_phone: form.buyer_phone.value,
+                    preferred_contact: form.preferred_contact.value,
+                    best_time: form.best_time.value,
+                    message: form.message.value,
+                    consent: form.consent.checked,
+                    website: form.website.value  // Honeypot
+                };
+
+                try {
+                    const response = await fetch('/api/leads/submit', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(formData)
+                    });
+
+                    const data = await response.json();
+
+                    if (data.success) {
+                        successEl.textContent = data.message || 'Request submitted successfully!';
+                        successEl.style.display = 'block';
+                        form.reset();
+                        setTimeout(() => closeLeadModal(), 2000);
+                    } else {
+                        errorEl.textContent = data.message || data.error || 'An error occurred';
+                        errorEl.style.display = 'block';
+                    }
+                } catch (err) {
+                    errorEl.textContent = 'Network error. Please try again.';
+                    errorEl.style.display = 'block';
+                } finally {
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Submit Request';
+                }
+            }
+        </script>
+
+
+</body>
+
+</html>

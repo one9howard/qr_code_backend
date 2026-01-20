@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Listing Expired</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
+<body class="bg-image" style="display: flex; justify-content: center; align-items: center; min-height: 100vh;">
+    <div class="form-container" style="text-align: center; max-width: 500px;">
+        <h1 style="color: white; margin-bottom: 20px;">Listing Expired</h1>
+
+        <p style="color: #aaa; margin-bottom: 30px;">
+            This property listing has expired. The agent can reactivate it by purchasing a yard sign.
+        </p>
+
+        <!-- Agent Card -->
+        {% if property %}
+        <div style="background: rgba(255,255,255,0.05); border-radius: 12px; padding: 20px; margin-bottom: 30px;">
+            <h3 style="color: white; margin-bottom: 5px;">{{ property.agent_name }}</h3>
+            <p style="color: #888; margin-bottom: 15px;">{{ property.brokerage }}</p>
+
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+                {% if property.agent_phone %}
+                <a href="tel:{{ property.agent_phone }}" class="glass-button"
+                    style="font-size: 0.9rem; padding: 10px 20px;">
+                    Call Agent
+                </a>
+                {% endif %}
+                <a href="mailto:{{ property.agent_email }}" class="glass-button secondary"
+                    style="font-size: 0.9rem; padding: 10px 20px;">
+                    Email Agent
+                </a>
+            </div>
+        </div>
+        {% endif %}
+
+        <a href="/" class="glass-button accent" style="font-size: 0.9rem; padding: 12px 30px;">
+            Back to Home
+        </a>
+    </div>
+</body>
+
+</html>

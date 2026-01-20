@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container" style="max-width: 800px; margin-top: 50px;">
+    <div class="glass-panel text-center" style="padding: 3rem;">
+        <h1 class="mb-2" style="color: #9e9e9e;">Order Cancelled</h1>
+        <p class="lead mb-4">Your order was not processed. No payment was taken.</p>
+        <div class="mt-4">
+            <a href="{{ url_for('dashboard.index') }}" class="glass-button">Return to Dashboard</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

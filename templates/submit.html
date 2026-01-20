@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+{% block body_class %}submit bg-image-dark{% endblock %}
+{% block content %}
+
+<!-- Load Page-Specific CSS -->
+<link rel="stylesheet" href="{{ url_for('static', filename='css/pages/submit.css') }}">
+
+<div class="submit-container" style="margin-top: 2rem; position: relative;">
+
+    <!-- Form Section -->
+    <div class="form-container">
+        <h2>Property Details</h2>
+        <form method="POST" class="form" enctype="multipart/form-data">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input name="agent_name" placeholder="Agent Name" value="{{ agent_data.name if agent_data else '' }}"
+                required>
+            <input name="brokerage" placeholder="Brokerage" value="{{ agent_data.brokerage or '' }}" required>
+            <input type="tel" name="phone" placeholder="Phone Number" value="{{ agent_data.phone or '' }}" required>
+            <input type="email" name="email" placeholder="Email Address"
+                value="{{ agent_data.email if agent_data else current_user.email if current_user.is_authenticated else '' }}"
+                required>
+
+            <label style="color: #666; font-size: 0.9rem; margin-bottom: 5px; display: block;">Agent Headshot
+                (Optional)</label>
+            {% if agent_data and agent_data.photo_filename %}
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                <img src="{{ get_storage_url(agent_data.photo_filename) }}"
+                    style="width: 50px; height: 50px; border-radius: 50%; object-fit: cover;">
+                <span style="font-size: 0.8rem; color: #666;">Current headshot being used. Upload new one to
+                    replace.</span>
+            </div>
+            {% endif %}
+            <input type="file" name="agent_photo" accept="image/*" style="padding: 10px;">
+
+            <hr style="margin: 1.5rem 0; opacity: 0.1;">
+
+            <input name="address" placeholder="Property Address" required>
+
+            <div style="display: flex; gap: 10px;">
+                <input name="beds" placeholder="Beds (e.g. 3)" required style="flex: 1;">
+                <input name="baths" placeholder="Baths (e.g. 2.5)" required style="flex: 1;">
+            </div>
+
+            <div style="display: flex; gap: 10px;">
+                <input name="sqft" placeholder="Square Footage (Optional)" style="flex: 1;">
+                <input name="price" placeholder="Asking Price (Optional)" style="flex: 1;">
+            </div>
+
+            <label style="color: #666; font-size: 0.9rem; margin-bottom: 5px; display: block;">Property Photos
+                (Optional)</label>
+            <input type="file" name="property_photos" accept="image/*" multiple style="padding: 10px;">
+
+            <textarea name="description" placeholder="Property Description (Optional)" rows="4"></textarea>
+
+            <hr style="margin: 1.5rem 0; opacity: 0.1;">
+
+            <!-- Sign Customization Options (NEW) -->
+            <h3 style="color: #2196f3; margin-bottom: 1rem;">Sign Options</h3>
+
+            <div class="sign-options-container">
+                <!-- Color Palette -->
+                <label style="color: #666; font-size: 0.9rem; margin-bottom: 10px; display: block;">Banner Color</label>
+                <div class="color-palette">
+                    <label class="color-option">
+                        <input type="radio" name="sign_color" value="#1F6FEB" checked>
+                        <div class="color-swatch" style="background: #1F6FEB;"></div>
+                        <span class="color-label">Ocean Blue</span>
+                    </label>
+                    <label class="color-option">
+                        <input type="radio" name="sign_color" value="#2EA043">
+                        <div class="color-swatch" style="background: #2EA043;"></div>
+                        <span class="color-label">Forest Green</span>
+                    </label>
+                    <label class="color-option">
+                        <input type="radio" name="sign_color" value="#CF222E">
+                        <div class="color-swatch" style="background: #CF222E;"></div>
+                        <span class="color-label">Ruby Red</span>
+                    </label>
+                    <label class="color-option">
+                        <input type="radio" name="sign_color" value="#8250DF">
+                        <div class="color-swatch" style="background: #8250DF;"></div>
+                        <span class="color-label">Royal Purple</span>
+                    </label>
+                    <label class="color-option">
+                        <input type="radio" name="sign_color" value="#FB8500">
+                        <div class="color-swatch" style="background: #FB8500;"></div>
+                        <span class="color-label">Sunset Orange</span>
+                    </label>
+                    <label class="color-option">
+                        <input type="radio" name="sign_color" value="#0969DA">
+                        <div class="color-swatch" style="background: #0969DA;"></div>
+                        <span class="color-label">Sky Teal</span>
+                    </label>
+                </div>
+
+                <!-- Size Selector -->
+                <label style="color: #666; font-size: 0.9rem; margin-bottom: 5px; display: block;">Sign Size</label>
+                <select name="sign_size" class="size-selector">
+                    <option value="12x18">12" × 18" (Small)</option>
+                    <option value="18x24" selected>18" × 24" (Standard)</option>
+                    <option value="24x36">24" × 36" (Large)</option>
+                    <option value="36x18">36" × 18" (Wide)</option>
+                </select>
+            </div>
+
+            <button class="glass-button accent generate-btn">Generate Sign</button>
+        </form>
+    </div>
+</div>
+
+<!-- Load Page-Specific JS -->
+<script src="{{ url_for('static', filename='js/submit.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,215 @@
+/* NEW Landing overlay hero (scoped to landing.html only) */
+.landing-v2 {
+    position: relative;
+    height: 100vh;
+    height: 100dvh;
+}
+
+/* Scrim overlays for readability */
+.landing-v2::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, rgba(0, 0, 0, 0.70) 0%, rgba(0, 0, 0, 0.18) 55%, rgba(0, 0, 0, 0) 100%);
+    pointer-events: none;
+    z-index: 0;
+}
+
+.landing-v2::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(0deg, rgba(0, 0, 0, 0.55) 0%, rgba(0, 0, 0, 0) 45%);
+    pointer-events: none;
+    z-index: 0;
+}
+
+/* CSS Grid Layout for Hero */
+.landing-hero-wrap {
+    position: absolute;
+    left: clamp(18px, 5vw, 70px);
+    top: clamp(90px, 12vh, 140px);
+    width: min(1100px, 92vw);
+    z-index: 2;
+}
+
+.landing-hero-grid {
+    display: grid;
+    grid-template-columns: minmax(500px, 1.2fr) 300px;
+    gap: 40px;
+    align-items: start;
+}
+
+/* Left Column */
+.landing-hero-content {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.landing-hero-card {
+    background: rgba(0, 0, 0, 0.55);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 2px solid rgba(255, 255, 255, 0.28);
+    border-radius: 26px;
+    padding: 42px 48px;  /* Slightly tighter padding */
+    box-sizing: border-box;
+}
+
+/* Right Column (Preview) */
+.landing-hero-preview {
+    position: relative;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    transform: rotate(2deg) translateY(20px);
+    transition: transform 0.3s ease;
+}
+
+.landing-hero-preview:hover {
+    transform: rotate(0deg) translateY(10px);
+}
+
+.landing-sign-img {
+    width: 100%;
+    height: auto;
+    display: block;
+    aspect-ratio: 3/4;
+    object-fit: cover;
+}
+
+.preview-chip {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: rgba(0, 0, 0, 0.7);
+    color: rgba(255, 255, 255, 0.9);
+    padding: 6px 12px;
+    border-radius: 99px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    font-family: var(--font-main);
+    backdrop-filter: blur(4px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Typography & Content */
+.landing-hero-title {
+    margin: 0 0 16px;
+    font-weight: 800;
+    font-size: clamp(2.2rem, 3.2vw, 3.4rem);
+    line-height: 1.05;
+    letter-spacing: 0.2px;
+    color: rgba(255, 255, 255, 0.97);
+}
+
+.landing-hero-title-line2 {
+    display: block;
+    margin-top: 8px;
+}
+
+.landing-hero-sub {
+    margin: 0;
+    font-size: 1.05rem;
+    line-height: 1.6;
+    color: rgba(255, 255, 255, 0.86);
+    max-width: 90%;
+}
+
+.landing-feature-list {
+    list-style: none;
+    padding: 0;
+    margin: 24px 0 0;
+}
+
+.landing-feature-list li {
+    position: relative;
+    padding-left: 24px;
+    margin: 10px 0;
+    line-height: 1.5;
+    color: rgba(255, 255, 255, 0.90);
+    font-size: 0.95rem;
+}
+
+.landing-feature-list li::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0.5em;
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    background: var(--accent-color, #007bff);
+}
+
+/* CTA Area - now inside card */
+.landing-hero-cta {
+    margin-top: 32px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;  /* Inside card, keep centered relative to card content if you want, or align left */
+    gap: 16px;
+}
+
+/* Let's align CTA left since text is left-aligned */
+.landing-hero-cta {
+    align-items: flex-start; 
+}
+
+.landing-primary-cta {
+    width: 100%;
+    text-align: center;
+    padding: 16px 22px !important;
+    font-size: 1.05rem !important;
+}
+
+.landing-about-link {
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.7);
+    text-decoration: none;
+    margin-left: 8px; /* slight offset */
+}
+
+.landing-about-link:hover {
+    color: rgba(255, 255, 255, 1);
+    text-decoration: underline;
+}
+
+/* Trust Footer */
+.landing-trust-footer {
+    color: rgba(255, 255, 255, 0.65);
+    font-size: 0.9rem;
+    font-weight: 500;
+    text-align: center;
+    width: 100%; /* Spans width of left column */
+    padding-top: 4px;
+}
+
+/* Mobile: Stack and Hide Preview */
+@media (max-width: 992px) {
+    .landing-hero-grid {
+        grid-template-columns: 1fr; /* Stack */
+        width: min(720px, 92vw);
+        margin: 0 auto;
+    }
+    
+    .landing-hero-preview {
+        display: none; /* Hide on tablet/mobile */
+    }
+
+    .landing-hero-wrap {
+        left: 50%;
+        transform: translateX(-50%);
+        top: 90px;
+    }
+
+    .landing-hero-cta {
+        align-items: center; /* Center on mobile */
+    }
+    
+    .landing-hero-card {
+        padding: 32px 24px;
+    }
+}

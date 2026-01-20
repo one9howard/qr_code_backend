@@ -1,0 +1,589 @@
+/* Dark SaaS Theme - Landing Page */
+:root {
+    --bg-dark: #0a0e17;
+    --bg-card: rgba(30, 35, 45, 0.6);
+    --primary: #0077ff;
+    --primary-hover: #0066d6;
+    --text-main: #ffffff;
+    --text-muted: #a0aab8;
+    --border-glass: rgba(255, 255, 255, 0.1);
+    --glow-blue: rgba(0, 119, 255, 0.2);
+    --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+/* Base Overrides for Landing Page */
+body.saas-landing {
+    background-color: var(--bg-dark) !important;
+    color: var(--text-main);
+    font-family: var(--font-sans);
+    margin: 0;
+    line-height: 1.5;
+    overflow-x: hidden;
+}
+
+/* Global Reset for Landing Page */
+body.saas-landing * {
+    box-sizing: border-box;
+}
+
+/* Hide Base Nav */
+body.saas-landing .navbar {
+    display: none !important;
+}
+
+/* Reset Base Container to allow full-width hero */
+body.saas-landing>.container {
+    max-width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    width: 100% !important;
+}
+
+/* Wrapper for Scoping */
+.saas-landing .hero-wrapper {
+    position: relative;
+    background: radial-gradient(circle at 50% 0%, #1a2333 0%, var(--bg-dark) 60%);
+    overflow: hidden;
+    padding-bottom: 80px;
+    width: 100vw;
+    /* Ensure full viewport width */
+}
+
+/* Inner Container for Landing Content (restoring standard width) */
+.saas-landing .container-saas {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 24px;
+    position: relative;
+    z-index: 1;
+}
+
+/* --- Navigation --- */
+.saas-nav {
+    display: flex;
+    justify-content: flex-end;
+    /* Align links to right since logo is absolute */
+    align-items: center;
+    padding: 16px 0;
+    margin-bottom: 40px;
+    /* Add space for the overlapping logo */
+    position: relative;
+    /* Context for absolute logo */
+}
+
+.nav-logo {
+    position: absolute;
+    top: 16px;
+    left: 0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-weight: 700;
+    font-size: 1.25rem;
+    color: white;
+    text-decoration: none;
+    z-index: 10;
+}
+
+.nav-links {
+    display: flex;
+    gap: 32px;
+}
+
+.nav-links a {
+    color: var(--text-muted);
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.2s;
+}
+
+.nav-links a:hover {
+    color: white;
+}
+
+.nav-cta {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.btn-primary {
+    background: var(--primary);
+    color: white;
+    padding: 10px 24px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.1s;
+}
+
+.btn-primary:hover {
+    background: var(--primary-hover);
+}
+
+.btn-secondary {
+    background: rgba(255, 255, 255, 0.05);
+    color: white;
+    padding: 10px 24px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 600;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+}
+
+.btn-secondary:hover {
+    border-color: rgba(255, 255, 255, 0.5);
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.pricing-card .btn-primary,
+.pricing-card .btn-secondary {
+    width: 100%;
+    display: block;
+    text-align: center;
+    margin-top: auto;
+}
+
+.mobile-menu-btn {
+    display: none;
+    background: none;
+    border: none;
+    color: white;
+    font-size: 1.5rem;
+    cursor: pointer;
+}
+
+/* --- Hero Section --- */
+.hero-content {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 60px;
+    align-items: center;
+    padding: 20px 0 100px 0;
+}
+
+.hero-text h1 {
+    font-size: 3.5rem;
+    /* ~56px */
+    line-height: 1.25;
+    /* Increased from 1.1 to fix descender clipping */
+    padding-bottom: 0.1em;
+    /* Extra buffer for background-clip */
+    font-weight: 800;
+    margin-bottom: 24px;
+    letter-spacing: -0.02em;
+    background: linear-gradient(to right, #fff, #a5b4fc);
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.hero-text p {
+    font-size: 1.25rem;
+    color: var(--text-muted);
+    margin-bottom: 32px;
+    max-width: 500px;
+}
+
+.feature-bullets {
+    list-style: none;
+    padding: 0;
+    margin-bottom: 40px;
+}
+
+.feature-bullets li {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: #cbd5e1;
+    margin-bottom: 12px;
+    font-weight: 500;
+}
+
+.bullet-icon {
+    width: 8px;
+    height: 8px;
+    background: var(--primary);
+    border-radius: 50%;
+    box-shadow: 0 0 10px var(--primary);
+}
+
+.hero-actions {
+    display: flex;
+    gap: 16px;
+}
+
+/* --- Device Mockups (Content Images) --- */
+.hero-visual {
+    position: relative;
+    height: 500px;
+    perspective: 1000px;
+}
+
+.mockup-container {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    transform-style: preserve-3d;
+    transform: rotateX(5deg) rotateY(-15deg) rotateZ(2deg);
+}
+
+.card-mockup {
+    position: absolute;
+    background: rgba(20, 25, 35, 0.95);
+    border: 1px solid var(--border-glass);
+    border-radius: 12px;
+    box-shadow:
+        0 20px 40px rgba(0, 0, 0, 0.4),
+        0 0 0 1px rgba(255, 255, 255, 0.05);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.card-mockup img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+/* Mockup 1: Dashboard */
+.card-dashboard {
+    width: 480px;
+    height: 320px;
+    top: 0;
+    right: 0;
+    z-index: 1;
+}
+
+.mockup-header {
+    height: 40px;
+    border-bottom: 1px solid var(--border-glass);
+    display: flex;
+    align-items: center;
+    padding: 0 16px;
+    gap: 8px;
+}
+
+.dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #333;
+}
+
+.dot.red {
+    background: #ff5f56;
+}
+
+.dot.yellow {
+    background: #ffbd2e;
+}
+
+.dot.green {
+    background: #27c93f;
+}
+
+.mockup-body {
+    padding: 20px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.chart-line {
+    height: 120px;
+    width: 100%;
+    background: conic-gradient(from 180deg at 50% 100%, rgba(0, 119, 255, 0.1) 0deg, transparent 60deg);
+    border-bottom: 2px solid var(--primary);
+    position: relative;
+}
+
+.kpi-row {
+    display: flex;
+    gap: 16px;
+}
+
+.kpi-box {
+    flex: 1;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 6px;
+    padding: 12px;
+}
+
+.kpi-label {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+.kpi-value {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: white;
+}
+
+/* Mockup 2: Pipeline */
+.card-pipeline {
+    width: 300px;
+    height: 240px;
+    bottom: 20px;
+    left: 20px;
+    z-index: 3;
+    background: #151a25;
+}
+
+.pipeline-item {
+    padding: 12px;
+    border-bottom: 1px solid var(--border-glass);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.avatar-circle {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+}
+
+.pipeline-text {
+    flex: 1;
+}
+
+.bar-stub {
+    height: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    width: 60%;
+    margin-bottom: 4px;
+}
+
+.bar-stub.short {
+    width: 40%;
+}
+
+/* Mockup 3: Phone */
+.card-phone {
+    width: 140px;
+    height: 280px;
+    bottom: -30px;
+    right: 80px;
+    z-index: 4;
+    border-radius: 24px;
+    border: 4px solid #333;
+    background: black;
+}
+
+.card-phone .mockup-body {
+    background: #fff;
+    border-radius: 20px;
+    padding: 0;
+    overflow: hidden;
+}
+
+.phone-hero {
+    height: 40%;
+    background: url('/static/img/hero_house.jpg') center/cover, #ccc;
+    /* Fallback color */
+}
+
+/* Mockup 4: QR Card */
+.card-qr {
+    width: 160px;
+    height: 100px;
+    top: 80px;
+    left: -40px;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.8);
+    border: 1px solid var(--primary);
+    box-shadow: 0 0 20px rgba(0, 119, 255, 0.2);
+}
+
+/* --- Features Section --- */
+.features-section {
+    padding: 80px 0;
+    border-top: 1px solid var(--border-glass);
+    background: var(--bg-dark);
+}
+
+.section-title {
+    text-align: center;
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 60px;
+}
+
+.features-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+}
+
+.pricing-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-glass);
+    border-radius: 16px;
+    padding: 32px;
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.2s;
+    position: relative;
+    overflow: hidden;
+}
+
+.pricing-card:hover {
+    transform: translateY(-5px);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+.pricing-card.pro {
+    background: linear-gradient(to bottom right, rgba(0, 119, 255, 0.1), rgba(0, 0, 0, 0));
+    border-color: rgba(0, 119, 255, 0.3);
+}
+
+.pricing-badge {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    background: var(--primary);
+    color: white;
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 4px 8px;
+    border-radius: 4px;
+}
+
+.pricing-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 8px;
+}
+
+.pricing-price {
+    font-size: 2.5rem;
+    font-weight: 800;
+    margin-bottom: 24px;
+}
+
+.pricing-price span {
+    font-size: 1rem;
+    font-weight: 400;
+    color: var(--text-muted);
+}
+
+.pricing-features {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 32px 0;
+    flex: 1;
+}
+
+.pricing-features li {
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    color: #cbd5e1;
+    font-size: 0.95rem;
+}
+
+/* Nav Logo Small */
+.nav-logo img.nav-logo-img {
+    height: 60px;
+    width: auto;
+    display: block;
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+    .nav-logo img.nav-logo-img {
+        height: 60px;
+    }
+
+    .nav-links {
+        display: none;
+    }
+
+    .nav-links.active {
+        display: flex;
+        flex-direction: column;
+        position: absolute;
+        top: 70px;
+        left: 0;
+        right: 0;
+        background: var(--bg-dark);
+        padding: 2rem;
+        gap: 1.5rem;
+        border-bottom: 1px solid var(--glass-border);
+        backdrop-filter: blur(20px);
+        z-index: 1000;
+    }
+
+    .nav-cta {
+        display: flex;
+        /* Keep visible for hamburger */
+    }
+
+    .nav-cta .btn-primary,
+    .nav-cta .btn-secondary {
+        display: none;
+        /* Hide desktop buttons in header on mobile */
+    }
+
+    .mobile-menu-btn {
+        display: block;
+    }
+
+    .hero-content {
+        grid-template-columns: 1fr;
+        text-align: center;
+        gap: 40px;
+        padding-top: 20px;
+    }
+
+    .hero-text h1 {
+        font-size: 2.5rem;
+    }
+
+    .hero-text p {
+        margin: 0 auto 32px auto;
+    }
+
+    .feature-bullets {
+        display: inline-block;
+        text-align: left;
+    }
+
+    .hero-actions {
+        justify-content: center;
+        width: 100%;
+        flex-direction: column;
+    }
+
+    .btn-primary,
+    .btn-secondary {
+        width: 100%;
+        text-align: center;
+        padding: 14px;
+    }
+
+    .hero-visual {
+        height: 400px;
+        margin-top: 20px;
+        /* Reduce tilt on mobile for clarity */
+        transform: scale(0.85);
+    }
+
+    .features-grid {
+        grid-template-columns: 1fr;
+        padding: 0 16px;
+    }
+}

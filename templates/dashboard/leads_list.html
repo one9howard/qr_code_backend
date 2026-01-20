@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="dashboard-container">
+    <div class="dashboard-header">
+        <h1>Lead Management</h1>
+        <p class="subtitle">Track and manage your buyer inquiries</p>
+    </div>
+
+    <!-- Filters -->
+    <div class="glass-panel" style="margin-bottom: 20px; padding: 15px;">
+        <form method="GET" action="{{ url_for('lead_management.list_leads') }}"
+            style="display: flex; gap: 15px; align-items: center;">
+            <select name="status" class="glass-input" style="width: auto;">
+                <option value="">All Statuses</option>
+                <option value="new" {% if current_filter.status=='new' %}selected{% endif %}>New</option>
+                <option value="contacted" {% if current_filter.status=='contacted' %}selected{% endif %}>Contacted
+                </option>
+                <option value="qualified" {% if current_filter.status=='qualified' %}selected{% endif %}>Qualified
+                </option>
+                <option value="closed" {% if current_filter.status=='closed' %}selected{% endif %}>Closed</option>
+                <option value="lost" {% if current_filter.status=='lost' %}selected{% endif %}>Lost</option>
+            </select>
+
+            <select name="property_id" class="glass-input" style="width: auto; max-width: 300px;">
+                <option value="">All Properties</option>
+                {% for p in properties %}
+                <option value="{{ p.id }}" {% if current_filter.property_id==p.id|string %}selected{% endif %}>{{
+                    p.address }}</option>
+                {% endfor %}
+            </select>
+
+            <button type="submit" class="glass-button secondary">Filter</button>
+            <a href="{{ url_for('lead_management.list_leads') }}" class="glass-button secondary"
+                style="opacity: 0.7;">Clear</a>
+        </form>
+    </div>
+
+    <!-- Leads Table -->
+    <div class="glass-panel">
+        <table class="dashboard-table">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Name</th>
+                    <th>Property</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for lead in leads %}
+                <tr>
+                    <td>{{ lead.created_at }}</td>
+                    <td>
+                        <div style="font-weight: bold;">{{ lead.buyer_name }}</div>
+                        <div style="font-size: 0.8em; opacity: 0.7;">{{ lead.buyer_email }}</div>
+                    </td>
+                    <td>{{ lead.property_address }}</td>
+                    <td>
+                        <span class="status-pill {{ lead.status }}">{{ lead.status|upper }}</span>
+                    </td>
+                    <td>
+                        <a href="{{ url_for('lead_management.lead_detail', lead_id=lead.id) }}"
+                            class="glass-button secondary">
+                            View
+                        </a>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="5" style="text-align: center; padding: 30px; opacity: 0.6;">
+                        No leads found.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<style>
+    /* Status Colors */
+    .status-pill.new {
+        background: rgba(52, 152, 219, 0.2);
+        color: #3498db;
+        border: 1px solid rgba(52, 152, 219, 0.3);
+    }
+
+    .status-pill.contacted {
+        background: rgba(241, 196, 15, 0.2);
+        color: #f1c40f;
+        border: 1px solid rgba(241, 196, 15, 0.3);
+    }
+
+    .status-pill.qualified {
+        background: rgba(46, 213, 115, 0.2);
+        color: #2ed573;
+        border: 1px solid rgba(46, 213, 115, 0.3);
+    }
+
+    .status-pill.closed {
+        background: rgba(155, 89, 182, 0.2);
+        color: #9b59b6;
+        border: 1px solid rgba(155, 89, 182, 0.3);
+    }
+
+    .status-pill.lost {
+        background: rgba(231, 76, 60, 0.2);
+        color: #e74c3c;
+        border: 1px solid rgba(231, 76, 60, 0.3);
+    }
+
+    .glass-input {
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        color: white;
+        padding: 8px 12px;
+        border-radius: 6px;
+    }
+</style>
+{% endblock %}

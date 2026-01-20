@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+{% block body_class %}order-sign bg-image-dark{% endblock %}
+{% block content %}
+
+<!-- Reuse Submit CSS for layout -->
+<link rel="stylesheet" href="{{ url_for('static', filename='css/pages/submit.css') }}">
+
+<div class="submit-container" style="margin-top: 2rem; position: relative;">
+
+    <div class="form-container">
+        <h2>Order Sign</h2>
+        <p style="color: #888; margin-bottom: 2rem;">Customize your sign for the property below.</p>
+
+        <div class="property-summary"
+            style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 8px; margin-bottom: 2rem;">
+            <h3 style="margin: 0; color: #fff; font-size: 1.2rem;">{{ property.address }}</h3>
+            <div style="display: flex; gap: 15px; margin-top: 5px; color: #aaa; font-size: 0.9rem;">
+                <span>{{ property.beds }} Beds</span>
+                <span>•</span>
+                <span>{{ property.baths }} Baths</span>
+                {% if property.sqft %}
+                <span>•</span>
+                <span>{{ property.sqft }} SqFt</span>
+                {% endif %}
+            </div>
+        </div>
+
+        <form id="orderSignForm" class="form">
+            <input type="hidden" name="property_id" value="{{ property.id }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+            <!-- Sign Customization Options -->
+            <h3 style="color: #2196f3; margin-bottom: 1rem;">Sign Options</h3>
+
+            <div class="sign-options-container">
+                <!-- Color Palette -->
+                <label style="color: #666; font-size: 0.9rem; margin-bottom: 10px; display: block;">Banner Color</label>
+                <div class="color-palette">
+                    <label class="color-option">
+                        <input type="radio" name="sign_color" value="#1F6FEB" checked>
+                        <div class="color-swatch" style="background: #1F6FEB;"></div>
+                        <span class="color-label">Ocean Blue</span>
+                    </label>
+                    <label class="color-option">
+                        <input type="radio" name="sign_color" value="#2EA043">
+                        <div class="color-swatch" style="background: #2EA043;"></div>
+                        <span class="color-label">Forest Green</span>
+                    </label>
+                    <label class="color-option">
+                        <input type="radio" name="sign_color" value="#CF222E">
+                        <div class="color-swatch" style="background: #CF222E;"></div>
+                        <span class="color-label">Ruby Red</span>
+                    </label>
+                    <label class="color-option">
+                        <input type="radio" name="sign_color" value="#8250DF">
+                        <div class="color-swatch" style="background: #8250DF;"></div>
+                        <span class="color-label">Royal Purple</span>
+                    </label>
+                    <label class="color-option">
+                        <input type="radio" name="sign_color" value="#FB8500">
+                        <div class="color-swatch" style="background: #FB8500;"></div>
+                        <span class="color-label">Sunset Orange</span>
+                    </label>
+                    <label class="color-option">
+                        <input type="radio" name="sign_color" value="#0969DA">
+                        <div class="color-swatch" style="background: #0969DA;"></div>
+                        <span class="color-label">Sky Teal</span>
+                    </label>
+                </div>
+
+                <!-- Size Selector -->
+                <label
+                    style="color: #666; font-size: 0.9rem; margin-bottom: 5px; display: block; margin-top: 1.5rem;">Sign
+                    Size</label>
+                <select name="sign_size" class="size-selector">
+                    <option value="12x18">12" × 18" (Small)</option>
+                    <option value="18x24" selected>18" × 24" (Standard)</option>
+                    <option value="24x36">24" × 36" (Large)</option>
+                    <option value="36x18">36" × 18" (Wide)</option>
+                </select>
+            </div>
+
+            <button type="submit" class="glass-button accent generate-btn"
+                style="margin-top: 2rem; width: 100%;">Proceed to Payment</button>
+        </form>
+    </div>
+</div>
+
+<script>
+    document.getElementById('orderSignForm').addEventListener('submit', async function (e) {
+        e.preventDefault();
+
+        const btn = this.querySelector('button[type="submit"]');
+        const originalText = btn.textContent;
+        btn.textContent = 'Processing...';
+        btn.disabled = true;
+
+        const formData = new FormData(this);
+        const data = {
+            property_id: formData.get('property_id'),
+            color: formData.get('sign_color'),
+            size: formData.get('sign_size')
+        };
+
+        try {
+            const response = await fetch('/order-sign', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': formData.get('csrf_token')
+                },
+                body: JSON.stringify(data)
+            });
+
+            const result = await response.json();
+
+            if (result.success && result.checkoutUrl) {
+                window.location.href = result.checkoutUrl;
+            } else {
+                alert(result.error || 'Failed to create order. Please try again.');
+                btn.textContent = originalText;
+                btn.disabled = false;
+            }
+        } catch (err) {
+            console.error(err);
+            alert('Required network error occurred');
+            btn.textContent = originalText;
+            btn.disabled = false;
+        }
+    });
+</script>
+
+{% endblock %}

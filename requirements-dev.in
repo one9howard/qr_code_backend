@@ -1,0 +1,14 @@
+# =============================================================================
+# QR Code Backend - Development Dependencies
+# =============================================================================
+# This is a pip-tools input file. Edit this file, then regenerate lockfile:
+#   pip-compile --resolver=backtracking --generate-hashes --strip-extras \
+#     -o requirements-dev.txt requirements-dev.in
+# =============================================================================
+
+# Constrain to production lockfile to avoid version conflicts
+-c requirements.txt
+
+# --- Dev/test tools ---
+pip-tools>=7.5.2,<8
+pytest>=9.0.2,<10

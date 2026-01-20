@@ -1,0 +1,185 @@
+/* Assets Page Styles */
+
+.preview-section {
+    text-align: center;
+}
+
+.preview-header {
+    font-size: 2.5rem;
+    margin-bottom: 20px;
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.assets-grid {
+    display: flex;
+    gap: 40px;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: flex-start;
+}
+
+.sign-preview-card {
+    flex: 1;
+    min-width: 300px;
+    max-width: 500px;
+}
+
+.preview-img {
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    width: 100%;
+    border-radius: 8px;
+    transition: transform 0.3s ease;
+}
+
+.preview-img:hover {
+    transform: translateY(-5px);
+}
+
+.action-buttons {
+    margin-top: 30px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.order-btn {
+    display: inline-block;
+    padding: 1rem 2rem;
+    text-decoration: none;
+    border-radius: 8px;
+    width: 100%;
+    text-align: center;
+}
+
+.secondary-actions {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 20px;
+    padding-bottom: 4rem;
+    margin-top: 60px;
+}
+
+/* Size Selector Section */
+.sign-meta {
+    text-align: center;
+    margin-top: 15px;
+    margin-bottom: 15px;
+    color: #fff;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.size-label {
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.size-dropdown {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #fff;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    backdrop-filter: blur(10px);
+}
+
+.size-dropdown:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+.size-dropdown:focus {
+    outline: none;
+    border-color: #2196f3;
+    box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.3);
+}
+
+.size-dropdown:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.size-dropdown option {
+    background: #1a1a2e;
+    color: #fff;
+}
+
+/* Resize Status Indicator */
+.resize-status {
+    font-size: 0.85rem;
+    min-width: 100px;
+}
+
+.resize-status.loading {
+    color: #2196f3;
+}
+
+.resize-status.error {
+    color: #f44336;
+}
+
+.locked-notice {
+    color: #ff9800;
+    font-size: 0.85rem;
+    font-style: italic;
+}
+
+/* Order Status Badge */
+.order-status-section {
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.status-label {
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.status-badge {
+    padding: 5px 15px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.status-badge.status-pending_payment {
+    background: rgba(255, 152, 0, 0.2);
+    color: #ff9800;
+    border: 1px solid rgba(255, 152, 0, 0.3);
+}
+
+.status-badge.status-paid {
+    background: rgba(76, 175, 80, 0.2);
+    color: #4caf50;
+    border: 1px solid rgba(76, 175, 80, 0.3);
+}
+
+.status-badge.status-submitted_to_printer {
+    background: rgba(33, 150, 243, 0.2);
+    color: #2196f3;
+    border: 1px solid rgba(33, 150, 243, 0.3);
+}
+
+.status-badge.status-print_failed {
+    background: rgba(244, 67, 54, 0.2);
+    color: #f44336;
+    border: 1px solid rgba(244, 67, 54, 0.3);
+}
+
+.status-badge.status-fulfilled {
+    background: rgba(156, 39, 176, 0.2);
+    color: #9c27b0;
+    border: 1px solid rgba(156, 39, 176, 0.3);
+}

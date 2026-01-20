@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="dashboard-container">
+
+
+    <div class="dashboard-header">
+        <h1>Marketing Campaigns</h1>
+        <p class="subtitle">{{ property.address }}</p>
+    </div>
+
+    <div class="dashboard-grid" style="grid-template-columns: 1fr 1fr; gap: 20px;">
+
+        <!-- Campaigns -->
+        <div class="glass-panel" style="padding: 20px;">
+            <h3>Campaigns</h3>
+            <p style="font-size: 0.9rem; opacity: 0.7;">Group your marketing efforts (e.g. "Open House", "Mailers").</p>
+
+            <ul style="list-style: none; padding: 0; margin-bottom: 20px;">
+                {% for campaign in campaigns %}
+                <li
+                    style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between;">
+                    <strong>{{ campaign.name }}</strong>
+                    <span style="font-size: 0.8rem; opacity: 0.5;">{{ campaign.created_at[:10] }}</span>
+                </li>
+                {% else %}
+                <li style="opacity: 0.5;">No campaigns yet.</li>
+                {% endfor %}
+            </ul>
+
+            <form action="{{ url_for('campaigns.create_campaign', property_id=property.id) }}" method="POST"
+                style="display: flex; gap: 10px;">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="text" name="name" placeholder="Campaign Name" class="glass-input" required>
+                <button type="submit" class="glass-button secondary">Create</button>
+            </form>
+        </div>
+
+        <!-- QR Variants -->
+        <div class="glass-panel" style="padding: 20px;">
+            <h3>QR Variants</h3>
+            <p style="font-size: 0.9rem; opacity: 0.7;">Create unique QR codes to track sources (e.g. "Flyer", "Sign").
+            </p>
+
+            <div class="variants-list" style="margin-bottom: 20px;">
+                {% for variant in variants %}
+                <div
+                    style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 8px; margin-bottom: 10px;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                        <strong>{{ variant.label }}</strong>
+                        <span style="font-size: 0.8rem; opacity: 0.5;">{{ variant.campaign_name or 'No Campaign'
+                            }}</span>
+                    </div>
+
+                    <div
+                        style="display: flex; align-items: center; gap: 10px; background: rgba(0,0,0,0.2); padding: 8px; border-radius: 4px;">
+                        <code style="color: var(--accent-color);">{{ request.host_url }}r/{{ variant.code }}</code>
+                        <button onclick="navigator.clipboard.writeText('{{ request.host_url }}r/{{ variant.code }}')"
+                            class="glass-button secondary" style="padding: 2px 8px; font-size: 0.7rem;">Copy</button>
+                    </div>
+                </div>
+                {% else %}
+                <p style="opacity: 0.5;">No variants created.</p>
+                {% endfor %}
+            </div>
+
+            <form action="{{ url_for('campaigns.create_variant', property_id=property.id) }}" method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                <div style="margin-bottom: 10px;">
+                    <select name="campaign_id" class="glass-input" style="width: 100%;">
+                        <option value="">-- Select Campaign (Optional) --</option>
+                        {% for campaign in campaigns %}
+                        <option value="{{ campaign.id }}">{{ campaign.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div style="display: flex; gap: 10px;">
+                    <input type="text" name="label" placeholder="Label (e.g. 'Front Yard')" class="glass-input"
+                        required>
+                    <button type="submit" class="glass-button secondary">Create Variant</button>
+                </div>
+            </form>
+        </div>
+
+    </div>
+</div>
+{% endblock %}

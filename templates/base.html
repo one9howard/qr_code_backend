@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}QR Real Estate Signs{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=9">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+
+<body class="{% block body_class %}{% endblock %}">
+    <!-- Navigation -->
+    <nav class="navbar">
+        <!-- Left: Hamburger -->
+        <button class="hamburger-btn" aria-label="Menu" onclick="toggleDrawer()">
+            <svg viewBox="0 0 24 24" width="28" height="28" stroke="white" stroke-width="2" fill="none">
+                <path d="M3 12h18M3 6h18M3 18h18" />
+            </svg>
+        </button>
+
+        <!-- Center: Dashboard (if logged in) or Empty -->
+        <div class="nav-center">
+            {% if current_user.is_authenticated %}
+            <div class="nav-stack">
+                {% if request.endpoint not in ['orders.success', 'billing.success'] %}
+                <a href="{{ url_for('dashboard.index') }}" class="glass-button secondary nav-btn">
+                    Dashboard
+                </a>
+                {% endif %}
+                {% if request.endpoint not in ['account.index', 'agent.submit', 'orders.success', 'public.privacy',
+                'dashboard.edit_property', 'billing.index', 'billing.success', 'auth.verify_email', 'public.terms',
+                'public.about', 'campaigns.list_campaigns'] %}
+                <a href="{{ url_for('account.index') }}" class="nav-username" title="Account Settings">
+                    {{ current_user.display_name }}
+                </a>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Right: Home Icon + Auth Buttons -->
+        <div class="nav-right flex-center gap-md">
+            {% if request.endpoint not in ['public.privacy', 'public.terms', 'public.about', 'agent.submit',
+            'orders.success', 'account.index', 'campaigns.list_campaigns',
+            'auth.login', 'auth.register', 'billing.success'] %}
+            <a href="{{ url_for('public.landing') }}" class="home-link">
+                <svg viewBox="0 0 24 24" width="28" height="28" fill="white">
+                    <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" />
+                </svg>
+            </a>
+            {% endif %}
+
+            {% if not current_user.is_authenticated and request.endpoint not in ['auth.login', 'auth.register',
+            'public.privacy', 'public.terms', 'public.about'] %}
+            <a href="{{ url_for('auth.login') }}" class="glass-button secondary nav-btn">
+                Login
+            </a>
+            <a href="{{ url_for('auth.register') }}" class="glass-button secondary accent nav-btn">
+                Register
+            </a>
+            {% endif %}
+        </div>
+    </nav>
+
+    <!-- Drawer Menu -->
+    <div class="drawer-overlay" id="drawer-overlay" onclick="toggleDrawer()"></div>
+    <div class="drawer-menu" id="drawer-menu">
+        <div class="drawer-header">
+            <span class="drawer-title">Menu</span>
+            <button class="close-drawer" onclick="toggleDrawer()">&times;</button>
+        </div>
+
+        {% if current_user.is_authenticated %}
+        <div class="drawer-user-info">
+            Signed in as<br>
+            <strong>{{ current_user.email }}</strong>
+        </div>
+        {% endif %}
+
+        <div class="drawer-links">
+
+            <a href="{{ url_for('public.home') }}" class="drawer-item">
+                Home
+            </a>
+
+            <a href="{{ url_for('public.about') }}" class="drawer-item">
+                About Us
+            </a>
+
+            <div class="drawer-divider"></div>
+
+            {% if current_user.is_authenticated %}
+            <a href="{{ url_for('dashboard.index') }}" class="drawer-item highlight">
+                Dashboard
+            </a>
+            <a href="{{ url_for('account.index') }}" class="drawer-item">
+                Account Settings
+            </a>
+            <a href="{{ url_for('auth.logout') }}" class="drawer-item">
+                Logout
+            </a>
+            {% else %}
+            <a href="{{ url_for('auth.login') }}" class="drawer-item">
+                Login
+            </a>
+            <a href="{{ url_for('auth.register') }}" class="drawer-item highlight">
+                Register
+            </a>
+            {% endif %}
+
+            <div class="drawer-divider"></div>
+
+            <!-- Legal Links -->
+            <a href="{{ url_for('public.privacy') }}" class="drawer-item drawer-legal-link">
+                Privacy Policy
+            </a>
+            <a href="{{ url_for('public.terms') }}" class="drawer-item drawer-legal-link">
+                Terms of Service
+            </a>
+        </div>
+    </div>
+
+    <script>
+        function toggleDrawer() {
+            const drawer = document.getElementById('drawer-menu');
+            const overlay = document.getElementById('drawer-overlay');
+            drawer.classList.toggle('open');
+            overlay.classList.toggle('open');
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                const drawer = document.getElementById('drawer-menu');
+                if (drawer.classList.contains('open')) toggleDrawer();
+            }
+        });
+    </script>
+
+    <div class="container">
+        {% with messages = get_flashed_messages() %}
+        {% if messages %}
+        <div class="toast-container">
+            {% for message in messages %}
+            <div class="glass-toast">
+                {{ message }}
+            </div>
+            {% endfor %}
+        </div>
+        <script>
+            // Auto-dismiss toasts
+            document.addEventListener('DOMContentLoaded', () => {
+                const toasts = document.querySelectorAll('.glass-toast');
+                toasts.forEach((toast, index) => {
+                    setTimeout(() => {
+                        toast.classList.add('fade-out');
+                        toast.addEventListener('animationend', () => {
+                            toast.remove();
+                        });
+                    }, 4000 + (index * 500)); // Stagger removal slightly
+                });
+            });
+        </script>
+        {% endif %}
+        {% endwith %}
+        {% block content %}{% endblock %}
+    </div>
+</body>
+
+</html>

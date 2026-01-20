@@ -1,0 +1,35 @@
+[Unit]
+Description=InSite Signs Print Worker
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=insite-worker
+Group=insite-worker
+WorkingDirectory=/opt/insite_print_worker
+EnvironmentFile=/etc/insite_print_worker.env
+
+# Use venv if installer created it
+ExecStart=/opt/insite_print_worker/venv/bin/python -u /opt/insite_print_worker/print_worker.py \
+  --base-url ${INSITE_BASE_URL} \
+  --token ${PRINT_SERVER_TOKEN} \
+  --inbox-dir ${PRINT_WORKER_INBOX} \
+  --poll-seconds ${PRINT_WORKER_POLL_SECONDS} \
+  --limit ${PRINT_WORKER_LIMIT} \
+  --timeout ${PRINT_WORKER_HTTP_TIMEOUT}
+
+Restart=always
+RestartSec=5
+
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/insite_print_worker
+
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,74 @@
+/* Submit Page Sign Options */
+
+.sign-options-container {
+    margin-bottom: 2rem;
+}
+
+.color-palette {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+}
+
+.color-option {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    cursor: pointer;
+}
+
+.color-option input[type="radio"] {
+    display: none;
+}
+
+.color-swatch {
+    width: 60px;
+    height: 60px;
+    border-radius: 8px;
+    border: 3px solid transparent;
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.color-label {
+    font-size: 0.7rem;
+    color: #999;
+    margin-top: 5px;
+    transition: color 0.2s;
+}
+
+/* Selected state styling */
+.color-option input[type="radio"]:checked + .color-swatch {
+    border: 3px solid #fff;
+    box-shadow: 0 0 15px rgba(255, 255, 255, 0.5);
+    transform: scale(1.05);
+}
+
+.color-option input[type="radio"]:checked ~ .color-label {
+    color: #fff;
+}
+
+/* Size Selector */
+.size-selector {
+    width: 100%;
+    padding: 12px;
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(0, 0, 0, 0.3);
+    color: white;
+    margin-bottom: 1.5rem;
+    font-size: 1rem;
+}
+
+.size-selector:focus {
+    outline: none;
+    border-color: #2196f3;
+    background: rgba(0, 0, 0, 0.5);
+}
+
+.generate-btn {
+    width: 100%;
+    text-align: center;
+    margin-top: 1rem;
+}

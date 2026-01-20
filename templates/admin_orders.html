@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container" style="max-width: 1200px; margin-top: 50px;">
+    <div class="glass-panel" style="padding: 2rem;">
+        <h1 class="mb-4" style="color: #2196f3;">Admin: Order Management</h1>
+
+        <table style="width: 100%; border-collapse: collapse; color: white;">
+            <thead>
+                <tr style="border-bottom: 1px solid rgba(255,255,255,0.2);">
+                    <th style="padding: 10px; text-align: left;">ID</th>
+                    <th style="padding: 10px; text-align: left;">Customer</th>
+                    <th style="padding: 10px; text-align: left;">Status</th>
+                    <th style="padding: 10px; text-align: left;">Paid At</th>
+                    <th style="padding: 10px; text-align: left;">Submitted At</th>
+                    <th style="padding: 10px; text-align: left;">Error</th>
+                    <th style="padding: 10px; text-align: left;">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for order in orders %}
+                <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
+                    <td style="padding: 10px;">#{{ order.id }}</td>
+                    <td style="padding: 10px;">
+                        {{ order.customer_email }}
+                        {% if order.is_guest %}
+                        <span style="font-size: 0.75em; color: #ff9800; margin-left: 5px;">(Guest)</span>
+                        {% endif %}
+                    </td>
+                    <td style="padding: 10px;">
+                        <span class="status-badge status-{{ order.status }}">
+                            {{ order.status.replace('_', ' ').title() }}
+                        </span>
+                    </td>
+                    <td style="padding: 10px; font-size: 0.85em;">{{ order.paid_at if order.paid_at else '-' }}</td>
+                    <td style="padding: 10px; font-size: 0.85em;">{{ order.submitted_at if order.submitted_at else '-'
+                        }}</td>
+                    <td style="padding: 10px; font-size: 0.75em; color: #f44336; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"
+                        title="{{ order.fulfillment_error }}">
+                        {{ order.fulfillment_error if order.fulfillment_error else '-' }}
+                    </td>
+                    <td style="padding: 10px;">
+                        {% if order.status == 'paid' and not order.submitted_at %}
+                        <form action="{{ url_for('admin.retry_fulfillment', order_id=order.id) }}" method="POST"
+                            style="display:inline;">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="glass-button"
+                                style="padding: 5px 10px; font-size: 0.8em; background: rgba(255, 152, 0, 0.2);">Retry</button>
+                        </form>
+                        {% elif order.status == 'print_failed' %}
+                        <form action="{{ url_for('admin.retry_fulfillment', order_id=order.id) }}" method="POST"
+                            style="display:inline;">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="glass-button"
+                                style="padding: 5px 10px; font-size: 0.8em; background: rgba(244, 67, 54, 0.2);">Retry</button>
+                        </form>
+                        {% else %}
+                        <span style="color: #666;">-</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

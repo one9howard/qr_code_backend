@@ -1,0 +1,211 @@
+/**
+ * assets.js
+ * Handles order processing, size resizing, and UI interaction for the assets page
+ */
+
+// Store original size for revert on error
+let originalSize = null;
+
+function getConfig() {
+    const configEl = document.getElementById('assets-page-config');
+    if (!configEl) {
+        console.error("Configuration element #assets-page-config not found!");
+        return null;
+    }
+    return {
+        orderId: configEl.dataset.orderId,
+        guestToken: configEl.dataset.guestToken,
+        csrfToken: configEl.dataset.csrfToken,
+        orderUrl: configEl.dataset.orderUrl,
+        resizeUrl: configEl.dataset.resizeUrl,
+        orderStatus: configEl.dataset.orderStatus,
+        isLocked: configEl.dataset.isLocked === 'true'
+    };
+}
+
+function orderSign() {
+    const btn = document.getElementById('order-btn');
+    const originalText = btn.innerText;
+    const config = getConfig();
+
+    if (!config || !config.orderId || !config.orderUrl) {
+        alert("Missing order configuration details.");
+        return;
+    }
+
+    // UI Feedback
+    btn.innerText = "Redirecting to Checkout...";
+    btn.style.opacity = "0.7";
+    btn.style.pointerEvents = "none";
+
+    const requestBody = {
+        order_id: config.orderId
+    };
+
+    // Include guest_token if present
+    if (config.guestToken) {
+        requestBody.guest_token = config.guestToken;
+    }
+
+    fetch(config.orderUrl, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': config.csrfToken,
+        },
+        body: JSON.stringify(requestBody)
+    })
+        .then(async response => {
+            if (response.redirected) {
+                window.location.href = response.url;
+                return;
+            }
+
+            const isJson = response.headers.get('content-type')?.includes('application/json');
+            const text = await response.text();
+
+            if (!response.ok) {
+                throw new Error(isJson ? JSON.parse(text).error : `Server Error: ${response.status}`);
+            }
+
+            if (!isJson) {
+                throw new Error("Received invalid response from server");
+            }
+
+            return JSON.parse(text);
+        })
+        .then(data => {
+            if (!data) return; // Handled by redirect above
+
+            if (data.success && data.checkoutUrl) {
+                // Redirect to Stripe
+                window.location.href = data.checkoutUrl;
+            } else {
+                throw new Error(data.error || "Unknown error");
+            }
+        })
+        .catch(error => {
+            btn.innerText = originalText;
+            btn.style.opacity = "1";
+            btn.style.pointerEvents = "auto";
+            console.error('Error:', error);
+            alert(error.message || "An error occurred connecting to the server.");
+        });
+}
+
+function resizeSign(newSize) {
+    const config = getConfig();
+    const sizeSelector = document.getElementById('size-selector');
+    const statusEl = document.getElementById('resize-status');
+    const previewImg = document.getElementById('preview-image');
+
+    if (!config || config.isLocked) {
+        return;
+    }
+
+    // Show loading state
+    statusEl.textContent = 'Updating...';
+    statusEl.className = 'resize-status loading';
+    sizeSelector.disabled = true;
+
+    const requestBody = {
+        size: newSize
+    };
+
+    if (config.guestToken) {
+        requestBody.guest_token = config.guestToken;
+    }
+
+    fetch(config.resizeUrl, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': config.csrfToken,
+        },
+        body: JSON.stringify(requestBody)
+    })
+        .then(async response => {
+            const data = await response.json();
+
+            if (!response.ok || !data.success) {
+                // Handle specific error codes
+                let errorMessage = 'Resize failed';
+                switch (data.error) {
+                    case 'invalid_size':
+                        errorMessage = 'Invalid size selected';
+                        break;
+                    case 'unauthorized':
+                        errorMessage = 'Not authorized to modify this order';
+                        break;
+                    case 'order_locked_paid':
+                        errorMessage = 'Cannot resize a paid order';
+                        break;
+                    case 'render_failed':
+                        errorMessage = data.message || 'Failed to generate new sign';
+                        break;
+                    default:
+                        errorMessage = data.message || data.error || 'Unknown error';
+                }
+                throw new Error(errorMessage);
+            }
+
+            return data;
+        })
+        .then(data => {
+            // Success - update preview
+            if (data.preview_url) {
+                previewImg.src = data.preview_url;
+            }
+
+            // Update stored original size
+            originalSize = data.size;
+
+            // Clear status
+            statusEl.textContent = '';
+            statusEl.className = 'resize-status';
+            sizeSelector.disabled = false;
+        })
+        .catch(error => {
+            console.error('Resize error:', error);
+
+            // Show error
+            statusEl.textContent = error.message;
+            statusEl.className = 'resize-status error';
+
+            // Revert selector to original size
+            if (originalSize) {
+                sizeSelector.value = originalSize;
+            }
+
+            sizeSelector.disabled = false;
+
+            // Clear error after 5 seconds
+            setTimeout(() => {
+                if (statusEl.classList.contains('error')) {
+                    statusEl.textContent = '';
+                    statusEl.className = 'resize-status';
+                }
+            }, 5000);
+        });
+}
+
+// Attach event listeners when DOM loads
+document.addEventListener('DOMContentLoaded', () => {
+    const orderBtn = document.getElementById('order-btn');
+    if (orderBtn) {
+        orderBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            orderSign();
+        });
+    }
+
+    const sizeSelector = document.getElementById('size-selector');
+    if (sizeSelector) {
+        // Store original size
+        originalSize = sizeSelector.value;
+
+        sizeSelector.addEventListener('change', (e) => {
+            resizeSign(e.target.value);
+        });
+    }
+});

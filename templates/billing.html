@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+{% block body_class %}bg-image-dark billing-gate{% endblock %}
+{% block content %}
+<style>
+    body.billing-gate {
+        background-image: linear-gradient(rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0.8)),
+        url("{{ url_for('static', filename='images/dashboard_preview_bg.jpg') }}") !important;
+    }
+
+    /* Pricing Card Styling */
+    .pricing-card {
+        flex: 1;
+        min-width: 250px;
+        padding: 30px;
+        border-radius: 12px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        color: #111;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .pricing-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: url("{{ url_for('static', filename='images/dashboard_preview_bg.jpg') }}") center/cover;
+        opacity: 0.08;
+        z-index: 0;
+    }
+
+    .pricing-card>* {
+        position: relative;
+        z-index: 1;
+    }
+
+    .pricing-card.monthly {
+        background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+    }
+
+    .pricing-card.annual {
+        background: linear-gradient(135deg, #ffffff 0%, #e8f4ff 100%);
+        border: 2px solid #007bff;
+    }
+
+    /* Blue Subscribe Button */
+    .subscribe-btn {
+        display: inline-block;
+        padding: 14px 28px;
+        font-size: 1rem;
+        font-weight: 600;
+        color: white;
+        background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 4px 15px rgba(0, 123, 255, 0.4);
+    }
+
+    .subscribe-btn::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg,
+                transparent,
+                rgba(255, 255, 255, 0.3),
+                transparent);
+        transition: left 0.5s ease;
+    }
+
+    .subscribe-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 25px rgba(0, 123, 255, 0.5), 0 0 30px rgba(0, 123, 255, 0.3);
+    }
+
+    .subscribe-btn:hover::before {
+        left: 100%;
+    }
+
+    .subscribe-btn:active {
+        transform: translateY(0);
+    }
+</style>
+<div class="submit-container" style="justify-content: center; min-height: 80vh; margin-top: 2rem;">
+
+    <div class="preview-section" style="text-align: center; max-width: 800px;">
+        <h2 style="font-size: 2.5rem; margin-bottom: 20px; text-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+            Subscription Required
+        </h2>
+        <p style="margin-bottom: 40px; color: #aaa;">
+            Access to the analytics dashboard requires an active subscription.
+        </p>
+
+        {% if is_active %}
+        <div style="background: rgba(40, 167, 69, 0.1); padding: 20px; border-radius: 8px; margin-bottom: 30px;">
+            <h3 style="color: #28a745;">You have an active subscription!</h3>
+            <p>You can manage your billing settings or cancel your subscription below.</p>
+        </div>
+        <a href="{{ url_for('billing.portal') }}" class="glass-button secondary">
+            Manage Subscription
+        </a>
+        <a href="{{ url_for('dashboard.index') }}" class="glass-button secondary accent" style="margin-left: 10px;">
+            Go to Dashboard
+        </a>
+        {% else %}
+
+        <div style="display: flex; gap: 30px; justify-content: center; flex-wrap: wrap;">
+            <!-- Monthly -->
+            <div class="pricing-card monthly">
+                <h3 style="color: #333; margin-bottom: 10px;">Monthly</h3>
+                <div style="font-size: 2.5rem; font-weight: bold; margin: 20px 0; color: #111;">
+                    {{ prices['monthly']['formatted'] }}<span
+                        style="font-size: 1rem; color: #888; font-weight: normal;">/mo</span>
+                </div>
+                <p style="color: #666; font-size: 0.9rem; margin-bottom: 20px;">Perfect for trying out</p>
+                <form action="{{ url_for('billing.checkout') }}" method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="price_id" value="{{ prices['monthly']['id'] }}">
+                    <button type="submit" class="subscribe-btn">Subscribe Monthly</button>
+                </form>
+            </div>
+
+            <!-- Annual -->
+            <div class="pricing-card annual">
+                <div
+                    style="background: linear-gradient(135deg, #007bff, #00c6ff); color: white; padding: 6px 14px; border-radius: 20px; display: inline-block; font-size: 0.8rem; margin-bottom: 10px; font-weight: 600;">
+                    ✨ Best Value - Save 17%</div>
+                <h3 style="color: #333; margin-bottom: 10px;">Annually</h3>
+                <div style="font-size: 2.5rem; font-weight: bold; margin: 20px 0; color: #111;">
+                    {{ prices['annual']['formatted'] }}<span
+                        style="font-size: 1rem; color: #888; font-weight: normal;">/yr</span>
+                </div>
+                <p style="color: #666; font-size: 0.9rem; margin-bottom: 20px;">Best for serious agents</p>
+                <form action="{{ url_for('billing.checkout') }}" method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="price_id" value="{{ prices['annual']['id'] }}">
+                    <button type="submit" class="subscribe-btn">Subscribe Annually</button>
+                </form>
+            </div>
+        </div>
+        {% endif %}
+
+    </div>
+</div>
+{% endblock %}

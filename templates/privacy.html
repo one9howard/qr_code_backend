@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% block title %}Privacy Policy - InSite QR Signs{% endblock %}
+{% block body_class %}legal-page bg-image-dark privacy-page{% endblock %}
+{% block content %}
+
+<div class="submit-container">
+    <div class="legal-container card--dark">
+        <h1 class="text-white">Privacy Policy</h1>
+        <p class="muted-text">Last updated: January 2026</p>
+
+        <h2>Introduction</h2>
+        <p>
+            InSite QR Signs ("we," "our," or "us") is committed to protecting your privacy.
+            This policy explains how we collect, use, and protect information when you use our
+            QR code yard sign service.
+        </p>
+
+        <h2>Information We Collect</h2>
+
+        <h3 class="legal-subheading">For Agents (Account Holders)</h3>
+        <ul>
+            <li><strong>Account Information:</strong> Email, name, brokerage, phone number, profile photo</li>
+            <li><strong>Property Data:</strong> Addresses, descriptions, photos of listed properties</li>
+            <li><strong>Payment Information:</strong> Processed securely via Stripe; we do not store card details</li>
+            <li><strong>Order History:</strong> Sign orders, sizes, colors, shipping addresses</li>
+        </ul>
+
+        <h3 class="legal-subheading">For Buyers (QR Scanners)</h3>
+        <ul>
+            <li><strong>QR Scan Analytics:</strong> Timestamp, IP address, user agent, device type, referrer URL</li>
+            <li><strong>Page Views:</strong> Which property pages are viewed and when</li>
+            <li><strong>Lead Form Submissions:</strong> Name, email, phone, message (only when voluntarily submitted)
+            </li>
+        </ul>
+
+        <h2>Analytics & Tracking Disclosure</h2>
+        <p>
+            When you scan a QR code on one of our signs or view a property page, we collect:
+        </p>
+        <ul>
+            <li><strong>IP Address:</strong> Used to derive approximate location for geographic analytics</li>
+            <li><strong>User Agent:</strong> Browser and device information</li>
+            <li><strong>Referrer URL:</strong> Where the visitor came from (e.g., UTM parameters)</li>
+            <li><strong>Visitor Hash:</strong> A privacy-preserving identifier to count unique visitors</li>
+        </ul>
+        <p>
+            We use a session cookie to distinguish between property page views from logged-in agents
+            (dashboard activity) and views from potential buyers (public interest). This prevents
+            agent activity from being counted as buyer interest in analytics.
+        </p>
+
+        <h2>How We Use Information</h2>
+        <ul>
+            <li>To generate and fulfill QR code yard sign orders</li>
+            <li>To provide agents with analytics about property interest</li>
+            <li>To connect potential buyers with listing agents (via lead forms)</li>
+            <li>To improve our service and user experience</li>
+            <li>To process payments and prevent fraud</li>
+        </ul>
+
+        <h2>Information Sharing</h2>
+        <p>We share information only in these cases:</p>
+        <ul>
+            <li><strong>With Agents:</strong> Lead submissions and property view analytics are shared with the listing
+                agent</li>
+            <li><strong>With Service Providers:</strong> Print fulfillment companies receive order details to produce
+                signs</li>
+            <li><strong>Payment Processing:</strong> Stripe processes payments according to their privacy policy</li>
+            <li><strong>Legal Requirements:</strong> When required by law or to protect rights</li>
+        </ul>
+
+        <h2>Data Retention</h2>
+        <p>
+            We retain account and order data as long as needed to provide our service.
+            Analytics data (QR scans, page views) is retained for up to 2 years.
+            You may request deletion of your account data by contacting us.
+        </p>
+
+        <h2>Your Rights</h2>
+        <p>You have the right to:</p>
+        <ul>
+            <li>Access your personal data</li>
+            <li>Request correction of inaccurate data</li>
+            <li>Request deletion of your data</li>
+            <li>Opt out of marketing communications</li>
+        </ul>
+
+        <h2>Cookies</h2>
+        <p>
+            We use essential cookies for session management and authentication.
+            We do not use third-party tracking or advertising cookies.
+        </p>
+
+        <h2>Contact Us</h2>
+        <p>
+            For privacy questions or data requests, please contact:<br>
+            <strong>Email:</strong> {{ config.LEGAL_CONTACT_EMAIL }}
+        </p>
+
+
+    </div>
+</div>
+{% endblock %}

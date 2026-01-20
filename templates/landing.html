@@ -1,0 +1,166 @@
+{% extends "base.html" %}
+
+{% block title %}InSite Signs - One system for real estate measurement{% endblock %}
+
+{% block body_class %}saas-landing{% endblock %}
+
+{% block content %}
+<!-- Landing Page Specific Assets (Injected into Body since Head block missing) -->
+<link rel="stylesheet" href="{{ url_for('static', filename='css/pages/landing_saas.css') }}?v=6">
+
+<!-- Hero Wrapper -->
+<div class="hero-wrapper">
+    <div class="hero-grid"></div>
+
+    <div class="container-saas">
+        <!-- Navigation -->
+        <nav class="saas-nav">
+            <a href="/" class="nav-logo">
+                <img class="nav-logo-img" src="{{ url_for('static', filename='img/logo.png') }}" alt="InSite Signs">
+            </a>
+
+            <div class="nav-links" id="nav-links">
+                <a href="#product">Product</a>
+                <a href="#teams">Teams</a>
+                <a href="#pricing">Pricing</a>
+                <a href="{{ url_for('public.privacy') }}">Security</a>
+
+                {% if current_user.is_authenticated %}
+                <a href="{{ url_for('account.index') }}" style="color: var(--primary);">{{ current_user.full_name }}</a>
+                {% else %}
+                <a href="{{ url_for('auth.login') }}">Log in</a>
+                {% endif %}
+            </div>
+
+            <div class="nav-cta">
+                <button class="mobile-menu-btn" id="mobile-menu-btn" aria-label="Menu">&#9776;</button>
+            </div>
+        </nav>
+
+        <!-- Hero Content -->
+        <div class="hero-content">
+            <!-- Left: Copy -->
+            <div class="hero-text">
+                <h1>One system for every listing in your brokerage.</h1>
+                <p>Standardized sign workflow, lead capture, attribution, and follow-up.</p>
+
+                <ul class="feature-bullets">
+                    <li><span class="bullet-icon"></span> Campaign QR variants</li>
+                    <li><span class="bullet-icon"></span> Lead pipeline + tasks</li>
+                    <li><span class="bullet-icon"></span> Share kit + print bundle</li>
+                </ul>
+
+                <div class="hero-actions">
+                    {% if current_user.is_authenticated %}
+                    <a href="{{ url_for('agent.submit') }}" class="btn-primary">Create QR</a>
+                    <a href="{{ url_for('dashboard.index') }}" class="btn-secondary">Dashboard</a>
+                    {% else %}
+                    <a href="{{ url_for('auth.register', next=url_for('agent.submit')) }}" class="btn-primary">Start
+                        free</a>
+                    <a href="{{ url_for('auth.login') }}" class="btn-secondary">Log in</a>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Right: CSS Mockups -->
+            <div class="hero-visual">
+                <div class="mockup-container">
+                    <!-- Card 1: Dashboard -->
+                    <div class="card-mockup card-dashboard">
+                        <img src="{{ url_for('static', filename='img/mockups/dashboard_screen.png') }}"
+                            alt="Analytics Dashboard showing leads and scans">
+                    </div>
+
+                    <!-- Card 2: QR Variants -->
+                    <div class="card-mockup card-qr">
+                        <img src="{{ url_for('static', filename='img/mockups/qr_variants.png') }}"
+                            alt="QR Code Campaign Variants">
+                    </div>
+
+                    <!-- Card 3: Pipeline -->
+                    <div class="card-mockup card-pipeline">
+                        <img src="{{ url_for('static', filename='img/mockups/pipeline_list.png') }}"
+                            alt="Lead Pipeline List View">
+                    </div>
+
+                    <!-- Card 4: Phone -->
+                    <div class="card-mockup card-phone">
+                        <img src="{{ url_for('static', filename='img/mockups/mobile_listing.png') }}"
+                            alt="Mobile Property Listing Page">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Features Section -->
+<div class="features-section" id="product">
+    <div class="container-saas">
+        <h2 class="section-title">Features at a glance</h2>
+
+        <div class="features-grid" id="pricing">
+            <!-- Free Plan -->
+            <div class="pricing-card">
+                <div class="pricing-title">Free</div>
+                <div class="pricing-price">$0<span>/mo</span></div>
+                <ul class="pricing-features">
+                    <li>1 Active Sign Property</li>
+                    <li>Basic Lead Dashboard</li>
+                    <li>Standard Support</li>
+                    <li>Core Analytics</li>
+                </ul>
+                <a href="{{ url_for('auth.register', next=url_for('agent.submit')) }}" class="btn-secondary">Get
+                    Started</a>
+            </div>
+
+            <!-- Pro Plan -->
+            <div class="pricing-card pro">
+                <div class="pricing-badge">POPULAR</div>
+                <div class="pricing-title">Pro</div>
+                <div class="pricing-price">$29<span>/mo</span></div>
+                <ul class="pricing-features">
+                    <li>Unlimited Properties</li>
+                    <li>Advanced Analytics & Attribution</li>
+                    <li>Lead Pipeline & Tasks</li>
+                    <li>Campaign QR Variants</li>
+                    <li>Priority Support</li>
+                </ul>
+
+                {% if current_user.is_authenticated and not current_user.is_pro %}
+                <a href="{{ url_for('billing.start', plan='monthly') }}" class="btn-primary">Get Started</a>
+                {% elif current_user.is_authenticated and current_user.is_pro %}
+                <a href="{{ url_for('dashboard.index') }}" class="btn-primary">Go to Dashboard</a>
+                {% else %}
+                <a href="{{ url_for('billing.start', plan='monthly') }}" class="btn-primary">Get Started</a>
+                {% endif %}
+
+                <!-- Secondary Annual Link -->
+                <div style="text-align: center; margin-top: 10px;">
+                    <a href="{{ url_for('billing.start', plan='annual') }}"
+                        style="background: none; border: none; color: var(--text-muted); font-size: 0.85rem; cursor: pointer; text-decoration: underline;">
+                        or save 20% annually
+                    </a>
+                </div>
+            </div>
+
+            <!-- Teams Plan -->
+            <div class="pricing-card">
+                <div class="pricing-title">Teams</div>
+                <div class="pricing-price">Custom</div>
+                <ul class="pricing-features">
+                    <li>Everything in Pro</li>
+                    <li>Brokerage-wide Admin</li>
+                    <li>Agent Roster Management</li>
+                    <li>Unified Billing</li>
+                    <li>Dedicated Account Manager</li>
+                </ul>
+                <a href="mailto:sales@insitesigns.com" class="btn-secondary">Contact Sales</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- JS -->
+<script defer src="{{ url_for('static', filename='js/landing_saas.js') }}"></script>
+{% endblock %}

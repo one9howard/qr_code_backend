@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block body_class %}auth-page{% endblock %}
+
+{% block content %}
+<div class="submit-container" style="margin-top: 2rem;">
+    <div class="form-container" style="text-align: center;">
+        <h1 class="mb-2" style="color: #4caf50;">Order Placed!</h1>
+        <p class="lead mb-4" style="font-size: 1.1rem; opacity: 0.9;">Thank you for your purchase. Your lawn sign is
+            being processed.</p>
+        <p class="mb-4" style="color: #ccc; margin-bottom: 1.5rem;">You will receive an email confirmation shortly.</p>
+        <div class="mt-4">
+            {% if current_user.is_authenticated %}
+            <a href="{{ url_for('dashboard.index') }}" class="glass-button">Return to Dashboard</a>
+            {% else %}
+            <p style="margin-bottom: 20px; opacity: 0.9;">Create an account to track your order status and analytics.
+            </p>
+            <a href="{{ url_for('auth.register') }}" class="glass-button accent">Create Account</a>
+            <div style="margin-top: 15px;">
+                <a href="{{ url_for('public.landing') }}"
+                    style="color: rgba(255,255,255,0.6); text-decoration: none; font-size: 0.9rem; transition: color 0.3s;">
+                    &larr; Return to Home
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% block body_class %}submit bg-image-dark{% endblock %}
+{% block content %}
+
+<!-- Load Page-Specific CSS -->
+<link rel="stylesheet" href="{{ url_for('static', filename='css/pages/assets.css') }}">
+
+<!-- Config Data for JS -->
+<div id="assets-page-config" data-order-id="{{ order_id }}" data-guest-token="{{ guest_token if guest_token else '' }}"
+    data-csrf-token="{{ csrf_token() }}" data-order-url="{{ url_for('orders.order_sign') }}"
+    data-resize-url="{{ url_for('orders.resize_order', order_id=order_id) }}"
+    data-order-status="{{ order_status if order_status else 'pending_payment' }}"
+    data-is-locked="{{ 'true' if is_locked else 'false' }}" style="display: none;">
+</div>
+
+<div class="submit-container" style="justify-content: center; min-height: 80vh; margin-top: 2rem;">
+
+    <!-- Assets Presentation -->
+    <div class="preview-section" id="results">
+        <h2 class="preview-header">Your Sign is Ready!</h2>
+
+        <!-- Order Status Badge -->
+        {% if order_status %}
+        <div class="order-status-section">
+            <span class="status-label">Order Status:</span>
+            {% if order_status == 'pending_payment' %}
+            <span class="status-badge status-{{ order_status }}" onclick="orderSign()" style="cursor: pointer;"
+                title="Click to Complete Payment">
+                {{ order_status.replace('_', ' ').title() }}
+            </span>
+            {% else %}
+            <span class="status-badge status-{{ order_status }}">
+                {{ order_status.replace('_', ' ').title() }}
+            </span>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        <div class="assets-grid">
+
+            <!-- Sign Preview -->
+            {% if preview_url %}
+            <div class="sign-preview-card">
+                <img src="{{ preview_url }}{% if '?' in preview_url %}&{% else %}?{% endif %}v={{ timestamp }}"
+                    class="preview-img" id="preview-image">
+
+                <!-- Size Selector -->
+                <div class="sign-meta">
+                    <label for="size-selector" class="size-label">Sign Size:</label>
+                    <select id="size-selector" class="size-dropdown" {% if is_locked %}disabled{% endif %}>
+                        <option value="12x18" {% if sign_size=='12x18' %}selected{% endif %}>12" × 18"</option>
+                        <option value="18x24" {% if sign_size=='18x24' %}selected{% endif %}>18" × 24" (Standard)
+                        </option>
+                        <option value="24x36" {% if sign_size=='24x36' %}selected{% endif %}>24" × 36" (Large)</option>
+                        <option value="36x18" {% if sign_size=='36x18' %}selected{% endif %}>36" × 18" (Landscape)
+                        </option>
+                    </select>
+                    <span id="resize-status" class="resize-status"></span>
+                    {% if is_locked %}
+                    <span class="locked-notice">Size locked (order paid)</span>
+                    {% endif %}
+                </div>
+
+                <div class="action-buttons">
+                    <!-- Order Physical Sign Button -->
+                    <a href="javascript:void(0)" class="glass-button secondary accent order-btn" id="order-btn">
+                        {% if not current_user.is_authenticated %}
+                        Order Physical Lawn Sign (Guest)
+                        {% else %}
+                        Order Physical Lawn Sign
+                        {% endif %}
+                    </a>
+                </div>
+            </div>
+            {% endif %}
+
+        </div>
+
+        <div class="secondary-actions">
+            <a href="{{ property_url }}" target="_blank" class="glass-button secondary"
+                onclick="window.open(this.href, '_blank'); return false;">
+                View Live Property Page
+            </a>
+
+            <a href="/submit" class="glass-button secondary">
+                Create Another Sign
+            </a>
+        </div>
+
+    </div>
+
+</div>
+
+<!-- Load Page-Specific JS -->
+<script src="{{ url_for('static', filename='js/assets.js') }}"></script>
+{% endblock %}

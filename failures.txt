@@ -1,0 +1,1459 @@
+============================= test session starts =============================
+platform win32 -- Python 3.14.0, pytest-9.0.2, pluggy-1.6.0 -- C:\Python314\python.exe
+cachedir: .pytest_cache
+rootdir: C:\Users\player1\Desktop\InSite_signs
+configfile: pytest.ini
+testpaths: tests
+collecting ... collected 62 items
+
+tests/test_config_boot.py::TestConfigStagingBoot::test_staging_boot_without_smtp PASSED [  1%]
+tests/test_dependency_versions.py::TestDependencyVersions::test_flask_version_is_3x PASSED [  3%]
+tests/test_dependency_versions.py::TestDependencyVersions::test_werkzeug_version_is_3x PASSED [  4%]
+tests/test_dependency_versions.py::TestDependencyVersions::test_flask_werkzeug_compatible PASSED [  6%]
+tests/test_env_sanitization.py::TestGetEnvStr::test_strips_whitespace_by_default PASSED [  8%]
+tests/test_env_sanitization.py::TestGetEnvStr::test_preserves_whitespace_when_strip_false PASSED [  9%]
+tests/test_env_sanitization.py::TestGetEnvStr::test_returns_none_when_missing PASSED [ 11%]
+tests/test_env_sanitization.py::TestGetEnvStr::test_returns_default_when_missing PASSED [ 12%]
+tests/test_env_sanitization.py::TestGetEnvStr::test_returns_default_when_empty_after_strip PASSED [ 14%]
+tests/test_env_sanitization.py::TestGetEnvStr::test_required_raises_on_missing PASSED [ 16%]
+tests/test_env_sanitization.py::TestGetEnvStr::test_required_raises_on_empty_after_strip PASSED [ 17%]
+tests/test_env_sanitization.py::TestGetEnvStr::test_required_passes_with_valid_value PASSED [ 19%]
+tests/test_env_sanitization.py::TestGetEnvStr::test_stripe_webhook_secret_scenario PASSED [ 20%]
+tests/test_feature_flows.py::test_lead_lifecycle ERROR                   [ 22%]
+tests/test_feature_flows.py::test_qr_variant_resolution ERROR            [ 24%]
+tests/test_feature_flows.py::test_open_house_mode ERROR                  [ 25%]
+tests/test_feature_flows.py::test_gating_rendering ERROR                 [ 27%]
+tests/test_feature_flows.py::test_cleanup_calls_storage_delete ERROR     [ 29%]
+tests/test_fulfillment.py::test_fulfill_order_enqueues_one_print_job ERROR [ 30%]
+tests/test_notifications_skipped.py::TestNotificationSkipped::test_notification_returns_skipped_without_smtp PASSED [ 32%]
+tests/test_notifications_skipped.py::TestNotificationSkipped::test_notification_tuple_has_three_elements PASSED [ 33%]
+tests/test_pdf_security.py::TestResolvePdfPath::test_allows_valid_order_path_format PASSED [ 35%]
+tests/test_pdf_security.py::TestResolvePdfPath::test_blocks_absolute_paths PASSED [ 37%]
+tests/test_pdf_security.py::TestResolvePdfPath::test_blocks_leading_slash PASSED [ 38%]
+tests/test_pdf_security.py::TestResolvePdfPath::test_blocks_path_traversal PASSED [ 40%]
+tests/test_pdf_security.py::TestResolvePdfPath::test_empty_and_none_input PASSED [ 41%]
+tests/test_pdf_security.py::TestResolvePdfPath::test_rejects_invalid_order_id_format PASSED [ 43%]
+tests/test_pdf_security.py::TestPrivatePdfPaths::test_get_private_pdf_path_format PASSED [ 45%]
+tests/test_pdf_security.py::TestPrivatePdfPaths::test_get_private_pdf_relative_path_format PASSED [ 46%]
+tests/test_pdf_security.py::TestPaidStatuses::test_paid_statuses_contains_expected_values PASSED [ 48%]
+tests/test_pdf_vector_qr.py::test_pdf_vector_qr_no_embedded_images PASSED [ 50%]
+tests/test_pdf_vector_qr.py::test_pdf_vector_qr_all_sizes PASSED         [ 51%]
+tests/test_pdf_vector_qr.py::test_pdf_with_agent_photo_has_one_image PASSED [ 53%]
+tests/test_print_jobs.py::test_claim_jobs_is_idempotent ERROR            [ 54%]
+tests/test_print_jobs.py::test_download_pdf_requires_auth_and_returns_bytes ERROR [ 56%]
+tests/test_print_preflight.py::test_validate_sign_layout_success PASSED  [ 58%]
+tests/test_print_preflight.py::test_validate_sign_layout_too_small_qr PASSED [ 59%]
+tests/test_print_preflight.py::test_validate_sign_layout_small_bleed PASSED [ 61%]
+tests/test_print_preflight.py::test_validate_sign_layout_warnings PASSED [ 62%]
+tests/test_print_server_boundary.py::test_print_server_imports_in_dev PASSED [ 64%]
+tests/test_print_server_boundary.py::test_print_server_requires_token_in_production PASSED [ 66%]
+tests/test_print_server_boundary.py::test_print_server_allows_token_in_production PASSED [ 67%]
+tests/test_print_server_idempotency.py::test_idempotency_duplicate_requests_same_job_id PASSED [ 69%]
+tests/test_print_server_idempotency.py::test_idempotency_only_one_file_saved PASSED [ 70%]
+tests/test_print_server_idempotency.py::test_different_keys_create_different_jobs PASSED [ 72%]
+tests/test_printing_atomic.py::test_claim_jobs_success ERROR             [ 74%]
+tests/test_printing_atomic.py::test_claim_unauthorized PASSED            [ 75%]
+tests/test_printing_atomic.py::test_mark_downloaded_transition ERROR     [ 77%]
+tests/test_printing_atomic.py::test_download_pdf ERROR                   [ 79%]
+tests/test_pro_features.py::TestLeadSubmissionCSRF::test_lead_submission_no_csrf_error FAILED [ 80%]
+tests/test_pro_features.py::TestFreeTierLeadLimit::test_free_lead_limit_constant PASSED [ 82%]
+tests/test_pro_features.py::TestCSVExport::test_csv_export_requires_login PASSED [ 83%]
+tests/test_pro_features.py::TestCSVExport::test_csv_export_route_exists PASSED [ 85%]
+tests/test_pro_features.py::TestAnalyticsService::test_analytics_module_exists PASSED [ 87%]
+tests/test_pro_features.py::TestAnalyticsService::test_analytics_returns_expected_keys FAILED [ 88%]
+tests/test_scope_changes.py::TestDownloadPdfRoute::test_download_pdf_404_message PASSED [ 90%]
+tests/test_scope_changes.py::TestDownloadPdfRoute::test_download_pdf_returns_404 PASSED [ 91%]
+tests/test_scope_changes.py::TestLeadSubmission::test_honeypot_rejects_bots FAILED [ 93%]
+tests/test_scope_changes.py::TestLeadSubmission::test_lead_submission_requires_fields FAILED [ 95%]
+tests/test_scope_changes.py::TestLeadRateLimiting::test_rate_limit_check_function PASSED [ 96%]
+tests/test_scope_changes.py::TestLeadOwnership::test_leads_only_shown_to_owning_agent PASSED [ 98%]
+tests/test_webhook_amounts.py::test_webhook_captures_totals ERROR        [100%]
+
+=================================== ERRORS ====================================
+____________________ ERROR at setup of test_lead_lifecycle ____________________
+
+app = <Flask 'app'>
+
+    @pytest.fixture()
+    def db(app):
+        from database import get_db
+    
+        with app.app_context():
+>           d = get_db()
+                ^^^^^^^^
+
+tests\conftest.py:65: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+database.py:17: in get_db
+    raise e
+database.py:13: in get_db
+    conn = psycopg2.connect(db_url, cursor_factory=DictCursor)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+dsn = 'postgresql://postgres:postgres@localhost:5432/qrapp '
+connection_factory = None, cursor_factory = <class 'psycopg2.extras.DictCursor'>
+kwargs = {}, kwasync = {}
+
+    def connect(dsn=None, connection_factory=None, cursor_factory=None, **kwargs):
+        """
+        Create a new database connection.
+    
+        The connection parameters can be specified as a string:
+    
+            conn = psycopg2.connect("dbname=test user=postgres password=secret")
+    
+        or using a set of keyword arguments:
+    
+            conn = psycopg2.connect(database="test", user="postgres", password="secret")
+    
+        Or as a mix of both. The basic connection parameters are:
+    
+        - *dbname*: the database name
+        - *database*: the database name (only as keyword argument)
+        - *user*: user name used to authenticate
+        - *password*: password used to authenticate
+        - *host*: database host address (defaults to UNIX socket if not provided)
+        - *port*: connection port number (defaults to 5432 if not provided)
+    
+        Using the *connection_factory* parameter a different class or connections
+        factory can be specified. It should be a callable object taking a dsn
+        argument.
+    
+        Using the *cursor_factory* parameter, a new default cursor factory will be
+        used by cursor().
+    
+        Using *async*=True an asynchronous connection will be created. *async_* is
+        a valid alias (for Python versions where ``async`` is a keyword).
+    
+        Any other keyword parameter will be passed to the underlying client
+        library: the list of supported parameters depends on the library version.
+    
+        """
+        kwasync = {}
+        if 'async' in kwargs:
+            kwasync['async'] = kwargs.pop('async')
+        if 'async_' in kwargs:
+            kwasync['async_'] = kwargs.pop('async_')
+    
+        dsn = _ext.make_dsn(dsn, **kwargs)
+>       conn = _connect(dsn, connection_factory=connection_factory, **kwasync)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       psycopg2.OperationalError: connection to server at "localhost" (::1), port 5432 failed: FATAL:  database "qrapp " does not exist
+
+..\..\AppData\Roaming\Python\Python314\site-packages\psycopg2\__init__.py:135: OperationalError
+---------------------------- Captured stdout setup ----------------------------
+{"timestamp": "2026-01-19T23:47:53.189110", "level": "INFO", "message": "Logger setup complete. JSON formatted logs enabled.", "logger": "app", "module": "logger", "lineno": 66}
+{"timestamp": "2026-01-19T23:47:53.205593", "level": "INFO", "message": "Logger setup complete. JSON formatted logs enabled.", "logger": "app", "module": "logger", "lineno": 66}
+[DB] Connection Failed: connection to server at "localhost" (::1), port 5432 failed: FATAL:  database "qrapp " does not exist
+
+----------------------------- Captured log setup ------------------------------
+INFO     app:logger.py:66 Logger setup complete. JSON formatted logs enabled.
+INFO     app:logger.py:66 Logger setup complete. JSON formatted logs enabled.
+________________ ERROR at setup of test_qr_variant_resolution _________________
+
+app = <Flask 'app'>
+
+    @pytest.fixture()
+    def db(app):
+        from database import get_db
+    
+        with app.app_context():
+>           d = get_db()
+                ^^^^^^^^
+
+tests\conftest.py:65: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+database.py:17: in get_db
+    raise e
+database.py:13: in get_db
+    conn = psycopg2.connect(db_url, cursor_factory=DictCursor)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+dsn = 'postgresql://postgres:postgres@localhost:5432/qrapp '
+connection_factory = None, cursor_factory = <class 'psycopg2.extras.DictCursor'>
+kwargs = {}, kwasync = {}
+
+    def connect(dsn=None, connection_factory=None, cursor_factory=None, **kwargs):
+        """
+        Create a new database connection.
+    
+        The connection parameters can be specified as a string:
+    
+            conn = psycopg2.connect("dbname=test user=postgres password=secret")
+    
+        or using a set of keyword arguments:
+    
+            conn = psycopg2.connect(database="test", user="postgres", password="secret")
+    
+        Or as a mix of both. The basic connection parameters are:
+    
+        - *dbname*: the database name
+        - *database*: the database name (only as keyword argument)
+        - *user*: user name used to authenticate
+        - *password*: password used to authenticate
+        - *host*: database host address (defaults to UNIX socket if not provided)
+        - *port*: connection port number (defaults to 5432 if not provided)
+    
+        Using the *connection_factory* parameter a different class or connections
+        factory can be specified. It should be a callable object taking a dsn
+        argument.
+    
+        Using the *cursor_factory* parameter, a new default cursor factory will be
+        used by cursor().
+    
+        Using *async*=True an asynchronous connection will be created. *async_* is
+        a valid alias (for Python versions where ``async`` is a keyword).
+    
+        Any other keyword parameter will be passed to the underlying client
+        library: the list of supported parameters depends on the library version.
+    
+        """
+        kwasync = {}
+        if 'async' in kwargs:
+            kwasync['async'] = kwargs.pop('async')
+        if 'async_' in kwargs:
+            kwasync['async_'] = kwargs.pop('async_')
+    
+        dsn = _ext.make_dsn(dsn, **kwargs)
+>       conn = _connect(dsn, connection_factory=connection_factory, **kwasync)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       psycopg2.OperationalError: connection to server at "localhost" (::1), port 5432 failed: FATAL:  database "qrapp " does not exist
+
+..\..\AppData\Roaming\Python\Python314\site-packages\psycopg2\__init__.py:135: OperationalError
+---------------------------- Captured stdout setup ----------------------------
+{"timestamp": "2026-01-19T23:47:53.368227", "level": "INFO", "message": "Logger setup complete. JSON formatted logs enabled.", "logger": "app", "module": "logger", "lineno": 66}
+[DB] Connection Failed: connection to server at "localhost" (::1), port 5432 failed: FATAL:  database "qrapp " does not exist
+
+----------------------------- Captured log setup ------------------------------
+INFO     app:logger.py:66 Logger setup complete. JSON formatted logs enabled.
+___________________ ERROR at setup of test_open_house_mode ____________________
+
+app = <Flask 'app'>
+
+    @pytest.fixture()
+    def db(app):
+        from database import get_db
+    
+        with app.app_context():
+>           d = get_db()
+                ^^^^^^^^
+
+tests\conftest.py:65: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+database.py:17: in get_db
+    raise e
+database.py:13: in get_db
+    conn = psycopg2.connect(db_url, cursor_factory=DictCursor)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+dsn = 'postgresql://postgres:postgres@localhost:5432/qrapp '
+connection_factory = None, cursor_factory = <class 'psycopg2.extras.DictCursor'>
+kwargs = {}, kwasync = {}
+
+    def connect(dsn=None, connection_factory=None, cursor_factory=None, **kwargs):
+        """
+        Create a new database connection.
+    
+        The connection parameters can be specified as a string:
+    
+            conn = psycopg2.connect("dbname=test user=postgres password=secret")
+    
+        or using a set of keyword arguments:
+    
+            conn = psycopg2.connect(database="test", user="postgres", password="secret")
+    
+        Or as a mix of both. The basic connection parameters are:
+    
+        - *dbname*: the database name
+        - *database*: the database name (only as keyword argument)
+        - *user*: user name used to authenticate
+        - *password*: password used to authenticate
+        - *host*: database host address (defaults to UNIX socket if not provided)
+        - *port*: connection port number (defaults to 5432 if not provided)
+    
+        Using the *connection_factory* parameter a different class or connections
+        factory can be specified. It should be a callable object taking a dsn
+        argument.
+    
+        Using the *cursor_factory* parameter, a new default cursor factory will be
+        used by cursor().
+    
+        Using *async*=True an asynchronous connection will be created. *async_* is
+        a valid alias (for Python versions where ``async`` is a keyword).
+    
+        Any other keyword parameter will be passed to the underlying client
+        library: the list of supported parameters depends on the library version.
+    
+        """
+        kwasync = {}
+        if 'async' in kwargs:
+            kwasync['async'] = kwargs.pop('async')
+        if 'async_' in kwargs:
+            kwasync['async_'] = kwargs.pop('async_')
+    
+        dsn = _ext.make_dsn(dsn, **kwargs)
+>       conn = _connect(dsn, connection_factory=connection_factory, **kwasync)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       psycopg2.OperationalError: connection to server at "localhost" (::1), port 5432 failed: FATAL:  database "qrapp " does not exist
+
+..\..\AppData\Roaming\Python\Python314\site-packages\psycopg2\__init__.py:135: OperationalError
+---------------------------- Captured stdout setup ----------------------------
+{"timestamp": "2026-01-19T23:47:53.421168", "level": "INFO", "message": "Logger setup complete. JSON formatted logs enabled.", "logger": "app", "module": "logger", "lineno": 66}
+[DB] Connection Failed: connection to server at "localhost" (::1), port 5432 failed: FATAL:  database "qrapp " does not exist
+
+----------------------------- Captured log setup ------------------------------
+INFO     app:logger.py:66 Logger setup complete. JSON formatted logs enabled.
+___________________ ERROR at setup of test_gating_rendering ___________________
+
+app = <Flask 'app'>
+
+    @pytest.fixture()
+    def db(app):
+        from database import get_db
+    
+        with app.app_context():
+>           d = get_db()
+                ^^^^^^^^
+
+tests\conftest.py:65: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+database.py:17: in get_db
+    raise e
+database.py:13: in get_db
+    conn = psycopg2.connect(db_url, cursor_factory=DictCursor)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+dsn = 'postgresql://postgres:postgres@localhost:5432/qrapp '
+connection_factory = None, cursor_factory = <class 'psycopg2.extras.DictCursor'>
+kwargs = {}, kwasync = {}
+
+    def connect(dsn=None, connection_factory=None, cursor_factory=None, **kwargs):
+        """
+        Create a new database connection.
+    
+        The connection parameters can be specified as a string:
+    
+            conn = psycopg2.connect("dbname=test user=postgres password=secret")
+    
+        or using a set of keyword arguments:
+    
+            conn = psycopg2.connect(database="test", user="postgres", password="secret")
+    
+        Or as a mix of both. The basic connection parameters are:
+    
+        - *dbname*: the database name
+        - *database*: the database name (only as keyword argument)
+        - *user*: user name used to authenticate
+        - *password*: password used to authenticate
+        - *host*: database host address (defaults to UNIX socket if not provided)
+        - *port*: connection port number (defaults to 5432 if not provided)
+    
+        Using the *connection_factory* parameter a different class or connections
+        factory can be specified. It should be a callable object taking a dsn
+        argument.
+    
+        Using the *cursor_factory* parameter, a new default cursor factory will be
+        used by cursor().
+    
+        Using *async*=True an asynchronous connection will be created. *async_* is
+        a valid alias (for Python versions where ``async`` is a keyword).
+    
+        Any other keyword parameter will be passed to the underlying client
+        library: the list of supported parameters depends on the library version.
+    
+        """
+        kwasync = {}
+        if 'async' in kwargs:
+            kwasync['async'] = kwargs.pop('async')
+        if 'async_' in kwargs:
+            kwasync['async_'] = kwargs.pop('async_')
+    
+        dsn = _ext.make_dsn(dsn, **kwargs)
+>       conn = _connect(dsn, connection_factory=connection_factory, **kwasync)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       psycopg2.OperationalError: connection to server at "localhost" (::1), port 5432 failed: FATAL:  database "qrapp " does not exist
+
+..\..\AppData\Roaming\Python\Python314\site-packages\psycopg2\__init__.py:135: OperationalError
+---------------------------- Captured stdout setup ----------------------------
+{"timestamp": "2026-01-19T23:47:53.469582", "level": "INFO", "message": "Logger setup complete. JSON formatted logs enabled.", "logger": "app", "module": "logger", "lineno": 66}
+[DB] Connection Failed: connection to server at "localhost" (::1), port 5432 failed: FATAL:  database "qrapp " does not exist
+
+----------------------------- Captured log setup ------------------------------
+INFO     app:logger.py:66 Logger setup complete. JSON formatted logs enabled.
+_____________ ERROR at setup of test_cleanup_calls_storage_delete _____________
+
+app = <Flask 'app'>
+
+    @pytest.fixture()
+    def db(app):
+        from database import get_db
+    
+        with app.app_context():
+>           d = get_db()
+                ^^^^^^^^
+
+tests\conftest.py:65: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+database.py:17: in get_db
+    raise e
+database.py:13: in get_db
+    conn = psycopg2.connect(db_url, cursor_factory=DictCursor)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+dsn = 'postgresql://postgres:postgres@localhost:5432/qrapp '
+connection_factory = None, cursor_factory = <class 'psycopg2.extras.DictCursor'>
+kwargs = {}, kwasync = {}
+
+    def connect(dsn=None, connection_factory=None, cursor_factory=None, **kwargs):
+        """
+        Create a new database connection.
+    
+        The connection parameters can be specified as a string:
+    
+            conn = psycopg2.connect("dbname=test user=postgres password=secret")
+    
+        or using a set of keyword arguments:
+    
+            conn = psycopg2.connect(database="test", user="postgres", password="secret")
+    
+        Or as a mix of both. The basic connection parameters are:
+    
+        - *dbname*: the database name
+        - *database*: the database name (only as keyword argument)
+        - *user*: user name used to authenticate
+        - *password*: password used to authenticate
+        - *host*: database host address (defaults to UNIX socket if not provided)
+        - *port*: connection port number (defaults to 5432 if not provided)
+    
+        Using the *connection_factory* parameter a different class or connections
+        factory can be specified. It should be a callable object taking a dsn
+        argument.
+    
+        Using the *cursor_factory* parameter, a new default cursor factory will be
+        used by cursor().
+    
+        Using *async*=True an asynchronous connection will be created. *async_* is
+        a valid alias (for Python versions where ``async`` is a keyword).
+    
+        Any other keyword parameter will be passed to the underlying client
+        library: the list of supported parameters depends on the library version.
+    
+        """
+        kwasync = {}
+        if 'async' in kwargs:
+            kwasync['async'] = kwargs.pop('async')
+        if 'async_' in kwargs:
+            kwasync['async_'] = kwargs.pop('async_')
+    
+        dsn = _ext.make_dsn(dsn, **kwargs)
+>       conn = _connect(dsn, connection_factory=connection_factory, **kwasync)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       psycopg2.OperationalError: connection to server at "localhost" (::1), port 5432 failed: FATAL:  database "qrapp " does not exist
+
+..\..\AppData\Roaming\Python\Python314\site-packages\psycopg2\__init__.py:135: OperationalError
+---------------------------- Captured stdout setup ----------------------------
+{"timestamp": "2026-01-19T23:47:53.517630", "level": "INFO", "message": "Logger setup complete. JSON formatted logs enabled.", "logger": "app", "module": "logger", "lineno": 66}
+[DB] Connection Failed: connection to server at "localhost" (::1), port 5432 failed: FATAL:  database "qrapp " does not exist
+
+----------------------------- Captured log setup ------------------------------
+INFO     app:logger.py:66 Logger setup complete. JSON formatted logs enabled.
+_________ ERROR at setup of test_fulfill_order_enqueues_one_print_job _________
+
+app = <Flask 'app'>
+
+    @pytest.fixture()
+    def db(app):
+        from database import get_db
+    
+        with app.app_context():
+>           d = get_db()
+                ^^^^^^^^
+
+tests\conftest.py:65: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+database.py:17: in get_db
+    raise e
+database.py:13: in get_db
+    conn = psycopg2.connect(db_url, cursor_factory=DictCursor)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+dsn = 'postgresql://postgres:postgres@localhost:5432/qrapp '
+connection_factory = None, cursor_factory = <class 'psycopg2.extras.DictCursor'>
+kwargs = {}, kwasync = {}
+
+    def connect(dsn=None, connection_factory=None, cursor_factory=None, **kwargs):
+        """
+        Create a new database connection.
+    
+        The connection parameters can be specified as a string:
+    
+            conn = psycopg2.connect("dbname=test user=postgres password=secret")
+    
+        or using a set of keyword arguments:
+    
+            conn = psycopg2.connect(database="test", user="postgres", password="secret")
+    
+        Or as a mix of both. The basic connection parameters are:
+    
+        - *dbname*: the database name
+        - *database*: the database name (only as keyword argument)
+        - *user*: user name used to authenticate
+        - *password*: password used to authenticate
+        - *host*: database host address (defaults to UNIX socket if not provided)
+        - *port*: connection port number (defaults to 5432 if not provided)
+    
+        Using the *connection_factory* parameter a different class or connections
+        factory can be specified. It should be a callable object taking a dsn
+        argument.
+    
+        Using the *cursor_factory* parameter, a new default cursor factory will be
+        used by cursor().
+    
+        Using *async*=True an asynchronous connection will be created. *async_* is
+        a valid alias (for Python versions where ``async`` is a keyword).
+    
+        Any other keyword parameter will be passed to the underlying client
+        library: the list of supported parameters depends on the library version.
+    
+        """
+        kwasync = {}
+        if 'async' in kwargs:
+            kwasync['async'] = kwargs.pop('async')
+        if 'async_' in kwargs:
+            kwasync['async_'] = kwargs.pop('async_')
+    
+        dsn = _ext.make_dsn(dsn, **kwargs)
+>       conn = _connect(dsn, connection_factory=connection_factory, **kwasync)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       psycopg2.OperationalError: connection to server at "localhost" (::1), port 5432 failed: FATAL:  database "qrapp " does not exist
+
+..\..\AppData\Roaming\Python\Python314\site-packages\psycopg2\__init__.py:135: OperationalError
+---------------------------- Captured stdout setup ----------------------------
+{"timestamp": "2026-01-19T23:47:53.563739", "level": "INFO", "message": "Logger setup complete. JSON formatted logs enabled.", "logger": "app", "module": "logger", "lineno": 66}
+[DB] Connection Failed: connection to server at "localhost" (::1), port 5432 failed: FATAL:  database "qrapp " does not exist
+
+----------------------------- Captured log setup ------------------------------
+INFO     app:logger.py:66 Logger setup complete. JSON formatted logs enabled.
+_______________ ERROR at setup of test_claim_jobs_is_idempotent _______________
+
+app = <Flask 'app'>
+
+    @pytest.fixture()
+    def db(app):
+        from database import get_db
+    
+        with app.app_context():
+>           d = get_db()
+                ^^^^^^^^
+
+tests\conftest.py:65: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+database.py:17: in get_db
+    raise e
+database.py:13: in get_db
+    conn = psycopg2.connect(db_url, cursor_factory=DictCursor)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+dsn = 'postgresql://postgres:postgres@localhost:5432/qrapp '
+connection_factory = None, cursor_factory = <class 'psycopg2.extras.DictCursor'>
+kwargs = {}, kwasync = {}
+
+    def connect(dsn=None, connection_factory=None, cursor_factory=None, **kwargs):
+        """
+        Create a new database connection.
+    
+        The connection parameters can be specified as a string:
+    
+            conn = psycopg2.connect("dbname=test user=postgres password=secret")
+    
+        or using a set of keyword arguments:
+    
+            conn = psycopg2.connect(database="test", user="postgres", password="secret")
+    
+        Or as a mix of both. The basic connection parameters are:
+    
+        - *dbname*: the database name
+        - *database*: the database name (only as keyword argument)
+        - *user*: user name used to authenticate
+        - *password*: password used to authenticate
+        - *host*: database host address (defaults to UNIX socket if not provided)
+        - *port*: connection port number (defaults to 5432 if not provided)
+    
+        Using the *connection_factory* parameter a different class or connections
+        factory can be specified. It should be a callable object taking a dsn
+        argument.
+    
+        Using the *cursor_factory* parameter, a new default cursor factory will be
+        used by cursor().
+    
+        Using *async*=True an asynchronous connection will be created. *async_* is
+        a valid alias (for Python versions where ``async`` is a keyword).
+    
+        Any other keyword parameter will be passed to the underlying client
+        library: the list of supported parameters depends on the library version.
+    
+        """
+        kwasync = {}
+        if 'async' in kwargs:
+            kwasync['async'] = kwargs.pop('async')
+        if 'async_' in kwargs:
+            kwasync['async_'] = kwargs.pop('async_')
+    
+        dsn = _ext.make_dsn(dsn, **kwargs)
+>       conn = _connect(dsn, connection_factory=connection_factory, **kwasync)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       psycopg2.OperationalError: connection to server at "localhost" (::1), port 5432 failed: FATAL:  database "qrapp " does not exist
+
+..\..\AppData\Roaming\Python\Python314\site-packages\psycopg2\__init__.py:135: OperationalError
+---------------------------- Captured stdout setup ----------------------------
+{"timestamp": "2026-01-19T23:47:53.829526", "level": "INFO", "message": "Logger setup complete. JSON formatted logs enabled.", "logger": "app", "module": "logger", "lineno": 66}
+[DB] Connection Failed: connection to server at "localhost" (::1), port 5432 failed: FATAL:  database "qrapp " does not exist
+
+----------------------------- Captured log setup ------------------------------
+INFO     app:logger.py:66 Logger setup complete. JSON formatted logs enabled.
+_____ ERROR at setup of test_download_pdf_requires_auth_and_returns_bytes _____
+
+app = <Flask 'app'>
+
+    @pytest.fixture()
+    def db(app):
+        from database import get_db
+    
+        with app.app_context():
+>           d = get_db()
+                ^^^^^^^^
+
+tests\conftest.py:65: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+database.py:17: in get_db
+    raise e
+database.py:13: in get_db
+    conn = psycopg2.connect(db_url, cursor_factory=DictCursor)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+dsn = 'postgresql://postgres:postgres@localhost:5432/qrapp '
+connection_factory = None, cursor_factory = <class 'psycopg2.extras.DictCursor'>
+kwargs = {}, kwasync = {}
+
+    def connect(dsn=None, connection_factory=None, cursor_factory=None, **kwargs):
+        """
+        Create a new database connection.
+    
+        The connection parameters can be specified as a string:
+    
+            conn = psycopg2.connect("dbname=test user=postgres password=secret")
+    
+        or using a set of keyword arguments:
+    
+            conn = psycopg2.connect(database="test", user="postgres", password="secret")
+    
+        Or as a mix of both. The basic connection parameters are:
+    
+        - *dbname*: the database name
+        - *database*: the database name (only as keyword argument)
+        - *user*: user name used to authenticate
+        - *password*: password used to authenticate
+        - *host*: database host address (defaults to UNIX socket if not provided)
+        - *port*: connection port number (defaults to 5432 if not provided)
+    
+        Using the *connection_factory* parameter a different class or connections
+        factory can be specified. It should be a callable object taking a dsn
+        argument.
+    
+        Using the *cursor_factory* parameter, a new default cursor factory will be
+        used by cursor().
+    
+        Using *async*=True an asynchronous connection will be created. *async_* is
+        a valid alias (for Python versions where ``async`` is a keyword).
+    
+        Any other keyword parameter will be passed to the underlying client
+        library: the list of supported parameters depends on the library version.
+    
+        """
+        kwasync = {}
+        if 'async' in kwargs:
+            kwasync['async'] = kwargs.pop('async')
+        if 'async_' in kwargs:
+            kwasync['async_'] = kwargs.pop('async_')
+    
+        dsn = _ext.make_dsn(dsn, **kwargs)
+>       conn = _connect(dsn, connection_factory=connection_factory, **kwasync)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       psycopg2.OperationalError: connection to server at "localhost" (::1), port 5432 failed: FATAL:  database "qrapp " does not exist
+
+..\..\AppData\Roaming\Python\Python314\site-packages\psycopg2\__init__.py:135: OperationalError
+---------------------------- Captured stdout setup ----------------------------
+{"timestamp": "2026-01-19T23:47:53.874037", "level": "INFO", "message": "Logger setup complete. JSON formatted logs enabled.", "logger": "app", "module": "logger", "lineno": 66}
+[DB] Connection Failed: connection to server at "localhost" (::1), port 5432 failed: FATAL:  database "qrapp " does not exist
+
+----------------------------- Captured log setup ------------------------------
+INFO     app:logger.py:66 Logger setup complete. JSON formatted logs enabled.
+__________________ ERROR at setup of test_claim_jobs_success __________________
+
+app = <Flask 'app'>
+
+    @pytest.fixture()
+    def db(app):
+        from database import get_db
+    
+        with app.app_context():
+>           d = get_db()
+                ^^^^^^^^
+
+tests\conftest.py:65: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+database.py:17: in get_db
+    raise e
+database.py:13: in get_db
+    conn = psycopg2.connect(db_url, cursor_factory=DictCursor)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+dsn = 'postgresql://postgres:postgres@localhost:5432/qrapp '
+connection_factory = None, cursor_factory = <class 'psycopg2.extras.DictCursor'>
+kwargs = {}, kwasync = {}
+
+    def connect(dsn=None, connection_factory=None, cursor_factory=None, **kwargs):
+        """
+        Create a new database connection.
+    
+        The connection parameters can be specified as a string:
+    
+            conn = psycopg2.connect("dbname=test user=postgres password=secret")
+    
+        or using a set of keyword arguments:
+    
+            conn = psycopg2.connect(database="test", user="postgres", password="secret")
+    
+        Or as a mix of both. The basic connection parameters are:
+    
+        - *dbname*: the database name
+        - *database*: the database name (only as keyword argument)
+        - *user*: user name used to authenticate
+        - *password*: password used to authenticate
+        - *host*: database host address (defaults to UNIX socket if not provided)
+        - *port*: connection port number (defaults to 5432 if not provided)
+    
+        Using the *connection_factory* parameter a different class or connections
+        factory can be specified. It should be a callable object taking a dsn
+        argument.
+    
+        Using the *cursor_factory* parameter, a new default cursor factory will be
+        used by cursor().
+    
+        Using *async*=True an asynchronous connection will be created. *async_* is
+        a valid alias (for Python versions where ``async`` is a keyword).
+    
+        Any other keyword parameter will be passed to the underlying client
+        library: the list of supported parameters depends on the library version.
+    
+        """
+        kwasync = {}
+        if 'async' in kwargs:
+            kwasync['async'] = kwargs.pop('async')
+        if 'async_' in kwargs:
+            kwasync['async_'] = kwargs.pop('async_')
+    
+        dsn = _ext.make_dsn(dsn, **kwargs)
+>       conn = _connect(dsn, connection_factory=connection_factory, **kwasync)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       psycopg2.OperationalError: connection to server at "localhost" (::1), port 5432 failed: FATAL:  database "qrapp " does not exist
+
+..\..\AppData\Roaming\Python\Python314\site-packages\psycopg2\__init__.py:135: OperationalError
+---------------------------- Captured stdout setup ----------------------------
+{"timestamp": "2026-01-19T23:47:54.082962", "level": "INFO", "message": "Logger setup complete. JSON formatted logs enabled.", "logger": "app", "module": "logger", "lineno": 66}
+[DB] Connection Failed: connection to server at "localhost" (::1), port 5432 failed: FATAL:  database "qrapp " does not exist
+
+----------------------------- Captured log setup ------------------------------
+INFO     app:logger.py:66 Logger setup complete. JSON formatted logs enabled.
+______________ ERROR at setup of test_mark_downloaded_transition ______________
+
+app = <Flask 'app'>
+
+    @pytest.fixture()
+    def db(app):
+        from database import get_db
+    
+        with app.app_context():
+>           d = get_db()
+                ^^^^^^^^
+
+tests\conftest.py:65: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+database.py:17: in get_db
+    raise e
+database.py:13: in get_db
+    conn = psycopg2.connect(db_url, cursor_factory=DictCursor)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+dsn = 'postgresql://postgres:postgres@localhost:5432/qrapp '
+connection_factory = None, cursor_factory = <class 'psycopg2.extras.DictCursor'>
+kwargs = {}, kwasync = {}
+
+    def connect(dsn=None, connection_factory=None, cursor_factory=None, **kwargs):
+        """
+        Create a new database connection.
+    
+        The connection parameters can be specified as a string:
+    
+            conn = psycopg2.connect("dbname=test user=postgres password=secret")
+    
+        or using a set of keyword arguments:
+    
+            conn = psycopg2.connect(database="test", user="postgres", password="secret")
+    
+        Or as a mix of both. The basic connection parameters are:
+    
+        - *dbname*: the database name
+        - *database*: the database name (only as keyword argument)
+        - *user*: user name used to authenticate
+        - *password*: password used to authenticate
+        - *host*: database host address (defaults to UNIX socket if not provided)
+        - *port*: connection port number (defaults to 5432 if not provided)
+    
+        Using the *connection_factory* parameter a different class or connections
+        factory can be specified. It should be a callable object taking a dsn
+        argument.
+    
+        Using the *cursor_factory* parameter, a new default cursor factory will be
+        used by cursor().
+    
+        Using *async*=True an asynchronous connection will be created. *async_* is
+        a valid alias (for Python versions where ``async`` is a keyword).
+    
+        Any other keyword parameter will be passed to the underlying client
+        library: the list of supported parameters depends on the library version.
+    
+        """
+        kwasync = {}
+        if 'async' in kwargs:
+            kwasync['async'] = kwargs.pop('async')
+        if 'async_' in kwargs:
+            kwasync['async_'] = kwargs.pop('async_')
+    
+        dsn = _ext.make_dsn(dsn, **kwargs)
+>       conn = _connect(dsn, connection_factory=connection_factory, **kwasync)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       psycopg2.OperationalError: connection to server at "localhost" (::1), port 5432 failed: FATAL:  database "qrapp " does not exist
+
+..\..\AppData\Roaming\Python\Python314\site-packages\psycopg2\__init__.py:135: OperationalError
+---------------------------- Captured stdout setup ----------------------------
+{"timestamp": "2026-01-19T23:47:54.138903", "level": "INFO", "message": "Logger setup complete. JSON formatted logs enabled.", "logger": "app", "module": "logger", "lineno": 66}
+[DB] Connection Failed: connection to server at "localhost" (::1), port 5432 failed: FATAL:  database "qrapp " does not exist
+
+----------------------------- Captured log setup ------------------------------
+INFO     app:logger.py:66 Logger setup complete. JSON formatted logs enabled.
+_____________________ ERROR at setup of test_download_pdf _____________________
+
+app = <Flask 'app'>
+
+    @pytest.fixture()
+    def db(app):
+        from database import get_db
+    
+        with app.app_context():
+>           d = get_db()
+                ^^^^^^^^
+
+tests\conftest.py:65: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+database.py:17: in get_db
+    raise e
+database.py:13: in get_db
+    conn = psycopg2.connect(db_url, cursor_factory=DictCursor)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+dsn = 'postgresql://postgres:postgres@localhost:5432/qrapp '
+connection_factory = None, cursor_factory = <class 'psycopg2.extras.DictCursor'>
+kwargs = {}, kwasync = {}
+
+    def connect(dsn=None, connection_factory=None, cursor_factory=None, **kwargs):
+        """
+        Create a new database connection.
+    
+        The connection parameters can be specified as a string:
+    
+            conn = psycopg2.connect("dbname=test user=postgres password=secret")
+    
+        or using a set of keyword arguments:
+    
+            conn = psycopg2.connect(database="test", user="postgres", password="secret")
+    
+        Or as a mix of both. The basic connection parameters are:
+    
+        - *dbname*: the database name
+        - *database*: the database name (only as keyword argument)
+        - *user*: user name used to authenticate
+        - *password*: password used to authenticate
+        - *host*: database host address (defaults to UNIX socket if not provided)
+        - *port*: connection port number (defaults to 5432 if not provided)
+    
+        Using the *connection_factory* parameter a different class or connections
+        factory can be specified. It should be a callable object taking a dsn
+        argument.
+    
+        Using the *cursor_factory* parameter, a new default cursor factory will be
+        used by cursor().
+    
+        Using *async*=True an asynchronous connection will be created. *async_* is
+        a valid alias (for Python versions where ``async`` is a keyword).
+    
+        Any other keyword parameter will be passed to the underlying client
+        library: the list of supported parameters depends on the library version.
+    
+        """
+        kwasync = {}
+        if 'async' in kwargs:
+            kwasync['async'] = kwargs.pop('async')
+        if 'async_' in kwargs:
+            kwasync['async_'] = kwargs.pop('async_')
+    
+        dsn = _ext.make_dsn(dsn, **kwargs)
+>       conn = _connect(dsn, connection_factory=connection_factory, **kwasync)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       psycopg2.OperationalError: connection to server at "localhost" (::1), port 5432 failed: FATAL:  database "qrapp " does not exist
+
+..\..\AppData\Roaming\Python\Python314\site-packages\psycopg2\__init__.py:135: OperationalError
+---------------------------- Captured stdout setup ----------------------------
+{"timestamp": "2026-01-19T23:47:54.190182", "level": "INFO", "message": "Logger setup complete. JSON formatted logs enabled.", "logger": "app", "module": "logger", "lineno": 66}
+[DB] Connection Failed: connection to server at "localhost" (::1), port 5432 failed: FATAL:  database "qrapp " does not exist
+
+----------------------------- Captured log setup ------------------------------
+INFO     app:logger.py:66 Logger setup complete. JSON formatted logs enabled.
+_______________ ERROR at setup of test_webhook_captures_totals ________________
+
+app = <Flask 'app'>
+
+    @pytest.fixture()
+    def db(app):
+        from database import get_db
+    
+        with app.app_context():
+>           d = get_db()
+                ^^^^^^^^
+
+tests\conftest.py:65: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+database.py:17: in get_db
+    raise e
+database.py:13: in get_db
+    conn = psycopg2.connect(db_url, cursor_factory=DictCursor)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+dsn = 'postgresql://postgres:postgres@localhost:5432/qrapp '
+connection_factory = None, cursor_factory = <class 'psycopg2.extras.DictCursor'>
+kwargs = {}, kwasync = {}
+
+    def connect(dsn=None, connection_factory=None, cursor_factory=None, **kwargs):
+        """
+        Create a new database connection.
+    
+        The connection parameters can be specified as a string:
+    
+            conn = psycopg2.connect("dbname=test user=postgres password=secret")
+    
+        or using a set of keyword arguments:
+    
+            conn = psycopg2.connect(database="test", user="postgres", password="secret")
+    
+        Or as a mix of both. The basic connection parameters are:
+    
+        - *dbname*: the database name
+        - *database*: the database name (only as keyword argument)
+        - *user*: user name used to authenticate
+        - *password*: password used to authenticate
+        - *host*: database host address (defaults to UNIX socket if not provided)
+        - *port*: connection port number (defaults to 5432 if not provided)
+    
+        Using the *connection_factory* parameter a different class or connections
+        factory can be specified. It should be a callable object taking a dsn
+        argument.
+    
+        Using the *cursor_factory* parameter, a new default cursor factory will be
+        used by cursor().
+    
+        Using *async*=True an asynchronous connection will be created. *async_* is
+        a valid alias (for Python versions where ``async`` is a keyword).
+    
+        Any other keyword parameter will be passed to the underlying client
+        library: the list of supported parameters depends on the library version.
+    
+        """
+        kwasync = {}
+        if 'async' in kwargs:
+            kwasync['async'] = kwargs.pop('async')
+        if 'async_' in kwargs:
+            kwasync['async_'] = kwargs.pop('async_')
+    
+        dsn = _ext.make_dsn(dsn, **kwargs)
+>       conn = _connect(dsn, connection_factory=connection_factory, **kwasync)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       psycopg2.OperationalError: connection to server at "localhost" (::1), port 5432 failed: FATAL:  database "qrapp " does not exist
+
+..\..\AppData\Roaming\Python\Python314\site-packages\psycopg2\__init__.py:135: OperationalError
+---------------------------- Captured stdout setup ----------------------------
+{"timestamp": "2026-01-19T23:47:54.524898", "level": "INFO", "message": "Logger setup complete. JSON formatted logs enabled.", "logger": "app", "module": "logger", "lineno": 66}
+[DB] Connection Failed: connection to server at "localhost" (::1), port 5432 failed: FATAL:  database "qrapp " does not exist
+
+----------------------------- Captured log setup ------------------------------
+INFO     app:logger.py:66 Logger setup complete. JSON formatted logs enabled.
+================================== FAILURES ===================================
+__________ TestLeadSubmissionCSRF.test_lead_submission_no_csrf_error __________
+
+self = <test_pro_features.TestLeadSubmissionCSRF testMethod=test_lead_submission_no_csrf_error>
+
+    def test_lead_submission_no_csrf_error(self):
+        """Lead submission should work without CSRF token (exempt endpoint)."""
+        # This should not return 400 CSRF error
+>       response = self.client.post(
+            '/api/leads/submit',
+            json={
+                'property_id': 1,
+                'buyer_name': 'Test User',
+                'buyer_email': 'test@example.com',
+                'consent': True
+            },
+            content_type='application/json'
+        )
+
+tests\test_pro_features.py:26: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+..\..\AppData\Roaming\Python\Python314\site-packages\werkzeug\test.py:1167: in post
+    return self.open(*args, **kw)
+           ^^^^^^^^^^^^^^^^^^^^^^
+..\..\AppData\Roaming\Python\Python314\site-packages\flask\testing.py:235: in open
+    response = super().open(
+..\..\AppData\Roaming\Python\Python314\site-packages\werkzeug\test.py:1116: in open
+    response_parts = self.run_wsgi_app(request.environ, buffered=buffered)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\AppData\Roaming\Python\Python314\site-packages\werkzeug\test.py:988: in run_wsgi_app
+    rv = run_wsgi_app(self.application, environ, buffered=buffered)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\AppData\Roaming\Python\Python314\site-packages\werkzeug\test.py:1264: in run_wsgi_app
+    app_rv = app(environ, start_response)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\AppData\Roaming\Python\Python314\site-packages\flask\app.py:1536: in __call__
+    return self.wsgi_app(environ, start_response)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\AppData\Roaming\Python\Python314\site-packages\flask\app.py:1514: in wsgi_app
+    response = self.handle_exception(e)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\AppData\Roaming\Python\Python314\site-packages\flask\app.py:1511: in wsgi_app
+    response = self.full_dispatch_request()
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\AppData\Roaming\Python\Python314\site-packages\flask\app.py:919: in full_dispatch_request
+    rv = self.handle_user_exception(e)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\AppData\Roaming\Python\Python314\site-packages\flask\app.py:917: in full_dispatch_request
+    rv = self.dispatch_request()
+         ^^^^^^^^^^^^^^^^^^^^^^^
+..\..\AppData\Roaming\Python\Python314\site-packages\flask\app.py:902: in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+routes\leads.py:63: in submit_lead
+    db = get_db()
+         ^^^^^^^^
+database.py:17: in get_db
+    raise e
+database.py:13: in get_db
+    conn = psycopg2.connect(db_url, cursor_factory=DictCursor)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+dsn = 'postgresql://postgres:postgres@localhost:5432/qrapp '
+connection_factory = None, cursor_factory = <class 'psycopg2.extras.DictCursor'>
+kwargs = {}, kwasync = {}
+
+    def connect(dsn=None, connection_factory=None, cursor_factory=None, **kwargs):
+        """
+        Create a new database connection.
+    
+        The connection parameters can be specified as a string:
+    
+            conn = psycopg2.connect("dbname=test user=postgres password=secret")
+    
+        or using a set of keyword arguments:
+    
+            conn = psycopg2.connect(database="test", user="postgres", password="secret")
+    
+        Or as a mix of both. The basic connection parameters are:
+    
+        - *dbname*: the database name
+        - *database*: the database name (only as keyword argument)
+        - *user*: user name used to authenticate
+        - *password*: password used to authenticate
+        - *host*: database host address (defaults to UNIX socket if not provided)
+        - *port*: connection port number (defaults to 5432 if not provided)
+    
+        Using the *connection_factory* parameter a different class or connections
+        factory can be specified. It should be a callable object taking a dsn
+        argument.
+    
+        Using the *cursor_factory* parameter, a new default cursor factory will be
+        used by cursor().
+    
+        Using *async*=True an asynchronous connection will be created. *async_* is
+        a valid alias (for Python versions where ``async`` is a keyword).
+    
+        Any other keyword parameter will be passed to the underlying client
+        library: the list of supported parameters depends on the library version.
+    
+        """
+        kwasync = {}
+        if 'async' in kwargs:
+            kwasync['async'] = kwargs.pop('async')
+        if 'async_' in kwargs:
+            kwasync['async_'] = kwargs.pop('async_')
+    
+        dsn = _ext.make_dsn(dsn, **kwargs)
+>       conn = _connect(dsn, connection_factory=connection_factory, **kwasync)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       psycopg2.OperationalError: connection to server at "localhost" (::1), port 5432 failed: FATAL:  database "qrapp " does not exist
+
+..\..\AppData\Roaming\Python\Python314\site-packages\psycopg2\__init__.py:135: OperationalError
+---------------------------- Captured stdout call -----------------------------
+[DB] Connection Failed: connection to server at "localhost" (::1), port 5432 failed: FATAL:  database "qrapp " does not exist
+
+__________ TestAnalyticsService.test_analytics_returns_expected_keys __________
+
+self = <test_pro_features.TestAnalyticsService testMethod=test_analytics_returns_expected_keys>
+
+    def test_analytics_returns_expected_keys(self):
+        """Analytics should return expected data structure."""
+        from services.analytics import get_dashboard_analytics
+        from app import app
+    
+        with app.app_context():
+            # Call with agent_id that may not exist - should not crash
+>           result = get_dashboard_analytics(99999)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_pro_features.py:88: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+services\analytics.py:49: in get_dashboard_analytics
+    db = get_db()
+         ^^^^^^^^
+database.py:17: in get_db
+    raise e
+database.py:13: in get_db
+    conn = psycopg2.connect(db_url, cursor_factory=DictCursor)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+dsn = 'postgresql://postgres:postgres@localhost:5432/qrapp '
+connection_factory = None, cursor_factory = <class 'psycopg2.extras.DictCursor'>
+kwargs = {}, kwasync = {}
+
+    def connect(dsn=None, connection_factory=None, cursor_factory=None, **kwargs):
+        """
+        Create a new database connection.
+    
+        The connection parameters can be specified as a string:
+    
+            conn = psycopg2.connect("dbname=test user=postgres password=secret")
+    
+        or using a set of keyword arguments:
+    
+            conn = psycopg2.connect(database="test", user="postgres", password="secret")
+    
+        Or as a mix of both. The basic connection parameters are:
+    
+        - *dbname*: the database name
+        - *database*: the database name (only as keyword argument)
+        - *user*: user name used to authenticate
+        - *password*: password used to authenticate
+        - *host*: database host address (defaults to UNIX socket if not provided)
+        - *port*: connection port number (defaults to 5432 if not provided)
+    
+        Using the *connection_factory* parameter a different class or connections
+        factory can be specified. It should be a callable object taking a dsn
+        argument.
+    
+        Using the *cursor_factory* parameter, a new default cursor factory will be
+        used by cursor().
+    
+        Using *async*=True an asynchronous connection will be created. *async_* is
+        a valid alias (for Python versions where ``async`` is a keyword).
+    
+        Any other keyword parameter will be passed to the underlying client
+        library: the list of supported parameters depends on the library version.
+    
+        """
+        kwasync = {}
+        if 'async' in kwargs:
+            kwasync['async'] = kwargs.pop('async')
+        if 'async_' in kwargs:
+            kwasync['async_'] = kwargs.pop('async_')
+    
+        dsn = _ext.make_dsn(dsn, **kwargs)
+>       conn = _connect(dsn, connection_factory=connection_factory, **kwasync)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       psycopg2.OperationalError: connection to server at "localhost" (::1), port 5432 failed: FATAL:  database "qrapp " does not exist
+
+..\..\AppData\Roaming\Python\Python314\site-packages\psycopg2\__init__.py:135: OperationalError
+---------------------------- Captured stdout call -----------------------------
+[DB] Connection Failed: connection to server at "localhost" (::1), port 5432 failed: FATAL:  database "qrapp " does not exist
+
+________________ TestLeadSubmission.test_honeypot_rejects_bots ________________
+
+self = <test_scope_changes.TestLeadSubmission testMethod=test_honeypot_rejects_bots>
+
+    def test_honeypot_rejects_bots(self):
+        """Filled honeypot field should silently reject submission."""
+>       response = self.client.post(
+            '/api/leads/submit',
+            json={
+                'property_id': 1,
+                'buyer_name': 'Bot Test',
+                'buyer_email': 'bot@example.com',
+                'consent': True,
+                'website': 'http://spam.com'  # Honeypot filled = bot
+            },
+            content_type='application/json'
+        )
+
+tests\test_scope_changes.py:75: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+..\..\AppData\Roaming\Python\Python314\site-packages\werkzeug\test.py:1167: in post
+    return self.open(*args, **kw)
+           ^^^^^^^^^^^^^^^^^^^^^^
+..\..\AppData\Roaming\Python\Python314\site-packages\flask\testing.py:235: in open
+    response = super().open(
+..\..\AppData\Roaming\Python\Python314\site-packages\werkzeug\test.py:1116: in open
+    response_parts = self.run_wsgi_app(request.environ, buffered=buffered)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\AppData\Roaming\Python\Python314\site-packages\werkzeug\test.py:988: in run_wsgi_app
+    rv = run_wsgi_app(self.application, environ, buffered=buffered)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\AppData\Roaming\Python\Python314\site-packages\werkzeug\test.py:1264: in run_wsgi_app
+    app_rv = app(environ, start_response)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\AppData\Roaming\Python\Python314\site-packages\flask\app.py:1536: in __call__
+    return self.wsgi_app(environ, start_response)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\AppData\Roaming\Python\Python314\site-packages\flask\app.py:1514: in wsgi_app
+    response = self.handle_exception(e)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\AppData\Roaming\Python\Python314\site-packages\flask\app.py:1511: in wsgi_app
+    response = self.full_dispatch_request()
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\AppData\Roaming\Python\Python314\site-packages\flask\app.py:919: in full_dispatch_request
+    rv = self.handle_user_exception(e)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\AppData\Roaming\Python\Python314\site-packages\flask\app.py:917: in full_dispatch_request
+    rv = self.dispatch_request()
+         ^^^^^^^^^^^^^^^^^^^^^^^
+..\..\AppData\Roaming\Python\Python314\site-packages\flask\app.py:902: in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+routes\leads.py:63: in submit_lead
+    db = get_db()
+         ^^^^^^^^
+database.py:17: in get_db
+    raise e
+database.py:13: in get_db
+    conn = psycopg2.connect(db_url, cursor_factory=DictCursor)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+dsn = 'postgresql://postgres:postgres@localhost:5432/qrapp '
+connection_factory = None, cursor_factory = <class 'psycopg2.extras.DictCursor'>
+kwargs = {}, kwasync = {}
+
+    def connect(dsn=None, connection_factory=None, cursor_factory=None, **kwargs):
+        """
+        Create a new database connection.
+    
+        The connection parameters can be specified as a string:
+    
+            conn = psycopg2.connect("dbname=test user=postgres password=secret")
+    
+        or using a set of keyword arguments:
+    
+            conn = psycopg2.connect(database="test", user="postgres", password="secret")
+    
+        Or as a mix of both. The basic connection parameters are:
+    
+        - *dbname*: the database name
+        - *database*: the database name (only as keyword argument)
+        - *user*: user name used to authenticate
+        - *password*: password used to authenticate
+        - *host*: database host address (defaults to UNIX socket if not provided)
+        - *port*: connection port number (defaults to 5432 if not provided)
+    
+        Using the *connection_factory* parameter a different class or connections
+        factory can be specified. It should be a callable object taking a dsn
+        argument.
+    
+        Using the *cursor_factory* parameter, a new default cursor factory will be
+        used by cursor().
+    
+        Using *async*=True an asynchronous connection will be created. *async_* is
+        a valid alias (for Python versions where ``async`` is a keyword).
+    
+        Any other keyword parameter will be passed to the underlying client
+        library: the list of supported parameters depends on the library version.
+    
+        """
+        kwasync = {}
+        if 'async' in kwargs:
+            kwasync['async'] = kwargs.pop('async')
+        if 'async_' in kwargs:
+            kwasync['async_'] = kwargs.pop('async_')
+    
+        dsn = _ext.make_dsn(dsn, **kwargs)
+>       conn = _connect(dsn, connection_factory=connection_factory, **kwasync)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       psycopg2.OperationalError: connection to server at "localhost" (::1), port 5432 failed: FATAL:  database "qrapp " does not exist
+
+..\..\AppData\Roaming\Python\Python314\site-packages\psycopg2\__init__.py:135: OperationalError
+---------------------------- Captured stdout call -----------------------------
+[DB] Connection Failed: connection to server at "localhost" (::1), port 5432 failed: FATAL:  database "qrapp " does not exist
+
+___________ TestLeadSubmission.test_lead_submission_requires_fields ___________
+
+self = <test_scope_changes.TestLeadSubmission testMethod=test_lead_submission_requires_fields>
+
+    def test_lead_submission_requires_fields(self):
+        """Lead submission should require name, email, property_id, consent."""
+        # Missing all fields
+>       response = self.client.post(
+            '/api/leads/submit',
+            json={},
+            content_type='application/json'
+        )
+
+tests\test_scope_changes.py:53: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+..\..\AppData\Roaming\Python\Python314\site-packages\werkzeug\test.py:1167: in post
+    return self.open(*args, **kw)
+           ^^^^^^^^^^^^^^^^^^^^^^
+..\..\AppData\Roaming\Python\Python314\site-packages\flask\testing.py:235: in open
+    response = super().open(
+..\..\AppData\Roaming\Python\Python314\site-packages\werkzeug\test.py:1116: in open
+    response_parts = self.run_wsgi_app(request.environ, buffered=buffered)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\AppData\Roaming\Python\Python314\site-packages\werkzeug\test.py:988: in run_wsgi_app
+    rv = run_wsgi_app(self.application, environ, buffered=buffered)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\AppData\Roaming\Python\Python314\site-packages\werkzeug\test.py:1264: in run_wsgi_app
+    app_rv = app(environ, start_response)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\AppData\Roaming\Python\Python314\site-packages\flask\app.py:1536: in __call__
+    return self.wsgi_app(environ, start_response)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\AppData\Roaming\Python\Python314\site-packages\flask\app.py:1514: in wsgi_app
+    response = self.handle_exception(e)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\AppData\Roaming\Python\Python314\site-packages\flask\app.py:1511: in wsgi_app
+    response = self.full_dispatch_request()
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\AppData\Roaming\Python\Python314\site-packages\flask\app.py:919: in full_dispatch_request
+    rv = self.handle_user_exception(e)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\AppData\Roaming\Python\Python314\site-packages\flask\app.py:917: in full_dispatch_request
+    rv = self.dispatch_request()
+         ^^^^^^^^^^^^^^^^^^^^^^^
+..\..\AppData\Roaming\Python\Python314\site-packages\flask\app.py:902: in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+routes\leads.py:63: in submit_lead
+    db = get_db()
+         ^^^^^^^^
+database.py:17: in get_db
+    raise e
+database.py:13: in get_db
+    conn = psycopg2.connect(db_url, cursor_factory=DictCursor)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+dsn = 'postgresql://postgres:postgres@localhost:5432/qrapp '
+connection_factory = None, cursor_factory = <class 'psycopg2.extras.DictCursor'>
+kwargs = {}, kwasync = {}
+
+    def connect(dsn=None, connection_factory=None, cursor_factory=None, **kwargs):
+        """
+        Create a new database connection.
+    
+        The connection parameters can be specified as a string:
+    
+            conn = psycopg2.connect("dbname=test user=postgres password=secret")
+    
+        or using a set of keyword arguments:
+    
+            conn = psycopg2.connect(database="test", user="postgres", password="secret")
+    
+        Or as a mix of both. The basic connection parameters are:
+    
+        - *dbname*: the database name
+        - *database*: the database name (only as keyword argument)
+        - *user*: user name used to authenticate
+        - *password*: password used to authenticate
+        - *host*: database host address (defaults to UNIX socket if not provided)
+        - *port*: connection port number (defaults to 5432 if not provided)
+    
+        Using the *connection_factory* parameter a different class or connections
+        factory can be specified. It should be a callable object taking a dsn
+        argument.
+    
+        Using the *cursor_factory* parameter, a new default cursor factory will be
+        used by cursor().
+    
+        Using *async*=True an asynchronous connection will be created. *async_* is
+        a valid alias (for Python versions where ``async`` is a keyword).
+    
+        Any other keyword parameter will be passed to the underlying client
+        library: the list of supported parameters depends on the library version.
+    
+        """
+        kwasync = {}
+        if 'async' in kwargs:
+            kwasync['async'] = kwargs.pop('async')
+        if 'async_' in kwargs:
+            kwasync['async_'] = kwargs.pop('async_')
+    
+        dsn = _ext.make_dsn(dsn, **kwargs)
+>       conn = _connect(dsn, connection_factory=connection_factory, **kwasync)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       psycopg2.OperationalError: connection to server at "localhost" (::1), port 5432 failed: FATAL:  database "qrapp " does not exist
+
+..\..\AppData\Roaming\Python\Python314\site-packages\psycopg2\__init__.py:135: OperationalError
+---------------------------- Captured stdout call -----------------------------
+[DB] Connection Failed: connection to server at "localhost" (::1), port 5432 failed: FATAL:  database "qrapp " does not exist
+
+============================== warnings summary ===============================
+..\..\AppData\Roaming\Python\Python314\site-packages\_pytest\config\__init__.py:1428
+  C:\Users\player1\AppData\Roaming\Python\Python314\site-packages\_pytest\config\__init__.py:1428: PytestConfigWarning: Unknown config option: env
+  
+    self._warn_or_fail_if_strict(f"Unknown config option: {key}\n")
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED tests/test_pro_features.py::TestLeadSubmissionCSRF::test_lead_submission_no_csrf_error
+FAILED tests/test_pro_features.py::TestAnalyticsService::test_analytics_returns_expected_keys
+FAILED tests/test_scope_changes.py::TestLeadSubmission::test_honeypot_rejects_bots
+FAILED tests/test_scope_changes.py::TestLeadSubmission::test_lead_submission_requires_fields
+ERROR tests/test_feature_flows.py::test_lead_lifecycle - psycopg2.Operational...
+ERROR tests/test_feature_flows.py::test_qr_variant_resolution - psycopg2.Oper...
+ERROR tests/test_feature_flows.py::test_open_house_mode - psycopg2.Operationa...
+ERROR tests/test_feature_flows.py::test_gating_rendering - psycopg2.Operation...
+ERROR tests/test_feature_flows.py::test_cleanup_calls_storage_delete - psycop...
+ERROR tests/test_fulfillment.py::test_fulfill_order_enqueues_one_print_job - ...
+ERROR tests/test_print_jobs.py::test_claim_jobs_is_idempotent - psycopg2.Oper...
+ERROR tests/test_print_jobs.py::test_download_pdf_requires_auth_and_returns_bytes
+ERROR tests/test_printing_atomic.py::test_claim_jobs_success - psycopg2.Opera...
+ERROR tests/test_printing_atomic.py::test_mark_downloaded_transition - psycop...
+ERROR tests/test_printing_atomic.py::test_download_pdf - psycopg2.Operational...
+ERROR tests/test_webhook_amounts.py::test_webhook_captures_totals - psycopg2....
+============= 4 failed, 46 passed, 1 warning, 12 errors in 3.06s ==============

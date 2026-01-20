@@ -1,0 +1,44 @@
+[Unit]
+Description=Gunicorn instance for Print Server (Internal)
+After=network.target
+StartLimitIntervalSec=60
+StartLimitBurst=5
+
+[Service]
+# User/Group: Dedicated service user for production
+User=qrapp
+Group=www-data
+
+# Directories managed by systemd
+StateDirectory=qrapp
+LogsDirectory=qrapp
+# (RuntimeDirectory not strictly needed for print server if it binds localhost tcp, 
+# but good for consistency if we ever move to sockets)
+
+WorkingDirectory=/opt/qr_code_backend
+Environment="PATH=/opt/qr_code_backend/.venv/bin:/usr/bin"
+EnvironmentFile=/etc/qr-secrets.env
+
+# Strict Production Paths
+Environment=INSTANCE_DIR=/var/lib/qrapp
+Environment=PRINT_INBOX_DIR=/var/lib/qrapp/print_inbox
+
+# Run the print server application
+# Bind ONLY to localhost for security
+ExecStart=/opt/qr_code_backend/.venv/bin/gunicorn --workers 1 --bind 127.0.0.1:8080 services.print_server.app:app
+
+Restart=on-failure
+RestartSec=2
+
+# =============================================================================
+# Security Hardening (Correct Forever)
+# =============================================================================
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/qrapp
+UMask=0007
+
+[Install]
+WantedBy=multi-user.target

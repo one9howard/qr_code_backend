@@ -1,0 +1,261 @@
+/**
+ * Reusable CSS Components
+ * Use these classes to reduce inline styles and maintain consistency.
+ */
+
+/* =============================================================================
+   Typography Scale
+   ============================================================================= */
+:root {
+    --text-xs: 0.75rem;
+    /* 12px */
+    --text-sm: 0.875rem;
+    /* 14px */
+    --text-md: 1rem;
+    /* 16px - base */
+    --text-lg: 1.125rem;
+    /* 18px */
+    --text-xl: 1.25rem;
+    /* 20px */
+    --text-2xl: 1.5rem;
+    /* 24px */
+    --text-3xl: 1.875rem;
+    /* 30px */
+    --text-4xl: 2.25rem;
+    /* 36px */
+}
+
+/* =============================================================================
+   Card Components
+   ============================================================================= */
+.card {
+    background: rgba(0, 0, 0, 0.6);
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 20px;
+}
+
+.card--glass {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 20px;
+}
+
+.card--dark {
+    background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-radius: 15px;
+    border: 1px solid #333;
+    padding: 30px;
+}
+
+/* =============================================================================
+   Section Headers
+   ============================================================================= */
+.section-header {
+    color: white;
+    font-size: var(--text-2xl);
+    font-weight: 600;
+    margin-bottom: 20px;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.nav-username {
+    display: inline-block;
+    margin-top: 0;
+    font-size: 0.9rem;
+    color: var(--accent-color);
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.section-header--center {
+    text-align: center;
+}
+
+.section-subheader {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: var(--text-md);
+    margin-bottom: 15px;
+}
+
+/* =============================================================================
+   Button Row / CTA Blocks
+   ============================================================================= */
+.btn-row {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-top: 20px;
+}
+
+.btn-row--left {
+    justify-content: flex-start;
+}
+
+.btn-row--right {
+    justify-content: flex-end;
+}
+
+/* =============================================================================
+   Pills / Badges
+   ============================================================================= */
+.pill {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: var(--text-sm);
+    font-weight: 600;
+}
+
+.pill--success {
+    background: rgba(40, 167, 69, 0.2);
+    color: #28a745;
+}
+
+.pill--warning {
+    background: rgba(255, 152, 0, 0.2);
+    color: #ff9800;
+}
+
+.pill--info {
+    background: rgba(79, 172, 254, 0.2);
+    color: #4facfe;
+}
+
+.pill--neutral {
+    background: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.8);
+}
+
+/* =============================================================================
+   Text Utilities
+   ============================================================================= */
+.muted-text {
+    color: rgba(255, 255, 255, 0.5);
+    font-size: var(--text-sm);
+}
+
+.accent-text {
+    color: var(--accent-color, #0077ff);
+}
+
+.text-center {
+    text-align: center;
+}
+
+.text-white {
+    color: white;
+}
+
+/* =============================================================================
+   Layout Utilities
+   ============================================================================= */
+.flex-center {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.flex-between {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.gap-sm {
+    gap: 10px;
+}
+
+.gap-md {
+    gap: 20px;
+}
+
+.gap-lg {
+    gap: 30px;
+}
+
+/* =============================================================================
+   Legal Page Styles
+   ============================================================================= */
+.legal-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 40px 20px;
+}
+
+.legal-container h1 {
+    font-size: var(--text-3xl);
+    margin-bottom: 30px;
+}
+
+.legal-container h2 {
+    font-size: var(--text-xl);
+    margin-top: 30px;
+    margin-bottom: 15px;
+    color: var(--accent-color, #4facfe);
+}
+
+.legal-container p,
+.legal-container li {
+    line-height: 1.7;
+    margin-bottom: 15px;
+    color: rgba(255, 255, 255, 0.85);
+}
+
+.legal-container ul {
+    margin-left: 20px;
+    margin-bottom: 20px;
+}
+
+.legal-container a {
+    color: var(--accent-color, #4facfe);
+    text-decoration: underline;
+}
+
+.legal-subheading {
+    color: white;
+    font-size: var(--text-lg);
+    margin-top: 20px;
+    margin-bottom: 10px;
+}
+
+.legal-btn-row {
+    margin-top: 40px;
+}
+
+/* =============================================================================
+   Navigation Components
+   ============================================================================= */
+.nav-stack {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 15px;
+}
+
+.nav-btn {
+    padding: 8px 20px;
+    font-size: var(--text-sm);
+}
+
+.drawer-legal-link {
+    font-size: var(--text-sm);
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.drawer-legal-link:hover {
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.drawer-title {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: white;
+}
