@@ -75,14 +75,7 @@ Configure these in Railway: **Service → Variables**
 > **To add Postgres**: Right-click canvas → Add → Database → PostgreSQL
 
 > [!IMPORTANT]
-> **DATABASE_URL is REQUIRED** for production/staging deployments. The `migrate.py` script will **exit with error** if DATABASE_URL is not set, preventing accidental SQLite usage on servers.
-> 
-> For local SQLite development only, you can bypass this by setting `FORCE_SQLITE=1`:
-> ```bash
-> export FORCE_SQLITE=1
-> python migrate.py
-> ```
-> However, SQLite mode is deprecated and will be removed in a future version.
+> **DATABASE_URL is REQUIRED** for production/staging deployments. The `migrate.py` script will **exit with error** if DATABASE_URL is not set, preventing invalid configuration.
 
 #### Proxy Headers
 | Variable | Value | Notes |

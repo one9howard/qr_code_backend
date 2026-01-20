@@ -35,6 +35,7 @@ def test_webhook_captures_totals(db):
         'id': 'cs_test_webhook_123',
         'metadata': {'order_id': str(order_id), 'purpose': 'sign'},
         'amount_total': 5000, 
+        'payment_status': 'paid',
         'currency': 'usd'
     }
     

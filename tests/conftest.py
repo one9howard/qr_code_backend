@@ -19,8 +19,8 @@ if not _INSTANCE_DIR:
 os.environ.setdefault("FLASK_ENV", "test")
 os.environ.setdefault("APP_STAGE", "test")
 os.environ.setdefault("BASE_URL", "http://localhost")
-os.environ.setdefault("SECRET_KEY", "test-secret")
-os.environ.setdefault("PRINT_SERVER_TOKEN", "test-print-token")
+os.environ["SECRET_KEY"] = "test-secret"
+os.environ["PRINT_SERVER_TOKEN"] = "test-print-token"
 os.environ.setdefault("STRIPE_SECRET_KEY", "sk_test_dummy")
 os.environ.setdefault("STRIPE_WEBHOOK_SECRET", "whsec_dummy")
 os.environ.setdefault("STORAGE_BACKEND", "local")
@@ -44,28 +44,14 @@ def _migrate_db_once():
     """Run Alembic migrations once per test session."""
     db_url = os.environ.get("DATABASE_URL", "")
     
-    if not db_url:
+    if not db_url or not db_url.startswith("postgres"):
         raise RuntimeError(
-            "DATABASE_URL must be set for tests (Postgres required).\n"
-            "Run: docker run --name qrapp-db -e POSTGRES_PASSWORD=postgres -p 5432:5432 -d postgres\n"
-            "Then: export DATABASE_URL=postgresql://postgres:postgres@localhost:5432/qrapp"
-        )
-
-    if db_url.startswith("sqlite"):
-        raise ValueError(
-            f"SQLite URL detected: {db_url}. SQLite is NOT supported for tests.\n"
-            "Please unset DATABASE_URL or set it to a valid Postgres equivalent.\n"
-            "Example: postgresql://postgres:postgres@localhost:5432/qrapp"
+            "CRITICAL: Tests must run against Postgres (DATABASE_URL=postgresql://...). Non-Postgres DBs are strictly forbidden.\n"
+            f"Current URL: {db_url}"
         )
 
     # Run migrations using the project's migrate.py so it's consistent with prod.
-    try:
-        subprocess.check_call([sys.executable, "migrate.py"], cwd=os.path.dirname(__file__) + "/..")
-    except subprocess.CalledProcessError as e:
-        # Fallback: Print error but continue if possible (testing on existing db?)
-        print(f"WARNING: Migration failed during test setup: {e}")
-        # We assume manual migration might have been done.
-        pass
+    subprocess.check_call([sys.executable, "migrate.py"], cwd=os.path.dirname(__file__) + "/..")
     yield
 
 

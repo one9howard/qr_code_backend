@@ -1,0 +1,453 @@
+DEBUG_CONFTEST_TOP: DATABASE_URL=postgresql://postgres:postgres@localhost:5432/insite_signs
+============================= test session starts =============================
+platform win32 -- Python 3.14.0, pytest-9.0.2, pluggy-1.6.0 -- C:\Python314\python.exe
+cachedir: .pytest_cache
+rootdir: C:\Users\player1\Desktop\InSite_signs
+configfile: pytest.ini
+collecting ... collected 5 items
+
+tests/test_smart_signs_printing.py::TestSmartSignPrinting::test_edit_access_control INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.
+INFO  [alembic.runtime.migration] Will assume transactional DDL.
+[Manage] Loaded .env file
+[Manage] Starting database migration...
+[Manage] DATABASE_URL format: postgresql://postgres:****@localhost:5432/insite_signs
+[Manage] Detected DATABASE_URL, using Alembic for Postgres...
+[Manage] Alembic migration to 'head' successful.
+[Manage] Database migration completed successfully.
+[Config] STORAGE_BACKEND=local, INSTANCE_DIR=instance
+[Config] Write check passed for instance\private\pdf
+[Config] Validating production config...
+[Config] Production config valid.
+[App] create_app() called
+[App] Flask app instance created
+{"timestamp": "2026-01-20T23:45:42.436245", "level": "INFO", "message": "Logger setup complete. JSON formatted logs enabled.", "logger": "app", "module": "logger", "lineno": 66}
+[App] create_app() called
+[App] Flask app instance created
+{"timestamp": "2026-01-20T23:45:42.454736", "level": "INFO", "message": "Logger setup complete. JSON formatted logs enabled.", "logger": "app", "module": "logger", "lineno": 66}
+FAILED
+tests/test_smart_signs_printing.py::TestSmartSignPrinting::test_edit_design [App] create_app() called
+[App] Flask app instance created
+{"timestamp": "2026-01-20T23:45:42.847448", "level": "INFO", "message": "Logger setup complete. JSON formatted logs enabled.", "logger": "app", "module": "logger", "lineno": 66}
+FAILED
+tests/test_smart_signs_printing.py::TestSmartSignPrinting::test_checkout_flow [App] create_app() called
+[App] Flask app instance created
+{"timestamp": "2026-01-20T23:45:43.242760", "level": "INFO", "message": "Logger setup complete. JSON formatted logs enabled.", "logger": "app", "module": "logger", "lineno": 66}
+[DB] Query Failed: null value in column "property_id" of relation "orders" violates not-null constraint
+DETAIL:  Failing row contains (1, 1, null, null, null, pending_payment, null, null, null, null, null, null, null, null, null, null, null, null, #1F6FEB, 18x24, 2026-01-20 23:45:43.477393, null, smart_sign, null, null, 1).
+
+[DB] SQL: 
+        INSERT INTO orders (user_id, property_id, sign_asset_id, status, order_type, created_at)
+        VALUES (%s, %s, %s, 'pending_payment', 'smart_sign', CURRENT_TIMESTAMP)
+        RETURNING id
+    
+FAILED
+tests/test_smart_signs_printing.py::TestSmartSignPrinting::test_webhook_activation [App] create_app() called
+[App] Flask app instance created
+{"timestamp": "2026-01-20T23:45:43.562033", "level": "INFO", "message": "Logger setup complete. JSON formatted logs enabled.", "logger": "app", "module": "logger", "lineno": 66}
+{"timestamp": "2026-01-20T23:45:43.783231", "level": "INFO", "message": "[Webhook] Received event: checkout.session.completed (ID: evt_123)", "logger": "app", "module": "webhook", "lineno": 51, "method": "POST", "path": "/stripe/webhook", "remote_ip": "127.0.0.1", "request_id": "cffef0e7-da1b-4bee-8e32-73803a5c19e8"}
+{"timestamp": "2026-01-20T23:45:43.788465", "level": "INFO", "message": "[Webhook] Updating Order 1: Status pending_payment->paid, Type smart_sign->smart_sign", "logger": "app", "module": "webhook", "lineno": 280, "method": "POST", "path": "/stripe/webhook", "remote_ip": "127.0.0.1", "request_id": "cffef0e7-da1b-4bee-8e32-73803a5c19e8"}
+{"timestamp": "2026-01-20T23:45:43.788565", "level": "WARNING", "message": "[Webhook] Session sess_fake payment_status=None. Skipping activation/fulfillment.", "logger": "app", "module": "webhook", "lineno": 286, "method": "POST", "path": "/stripe/webhook", "remote_ip": "127.0.0.1", "request_id": "cffef0e7-da1b-4bee-8e32-73803a5c19e8"}
+{"timestamp": "2026-01-20T23:45:43.790218", "level": "INFO", "message": "[Webhook] Event evt_123 processed successfully.", "logger": "app", "module": "webhook", "lineno": 124, "method": "POST", "path": "/stripe/webhook", "remote_ip": "127.0.0.1", "request_id": "cffef0e7-da1b-4bee-8e32-73803a5c19e8"}
+FAILED
+tests/test_smart_signs_printing.py::TestSmartSignPrinting::test_fulfillment_generation [App] create_app() called
+[App] Flask app instance created
+{"timestamp": "2026-01-20T23:45:43.795379", "level": "INFO", "message": "Logger setup complete. JSON formatted logs enabled.", "logger": "app", "module": "logger", "lineno": 66}
+[Fulfillment] Generating PDF for SmartSign Order 1...
+[Fulfillment] Error: PDF file not found for order 1. Storage key: pdfs/generated.pdf
+FAILED
+
+================================== FAILURES ===================================
+_______________ TestSmartSignPrinting.test_edit_access_control ________________
+
+self = <test_smart_signs_printing.TestSmartSignPrinting object at 0x00000122C6DA0690>
+client = <FlaskClient <Flask 'app'>>, setup_data = None
+
+    def test_edit_access_control(self, client, setup_data):
+        # 1. Free user cannot edit? (Actually, logic says "Pro feature" but checks subscription_status in check_access)
+        login(client, client.free_id)
+        resp = client.get(f"/dashboard/sign-assets/{client.asset_id}/edit")
+        assert resp.status_code == 403 or resp.status_code == 404 # Forbidden (not owner) or 404
+    
+        # 2. Pro user (Owner) can edit
+        login(client, client.pro_id)
+        resp = client.get(f"/dashboard/sign-assets/{client.asset_id}/edit")
+        # Subscription check is in check_access
+>       assert resp.status_code == 200
+E       assert 403 == 200
+E        +  where 403 = <WrapperTestResponse streamed [403 FORBIDDEN]>.status_code
+
+tests\test_smart_signs_printing.py:44: AssertionError
+----------------------------- Captured log setup ------------------------------
+INFO     app:logger.py:66 Logger setup complete. JSON formatted logs enabled.
+INFO     app:logger.py:66 Logger setup complete. JSON formatted logs enabled.
+___________________ TestSmartSignPrinting.test_edit_design ____________________
+
+self = <test_smart_signs_printing.TestSmartSignPrinting object at 0x00000122C6DA0B90>
+client = <FlaskClient <Flask 'app'>>, setup_data = None
+db = <database.PostgresDB object at 0x00000122CA347B10>
+
+    def test_edit_design(self, client, setup_data, db):
+        login(client, client.pro_id)
+>       resp = client.post(f"/dashboard/sign-assets/{client.asset_id}/edit", data={
+            'brand_name': 'New Brand',
+            'cta_key': 'scan_for_details',
+            'background_style': 'dark',
+            'include_logo': 'on'
+        }, follow_redirects=True)
+
+tests\test_smart_signs_printing.py:49: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+..\..\AppData\Roaming\Python\Python314\site-packages\werkzeug\test.py:1167: in post
+    return self.open(*args, **kw)
+           ^^^^^^^^^^^^^^^^^^^^^^
+..\..\AppData\Roaming\Python\Python314\site-packages\flask\testing.py:235: in open
+    response = super().open(
+..\..\AppData\Roaming\Python\Python314\site-packages\werkzeug\test.py:1150: in open
+    response = self.resolve_redirect(response, buffered=buffered)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\AppData\Roaming\Python\Python314\site-packages\werkzeug\test.py:1056: in resolve_redirect
+    return self.open(builder, buffered=buffered)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\AppData\Roaming\Python\Python314\site-packages\flask\testing.py:235: in open
+    response = super().open(
+..\..\AppData\Roaming\Python\Python314\site-packages\werkzeug\test.py:1116: in open
+    response_parts = self.run_wsgi_app(request.environ, buffered=buffered)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\AppData\Roaming\Python\Python314\site-packages\werkzeug\test.py:988: in run_wsgi_app
+    rv = run_wsgi_app(self.application, environ, buffered=buffered)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\AppData\Roaming\Python\Python314\site-packages\werkzeug\test.py:1264: in run_wsgi_app
+    app_rv = app(environ, start_response)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\AppData\Roaming\Python\Python314\site-packages\flask\app.py:1536: in __call__
+    return self.wsgi_app(environ, start_response)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\AppData\Roaming\Python\Python314\site-packages\flask\app.py:1514: in wsgi_app
+    response = self.handle_exception(e)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\AppData\Roaming\Python\Python314\site-packages\flask\app.py:1511: in wsgi_app
+    response = self.full_dispatch_request()
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\AppData\Roaming\Python\Python314\site-packages\flask\app.py:919: in full_dispatch_request
+    rv = self.handle_user_exception(e)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\AppData\Roaming\Python\Python314\site-packages\flask\app.py:917: in full_dispatch_request
+    rv = self.dispatch_request()
+         ^^^^^^^^^^^^^^^^^^^^^^^
+..\..\AppData\Roaming\Python\Python314\site-packages\flask\app.py:902: in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\AppData\Roaming\Python\Python314\site-packages\flask_login\utils.py:290: in decorated_view
+    return current_app.ensure_sync(func)(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+routes\smart_signs.py:116: in edit_smartsign
+    return render_template('smartsign_edit.html', asset=asset,
+..\..\AppData\Roaming\Python\Python314\site-packages\flask\templating.py:150: in render_template
+    return _render(app, template, context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\AppData\Roaming\Python\Python314\site-packages\flask\templating.py:131: in _render
+    rv = template.render(context)
+         ^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\AppData\Roaming\Python\Python314\site-packages\jinja2\environment.py:1295: in render
+    self.environment.handle_exception()
+..\..\AppData\Roaming\Python\Python314\site-packages\jinja2\environment.py:942: in handle_exception
+    raise rewrite_traceback_stack(source=source)
+templates\smartsign_edit.html:1: in top-level template code
+    {% extends "base.html" %}
+templates\base.html:166: in top-level template code
+    {% block content %}{% endblock %}
+    ^^^^^^^^^^^^^^^^^^^^^^^^^
+templates\smartsign_edit.html:10: in block 'content'
+    <a href="{{ url_for('dashboard.smart_assets') }}"
+    ^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\AppData\Roaming\Python\Python314\site-packages\flask\app.py:1121: in url_for
+    return self.handle_url_build_error(error, endpoint, values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\AppData\Roaming\Python\Python314\site-packages\flask\app.py:1110: in url_for
+    rv = url_adapter.build(  # type: ignore[union-attr]
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <werkzeug.routing.map.MapAdapter object at 0x00000122C9F77050>
+endpoint = 'dashboard.smart_assets', values = {}, method = None
+force_external = False, append_unknown = True, url_scheme = None
+
+    def build(
+        self,
+        endpoint: t.Any,
+        values: t.Mapping[str, t.Any] | None = None,
+        method: str | None = None,
+        force_external: bool = False,
+        append_unknown: bool = True,
+        url_scheme: str | None = None,
+    ) -> str:
+        """Building URLs works pretty much the other way round.  Instead of
+        `match` you call `build` and pass it the endpoint and a dict of
+        arguments for the placeholders.
+    
+        The `build` function also accepts an argument called `force_external`
+        which, if you set it to `True` will force external URLs. Per default
+        external URLs (include the server name) will only be used if the
+        target URL is on a different subdomain.
+    
+        >>> m = Map([
+        ...     Rule('/', endpoint='index'),
+        ...     Rule('/downloads/', endpoint='downloads/index'),
+        ...     Rule('/downloads/<int:id>', endpoint='downloads/show')
+        ... ])
+        >>> urls = m.bind("example.com", "/")
+        >>> urls.build("index", {})
+        '/'
+        >>> urls.build("downloads/show", {'id': 42})
+        '/downloads/42'
+        >>> urls.build("downloads/show", {'id': 42}, force_external=True)
+        'http://example.com/downloads/42'
+    
+        Because URLs cannot contain non ASCII data you will always get
+        bytes back.  Non ASCII characters are urlencoded with the
+        charset defined on the map instance.
+    
+        Additional values are converted to strings and appended to the URL as
+        URL querystring parameters:
+    
+        >>> urls.build("index", {'q': 'My Searchstring'})
+        '/?q=My+Searchstring'
+    
+        When processing those additional values, lists are furthermore
+        interpreted as multiple values (as per
+        :py:class:`werkzeug.datastructures.MultiDict`):
+    
+        >>> urls.build("index", {'q': ['a', 'b', 'c']})
+        '/?q=a&q=b&q=c'
+    
+        Passing a ``MultiDict`` will also add multiple values:
+    
+        >>> urls.build("index", MultiDict((('p', 'z'), ('q', 'a'), ('q', 'b'))))
+        '/?p=z&q=a&q=b'
+    
+        If a rule does not exist when building a `BuildError` exception is
+        raised.
+    
+        The build method accepts an argument called `method` which allows you
+        to specify the method you want to have an URL built for if you have
+        different methods for the same endpoint specified.
+    
+        :param endpoint: the endpoint of the URL to build.
+        :param values: the values for the URL to build.  Unhandled values are
+                       appended to the URL as query parameters.
+        :param method: the HTTP method for the rule if there are different
+                       URLs for different methods on the same endpoint.
+        :param force_external: enforce full canonical external URLs. If the URL
+                               scheme is not provided, this will generate
+                               a protocol-relative URL.
+        :param append_unknown: unknown parameters are appended to the generated
+                               URL as query string argument.  Disable this
+                               if you want the builder to ignore those.
+        :param url_scheme: Scheme to use in place of the bound
+            :attr:`url_scheme`.
+    
+        .. versionchanged:: 2.0
+            Added the ``url_scheme`` parameter.
+    
+        .. versionadded:: 0.6
+           Added the ``append_unknown`` parameter.
+        """
+        self.map.update()
+    
+        if values:
+            if isinstance(values, MultiDict):
+                values = {
+                    k: (v[0] if len(v) == 1 else v)
+                    for k, v in dict.items(values)
+                    if len(v) != 0
+                }
+            else:  # plain dict
+                values = {k: v for k, v in values.items() if v is not None}
+        else:
+            values = {}
+    
+        rv = self._partial_build(endpoint, values, method, append_unknown)
+        if rv is None:
+>           raise BuildError(endpoint, values, method, self)
+E           werkzeug.routing.exceptions.BuildError: Could not build url for endpoint 'dashboard.smart_assets'. Did you mean 'dashboard.create_smart_sign' instead?
+
+..\..\AppData\Roaming\Python\Python314\site-packages\werkzeug\routing\map.py:924: BuildError
+----------------------------- Captured log setup ------------------------------
+INFO     app:logger.py:66 Logger setup complete. JSON formatted logs enabled.
+__________________ TestSmartSignPrinting.test_checkout_flow ___________________
+
+self = <test_smart_signs_printing.TestSmartSignPrinting object at 0x00000122C6C22FD0>
+mock_env = <MagicMock name='get' id='1248933788848'>
+mock_stripe = <MagicMock name='create' id='1248941981776'>
+client = <FlaskClient <Flask 'app'>>, setup_data = None
+db = <database.PostgresDB object at 0x00000122CABB5590>
+
+    @patch('routes.smart_signs.stripe.checkout.Session.create')
+    @patch('os.environ.get')
+    def test_checkout_flow(self, mock_env, mock_stripe, client, setup_data, db):
+        # Mock Price
+        def get_env(key, default=None):
+            if key == 'SMARTSIGN_PRICE_CENTS': return '2900'
+            return default
+        mock_env.side_effect = get_env
+    
+        mock_stripe.return_value = MagicMock(id='sess_123', url='http://stripe.url')
+    
+        login(client, client.pro_id)
+>       resp = client.post("/orders/smart-sign/checkout", data={'asset_id': client.asset_id})
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_smart_signs_printing.py:74: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+..\..\AppData\Roaming\Python\Python314\site-packages\werkzeug\test.py:1167: in post
+    return self.open(*args, **kw)
+           ^^^^^^^^^^^^^^^^^^^^^^
+..\..\AppData\Roaming\Python\Python314\site-packages\flask\testing.py:235: in open
+    response = super().open(
+..\..\AppData\Roaming\Python\Python314\site-packages\werkzeug\test.py:1116: in open
+    response_parts = self.run_wsgi_app(request.environ, buffered=buffered)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\AppData\Roaming\Python\Python314\site-packages\werkzeug\test.py:988: in run_wsgi_app
+    rv = run_wsgi_app(self.application, environ, buffered=buffered)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\AppData\Roaming\Python\Python314\site-packages\werkzeug\test.py:1264: in run_wsgi_app
+    app_rv = app(environ, start_response)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\AppData\Roaming\Python\Python314\site-packages\flask\app.py:1536: in __call__
+    return self.wsgi_app(environ, start_response)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\AppData\Roaming\Python\Python314\site-packages\flask\app.py:1514: in wsgi_app
+    response = self.handle_exception(e)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\AppData\Roaming\Python\Python314\site-packages\flask\app.py:1511: in wsgi_app
+    response = self.full_dispatch_request()
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\AppData\Roaming\Python\Python314\site-packages\flask\app.py:919: in full_dispatch_request
+    rv = self.handle_user_exception(e)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\AppData\Roaming\Python\Python314\site-packages\flask\app.py:917: in full_dispatch_request
+    rv = self.dispatch_request()
+         ^^^^^^^^^^^^^^^^^^^^^^^
+..\..\AppData\Roaming\Python\Python314\site-packages\flask\app.py:902: in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\AppData\Roaming\Python\Python314\site-packages\flask_login\utils.py:290: in decorated_view
+    return current_app.ensure_sync(func)(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+routes\smart_signs.py:248: in checkout_smartsign
+    row = db.execute("""
+database.py:46: in execute
+    raise e
+database.py:40: in execute
+    cur.execute(sql, params)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <cursor object at 0x00000122CAC45EB0; closed: 0>
+query = "\n        INSERT INTO orders (user_id, property_id, sign_asset_id, status, order_type, created_at)\n        VALUES (%s, %s, %s, 'pending_payment', 'smart_sign', CURRENT_TIMESTAMP)\n        RETURNING id\n    "
+vars = (1, None, '1')
+
+    def execute(self, query, vars=None):
+        self.index = OrderedDict()
+        self._query_executed = True
+>       return super().execute(query, vars)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       psycopg2.errors.NotNullViolation: null value in column "property_id" of relation "orders" violates not-null constraint
+E       DETAIL:  Failing row contains (1, 1, null, null, null, pending_payment, null, null, null, null, null, null, null, null, null, null, null, null, #1F6FEB, 18x24, 2026-01-20 23:45:43.477393, null, smart_sign, null, null, 1).
+
+..\..\AppData\Roaming\Python\Python314\site-packages\psycopg2\extras.py:146: NotNullViolation
+----------------------------- Captured log setup ------------------------------
+INFO     app:logger.py:66 Logger setup complete. JSON formatted logs enabled.
+________________ TestSmartSignPrinting.test_webhook_activation ________________
+
+self = <test_smart_signs_printing.TestSmartSignPrinting object at 0x00000122C6DBCE90>
+mock_fulfill = <MagicMock name='fulfill_order' id='1248941987824'>
+client = <FlaskClient <Flask 'app'>>, setup_data = None
+db = <database.PostgresDB object at 0x00000122CAFAB950>
+
+    @patch('routes.webhook.fulfill_order')
+    def test_webhook_activation(self, mock_fulfill, client, setup_data, db):
+        # 1. Create pending order
+        order_id = db.execute("""
+            INSERT INTO orders (user_id, sign_asset_id, property_id, status, order_type)
+            VALUES (%s, %s, %s, 'pending_payment', 'smart_sign')
+            RETURNING id
+        """, (client.pro_id, client.asset_id, client.property_id)).fetchone()['id']
+        db.commit()
+    
+        # 2. Simulate Webhook
+        payload = {
+            'id': 'evt_123',
+            'type': 'checkout.session.completed',
+            'data': {
+                'object': {
+                    'id': 'sess_fake',
+                    'mode': 'payment',
+                    'payment_intent': 'pi_fake',
+                    'amount_total': 2900,
+                    'currency': 'usd',
+                    'metadata': {
+                        'purpose': 'smart_sign',
+                        'order_id': str(order_id),
+                        'sign_asset_id': str(client.asset_id)
+                    }
+                }
+            }
+        }
+    
+        with patch('stripe.Webhook.construct_event') as mock_construct:
+            mock_construct.return_value = payload
+            resp = client.post("/stripe/webhook", json=payload, headers={'Stripe-Signature': 'fake'})
+            assert resp.status_code == 200
+    
+        # 3. Verify Activation
+        asset = db.execute("SELECT * FROM sign_assets WHERE id=%s", (client.asset_id,)).fetchone()
+>       assert asset['activated_at'] is not None
+E       assert None is not None
+
+tests\test_smart_signs_printing.py:122: AssertionError
+----------------------------- Captured log setup ------------------------------
+INFO     app:logger.py:66 Logger setup complete. JSON formatted logs enabled.
+------------------------------ Captured log call ------------------------------
+INFO     app:webhook.py:51 [Webhook] Received event: checkout.session.completed (ID: evt_123)
+INFO     app:webhook.py:280 [Webhook] Updating Order 1: Status pending_payment->paid, Type smart_sign->smart_sign
+WARNING  app:webhook.py:286 [Webhook] Session sess_fake payment_status=None. Skipping activation/fulfillment.
+INFO     app:webhook.py:124 [Webhook] Event evt_123 processed successfully.
+______________ TestSmartSignPrinting.test_fulfillment_generation ______________
+
+self = <test_smart_signs_printing.TestSmartSignPrinting object at 0x00000122C6C8A210>
+mock_gen = <MagicMock name='generate_smartsign_pdf' id='1248941988832'>
+client = <FlaskClient <Flask 'app'>>, setup_data = None
+db = <database.PostgresDB object at 0x00000122CAFCEC40>
+
+    @patch('services.fulfillment.generate_smartsign_pdf')
+    def test_fulfillment_generation(self, mock_gen, client, setup_data, db):
+        mock_gen.return_value = "pdfs/generated.pdf"
+    
+        # Setup paid order without PDF
+        order_id = db.execute("""
+            INSERT INTO orders (user_id, sign_asset_id, property_id, status, order_type, sign_pdf_path)
+            VALUES (%s, %s, %s, 'paid', 'smart_sign', NULL)
+            RETURNING id
+        """, (client.pro_id, client.asset_id, client.property_id)).fetchone()['id']
+        db.commit()
+    
+        from services.fulfillment import fulfill_order
+    
+        # Run
+        with patch('services.fulfillment_providers.internal.InternalQueueProvider.submit_order') as mock_submit:
+            mock_submit.return_value = "job_123"
+            success = fulfill_order(order_id)
+>           assert success is True
+E           assert False is True
+
+tests\test_smart_signs_printing.py:149: AssertionError
+----------------------------- Captured log setup ------------------------------
+INFO     app:logger.py:66 Logger setup complete. JSON formatted logs enabled.
+=========================== short test summary info ===========================
+FAILED tests/test_smart_signs_printing.py::TestSmartSignPrinting::test_edit_access_control - assert 403 == 200
+ +  where 403 = <WrapperTestResponse streamed [403 FORBIDDEN]>.status_code
+FAILED tests/test_smart_signs_printing.py::TestSmartSignPrinting::test_edit_design - werkzeug.routing.exceptions.BuildError: Could not build url for endpoint 'dashboard.smart_assets'. Did you mean 'dashboard.create_smart_sign' instead?
+FAILED tests/test_smart_signs_printing.py::TestSmartSignPrinting::test_checkout_flow - psycopg2.errors.NotNullViolation: null value in column "property_id" of relation "orders" violates not-null constraint
+DETAIL:  Failing row contains (1, 1, null, null, null, pending_payment, null, null, null, null, null, null, null, null, null, null, null, null, #1F6FEB, 18x24, 2026-01-20 23:45:43.477393, null, smart_sign, null, null, 1).
+FAILED tests/test_smart_signs_printing.py::TestSmartSignPrinting::test_webhook_activation - assert None is not None
+FAILED tests/test_smart_signs_printing.py::TestSmartSignPrinting::test_fulfillment_generation - assert False is True
+============================== 5 failed in 3.03s ==============================

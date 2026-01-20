@@ -4,14 +4,17 @@ from unittest.mock import patch, MagicMock
 @pytest.fixture
 def setup_data(client, db):
     # Setup Users using the shared db connection
-    db.execute("INSERT INTO users (email, password_hash, subscription_status, is_verified) VALUES ('pro@example.com', 'hash', 'active', true) RETURNING id")
-    pro_id = db.fetchone()['id']
-    db.execute("INSERT INTO users (email, password_hash, subscription_status, is_verified) VALUES ('free@example.com', 'hash', 'free', true) RETURNING id")
-    free_id = db.fetchone()['id']
+    pro_id = db.execute("INSERT INTO users (email, password_hash, subscription_status, is_verified) VALUES ('pro@example.com', 'hash', 'active', true) RETURNING id").fetchone()['id']
+    free_id = db.execute("INSERT INTO users (email, password_hash, subscription_status, is_verified) VALUES ('free@example.com', 'hash', 'free', true) RETURNING id").fetchone()['id']
     
+    # Setup Agent for Pro
+    agent_id = db.execute("INSERT INTO agents (user_id, name, brokerage, email) VALUES (%s, 'Pro Agent', 'Test Realty', 'pro@example.com') RETURNING id", (pro_id,)).fetchone()['id']
+
+    # Setup Property for Pro
+    property_id = db.execute("INSERT INTO properties (agent_id, address, beds, baths) VALUES (%s, '123 Test St', '3', '2') RETURNING id", (agent_id,)).fetchone()['id']
+
     # Setup Asset for Pro
-    db.execute("INSERT INTO sign_assets (user_id, code, label) VALUES (%s, 'PRO123', 'My Sign') RETURNING id", (pro_id,))
-    asset_id = db.fetchone()['id']
+    asset_id = db.execute("INSERT INTO sign_assets (user_id, code, label) VALUES (%s, 'PRO123', 'My Sign') RETURNING id", (pro_id,)).fetchone()['id']
     
     db.commit()
     
@@ -19,6 +22,7 @@ def setup_data(client, db):
     client.pro_id = pro_id
     client.free_id = free_id
     client.asset_id = asset_id
+    client.property_id = property_id
 
 def login(client, user_id):
     with client.session_transaction() as sess:
@@ -27,16 +31,16 @@ def login(client, user_id):
 
 class TestSmartSignPrinting:
 
-    def test_edit_access_control(self, client, setup_data):
-        # 1. Free user cannot edit? (Actually, logic says "Pro feature" but checks subscription_status in check_access)
+    def test_edit_access_control_free(self, client, setup_data):
+        # 1. Free user cannot edit
         login(client, client.free_id)
         resp = client.get(f"/dashboard/sign-assets/{client.asset_id}/edit")
-        assert resp.status_code == 403 or resp.status_code == 404 # Forbidden (not owner) or 404
-        
+        assert resp.status_code == 403 or resp.status_code == 404
+
+    def test_edit_access_control_pro(self, client, setup_data):
         # 2. Pro user (Owner) can edit
         login(client, client.pro_id)
         resp = client.get(f"/dashboard/sign-assets/{client.asset_id}/edit")
-        # Subscription check is in check_access
         assert resp.status_code == 200
         assert b"Edit SmartSign Design" in resp.data
 
@@ -67,7 +71,10 @@ class TestSmartSignPrinting:
         mock_stripe.return_value = MagicMock(id='sess_123', url='http://stripe.url')
         
         login(client, client.pro_id)
-        resp = client.post("/orders/smart-sign/checkout", data={'asset_id': client.asset_id})
+        resp = client.post("/orders/smart-sign/checkout", data={
+            'asset_id': client.asset_id,
+            'property_id': client.property_id
+        })
         
         assert resp.status_code == 303
         assert resp.location == 'http://stripe.url'
@@ -81,12 +88,11 @@ class TestSmartSignPrinting:
     @patch('routes.webhook.fulfill_order')
     def test_webhook_activation(self, mock_fulfill, client, setup_data, db):
         # 1. Create pending order
-        db.execute("""
-            INSERT INTO orders (user_id, sign_asset_id, status, order_type) 
-            VALUES (%s, %s, 'pending_payment', 'smart_sign') 
+        order_id = db.execute("""
+            INSERT INTO orders (user_id, sign_asset_id, property_id, status, order_type) 
+            VALUES (%s, %s, %s, 'pending_payment', 'smart_sign') 
             RETURNING id
-        """, (client.pro_id, client.asset_id))
-        order_id = db.fetchone()['id']
+        """, (client.pro_id, client.asset_id, client.property_id)).fetchone()['id']
         db.commit()
         
         # 2. Simulate Webhook
@@ -97,6 +103,7 @@ class TestSmartSignPrinting:
                 'object': {
                     'id': 'sess_fake',
                     'mode': 'payment',
+                    'payment_status': 'paid',
                     'payment_intent': 'pi_fake',
                     'amount_total': 2900,
                     'currency': 'usd',
@@ -130,18 +137,26 @@ class TestSmartSignPrinting:
         mock_gen.return_value = "pdfs/generated.pdf"
         
         # Setup paid order without PDF
-        db.execute("""
-            INSERT INTO orders (user_id, sign_asset_id, status, order_type, sign_pdf_path) 
-            VALUES (%s, %s, 'paid', 'smart_sign', NULL) 
+        order_id = db.execute("""
+            INSERT INTO orders (user_id, sign_asset_id, property_id, status, order_type, sign_pdf_path) 
+            VALUES (%s, %s, %s, 'paid', 'smart_sign', NULL) 
             RETURNING id
-        """, (client.pro_id, client.asset_id))
-        order_id = db.fetchone()['id']
+        """, (client.pro_id, client.asset_id, client.property_id)).fetchone()['id']
+        db.commit()
+        
         db.commit()
         
         from services.fulfillment import fulfill_order
         
         # Run
-        with patch('services.fulfillment_providers.internal.InternalQueueProvider.submit_order') as mock_submit:
+        # Mock get_storage to return True for exists
+        with patch('services.fulfillment_providers.internal.InternalQueueProvider.submit_order') as mock_submit, \
+             patch('utils.storage.get_storage') as mock_storage_cls:
+             
+            mock_storage_instance = MagicMock()
+            mock_storage_instance.exists.return_value = True
+            mock_storage_cls.return_value = mock_storage_instance
+
             mock_submit.return_value = "job_123"
             success = fulfill_order(order_id)
             assert success is True

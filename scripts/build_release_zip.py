@@ -291,10 +291,10 @@ def build_release_zip(project_root: str = None, output_dir: str = None, profile:
                 entrypoint_src = os.path.join(project_root, "scripts", "docker-entrypoint.sh")
                 wait_src = os.path.join(project_root, "scripts", "wait_for_db.py")
                 if not os.path.exists(entrypoint_src):
-                    print("❌ BUILD FAILED: Dockerfile uses scripts/docker-entrypoint.sh but file is missing.")
+                    print("[FAIL] BUILD FAILED: Dockerfile uses scripts/docker-entrypoint.sh but file is missing.")
                     raise SystemExit(1)
                 if not os.path.exists(wait_src):
-                    print("❌ BUILD FAILED: Dockerfile uses docker-entrypoint.sh which calls wait_for_db.py, but scripts/wait_for_db.py is missing.")
+                    print("[FAIL] BUILD FAILED: Dockerfile uses docker-entrypoint.sh which calls wait_for_db.py, but scripts/wait_for_db.py is missing.")
                     raise SystemExit(1)
 
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -351,7 +351,7 @@ def build_release_zip(project_root: str = None, output_dir: str = None, profile:
     # Regression Guard 2: If docker-entrypoint is included, ensure wait_for_db.py is included too
     docker_entry_included = "scripts/docker-entrypoint.sh" in included_files
     if docker_entry_included and "scripts/wait_for_db.py" not in included_files:
-        print("❌ BUILD FAILED: scripts/docker-entrypoint.sh is included but scripts/wait_for_db.py is NOT included.")
+        print("[FAIL] BUILD FAILED: scripts/docker-entrypoint.sh is included but scripts/wait_for_db.py is NOT included.")
         os.remove(zip_path)
         if os.path.exists(latest_path):
             os.remove(latest_path)
@@ -360,7 +360,7 @@ def build_release_zip(project_root: str = None, output_dir: str = None, profile:
     # Fail hard on __pycache__ (this should never be shipped in any profile)
     pycache_included = [f for f in included_files if "__pycache__" in f]
     if pycache_included:
-        print("❌ BUILD FAILED: __pycache__ content included (this indicates broken excludes or bad paths).")
+        print("[FAIL] BUILD FAILED: __pycache__ content included (this indicates broken excludes or bad paths).")
         for f in pycache_included[:20]:
             print(f"  - {f}")
         os.remove(zip_path)
@@ -382,7 +382,7 @@ def build_release_zip(project_root: str = None, output_dir: str = None, profile:
 
     if forbidden_found:
         print("\n" + "=" * 60)
-        print("❌ BUILD FAILED: Forbidden files found in release!")
+        print("[FAIL] BUILD FAILED: Forbidden files found in release!")
         print("=" * 60)
         for file_path, matched_pattern in forbidden_found:
             print(f"  - {file_path} (matched: {matched_pattern})")
@@ -393,7 +393,7 @@ def build_release_zip(project_root: str = None, output_dir: str = None, profile:
             os.remove(latest_path)
         raise SystemExit(1)
 
-    print("  ✓ No forbidden files found")
+    print("  [OK] No forbidden files found")
     print("-" * 60)
     print(f"\nRelease created: {zip_path}")
     print(f"Latest copy:     {latest_path}")

@@ -4,6 +4,7 @@ import time
 from database import get_db
 from config import PRINT_SERVER_URL, PRINT_SERVER_TOKEN
 from utils.timestamps import utc_iso
+from services.pdf_smartsign import generate_smartsign_pdf
 from constants import (
     ORDER_STATUS_PENDING_PAYMENT, 
     ORDER_STATUS_PAID, 
@@ -84,7 +85,7 @@ def fulfill_order(order_id):
             if not asset:
                 raise ValueError(f"Asset {asset_id} not found")
                 
-            from services.pdf_smartsign import generate_smartsign_pdf
+            # from services.pdf_smartsign import generate_smartsign_pdf <-- Moved to top
             # Generate and save
             pdf_key = generate_smartsign_pdf(asset, order_id=order_id)
             

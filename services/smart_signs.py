@@ -4,52 +4,31 @@ from services.subscriptions import is_subscription_active
 
 class SmartSignsService:
     @staticmethod
-    def create_asset(user_id, label=None, active_property_id=None):
+    def create_asset_for_purchase(user_id, property_id, label=None):
         """
-        Create a new Sign Asset.
-        Strict Requirement: User must be PRO.
+        Create a new Sign Asset for a purchase.
+        Status: Inactive (pending payment).
         """
         db = get_db()
         
-        # 1. Check Subscription Status (Strict)
-        user = db.execute("SELECT subscription_status FROM users WHERE id = %s", (user_id,)).fetchone()
-        
-        # Must verify user exists first
-        if not user:
-             raise ValueError("User not found.")
-             
-        # Canonical entitlement check
-        if not is_subscription_active(user['subscription_status']):
-             raise PermissionError("Upgrade required: Only Pro users can create SmartSigns.")
-
-        # 2. Generate Unique Code (Global Uniqueness Check)
+        # 1. Generate Unique Code
         while True:
             code = secrets.token_urlsafe(9)[:12] # 12 chars
-            
-            # Check sign_assets
-            if db.execute("SELECT 1 FROM sign_assets WHERE code = %s", (code,)).fetchone():
-                continue
-                
-            # Check properties (legacy qr_code)
-            if db.execute("SELECT 1 FROM properties WHERE qr_code = %s", (code,)).fetchone():
-                continue
-                
-            # Check qr_variants (Phase 2)
-            if db.execute("SELECT 1 FROM qr_variants WHERE code = %s", (code,)).fetchone():
-                continue
-                
-            # If we get here, it's unique
+            if db.execute("SELECT 1 FROM sign_assets WHERE code = %s", (code,)).fetchone(): continue
+            if db.execute("SELECT 1 FROM properties WHERE qr_code = %s", (code,)).fetchone(): continue
+            if db.execute("SELECT 1 FROM qr_variants WHERE code = %s", (code,)).fetchone(): continue
             break
         
-        # 3. Insert Asset
-        # Returning ID to confirm creation
+        # 2. Insert Asset (Frozen/Inactive by default)
+        # We set activated_at=NULL initially.
+        # We link active_property_id immediately so it's ready upon activation.
         row = db.execute(
             """
-            INSERT INTO sign_assets (user_id, code, label, active_property_id)
-            VALUES (%s, %s, %s, %s)
-            RETURNING id, code, label, is_frozen
+            INSERT INTO sign_assets (user_id, code, label, active_property_id, is_frozen)
+            VALUES (%s, %s, %s, %s, false)
+            RETURNING id, code, label
             """,
-            (user_id, code, label, active_property_id)
+            (user_id, code, label, property_id)
         ).fetchone()
         db.commit()
         return row

@@ -23,27 +23,28 @@ def upgrade():
     existing_tables = inspector.get_table_names()
 
     # 1. Create sign_assets table
-    if 'sign_assets' not in existing_tables:
-        op.create_table('sign_assets',
-            sa.Column('id', sa.BigInteger(), sa.Identity(), primary_key=True),
-            sa.Column('user_id', sa.Integer(), nullable=False),
-            sa.Column('code', sa.Text(), nullable=False),
-            sa.Column('label', sa.Text(), nullable=True),
-            sa.Column('active_property_id', sa.Integer(), nullable=True),
-            sa.Column('activated_at', sa.DateTime(), nullable=True),
-            sa.Column('activation_order_id', sa.Integer(), nullable=True),
-            sa.Column('is_frozen', sa.Boolean(), server_default='false', nullable=False),
-            sa.Column('created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
-            sa.Column('updated_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
-            sa.ForeignKeyConstraint(['user_id'], ['users.id'], ondelete='CASCADE'),
-            sa.ForeignKeyConstraint(['active_property_id'], ['properties.id'], ondelete='SET NULL'),
-            sa.ForeignKeyConstraint(['activation_order_id'], ['orders.id'], ),
-            sa.UniqueConstraint('code')
-        )
-        op.create_index(op.f('ix_sign_assets_code'), 'sign_assets', ['code'], unique=True)
-        op.create_index(op.f('ix_sign_assets_user_id'), 'sign_assets', ['user_id'], unique=False)
-    else:
-        print("Table 'sign_assets' already exists, skipping creation.")
+    # Unconditional create for fresh DB stability
+    # if 'sign_assets' not in existing_tables:
+    op.create_table('sign_assets',
+        sa.Column('id', sa.BigInteger(), sa.Identity(), primary_key=True),
+        sa.Column('user_id', sa.Integer(), nullable=False),
+        sa.Column('code', sa.Text(), nullable=False),
+        sa.Column('label', sa.Text(), nullable=True),
+        sa.Column('active_property_id', sa.Integer(), nullable=True),
+        sa.Column('activated_at', sa.DateTime(), nullable=True),
+        sa.Column('activation_order_id', sa.Integer(), nullable=True),
+        sa.Column('is_frozen', sa.Boolean(), server_default='false', nullable=False),
+        sa.Column('created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
+        sa.Column('updated_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
+        sa.ForeignKeyConstraint(['user_id'], ['users.id'], ondelete='CASCADE'),
+        sa.ForeignKeyConstraint(['active_property_id'], ['properties.id'], ondelete='SET NULL'),
+        sa.ForeignKeyConstraint(['activation_order_id'], ['orders.id'], ),
+        sa.UniqueConstraint('code')
+    )
+    op.create_index(op.f('ix_sign_assets_code'), 'sign_assets', ['code'], unique=True)
+    op.create_index(op.f('ix_sign_assets_user_id'), 'sign_assets', ['user_id'], unique=False)
+    # else:
+    #    print("Table 'sign_assets' already exists, skipping creation.")
 
     # 2. Create sign_asset_history table
     if 'sign_asset_history' not in existing_tables:

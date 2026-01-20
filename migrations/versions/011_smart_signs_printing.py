@@ -18,45 +18,28 @@ depends_on = None
 
 
 def upgrade():
-    # Helper to check if column exists
-    bind = op.get_bind()
-    inspector = sa.inspect(bind)
-    
     # --- sign_assets additions ---
-    existing_columns = [c['name'] for c in inspector.get_columns('sign_assets')]
-    
-    if 'brand_name' not in existing_columns:
-        op.add_column('sign_assets', sa.Column('brand_name', sa.Text(), nullable=True))
-    if 'phone' not in existing_columns:
-        op.add_column('sign_assets', sa.Column('phone', sa.Text(), nullable=True))
-    if 'email' not in existing_columns:
-        op.add_column('sign_assets', sa.Column('email', sa.Text(), nullable=True))
+    # Unconditional additions
+    op.add_column('sign_assets', sa.Column('brand_name', sa.Text(), nullable=True))
+    op.add_column('sign_assets', sa.Column('phone', sa.Text(), nullable=True))
+    op.add_column('sign_assets', sa.Column('email', sa.Text(), nullable=True))
         
     # presets
-    if 'cta_key' not in existing_columns:
-        op.add_column('sign_assets', sa.Column('cta_key', sa.Text(), server_default='scan_for_details', nullable=False))
-    if 'background_style' not in existing_columns:
-        op.add_column('sign_assets', sa.Column('background_style', sa.Text(), server_default='solid_blue', nullable=False))
+    op.add_column('sign_assets', sa.Column('cta_key', sa.Text(), server_default='scan_for_details', nullable=False))
+    op.add_column('sign_assets', sa.Column('background_style', sa.Text(), server_default='solid_blue', nullable=False))
     
     # images
-    if 'logo_key' not in existing_columns:
-        op.add_column('sign_assets', sa.Column('logo_key', sa.Text(), nullable=True))
-    if 'headshot_key' not in existing_columns:
-        op.add_column('sign_assets', sa.Column('headshot_key', sa.Text(), nullable=True))
-    if 'include_logo' not in existing_columns:
-        op.add_column('sign_assets', sa.Column('include_logo', sa.Boolean(), server_default='true', nullable=False))
-    if 'include_headshot' not in existing_columns:
-        op.add_column('sign_assets', sa.Column('include_headshot', sa.Boolean(), server_default='false', nullable=False))
+    op.add_column('sign_assets', sa.Column('logo_key', sa.Text(), nullable=True))
+    op.add_column('sign_assets', sa.Column('headshot_key', sa.Text(), nullable=True))
+    op.add_column('sign_assets', sa.Column('include_logo', sa.Boolean(), server_default='true', nullable=False))
+    op.add_column('sign_assets', sa.Column('include_headshot', sa.Boolean(), server_default='false', nullable=False))
 
     # --- orders additions ---
-    orders_columns = [c['name'] for c in inspector.get_columns('orders')]
-    if 'sign_asset_id' not in orders_columns:
-        op.add_column('orders', sa.Column('sign_asset_id', sa.BigInteger(), nullable=True))
-        
-        # Safe constraint creation
-        # We can try/except the FK creation or just assume if column didn't exist, FK doesn't either
-        op.create_foreign_key('fk_orders_sign_asset_id', 'orders', 'sign_assets', ['sign_asset_id'], ['id'], ondelete='SET NULL')
-        op.create_index(op.f('ix_orders_sign_asset_id'), 'orders', ['sign_asset_id'], unique=False)
+    op.add_column('orders', sa.Column('sign_asset_id', sa.BigInteger(), nullable=True))
+    
+    # Safe constraint creation
+    op.create_foreign_key('fk_orders_sign_asset_id', 'orders', 'sign_assets', ['sign_asset_id'], ['id'], ondelete='SET NULL')
+    op.create_index(op.f('ix_orders_sign_asset_id'), 'orders', ['sign_asset_id'], unique=False)
 
 
 def downgrade():

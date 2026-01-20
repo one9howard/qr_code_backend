@@ -1,5 +1,5 @@
 import logging
-# import sqlite3  <-- Removed
+
 from database import get_db
 import utils.storage as storage_module  # Module reference for testability
 from utils.filenames import make_sign_asset_basename

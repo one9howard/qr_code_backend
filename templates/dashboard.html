@@ -310,7 +310,8 @@
                         </p>
                     </div>
                     {% if is_pro %}
-                    <a href="#properties-section" class="btn-create" style="font-size: 0.9rem;">Order SmartSign</a>
+                    <a href="{{ url_for('smart_signs.order_start') }}" class="btn-create"
+                        style="font-size: 0.9rem;">Order SmartSign</a>
                     {% else %}
                     <a href="{{ url_for('billing.index') }}" class="btn-create"
                         style="background: var(--warning); color: #fff;">Upgrade to Order</a>

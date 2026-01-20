@@ -17,57 +17,33 @@ depends_on = None
 
 
 def upgrade():
-    bind = op.get_bind()
-    inspector = sa.inspect(bind)
+    # 1. Add missing columns (excluding those in 002: shipping_json, attempts, next_retry_at)
+    op.add_column('print_jobs', sa.Column('claimed_by', sa.Text(), nullable=True))
+    op.add_column('print_jobs', sa.Column('claimed_at', sa.DateTime(), nullable=True))
+    op.add_column('print_jobs', sa.Column('downloaded_at', sa.DateTime(), nullable=True))
+    op.add_column('print_jobs', sa.Column('printed_at', sa.DateTime(), nullable=True))
+    op.add_column('print_jobs', sa.Column('updated_at', sa.DateTime(), server_default=sa.text('CURRENT_TIMESTAMP'), nullable=False))
+    op.add_column('print_jobs', sa.Column('last_error', sa.Text(), nullable=True))
     
-    # 0. Safety Check: Verify table exists (it should from 001/008)
-    if 'print_jobs' not in inspector.get_table_names():
-        # Fallback: Create table if it doesn't exist (e.g. if 001 didn't run or was modified??)
-        # However, for stability, we should assume it exists or log warning. 
-        # But to be safe, we can skip or create.
-        # Given "Clean DB Support", 001 should have run. 
-        # If it's missing, let's create it with the BASE schema, then add columns?
-        # No, reusing 001 definition duplicates code. 
-        # Let's assume it exists, but wrapping in check avoids "NoSuchTableError" to cleanly error out or skip?
-        # If we skip, we miss columns. 
-        # If we error, we know why.
-        # But "idempotent" means if it crashed halfway, we can re-run.
-        # If table is missing, the previous migrations failed? 
-        return
-
-    # 1. Add missing columns safely
-    existing_columns = [c['name'] for c in inspector.get_columns('print_jobs')]
-    
-    if 'claimed_by' not in existing_columns:
-        op.add_column('print_jobs', sa.Column('claimed_by', sa.Text(), nullable=True))
-        
-    if 'claimed_at' not in existing_columns:
-        op.add_column('print_jobs', sa.Column('claimed_at', sa.DateTime(), nullable=True))
-        
-    if 'downloaded_at' not in existing_columns:
-        op.add_column('print_jobs', sa.Column('downloaded_at', sa.DateTime(), nullable=True))
-        
-    if 'printed_at' not in existing_columns:
-        op.add_column('print_jobs', sa.Column('printed_at', sa.DateTime(), nullable=True))
-        
-    if 'updated_at' not in existing_columns:
-        op.add_column('print_jobs', sa.Column('updated_at', sa.DateTime(), server_default=sa.text('CURRENT_TIMESTAMP'), nullable=False))
-        
-    if 'last_error' not in existing_columns:
-        op.add_column('print_jobs', sa.Column('last_error', sa.Text(), nullable=True))
-        
-    if 'attempts' not in existing_columns:
-        # Use string '0' for server_default safe for SQL
-        op.add_column('print_jobs', sa.Column('attempts', sa.Integer(), server_default='0', nullable=False))
+    # 002 added attempts as nullable=True. 012 wants nullable=False.
+    # We alter it.
+    op.alter_column('print_jobs', 'attempts',
+                    existing_type=sa.Integer(),
+                    nullable=False,
+                    server_default='0')
 
     # 2. Add Index on status if likely needed for queuing
-    indexes = [i['name'] for i in inspector.get_indexes('print_jobs')]
-    if 'ix_print_jobs_status' not in indexes:
-        op.create_index(op.f('ix_print_jobs_status'), 'print_jobs', ['status'], unique=False)
+    op.create_index(op.f('ix_print_jobs_status'), 'print_jobs', ['status'], unique=False)
         
     # 4. Check status column existence
-    if 'status' not in existing_columns:
-         op.add_column('print_jobs', sa.Column('status', sa.Text(), server_default='queued', nullable=False))
+    # Note: 001 already has 'status' (nullable=False). 
+    # If 001 ran, print_jobs has status.
+    # If we add it again -> Error.
+    # But 001 defines it. So we REMOVE this add_column if 001 has it.
+    # The previous code checked 'if status not in cols'. 
+    # Since 001 creates print_jobs with status, this block was likely dead code.
+    # I will comment it out to be safe.
+    # op.add_column('print_jobs', sa.Column('status', sa.Text(), server_default='queued', nullable=False))
 
 
 def downgrade():

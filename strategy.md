@@ -168,7 +168,7 @@ The physical sign pipeline must remain viable without POD API:
 **Why:** If payments and fulfillment regress, you don’t have a business—just refunds.
 
 ### Phase 1 — Reusable Sign Assets MVP (SmartSigns)
-- Add tables + migrations + SQLite parity
+- Add tables + migrations
 - Implement `/r/<code>` resolver for sign assets (internal-only)
 - Dashboard UI: create asset (Pro-only), list assets, assign/reassign
 - Log scans to `sign_asset_id` (minimal analytics: count)

@@ -318,10 +318,9 @@ def edit_property(property_id):
 @login_required
 def create_smart_sign():
     """Restricted: Manual creation disabled (Option B)."""
-    # Fail with 403 as per requirement "Any remaining route must return 403"
+    # Option B requirement: Abort 404 for this route
     from flask import abort
-    abort(403)
-    # return redirect(url_for('dashboard.index', _anchor='smart-signs-section'))
+    abort(404)
 
 
 @dashboard_bp.route("/smart-signs/<int:asset_id>/assign", methods=["POST"])

@@ -31,6 +31,9 @@ DATABASE_URL = os.getenv("DATABASE_URL")
 if not DATABASE_URL:
     raise RuntimeError("DATABASE_URL environment variable is required.")
 
+if not DATABASE_URL.startswith("postgres"):
+    raise ValueError(f"CRITICAL: DATABASE_URL must be a PostgreSQL URL. Got: {DATABASE_URL}. Non-Postgres DBs are strictly forbidden.")
+
 if DATABASE_URL.startswith("postgres://"):
     DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
     os.environ["DATABASE_URL"] = DATABASE_URL

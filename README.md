@@ -222,7 +222,7 @@ The application uses the following order statuses:
 
 ### Local Testing
 
-To run tests locally, you must run a Postgres container, as SQLite is not supported for tests.
+To run tests locally, you must run a Postgres container.
 
 1. Start Postgres:
    ```bash
@@ -409,5 +409,6 @@ PDF generation now includes automatic preflight checks for POD compliance (Bleed
 python scripts/print_preflight_demo.py
 ```
 This generates test PDFs in `instance/preflight_demo_output/`.
-#   q r _ c o d e _ b a c k e n d  
+#   q r _ c o d e _ b a c k e n d 
+ 
  

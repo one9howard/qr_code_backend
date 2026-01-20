@@ -72,7 +72,7 @@ def test_webhook_idempotency_activation(client, app, db, auth, mock_stripe_sessi
     # MUST provide required fields (beds, baths)
     prop_id = db.execute("INSERT INTO properties (agent_id, address, beds, baths) VALUES ((SELECT id FROM agents WHERE user_id=%s), '123 Test St', '3', '2') RETURNING id", (user.id,)).fetchone()['id']
     
-    asset_row = SmartSignsService.create_asset(user.id, label="Test Asset")
+    asset_row = SmartSignsService.create_asset_for_purchase(user.id, property_id=prop_id, label="Test Asset")
     asset = dict(asset_row)
     asset_id = asset['id']
     
@@ -143,12 +143,13 @@ def test_assignment_rules(client, app, db, auth):
     user = auth.login_pro() # Active Pro
     # db fixture ensures app context
     
-    # 1. Create Unactivated Asset
-    asset_row = SmartSignsService.create_asset(user.id, label="Rule Test")
-    asset_id = asset_row['id']
-    
-    # Create a property to assign to
+    # 1. Create Property FIRST (Required for creation)
     prop_id = db.execute("INSERT INTO properties (agent_id, address, beds, baths) VALUES ((SELECT id FROM agents WHERE user_id=%s), '123 Test St', '1', '1') RETURNING id", (user.id,)).fetchone()['id']
+    db.commit()
+
+    # 2. Create Unactivated Asset
+    asset_row = SmartSignsService.create_asset_for_purchase(user.id, property_id=prop_id, label="Rule Test")
+    asset_id = asset_row['id']
     db.commit()
     
     # 2. Try to Assign (Should Fail - Not Activated)
@@ -177,11 +178,13 @@ def test_smart_sign_checkout_flow(client, app, db, auth, monkeypatch):
     client.post('/login', data={'email': user.email, 'password': 'password'}, follow_redirects=True)
     
     # 1. Create Asset (Unactivated)
-    asset_row = SmartSignsService.create_asset(user.id, label="Checkout Test")
-    asset_id = asset_row['id']
-    
-    # 2. Create Property
+    # 1. Create Property
     prop_id = db.execute("INSERT INTO properties (agent_id, address, beds, baths) VALUES ((SELECT id FROM agents WHERE user_id=%s), 'Checkout St', '3', '2') RETURNING id", (user.id,)).fetchone()['id']
+    db.commit()
+
+    # 2. Create Asset (Unactivated)
+    asset_row = SmartSignsService.create_asset_for_purchase(user.id, property_id=prop_id, label="Checkout Test")
+    asset_id = asset_row['id']
     db.commit()
     
     # 3. Post to Checkout

@@ -43,7 +43,7 @@ def retry_fulfillment(order_id):
         return redirect(url_for('admin.order_list'))
     
     current_status = order['status']
-    # Use dict() for safety against sqlite3.Row not having .get()
+    # Ensure dict access for safety
     order_type = dict(order).get('order_type', 'sign') # Default to sign for legacy compatibility
     
     # LAYERED SAFETY: Only allow retries for sign orders

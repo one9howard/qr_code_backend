@@ -10,8 +10,8 @@ If you discover a security vulnerability, please report it by emailing security@
 
 ### Files that must remain in `.gitignore`:
 - `.env` - Contains all secrets (Stripe keys, database credentials, etc.)
-- `*.db` - SQLite databases (may contain user data)
-- `*.db-journal`, `*.db-wal`, `*.db-shm` - SQLite temp files
+
+- `*.db-journal`, `*.db-wal`, `*.db-shm` - Database temp files
 - `private/` - Private PDFs and preview images
 - `print_inbox/` - Print job PDFs
 

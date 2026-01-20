@@ -78,11 +78,12 @@ def reset_db():
         
         for table in tables:
             try:
-                # Use TRUNCATE CASCADE if supported (Postgres) or DELETE (SQLite)
+                # Use TRUNCATE CASCADE since we are on Postgres
                 if "postgresql" in db_url:
                     print(f"  Truncating {table}...")
                     db.execute(f"TRUNCATE TABLE {table} CASCADE")
                 else:
+                    # Should not happen per new config rules, but fallback to delete
                     print(f"  Deleting from {table}...")
                     db.execute(f"DELETE FROM {table}")
             except Exception as e:

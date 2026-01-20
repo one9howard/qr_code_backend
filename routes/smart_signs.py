@@ -226,7 +226,11 @@ def checkout_smartsign():
                  raise ValueError("Invalid property selected.")
 
              from services.smart_signs import SmartSignsService
-             asset_row = SmartSignsService.create_asset(current_user.id, label=None, active_property_id=property_id)
+             asset_row = SmartSignsService.create_asset_for_purchase(
+                 current_user.id, 
+                 property_id=property_id, 
+                 label=None
+             )
              # asset_row is a Row object, need dict-like access or just ID
              asset = dict(asset_row)
              asset_id = asset['id']
