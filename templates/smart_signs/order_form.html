@@ -1,0 +1,174 @@
+{% extends "base.html" %}
+
+{% block title %}Order SmartSign{% endblock %}
+
+{% block content %}
+<div class="container max-w-lg fade-in">
+    <div class="glass-panel p-lg">
+        <h1 class="text-gradient mb-md">Order Your SmartSign</h1>
+        <p class="text-muted mb-lg">Complete the details below to customize your sign.</p>
+
+        <form method="POST" action="{{ url_for('smart_signs.checkout_smartsign') }}" enctype="multipart/form-data"
+            class="form-stack">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            {% if asset_id %}
+            <input type="hidden" name="asset_id" value="{{ asset_id }}">
+            {% endif %}
+
+            <!-- Section 1: Sign Config -->
+            <div class="form-section">
+                <h3 class="mb-sm">1. Sign Configuration</h3>
+
+                <div class="form-group">
+                    <label class="form-label">Size</label>
+                    <div class="radio-group">
+                        <label class="radio-card">
+                            <input type="radio" name="size" value="18x24" checked>
+                            <span class="radio-content">
+                                <span class="radio-title">18" x 24"</span>
+                                <span class="radio-desc">Standard Listing</span>
+                            </span>
+                        </label>
+                        <!-- Only one size strictly supported for now per phase 6 rules? 
+                             Actually the test checked 18x24 for smart_sign. 
+                             Let's offer just that or check strict rules. 
+                             Test said: ok for 18x24, not 12x12. -->
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Layout Style</label>
+                    <select name="layout_id" class="form-control" required>
+                        <option value="smart_v1_photo_banner">Photo Banner (Agent Photo + Brand Color)</option>
+                        <option value="smart_v1_minimal">Minimal (Clean, White Background)</option>
+                        <option value="smart_v1_agent_brand">Agent Brand (Logo Focused)</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Banner Color (For Photo Banner Layout)</label>
+                    <div class="color-picker-grid">
+                        {% for color in colors %}
+                        <label class="color-option">
+                            <input type="radio" name="banner_color_id" value="{{ color.id }}" {% if loop.first
+                                %}checked{% endif %}>
+                            <span class="color-swatch" style="background-color: {{ color.hex }};"
+                                title="{{ color.name }}"></span>
+                        </label>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <hr class="divider">
+
+            <!-- Section 2: Agent Info -->
+            <div class="form-section">
+                <h3 class="mb-sm">2. Agent Details</h3>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Agent Name</label>
+                        <input type="text" name="agent_name" class="form-control" value="{{ current_user.full_name }}"
+                            required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Brokerage</label>
+                        <input type="text" name="brokerage_name" class="form-control" placeholder="e.g. Realty One"
+                            required>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Phone</label>
+                        <input type="tel" name="agent_phone" class="form-control" placeholder="(555) 123-4567" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Email</label>
+                        <input type="email" name="agent_email" class="form-control" value="{{ current_user.email }}"
+                            required>
+                    </div>
+                </div>
+            </div>
+
+            <hr class="divider">
+
+            <!-- Section 3: Uploads -->
+            <div class="form-section">
+                <h3 class="mb-sm">3. Photos & Logos</h3>
+
+                <div class="form-group">
+                    <label class="form-label">Agent Headshot</label>
+                    <input type="file" name="headshot_file" class="form-control" accept="image/*">
+                    <small class="text-muted">High resolution recommended.</small>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Brokerage/Agent Logo</label>
+                    <input type="file" name="logo_file" class="form-control" accept="image/*">
+                    <small class="text-muted">Transparent PNG works best.</small>
+                </div>
+            </div>
+
+            <div class="form-actions mt-lg">
+                <button type="submit" class="btn btn-primary btn-block btn-lg">
+                    Proceed to Checkout
+                </button>
+            </div>
+
+            <p class="text-center mt-sm text-sm text-muted">
+                <i class="icon-lock"></i> Secure Payment via Stripe
+            </p>
+        </form>
+    </div>
+</div>
+
+<style>
+    .max-w-lg {
+        max-width: 800px;
+        margin: 0 auto;
+    }
+
+    .form-stack {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+
+    .form-section {
+        padding: 0.5rem 0;
+    }
+
+    .color-picker-grid {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+
+    .color-option input {
+        display: none;
+    }
+
+    .color-swatch {
+        display: block;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        cursor: pointer;
+        border: 2px solid transparent;
+        transition: transform 0.2s;
+    }
+
+    .color-option input:checked+.color-swatch {
+        border-color: var(--accent-color);
+        transform: scale(1.1);
+        box-shadow: 0 0 0 2px white, 0 0 0 4px var(--accent-color);
+    }
+
+    .divider {
+        border-color: rgba(255, 255, 255, 0.1);
+        margin: 1.5rem 0;
+    }
+</style>
+{% endblock %}
