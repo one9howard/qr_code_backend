@@ -220,6 +220,20 @@ def order_sign():
 
         return jsonify({"success": True, "checkoutUrl": checkout_session.url})
         
+    except stripe.error.StripeError as e:
+        err_msg = str(e)
+        current_app.logger.error(f"[Orders] Stripe error: {err_msg}")
+        
+        # Check for price errors specifically to help user diagnose
+        if "No such price" in err_msg or "No such plan" in err_msg:
+             return jsonify({
+                 "success": False, 
+                 "error": "configuration_error",
+                 "message": f"Pricing configuration error: {err_msg}. Please check Stripe Price IDs in Railway variables."
+             }), 400
+             
+        return jsonify({"success": False, "error": err_msg}), 400
+        
     except Exception as e:
         current_app.logger.error(f"[Orders] Checkout error: {e}")
         traceback.print_exc()
