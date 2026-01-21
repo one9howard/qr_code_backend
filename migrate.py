@@ -44,14 +44,24 @@ def migrate():
         sys.exit(1)
 
     if not database_url.startswith("postgres"):
-        print(f"[Manage] ERROR: Only Postgres is supported (got {database_url})")
+        try:
+            from urllib.parse import urlparse
+            p = urlparse(database_url)
+            safe_msg = f"{p.scheme}://{p.hostname}"
+        except Exception:
+            safe_msg = "invalid_url"
+        print(f"[Manage] ERROR: Only Postgres is supported (got {safe_msg})")
         sys.exit(1)
 
     try:
-        from urllib.parse import urlparse
-        if urlparse(database_url).hostname == 'db':
-            print("[Manage] ERROR: DATABASE_URL host is 'db' which only resolves inside docker-compose. Either run migrations inside docker-compose or change host to localhost.")
-            sys.exit(1)
+        parsed = urlparse(database_url)
+        if parsed.hostname == 'db':
+            try:
+                import socket
+                socket.gethostbyname("db")
+            except Exception:
+                print("[Manage] ERROR: DATABASE_URL host is 'db' which only resolves inside docker-compose. Either run migrations inside docker-compose or change host to localhost.")
+                sys.exit(1)
     except ImportError:
         pass  # Basic robust fallback if imports fail, though stdlib usually safe
 

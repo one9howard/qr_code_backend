@@ -83,9 +83,18 @@ def _migrate_db_once():
     db_url = os.environ.get("DATABASE_URL", "")
     
     if not db_url or not db_url.startswith("postgres"):
+        safe_msg = "EMPTY"
+        if db_url:
+            try:
+                from urllib.parse import urlparse
+                p = urlparse(db_url)
+                safe_msg = f"{p.scheme}://{p.hostname}"
+            except Exception:
+                safe_msg = "INVALID_URL"
+
         raise RuntimeError(
             "CRITICAL: Tests must run against Postgres (DATABASE_URL=postgresql://...). Non-Postgres DBs are strictly forbidden.\n"
-            f"Current URL: {db_url}"
+            f"Current URL: {safe_msg}"
         )
 
     # Run migrations using the project's migrate.py so it's consistent with prod.

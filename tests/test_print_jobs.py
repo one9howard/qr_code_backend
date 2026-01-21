@@ -24,7 +24,8 @@ def test_claim_jobs_is_idempotent(client, db):
     )
     db.commit()
 
-    headers = {"Authorization": "Bearer test-print-token"}
+    from config import PRINT_JOBS_TOKEN
+    headers = {"Authorization": f"Bearer {PRINT_JOBS_TOKEN}"}
 
     r1 = client.post("/api/print-jobs/claim?limit=1", headers=headers)
     assert r1.status_code == 200
@@ -61,8 +62,9 @@ def test_download_pdf_requires_auth_and_returns_bytes(client, db):
     r0 = client.get("/api/print-jobs/job_pdf/pdf", headers={"Authorization": "Bearer wrong"})
     assert r0.status_code == 401
 
+    from config import PRINT_JOBS_TOKEN
     # Right token
-    r1 = client.get("/api/print-jobs/job_pdf/pdf", headers={"Authorization": "Bearer test-print-token"})
+    r1 = client.get("/api/print-jobs/job_pdf/pdf", headers={"Authorization": f"Bearer {PRINT_JOBS_TOKEN}"})
     assert r1.status_code == 200
     assert r1.data.startswith(b"%PDF")
     assert r1.mimetype == "application/pdf"

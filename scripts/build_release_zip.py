@@ -76,7 +76,10 @@ def get_profile_config(profile: str):
         "static/generated",
 
         # Release output (avoid nesting)
+        # Release output (avoid nesting)
         "releases",
+        "release",
+        "release/*",
 
         # IDE/editor files
         ".vscode",
