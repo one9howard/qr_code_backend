@@ -108,7 +108,7 @@ Configure these in Railway: **Service → Variables**
 #### Filesystem
 | Variable | Value | Notes |
 |----------|-------|-------|
-| `INSTANCE_DIR` | `/app/instance` | **Recommended**. Persists local DB if using SQLite. |
+| `INSTANCE_DIR` | `/app/instance` | **Recommended**. Persists instance data (uploads, cached artifacts). |
 
 #### Email (SMTP) - Optional for Staging
 | Variable | Value | Notes |

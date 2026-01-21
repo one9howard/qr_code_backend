@@ -11,10 +11,11 @@ if [ "$RUN_MIGRATIONS_ON_STARTUP" = "true" ]; then
     python3 /app/scripts/wait_for_db.py
     echo "[Entrypoint] DB ready. Running Alembic..."
   else
-    echo "[Entrypoint] No DATABASE_URL found. Running SQLite init..."
+    echo "[Entrypoint] ERROR: DATABASE_URL is not set. Postgres is required."
+    exit 1
   fi
 
-  # Both paths run the same command; the log message above is what differs.
+  python3 migrate.py
   python3 migrate.py
 else
   echo "[Entrypoint] Skipping migrations (RUN_MIGRATIONS_ON_STARTUP is not true)."

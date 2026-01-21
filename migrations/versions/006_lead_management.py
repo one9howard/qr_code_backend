@@ -67,7 +67,7 @@ def upgrade():
             sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
             sa.Column('lead_id', sa.Integer(), nullable=False),
             sa.Column('event_type', sa.String(length=100), nullable=False),
-            sa.Column('payload', sa.Text(), nullable=True), # Store as text for SQLite compat
+            sa.Column('payload', sa.Text(), nullable=True), # Store as text for broad DB compatibility
             sa.Column('actor_user_id', sa.Integer(), nullable=True),
             sa.Column('created_at', sa.DateTime(), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=True),
             sa.ForeignKeyConstraint(['lead_id'], ['leads.id'], ),
@@ -134,7 +134,7 @@ def downgrade():
     with op.batch_alter_table('qr_scans', schema=None) as batch_op:
         batch_op.drop_column('campaign_id')
         batch_op.drop_column('qr_variant_id')
-        # batch_op.drop_constraint('fk_qr_scans_qr_variant_id', type_='foreignkey') # SQLite batch handles logic
+        # batch_op.drop_constraint('fk_qr_scans_qr_variant_id', type_='foreignkey') # batch mode handles logic
 
     op.drop_table('qr_variants')
     op.drop_table('campaigns')

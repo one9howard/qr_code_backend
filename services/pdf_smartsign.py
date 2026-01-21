@@ -29,6 +29,24 @@ STYLE_MAP = {
     'light':       {'bg': '#ffffff', 'text': '#1a1a1a', 'accent': '#0077ff'}, # White background, dark text, blue accent
 }
 
+def _read(asset, key, default=None):
+    """Read a value from a dict-like row OR an object with attributes.
+
+    psycopg2 DictRow is dict-like (item access) but not attribute access.
+    """
+    if asset is None:
+        return default
+    # Mapping / row
+    try:
+        return asset[key]
+    except Exception:
+        pass
+    # dict
+    if isinstance(asset, dict):
+        return asset.get(key, default)
+    # attribute
+    return getattr(asset, key, default)
+
 def hex_to_rgb(hex_color: str) -> tuple:
     """Convert hex color to RGB tuple."""
     hex_color = hex_color.lstrip('#')
@@ -63,10 +81,10 @@ def generate_smartsign_pdf(asset, order_id=None):
     size_key = "18x24" # Standard MVP size
     layout = SmartSignLayout(size_key)
     
-    style_key = getattr(asset, 'background_style', 'solid_blue')
+    style_key = _read(asset, 'background_style', 'solid_blue')
     style = STYLE_MAP.get(style_key, STYLE_MAP['solid_blue'])
     
-    cta_key = getattr(asset, 'cta_key', 'scan_for_details')
+    cta_key = _read(asset, 'cta_key', 'scan_for_details')
     cta_text = CTA_MAP.get(cta_key, CTA_MAP['scan_for_details'])
     
     # 2. Setup Canvas
@@ -90,16 +108,20 @@ def generate_smartsign_pdf(asset, order_id=None):
     accent_rgb = hex_to_rgb(style['accent'])
     
     # 5. Header (Brand Name) - Top 15%
-    if asset.brand_name:
+    brand_name = _read(asset, 'brand_name')
+    if brand_name:
         c.setFont("Helvetica-Bold", layout.header_font)
         c.setFillColorRGB(*text_rgb)
-        c.drawCentredString(layout.width/2, layout.height - layout.margin - layout.header_font, asset.brand_name.upper())
+        c.drawCentredString(layout.width/2, layout.height - layout.margin - layout.header_font, str(brand_name).upper())
 
     # 6. Contact Info - Below Brand
     contact_y = layout.height - layout.margin - (layout.header_font * 2.2)
     contact_parts = []
-    if asset.phone: contact_parts.append(asset.phone)
-    if asset.email: contact_parts.append(asset.email)
+    phone = _read(asset, 'phone')
+    email = _read(asset, 'email')
+    if phone: contact_parts.append(phone)
+    if email: contact_parts.append(email)
+    # email handled above
     
     if contact_parts:
         c.setFont("Helvetica", layout.sub_font)
@@ -118,7 +140,8 @@ def generate_smartsign_pdf(asset, order_id=None):
     qr_x = (layout.width - qr_size) / 2
     qr_y = qr_bottom + (qr_max_h - qr_size) / 2
     
-    qr_url = f"{BASE_URL.rstrip('/')}/r/{asset.code}"
+    asset_code = _read(asset, 'code')
+    qr_url = f"{BASE_URL.rstrip('/')}/r/{asset_code}"
     
     # Draw Background pill for QR if style is solid color to ensure contrast?
     # Simple rule: If dark background, QR needs white background or be white.
@@ -160,14 +183,18 @@ def generate_smartsign_pdf(asset, order_id=None):
                 print(f"[SmartSign] Image load error {key}: {e}")
 
     # Logo - Top Left if included
-    if asset.include_logo and asset.logo_key:
+    include_logo = bool(_read(asset, 'include_logo'))
+    logo_key = _read(asset, 'logo_key')
+    if include_logo and logo_key:
         size = layout.width * 0.15
-        draw_corner_image(asset.logo_key, layout.margin, layout.height - layout.margin - size, size)
+        draw_corner_image(logo_key, layout.margin, layout.height - layout.margin - size, size)
 
     # Headshot - Top Right if included
-    if asset.include_headshot and asset.headshot_key:
+    include_headshot = bool(_read(asset, 'include_headshot'))
+    headshot_key = _read(asset, 'headshot_key')
+    if include_headshot and headshot_key:
         size = layout.width * 0.15
-        draw_corner_image(asset.headshot_key, layout.width - layout.margin - size, layout.height - layout.margin - size, size)
+        draw_corner_image(headshot_key, layout.width - layout.margin - size, layout.height - layout.margin - size, size)
 
     # Finish
     c.showPage()

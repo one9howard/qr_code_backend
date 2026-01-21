@@ -79,7 +79,7 @@ if ($LASTEXITCODE -ge 8) {
 
 # Remove forbidden files post-copy (keep .env.example)
 $forbiddenPatterns = @(
-    ".env", ".env.*", "*.db", "*.sqlite", "*.sqlite3",
+    ".env", ".env.*", "*.db",
     "*.zip"  # prevent nested zips in repo artifact
 )
 

@@ -329,12 +329,30 @@ def handle_payment_checkout(db, session):
             current_app.logger.warning(f"[Webhook] Could not update attempt {attempt_token}: {e}")
 
     # 3. Universal Entitlement Unlock
-    # "On successful paid checkout for both sign orders and listing unlocks, set properties.expires_at = NULL"
-    property_id = session.get('metadata', {}).get('property_id')
+    # On successful paid checkout for both sign orders and listing unlocks, set properties.expires_at = NULL
+    raw_property_id = session.get('metadata', {}).get('property_id')
+    property_id = None
+
+    # Prefer metadata (Stripe) when valid
+    if isinstance(raw_property_id, int) and raw_property_id > 0:
+        property_id = raw_property_id
+    elif isinstance(raw_property_id, str):
+        s = raw_property_id.strip()
+        if s.isdigit():
+            property_id = int(s)
+
+    # Fallback: trust the persisted order row
+    if not property_id:
+        try:
+            if row and row['property_id'] is not None:
+                property_id = int(row['property_id'])
+        except Exception:
+            property_id = None
+
     if property_id:
-         db.execute("UPDATE properties SET expires_at = NULL WHERE id = %s", (property_id,))
-         db.commit()
-         current_app.logger.info(f"[Webhook] Properties for Order {order_id} unlocked (expires_at=NULL).")
+        db.execute("UPDATE properties SET expires_at = NULL WHERE id = %s", (property_id,))
+        db.commit()
+        current_app.logger.info(f"[Webhook] Property {property_id} unlocked for Order {order_id} (expires_at=NULL).")
 
     # 4. SmartSign Activation (Idempotent)
     if final_type == 'smart_sign':

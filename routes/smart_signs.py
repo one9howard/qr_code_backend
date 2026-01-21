@@ -187,83 +187,98 @@ def order_start():
 @smart_signs_bp.route("/orders/smart-sign/checkout", methods=["POST"])
 @login_required
 def checkout_smartsign():
-    asset_id = request.form.get('asset_id')
-    property_id = request.form.get("property_id")
-    
+    """Start a Stripe checkout for a SmartSign.
+
+    Option B enforcement:
+      - Every SmartSign order MUST have a property_id (orders.property_id is NOT NULL)
+      - Reorders always bind to the asset's current active_property_id
+      - New orders create a new SignAsset (unactivated) bound to a chosen property
+    """
+    asset_id = (request.form.get('asset_id') or '').strip() or None
+    property_id_raw = (request.form.get('property_id') or '').strip() or None
+
     asset = None
-    
-    # 0. Pricing Check
+
+    # 0) Pricing
     price_val, price_type = get_smartsign_price()
     if not price_val:
         flash("Ordering configuration error.", "error")
         return redirect(url_for('dashboard.index'))
 
+    db = get_db()
+
+    # 1) Resolve (or create) the SignAsset and canonical property_id
     if asset_id:
-        # Reorder Existing
+        # Reorder existing asset -> property is derived from current assignment
         asset = check_access(asset_id)
         if asset['is_frozen']:
             flash("Frozen assets cannot be ordered.", "error")
             return redirect(url_for('dashboard.index'))
-    else:
-        # New Asset Creation
+
+        property_id = asset['active_property_id']
         if not property_id:
-             flash("Please select a property to assign the sign to.", "error")
-             return redirect(url_for('smart_signs.order_start'))
-             
+            flash("This SmartSign is not assigned to a listing. Assign it before ordering.", "error")
+            return redirect(url_for('dashboard.index', _anchor='smart-signs-section'))
+
+    else:
+        # New asset order -> require explicit property selection
+        if not property_id_raw:
+            flash("Please select a property to assign the sign to.", "error")
+            return redirect(url_for('smart_signs.order_start'))
+
         try:
-             # Validate property ownership implicitly via create_asset logic if we moved it there? 
-             # No, create_asset doesn't checking prop ownership deeply yet?
-             # Actually `create_asset` takes `active_property_id`. We rely on it (or should verify first).
-             # Let's verify property quickly to be safe (or trust service layer if updated).
-             # Service layer update didn't include property ownership check for creation, only assignment.
-             # So we should check it here or update service. Using ad-hoc check for speed/safety.
-             db = get_db()
-             valid_prop = db.execute("""
-                SELECT 1 FROM properties p JOIN agents a ON p.agent_id = a.id 
-                WHERE p.id = %s AND a.user_id = %s
-             """, (property_id, current_user.id)).fetchone()
-             if not valid_prop:
-                 raise ValueError("Invalid property selected.")
+            property_id = int(property_id_raw)
+        except Exception:
+            flash("Invalid property selected.", "error")
+            return redirect(url_for('smart_signs.order_start'))
 
-             from services.smart_signs import SmartSignsService
-             asset_row = SmartSignsService.create_asset_for_purchase(
-                 current_user.id, 
-                 property_id=property_id, 
-                 label=None
-             )
-             # asset_row is a Row object, need dict-like access or just ID
-             asset = dict(asset_row)
-             asset_id = asset['id']
-             
+        # Ownership guard (service layer does not enforce this for creation)
+        valid_prop = db.execute(
+            """SELECT 1
+                 FROM properties p
+                 JOIN agents a ON p.agent_id = a.id
+                WHERE p.id = %s AND a.user_id = %s""",
+            (property_id, current_user.id)
+        ).fetchone()
+        if not valid_prop:
+            flash("Invalid property selected.", "error")
+            return redirect(url_for('smart_signs.order_start'))
+
+        from services.smart_signs import SmartSignsService
+        try:
+            asset_row = SmartSignsService.create_asset_for_purchase(
+                current_user.id,
+                property_id=property_id,
+                label=None
+            )
+            asset = dict(asset_row)
+            asset_id = asset['id']
         except Exception as e:
-             flash(f"Error initiating sign: {e}", "error")
-             return redirect(url_for('smart_signs.order_start'))
+            current_app.logger.error(f"SmartSign asset creation error: {e}")
+            flash("Error initiating sign. Please try again.", "error")
+            return redirect(url_for('smart_signs.order_start'))
 
-    db = get_db()
     stripe.api_key = STRIPE_SECRET_KEY
 
-    # 1. Create Order
-    # We use a distinct order_type "smart_sign"
-    # OPTION B: SmartSign orders MUST have a property_id (NOT NULL)
-    row = db.execute("""
+    # 2) Create Order (MUST include property_id)
+    row = db.execute(
+        """
         INSERT INTO orders (user_id, property_id, sign_asset_id, status, order_type, created_at)
         VALUES (%s, %s, %s, 'pending_payment', 'smart_sign', CURRENT_TIMESTAMP)
         RETURNING id
-    """, (current_user.id, property_id, asset_id)).fetchone()
+        """,
+        (current_user.id, property_id, asset_id)
+    ).fetchone()
     order_id = row['id']
-    db.commit() # Commit to get ID
-    
-    # 2. Build Stripe Params
-    line_item = {
-        'quantity': 1,
-    }
-    
+    db.commit()
+
+    # 3) Build Stripe Checkout params
+    line_item = {'quantity': 1}
     code_display = asset['code'] if asset else "NEW"
-    
+
     if price_type == 'id':
         line_item['price'] = price_val
     else:
-        # Cents
         line_item['price_data'] = {
             'currency': 'usd',
             'product_data': {
@@ -285,40 +300,42 @@ def checkout_smartsign():
             'purpose': 'smart_sign',
             'sign_asset_id': str(asset_id),
             'property_id': str(property_id),
-            'user_id': str(current_user.id)
-        }
+            'user_id': str(current_user.id),
+        },
     }
 
-    # 3. Create Session (using checkout service helper for consistency)
+    # 4) Create Session (idempotent)
     try:
         attempt = create_checkout_attempt(
             user_id=current_user.id,
             purpose='smart_sign',
             params=checkout_params,
-            order_id=order_id
+            order_id=order_id,
         )
-        
+
         checkout_params['metadata']['attempt_token'] = attempt['attempt_token']
-        
+
         session = stripe.checkout.Session.create(
             **checkout_params,
-            idempotency_key=attempt['idempotency_key']
+            idempotency_key=attempt['idempotency_key'],
         )
-        
+
         update_attempt_status(
             attempt['attempt_token'],
             'session_created',
-            stripe_session_id=session.id
+            stripe_session_id=session.id,
         )
-        
-        db.execute("UPDATE orders SET stripe_checkout_session_id=%s WHERE id=%s", (session.id, order_id))
+
+        db.execute(
+            "UPDATE orders SET stripe_checkout_session_id=%s WHERE id=%s",
+            (session.id, order_id),
+        )
         db.commit()
-        
-        # Determine strictness of redirect
+
         return redirect(session.url, code=303)
-        
+
     except Exception as e:
         current_app.logger.error(f"SmartSign checkout error: {e}")
         flash("Checkout initialization failed. Please try again.", "error")
-        # Go back to start, preserving asset_id if it was a reorder
-        return redirect(url_for('smart_signs.order_start', asset_id=request.form.get('asset_id')))
+        return redirect(url_for('smart_signs.order_start', asset_id=asset_id))
+

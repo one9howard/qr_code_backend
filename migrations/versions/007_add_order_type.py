@@ -15,7 +15,7 @@ branch_labels = None
 depends_on = None
 
 def upgrade():
-    # Helper to check columns exists before adding (sqlite safe)
+    # Helper to check columns exists before adding (idempotent)
     # But for Alembic with Postgres we can just use add_column with server_default if needed
     
     # 1. order_type
