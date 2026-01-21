@@ -36,7 +36,6 @@ def migrate():
             print(f"[Manage] DATABASE_URL format: {masked}")
         except Exception as e:
             print(f"[Manage] Could not parse URL for logging: {e}")
-            print(f"[Manage] DATABASE_URL starts with: {database_url[:30]}...")
 
     if not database_url:
         print("[Manage] ERROR: DATABASE_URL environment variable is not set.")

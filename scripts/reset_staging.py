@@ -23,6 +23,18 @@ Usage:
 import sys
 import os
 
+def _mask_database_url(url: str) -> str:
+    """Return a safely masked DB URL for logs (no credentials)."""
+    try:
+        from urllib.parse import urlparse
+        p = urlparse(url or "")
+        if not p.scheme:
+            return "EMPTY"
+        host = p.hostname or "UNKNOWN_HOST"
+        port = p.port or ""
+        return f"{p.scheme}://{host}{(':'+str(port)) if port else ''}"
+    except Exception:
+        return "INVALID_URL"
 # Add parent dir to path to import app context
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
@@ -52,7 +64,7 @@ def reset_db():
             return
 
         print("⚠ WARNING: This will delete ALL data from the configured database.")
-        print(f"Database: {db_url}")
+        print(f"Database: {_mask_database_url(db_url)}")
         confirm = input("Are you sure? Type 'DELETE' to confirm: ")
         
         if confirm != "DELETE":

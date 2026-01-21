@@ -399,24 +399,6 @@ After making changes, verify these flows:
 - [ ] **Env Gating**: Verify `/dev` routes return 404 in production mode (if tested in prod).
 - [ ] **Build**: Run `scripts/build_release_zip.py` and verify `templates` folder is copied correctly.
 
-## Print Server
-
-The print server is now a separable service located in `services/print_server`.
-
-**Run locally (Dev):**
-```bash
-python -m services.print_server
-```
-
-**Run in Production:**
-Require `PRINT_JOBS_TOKEN` environment variable.
-```bash
-export PRINT_JOBS_TOKEN="secure-token-here"
-python -m services.print_server
-```
-
-**Compatibility:**
-Legacy `python print_server.py` command is supported but deprecated.
 
 ## Print Preflight
 
