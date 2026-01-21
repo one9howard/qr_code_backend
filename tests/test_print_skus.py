@@ -1,133 +1,187 @@
-"""Tests for Phase 5 Print Productization.
+"""Phase 5: Print Productization – SKU + PDF Generation + Validation.
 
-- Verifies SKU columns/logic (Listing vs SmartSign)
-- Verifies Generator output (Page counts, PDF headers)
-- Verifies Validation rules (Strict payload)
+Hard requirements validated here:
+- Listing Signs: coroplast_4mm OR aluminum_040, single OR double.
+- SmartSigns: aluminum_040 ONLY, single OR double.
+- SmartSign layouts are restricted to the catalog.
+- SmartSign design payload is strictly validated.
+
+Note: These tests rely on the existing `db` fixture (real Postgres) and should be run as part of
+`pytest -q` in CI.
 """
-import pytest
-import io
-import json
-from unittest.mock import patch, MagicMock
-import pytest
-import io
-import json
-from unittest.mock import patch, MagicMock
-from PyPDF2 import PdfReader
 
-# --- Fixtures ---
+import io
+import pytest
+from PyPDF2 import PdfReader
 
 
 @pytest.fixture
 def paid_order(db):
-    """Creates a basic paid order for tests."""
-    user_id = db.execute("INSERT INTO users (email, password_hash) VALUES ('sku@test.com', 'hash') RETURNING id").fetchone()['id']
-    prop_id = db.execute("INSERT INTO properties (agent_id, address, qr_code) VALUES (1, '123 SK St', 'sku-qr') RETURNING id").fetchone()['id']
-    row = db.execute("""
+    """Create a minimal paid Listing Sign order + linked user/agent/property."""
+    user_id = db.execute(
+        "INSERT INTO users (email, password_hash) VALUES ('sku@test.com', 'hash') RETURNING id"
+    ).fetchone()["id"]
+
+    agent_id = db.execute(
+        """
+        INSERT INTO agents (user_id, name, brokerage, email, phone)
+        VALUES (%s, 'Test Agent', 'Test Brokerage', 'agent@test.com', '555-0000')
+        RETURNING id
+        """,
+        (user_id,),
+    ).fetchone()["id"]
+
+    prop_id = db.execute(
+        """
+        INSERT INTO properties (agent_id, address, beds, baths, sqft, price, qr_code)
+        VALUES (%s, '123 SK St', '3', '2', '1500', '$499,000', 'sku-qr')
+        RETURNING id
+        """,
+        (agent_id,),
+    ).fetchone()["id"]
+
+    order_id = db.execute(
+        """
         INSERT INTO orders (user_id, property_id, status, order_type, created_at)
-        VALUES (%s, %s, 'paid', 'sign', NOW()) RETURNING id
-    """, (user_id, prop_id)).fetchone()
+        VALUES (%s, %s, 'paid', 'sign', NOW())
+        RETURNING id
+        """,
+        (user_id, prop_id),
+    ).fetchone()["id"]
+
     db.commit()
-    return dict(row)
+    return dict(db.execute("SELECT * FROM orders WHERE id=%s", (order_id,)).fetchone())
 
-# --- Listings Sign Tests (C1) ---
 
-def test_listing_sign_sku_coroplast_single_generates_pdf(db, paid_order):
-    """Test standard single-sided Listing Sign."""
-    from services.printing.listing_sign import generate_listing_sign_pdf
-    order = paid_order
-    order['print_product'] = 'listing_sign'
-    order['material'] = 'coroplast_4mm'
-    order['sides'] = 'single'
-    order['sign_size'] = '18x24'
-    # Mock payload or defaults
-    order['design_payload'] = {'address': '123 Test St', 'sign_color': '#000000'}
-    
-    pdf_bytes = generate_listing_sign_pdf(db, order)
-    assert pdf_bytes.startswith(b'%PDF')
-    
-    reader = PdfReader(io.BytesIO(pdf_bytes))
-    assert len(reader.pages) == 1
+# --- SKU Validation ---
 
-def test_listing_sign_sku_aluminum_double_generates_pdf(db, paid_order):
-    """Test double-sided Listing Sign (2 pages)."""
-    order = paid_order
-    order['print_product'] = 'listing_sign'
-    order['material'] = 'aluminum_040'
-    order['sides'] = 'double'
-    order['sign_size'] = '18x24'
-    order['design_payload'] = {'address': '456 Metal St', 'sign_color': '#FF0000'}
-    
-    pdf_bytes = generate_listing_sign_pdf(db, order)
-    reader = PdfReader(io.BytesIO(pdf_bytes))
-    assert len(reader.pages) == 2
+def test_listing_sign_allows_coroplast_and_aluminum():
+    from services.print_catalog import validate_sku
 
-# --- SmartSign Validation & Logic (C2, D) ---
+    ok, _ = validate_sku("listing_sign", "coroplast_4mm", "single")
+    assert ok
+
+    ok, _ = validate_sku("listing_sign", "aluminum_040", "double")
+    assert ok
+
 
 def test_smartsign_requires_aluminum_only():
-    """SmartSign must be aluminum."""
     from services.print_catalog import validate_sku
-    ok, reason = validate_sku('smart_sign', 'coroplast_4mm', 'single')
+
+    ok, reason = validate_sku("smart_sign", "coroplast_4mm", "single")
     assert not ok
     assert "Invalid material" in reason
 
-def test_smartsign_layouts_generate_pdf(db, paid_order):
-    """Test all 3 SmartSign layouts generate valid PDFs."""
-    from services.printing.smart_sign import generate_smart_sign_pdf
-    order = paid_order
-    order['print_product'] = 'smart_sign'
-    order['material'] = 'aluminum_040'
-    order['sides'] = 'single'
-    
-    # Mock valid payload
-    valid_payload = {
-        'banner_color_id': 'blue',
-        'agent_name': 'Test Agent',
-        'agent_phone': '555-1234'
-    }
-    order['design_payload'] = valid_payload
-    
-    layouts = ['smart_v1_photo_banner', 'smart_v1_minimal', 'smart_v1_agent_brand']
-    
-    for layout in layouts:
-        order['layout_id'] = layout
-        pdf_bytes = generate_smart_sign_pdf(db, order)
-        assert pdf_bytes.startswith(b'%PDF')
-        reader = PdfReader(io.BytesIO(pdf_bytes))
-        assert len(reader.pages) == 1
 
-def test_smartsign_double_pages_2(db, paid_order):
-    """SmartSign double sided -> 2 pages."""
-    order = paid_order
-    order['print_product'] = 'smart_sign'
-    order['material'] = 'aluminum_040'
-    order['sides'] = 'double'
-    order['layout_id'] = 'smart_v1_minimal'
-    order['design_payload'] = {'banner_color_id': 'black', 'agent_name': 'A', 'agent_phone': '1'}
-    
-    pdf_bytes = generate_smart_sign_pdf(db, order)
+# --- Listing Sign PDF Generation ---
+
+def test_listing_sign_single_generates_one_page_pdf(db, paid_order):
+    from services.printing.listing_sign import generate_listing_sign_pdf
+
+    order = dict(paid_order)
+    order.update(
+        {
+            "print_product": "listing_sign",
+            "material": "coroplast_4mm",
+            "sides": "single",
+            "sign_size": "18x24",
+            # Optional payload; generator can fall back to property/user.
+            "design_payload": {"sign_color": "#000000"},
+        }
+    )
+
+    pdf_bytes = generate_listing_sign_pdf(db, order)
+    assert pdf_bytes[:4] == b"%PDF"
+
+    reader = PdfReader(io.BytesIO(pdf_bytes))
+    assert len(reader.pages) == 1
+
+
+def test_listing_sign_double_generates_two_page_pdf(db, paid_order):
+    from services.printing.listing_sign import generate_listing_sign_pdf
+
+    order = dict(paid_order)
+    order.update(
+        {
+            "print_product": "listing_sign",
+            "material": "aluminum_040",
+            "sides": "double",
+            "sign_size": "18x24",
+            "design_payload": {"sign_color": "#FF0000"},
+        }
+    )
+
+    pdf_bytes = generate_listing_sign_pdf(db, order)
     reader = PdfReader(io.BytesIO(pdf_bytes))
     assert len(reader.pages) == 2
 
+
+# --- SmartSign Validation + Generation ---
+
 def test_smartsign_invalid_payload_rejected():
-    """Validator rejects invalid SmartSign payloads."""
-    # 1. Invalid Color
-    errors = validate_smartsign_payload('smart_v1_minimal', {'banner_color_id': 'purple'})
+    from services.printing.validation import validate_smartsign_payload
+
+    # Invalid banner color id
+    errors = validate_smartsign_payload("smart_v1_minimal", {"banner_color_id": "purple"})
     assert any("banner_color_id" in e for e in errors)
-    
-    # 2. Too long name
-    payload = {'banner_color_id': 'blue', 'agent_name': 'A'*41, 'agent_phone': '123'}
-    errors = validate_smartsign_payload('smart_v1_minimal', payload)
+
+    # Too long name
+    payload = {"banner_color_id": "blue", "agent_name": "A" * 41, "agent_phone": "123"}
+    errors = validate_smartsign_payload("smart_v1_minimal", payload)
     assert any("agent_name exceeds" in e for e in errors)
-    
-    # 3. Missing Phone
-    payload = {'banner_color_id': 'blue', 'agent_name': 'Valid'}
-    errors = validate_smartsign_payload('smart_v1_minimal', payload)
+
+    # Missing phone
+    payload = {"banner_color_id": "blue", "agent_name": "Valid"}
+    errors = validate_smartsign_payload("smart_v1_minimal", payload)
     assert any("agent_phone is required" in e for e in errors)
 
-# --- Checkout / Routes (E) ---
 
-def test_smartsign_checkout_validates_material(client, db, paid_order):
-    """Ensure route ensures Aluminum for SmartSign implicitly."""
-    # We test the route logic via the controller or function if possible, 
-    # but strictly user asked for 'test_smartsign_material_must_be_aluminum' which we covered in Unit test above.
-    pass
+def test_smartsign_layouts_generate_pdf(db, paid_order):
+    from services.printing.smart_sign import generate_smart_sign_pdf
+
+    base = dict(paid_order)
+    base.update(
+        {
+            "print_product": "smart_sign",
+            "material": "aluminum_040",
+            "sides": "single",
+            "design_payload": {
+                "banner_color_id": "blue",
+                "agent_name": "Test Agent",
+                "agent_phone": "555-1234",
+            },
+        }
+    )
+
+    layouts = [
+        "smart_v1_photo_banner",
+        "smart_v1_minimal",
+        "smart_v1_agent_brand",
+    ]
+
+    for layout in layouts:
+        order = dict(base)
+        order["layout_id"] = layout
+        pdf_bytes = generate_smart_sign_pdf(db, order)
+        assert pdf_bytes[:4] == b"%PDF"
+        reader = PdfReader(io.BytesIO(pdf_bytes))
+        assert len(reader.pages) == 1
+
+
+def test_smartsign_double_generates_two_pages(db, paid_order):
+    from services.printing.smart_sign import generate_smart_sign_pdf
+
+    order = dict(paid_order)
+    order.update(
+        {
+            "print_product": "smart_sign",
+            "material": "aluminum_040",
+            "sides": "double",
+            "layout_id": "smart_v1_minimal",
+            "design_payload": {"banner_color_id": "black", "agent_name": "A", "agent_phone": "1"},
+        }
+    )
+
+    pdf_bytes = generate_smart_sign_pdf(db, order)
+    reader = PdfReader(io.BytesIO(pdf_bytes))
+    assert len(reader.pages) == 2

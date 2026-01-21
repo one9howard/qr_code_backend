@@ -76,18 +76,33 @@ def fulfill_order(order_id):
         return True
 
     # Phase 5: Productized Generation
+    # If an order is productized, we (re)generate the print-grade PDF at fulfillment time
+    # so SKU choices (e.g., double-sided) are always honored, even if a preview PDF already exists.
     print_product = dict(order).get('print_product')
-    if print_product and not order.get('sign_pdf_path'):
+    if print_product:
         print(f"[Fulfillment] Generating PDF for SKU {print_product} Order {order_id}...")
         try:
              import io
+             from services.print_catalog import validate_sku
+
+             # Normalize defaults
+             order_map = dict(order)
+             material = order_map.get('material') or ('coroplast_4mm' if print_product == 'listing_sign' else 'aluminum_040')
+             sides = order_map.get('sides') or 'single'
+             order_map['material'] = material
+             order_map['sides'] = sides
+
+             ok, reason = validate_sku(print_product, material, sides)
+             if not ok:
+                 raise ValueError(f"Invalid SKU: {reason}")
+
              pdf_bytes = None
              if print_product == 'listing_sign':
                  from services.printing.listing_sign import generate_listing_sign_pdf
-                 pdf_bytes = generate_listing_sign_pdf(db, dict(order))
+                 pdf_bytes = generate_listing_sign_pdf(db, order_map)
              elif print_product == 'smart_sign':
                  from services.printing.smart_sign import generate_smart_sign_pdf
-                 pdf_bytes = generate_smart_sign_pdf(db, dict(order))
+                 pdf_bytes = generate_smart_sign_pdf(db, order_map)
              else:
                  raise ValueError(f"Unknown print_product: {print_product}")
 

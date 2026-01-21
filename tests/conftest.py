@@ -1,4 +1,5 @@
 import os
+from urllib.parse import urlparse, urlunparse
 import tempfile
 import subprocess
 import sys
@@ -32,15 +33,28 @@ _force_env_if_blank("STRIPE_WEBHOOK_SECRET", "whsec_dummy")
 _force_env_if_blank("STRIPE_PUBLISHABLE_KEY", "pk_test_dummy")  # harmless if unused
 
 
-# Fix DATABASE_URL for local test execution (Windows Host -> Docker Service mismatch)
+def _running_in_docker() -> bool:
+    """Best-effort detection to avoid breaking docker-compose test runs."""
+    if os.environ.get("RUNNING_IN_DOCKER") == "1" or os.environ.get("IN_DOCKER") == "1":
+        return True
+    return os.path.exists("/.dockerenv")
+
+
+# Fix DATABASE_URL for local host test execution (Host -> Docker Service mismatch)
 _db_url = os.environ.get("DATABASE_URL")
-if _db_url and "@db:" in _db_url:
-    # We are likely running on host, but config points to docker 'db' service.
-    # Swap to localhost (assuming port 5432 is exposed) AND use DSN format for Windows compatibility
-    # Using replace ensures we keep credentials from .env
-    # Patch DATABASE_URL to use localhost when running tests on host machine (outside Docker network)
-    val = _db_url.replace("@db:", "@localhost:")
-    os.environ["DATABASE_URL"] = val
+if _db_url:
+    try:
+        parsed = urlparse(_db_url)
+        if parsed.hostname == "db" and not _running_in_docker():
+            # In docker-compose, the hostname 'db' is correct inside the web container.
+            # On a host machine, it won't resolve. Swap ONLY the hostname.
+            new_netloc = parsed.netloc.replace("@db:", "@localhost:").replace("@db/", "@localhost/")
+            if new_netloc == parsed.netloc:
+                new_netloc = parsed.netloc.replace("@db", "@localhost", 1)
+            os.environ["DATABASE_URL"] = urlunparse(parsed._replace(netloc=new_netloc))
+    except Exception:
+        # Leave as-is; safety guard below will catch problematic values.
+        pass
 
 
 # SAFETY GUARD: Prevent accidental test runs against remote/production DBs
@@ -54,8 +68,10 @@ def _check_test_db_safety():
         parsed = urlparse(db_url)
         hostname = parsed.hostname or ""
         
-        # Strict Allow List: localhost only (Docker 'db' alias should have been patched above)
+        # Strict Allow List: localhost on host, OR docker-compose 'db' hostname when running inside docker.
         is_local = hostname.lower() in ("localhost", "127.0.0.1")
+        if hostname.lower() == "db" and _running_in_docker():
+            is_local = True
         
         if not is_local and os.environ.get("ALLOW_REMOTE_TEST_DB") != "1":
             print(f"!!! CRITICAL TEST SAFETY ERROR !!!")

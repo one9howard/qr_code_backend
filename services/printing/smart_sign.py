@@ -6,7 +6,7 @@ Generates PDFs for SmartSigns using specific versioned layouts.
 """
 import io
 from reportlab.pdfgen import canvas
-from reportlab.lib.pagesizes import inch
+from reportlab.lib.units import inch
 from reportlab.lib.utils import ImageReader
 from services.print_catalog import BANNER_COLOR_PALETTE
 from utils.qr_vector import draw_vector_qr

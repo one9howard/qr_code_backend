@@ -102,28 +102,31 @@ def validate_order_print_spec(order):
     """
     errors = []
     
-    if not order.print_product:
+    # Accept either a dict/row mapping (common in this codebase) or an ORM-like object.
+    get = (order.get if hasattr(order, "get") else lambda k, d=None: getattr(order, k, d))
+
+    if not get("print_product"):
         # If it's a legacy order, maybe skip? But instructions say 'Strict'.
         # Assuming this is called for NEW print jobs or checkout.
         # If order is already created, we validate what we have.
         return ["Missing print_product"]
 
     # Validate SKU
-    ok, reason = validate_sku(order.print_product, order.material, order.sides)
+    ok, reason = validate_sku(get("print_product"), get("material"), get("sides"))
     if not ok:
         errors.append(f"Invalid SKU: {reason}")
         
     # Validate Layout
-    ok, reason = validate_layout(order.print_product, order.layout_id)
+    ok, reason = validate_layout(get("print_product"), get("layout_id"))
     if not ok:
         errors.append(f"Invalid Layout: {reason}")
         
     # Product Specific Validation
-    if order.print_product == 'smart_sign':
-        if not order.design_payload:
+    if get("print_product") == 'smart_sign':
+        if not get("design_payload"):
             errors.append("SmartSign requires design_payload")
         else:
-            payload_errors = validate_smartsign_payload(order.layout_id, order.design_payload)
+            payload_errors = validate_smartsign_payload(get("layout_id"), get("design_payload"))
             errors.extend(payload_errors)
             
     return errors

@@ -6,7 +6,6 @@ Reuses existing layout logic from utils/pdf_generator but adds:
 """
 import io
 from reportlab.pdfgen import canvas
-from database import get_db
 from utils.pdf_generator import (
     LayoutSpec, 
     _draw_standard_layout, 
@@ -15,8 +14,8 @@ from utils.pdf_generator import (
     DEFAULT_SIGN_SIZE,
     DEFAULT_SIGN_COLOR
 )
-from utils.storage import get_storage
-from utils.filenames import make_sign_asset_basename
+from config import BASE_URL
+from config import BASE_URL
 
 def generate_listing_sign_pdf(db, order):
     """
@@ -113,6 +112,12 @@ def generate_listing_sign_pdf(db, order):
     # QR/Photos
     qr_key = get_val('qr_key')
     agent_photo_key = get_val('agent_photo_key')
+
+    # CRITICAL: Ensure the QR URL is deterministic and never falls back to example.com.
+    # Prefer explicit payload qr_value, else derive from the property's qr_code.
+    qr_value = payload.get('qr_value') if isinstance(payload, dict) else None
+    if not qr_value and prop and prop.get('qr_code'):
+        qr_value = f"{BASE_URL.rstrip('/')}/r/{prop['qr_code']}"
     
     # Legacy fallbacks if stored in non-standard cols? (unlikely for new flow)
     
@@ -145,7 +150,7 @@ def generate_listing_sign_pdf(db, order):
     layout_func(
         c, layout, address, beds, baths, sqft, price,
         agent_name, brokerage, agent_email, agent_phone,
-        qr_key, agent_photo_key, sign_color
+        qr_key, agent_photo_key, sign_color, qr_value
     )
     
     c.showPage()
@@ -156,7 +161,7 @@ def generate_listing_sign_pdf(db, order):
         layout_func(
             c, layout, address, beds, baths, sqft, price,
             agent_name, brokerage, agent_email, agent_phone,
-            qr_key, agent_photo_key, sign_color
+            qr_key, agent_photo_key, sign_color, qr_value
         )
         c.showPage()
         
