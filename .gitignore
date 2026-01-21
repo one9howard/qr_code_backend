@@ -81,6 +81,7 @@ Thumbs.db
 
 # Release artifacts
 releases/
+release/
 artifacts/
 *.zip
 
@@ -97,3 +98,6 @@ test_inbox/
 # Logs
 *.log
 failures*.txt
+
+# Misc local test transcripts
+test_final_check*.txt

@@ -1,6 +1,8 @@
 # Production Deployment Guide (Ubuntu)
 
-This guide establishes a "correct forever" deployment using `systemd`, `gunicorn`, `nginx`, and `postgres` with **strict security, state isolation, and observable migrations**.
+This guide establishes a "correct forever" deployment of the **cloud web app** using `systemd`, `gunicorn`, `nginx`, and `postgres` with **strict security, state isolation, and observable migrations**.
+
+Printing uses a **separate pull-worker** (`scripts/print_worker.py`) that runs on your print station (not on the web app server). See `ops/MANUAL_PRINTING.md`.
 
 ## 0. Prerequisites
 - Ubuntu Server (20.04+)
@@ -121,23 +123,22 @@ sudo systemctl restart nginx
 
 ```bash
 sudo cp systemd/qrapp.service /etc/systemd/system/
-sudo cp systemd/qrprint.service /etc/systemd/system/
 
 # Verify syntax (should produce no errors)
-sudo systemd-analyze verify /etc/systemd/system/qrapp.service /etc/systemd/system/qrprint.service
+sudo systemd-analyze verify /etc/systemd/system/qrapp.service
 
 # Reload and start
 sudo systemctl daemon-reload
-sudo systemctl enable qrapp qrprint
-sudo systemctl restart qrapp qrprint
+sudo systemctl enable qrapp
+sudo systemctl restart qrapp
 ```
 
 ## 5. Verification Checklist
 
 ### A. Service Status
 ```bash
-sudo systemctl status qrapp qrprint
-# Both should be: active (running)
+sudo systemctl status qrapp
+# Should be: active (running)
 ```
 
 ### B. State Directory
@@ -151,10 +152,6 @@ ls -la /var/lib/qrapp
 # Main app (via Nginx)
 curl -I http://localhost/healthz
 # Expected: HTTP/1.1 200 OK
-
-# Print server (localhost only)
-curl http://127.0.0.1:8080/health
-# Expected: {"status": "ok"}
 ```
 
 ### D. Migration Verification

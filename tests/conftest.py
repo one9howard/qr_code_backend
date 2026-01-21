@@ -103,10 +103,6 @@ def app():
         "SESSION_COOKIE_SECURE": False,
         "REMEMBER_COOKIE_SECURE": False,
     })
-    # Patch the imported constant in printing blueprint to match test env
-    import routes.printing
-    routes.printing.PRINT_SERVER_TOKEN = os.environ["PRINT_SERVER_TOKEN"]
-
     return a
 
 

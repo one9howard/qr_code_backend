@@ -56,7 +56,11 @@ cp reset_app.sh "$RELEASE_DIR/" 2>/dev/null || true
 
 # Copy documentation
 cp README.md "$RELEASE_DIR/"
-cp DEPLOYMENT.md "$RELEASE_DIR/"
+
+# Deployment docs live under docs/
+cp docs/DEPLOYMENT.md "$RELEASE_DIR/DEPLOYMENT.md"
+cp docs/DEPLOYMENT_OPS.md "$RELEASE_DIR/DEPLOYMENT_OPS.md" 2>/dev/null || true
+cp docs/RAILWAY_DEPLOYMENT.md "$RELEASE_DIR/RAILWAY_DEPLOYMENT.md" 2>/dev/null || true
 
 # 4. Create empty data directories
 echo "Creating empty data directories..."
