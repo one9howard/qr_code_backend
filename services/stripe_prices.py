@@ -10,10 +10,10 @@ logger = logging.getLogger(__name__)
 # Mapping from canonical size to Stripe Lookup Keys (in priority order)
 # User's Stripe Dashboard uses format: "18x24_sign"
 SIZE_TO_LOOKUP_KEYS = {
-    "12x18": ["12x18_sign", "sign_12x18"],
-    "18x24": ["18x24_sign", "sign_18x24"],
-    "24x36": ["24x36_sign", "sign_24x36"],
-    "36x18": ["36x18_sign", "sign_36x18"],
+    "12x18": ["12x18_listing_sign_print", "listing_sign_print_12x18"],
+    "18x24": ["18x24_listing_sign_print", "listing_sign_print_18x24"],
+    "24x36": ["24x36_listing_sign_print", "listing_sign_print_24x36"],
+    "36x18": ["36x18_listing_sign_print", "listing_sign_print_36x18"],
 }
 
 # Cache: {lookup_key: {"id": price_id, "product_id": prod_id, "expires_at": timestamp}}
