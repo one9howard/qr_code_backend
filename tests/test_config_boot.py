@@ -24,6 +24,7 @@ class TestConfigStagingBoot:
 
         # Set required staging vars
         monkeypatch.setenv('FLASK_ENV', 'production')
+        monkeypatch.setenv('DATABASE_URL', 'postgresql://user:pass@localhost:5432/testdb')
         monkeypatch.setenv('APP_STAGE', 'test')
         monkeypatch.setenv('SECRET_KEY', 'test-secret-key-1234567890')
         monkeypatch.setenv('BASE_URL', 'https://staging.example.com')
@@ -33,6 +34,9 @@ class TestConfigStagingBoot:
         monkeypatch.setenv('STRIPE_WEBHOOK_SECRET', 'whsec_test123')
         monkeypatch.setenv('PRINT_JOBS_TOKEN', 'test-token')
         monkeypatch.setenv('STRIPE_PRICE_MONTHLY', 'price_test_monthly')
+        monkeypatch.setenv('STRIPE_SUCCESS_URL', 'http://example.com/success')
+        monkeypatch.setenv('STRIPE_CANCEL_URL', 'http://example.com/cancel')
+        monkeypatch.setenv('STRIPE_PORTAL_RETURN_URL', 'http://example.com/portal')
 
         # Remove config from sys.modules to force reimport
         for mod_name in list(sys.modules.keys()):

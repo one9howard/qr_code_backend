@@ -157,7 +157,7 @@ def get_smart_sign_assets(user_id):
     """
     db = get_db()
     rows = db.execute("""
-        SELECT * FROM smart_sign_assets 
+        SELECT * FROM sign_assets 
         WHERE user_id = %s 
         ORDER BY created_at DESC
     """, (user_id,)).fetchall()
@@ -174,7 +174,7 @@ class GatingService:
         
         # Verify ownership
         asset = db.execute(
-            "SELECT * FROM smart_sign_assets WHERE id = %s AND user_id = %s",
+            "SELECT * FROM sign_assets WHERE id = %s AND user_id = %s",
             (asset_id, user_id)
         ).fetchone()
         
@@ -197,7 +197,7 @@ class GatingService:
         # If asset was assigned elsewhere, we overwrite.
         try:
             db.execute(
-                "UPDATE smart_sign_assets SET property_id = %s, updated_at = NOW() WHERE id = %s",
+                "UPDATE sign_assets SET property_id = %s, updated_at = NOW() WHERE id = %s",
                 (property_id, asset_id)
             )
             db.commit()
@@ -212,7 +212,7 @@ class GatingService:
         db = get_db()
          # Verify ownership
         asset = db.execute(
-            "SELECT * FROM smart_sign_assets WHERE id = %s AND user_id = %s",
+            "SELECT * FROM sign_assets WHERE id = %s AND user_id = %s",
             (asset_id, user_id)
         ).fetchone()
         
@@ -221,7 +221,7 @@ class GatingService:
             
         try:
             db.execute(
-                "UPDATE smart_sign_assets SET property_id = NULL, updated_at = NOW() WHERE id = %s",
+                "UPDATE sign_assets SET property_id = NULL, updated_at = NOW() WHERE id = %s",
                 (asset_id,)
             )
             db.commit()

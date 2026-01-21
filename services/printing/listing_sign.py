@@ -29,34 +29,55 @@ def generate_listing_sign_pdf(order, output_path):
     # but we control the CANVAS and PAGE loop here.
     
     # We need to gather the `data` dict expected by `_draw_standard_layout`.
-    from models import Property, User
+    # We need to gather the `data` dict expected by `_draw_standard_layout`.
+    from database import get_db
+    from models import User
     from utils.qr import generate_qr_code_url
     
     # Fetch related
-    # Assuming order is joined or we have IDs.
-    # If order is an object:
     prop_id = order.property_id
     user_id = order.user_id
     
-    # Just used raw sql row in fulfillment?
-    # fulfillment.py passes `order` which comes from `db.session.execute(...).fetchall()`
-    # So it uses dict access `order['id']`.
+    db = get_db()
     
-    # We need to query the property manually if not passed.
-    # It's cleaner to use the ORM if we are inside app context.
-    # Fulfillment runs in background task maybe? Yes, likely app context.
+    # Re-fetch full objects via SQL
+    prop = db.execute("SELECT * FROM properties WHERE id = %s", (prop_id,)).fetchone()
+    # User can be fetched via User model which supports get_by or raw sql
+    user_row = db.execute("SELECT * FROM users WHERE id = %s", (user_id,)).fetchone()
     
-    # Re-fetch full objects
-    prop = Property.query.get(prop_id)
-    user = User.query.get(user_id)
-    
-    if not prop or not user:
+    if not prop or not user_row:
         raise ValueError("Property or User not found for order")
 
+    # Map to expected object interface (dot notation or dict access)
+    # prop is a RealDictRow usually, so prop['address'] works. 
+    # But existing code below might use dot notation: prop.address.
+    # Let's wrap explicitly or change downstream usage.
+    # checking downstream usage... "address = prop.address"
+    # So we need an object or change downstream to use dict access.
+    # Let's change downstream to use dict access OR Wraps. 
+    # Simplest: use a dict access below or a simple class.
+    # Actually, let's just update the extraction below.
+    
+    class Box:
+        def __init__(self, data):
+            for k,v in data.items():
+                setattr(self, k, v)
+    
+    prop = Box(prop)
+    # user = Box(user_row) # User might be complex, let's use what we need.
+    # User might be used for agent info.
+    
     # Prepare Data Dict
     # This mimics `utils.pdf_generator.get_sign_data`
     address = prop.address
-    price = prop.price_formatted
+    price = prop.price  # Note: prop.price is raw. We need formatting? 
+    # Wait, original code said `price = prop.price_formatted`. 
+    # Does DB have price_formatted? Probably NOT. Property model likely had a property.
+    # We need to format it. "${:,}".format(prop.price)
+    
+    price_val = prop.price
+    price = f"${price_val:,}" if price_val else ""
+    
     beds = prop.beds
     baths = prop.baths
     sqft = prop.sqft

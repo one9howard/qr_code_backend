@@ -71,25 +71,45 @@ def create_app(test_config=None):
     app.config['STRIPE_PRICE_ANNUAL'] = STRIPE_PRICE_ANNUAL
     app.config['STRIPE_PUBLISHABLE_KEY'] = STRIPE_PUBLISHABLE_KEY
 
+
     # --- FAIL-FAST PRICING CHECK ---
-    # In production/dev (not tests), verify all Stripe Lookup Keys exist.
-    if not (os.environ.get('APP_STAGE') == 'test' or os.environ.get('FLASK_ENV') == 'test'):
+    # In production/staging, verifies Keys exist AND warms cache.
+    # If anything fails, CRASHES to prevent bad deployment.
+    with app.app_context():
         try:
-            from services.print_catalog import get_all_required_lookup_keys
-            from services.stripe_price_resolver import warm_cache
-            
-            with app.app_context():
-                # Check if we have Stripe keys at all first
-                # if app.config.get('STRIPE_SECRET_KEY'):
-                #     print("[Startup] Warming Stripe Price Cache...")
-                #     keys = get_all_required_lookup_keys()
-                #     warm_cache(keys)
-                # else:
-                #     print("[Startup] WARNING: No Stripe keys found. Skipping price cache warmup.")
-                pass
+            if app.config.get('APP_STAGE') in ('prod', 'staging'):
+                # 1. Check Secret Key
+                if not app.config.get('STRIPE_SECRET_KEY'):
+                    raise RuntimeError("Missing STRIPE_SECRET_KEY in production/staging.")
+                
+                # 2. Warm Cache (Strict)
+                print("[Startup] Warming Stripe Price Cache...")
+                from services.stripe_price_resolver import warm_cache
+                from services.print_catalog import get_all_required_lookup_keys
+                
+                keys = get_all_required_lookup_keys()
+                warm_cache(keys) # Will raise if keys invalid/inactive
+                
+            else:
+                # Dev Mode: Warn but allow boot
+                if not app.config.get('STRIPE_SECRET_KEY'):
+                    print("[Startup] WARNING: No Stripe keys found (Dev Mode). Skipping cache.")
+                else:
+                    # Optional: attempt warm for dev convenience, but don't hard crash
+                    try:
+                         from services.stripe_price_resolver import warm_cache
+                         from services.print_catalog import get_all_required_lookup_keys
+                         warm_cache(get_all_required_lookup_keys())
+                    except Exception as e:
+                         print(f"[Startup] Dev Warning: Cache warm failed: {e}")
+
         except Exception as e:
-            print(f"[Startup] CRITICAL: Failed to verify Stripe Pricing configuration: {e}")
-            raise RuntimeError(f"Pricing Configuration Error: {e}")
+            # Fatal boot error
+            if app.config.get('APP_STAGE') in ('prod', 'staging'):
+                print(f"[BOOT-FATAL] Pricing Configuration Error: {e}", flush=True)
+                raise RuntimeError(f"Pricing Configuration Error: {e}")
+            else:
+                print(f"[Startup] CRITICAL (Dev Ignored): {e}")
 
     # Template Helpers
     from utils.template_helpers import get_storage_url
@@ -190,7 +210,14 @@ def create_app(test_config=None):
     return app
 
 # WSGI Entry Point
-app = create_app()
+import traceback
+
+try:
+    app = create_app()
+except Exception as e:
+    print(f"[BOOT-FATAL] create_app failed: {type(e).__name__}: {e}", flush=True)
+    traceback.print_exc()
+    raise
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', debug=True)

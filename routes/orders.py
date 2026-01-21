@@ -127,14 +127,32 @@ def order_sign():
         
     # 3. Update Order with SKU Spec
     # Use direct SQL or ORM. ORM is safer/cleaner.
-    order.print_product = 'listing_sign'
-    order.material = material
-    order.sides = sides
-    order.print_size = sign_size # populate new column
-    order.layout_id = data.get('layout_id', order.layout_id or 'standard')
-    order.updated_at = db.func.now()
+    # 3. Update Order with SKU Spec
+    # Use direct SQL
+    from psycopg2.extras import Json
+    from database import get_db
     
-    db.session.commit()
+    db = get_db()
+    
+    # Raw SQL Update
+    db.execute("""
+        UPDATE orders 
+        SET print_product = %s,
+            material = %s,
+            sides = %s,
+            print_size = %s,
+            layout_id = %s,
+            updated_at = NOW()
+        WHERE id = %s
+    """, (
+        'listing_sign',
+        material,
+        sides,
+        sign_size,
+        data.get('layout_id', order.layout_id or 'standard'),
+        order.id
+    ))
+    db.commit()
     
     # 4. Create Stripe Session
     try:
@@ -197,12 +215,26 @@ def resize_order():
     if not order_id or not new_size:
         return jsonify({'error': 'Missing params'}), 400
         
-    order = Order.query.filter_by(id=order_id, user_id=current_user.id).first_or_404()
+    # RAW SQL REPLACEMENT
+    from database import get_db
+    db = get_db()
+    
+    order = Order.get_by(id=order_id, user_id=current_user.id)
+    if not order:
+        abort(404)
     
     # Update size
-    order.sign_size = new_size # Legacy column used for preview generation
-    order.print_size = new_size # New column
-    db.session.commit()
+    # order.sign_size = new_size # attribute update if object
+    # order.print_size = new_size 
+    
+    db.execute("""
+        UPDATE orders 
+        SET sign_size = %s,
+            print_size = %s,
+            updated_at = NOW()
+        WHERE id = %s
+    """, (new_size, new_size, order_id))
+    db.commit()
     
     # Trigger regeneration (assuming logic exists in services or agent route utils)
     # For MVP, we might just update the record and expect the frontend to reload 

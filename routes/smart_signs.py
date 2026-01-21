@@ -87,7 +87,8 @@ def order_start():
 
 def check_access(asset_id):
     # Helper to check ownership
-    data = db.session.execute("SELECT * FROM smart_sign_assets WHERE id=:id AND user_id=:uid", {"id": asset_id, "uid": current_user.id}).fetchone()
+    db = get_db()
+    data = db.execute("SELECT * FROM sign_assets WHERE id=%s AND user_id=%s", (asset_id, current_user.id)).fetchone()
     if not data:
         abort(404)
     return dict(data)
@@ -183,6 +184,12 @@ def checkout_smartsign():
         pass
 
     # 7. Create Order
+    # 7. Create Order (Using Raw SQL/Model wrapper)
+    # Order model now supports save() via raw SQL, but we need to ensure design_payload is wrapped or handled.
+    # Our Order.save() logic takes kwargs.
+    
+    from psycopg2.extras import Json
+    
     order = Order(
         user_id=current_user.id,
         order_type='smart_sign',
@@ -192,11 +199,10 @@ def checkout_smartsign():
         sides=sides,
         print_size=size,
         layout_id=layout_id,
-        design_payload=payload,  # JSONB
+        design_payload=Json(payload),  # JSONB Safe Wrapper
         design_version=1
     )
-    db.session.add(order)
-    db.session.commit()
+    order.save() # Uses raw SQL INSERT defined in models.py
     
     # 8. Stripe Session
     try:

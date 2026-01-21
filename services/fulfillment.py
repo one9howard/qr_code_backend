@@ -11,7 +11,7 @@ def fulfill_order(order_id):
     Generate the high-res PDF for the order and mark it locally fulfilled (ready for print).
     This function is idempotent.
     """
-    order = Order.query.get(order_id)
+    order = Order.get(order_id, none_if_missing=True)
     if not order:
         logger.error(f"Order {order_id} not found.")
         return False
@@ -80,10 +80,18 @@ def fulfill_order(order_id):
                 return False
 
         # Update Order Record
-        order.fulfillment_status = 'fulfilled'
-        order.sign_pdf_path = output_path # Point to print-ready file
-        order.updated_at = db.func.now()
-        db.session.commit()
+        # Update Order Record
+        from database import get_db
+        _db = get_db()
+        
+        _db.execute("""
+            UPDATE orders 
+            SET fulfillment_status = 'fulfilled',
+                sign_pdf_path = %s,
+                updated_at = NOW()
+            WHERE id = %s
+        """, (output_path, order_id))
+        _db.commit()
         
         print(f"[Fulfillment] Success: {output_path}")
         return True
