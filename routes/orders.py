@@ -15,7 +15,9 @@ logger = logging.getLogger(__name__)
 @orders_bp.route('/orders/<int:order_id>/preview.webp')
 def order_preview(order_id):
     """Serve the WebP preview for a specific order."""
-    order = Order.query.filter_by(id=order_id).first_or_404()
+    order = Order.get(order_id)
+    if not order:
+        abort(404)
     
     # Auth check: User must own order OR be admin OR use a signed token (future)
     if not current_user.is_authenticated or (current_user.id != order.user_id and not current_user.is_admin):
