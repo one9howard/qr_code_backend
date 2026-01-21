@@ -80,12 +80,13 @@ def create_app(test_config=None):
             
             with app.app_context():
                 # Check if we have Stripe keys at all first
-                if app.config.get('STRIPE_SECRET_KEY'):
-                    print("[Startup] Warming Stripe Price Cache...")
-                    keys = get_all_required_lookup_keys()
-                    warm_cache(keys)
-                else:
-                    print("[Startup] WARNING: No Stripe keys found. Skipping price cache warmup.")
+                # if app.config.get('STRIPE_SECRET_KEY'):
+                #     print("[Startup] Warming Stripe Price Cache...")
+                #     keys = get_all_required_lookup_keys()
+                #     warm_cache(keys)
+                # else:
+                #     print("[Startup] WARNING: No Stripe keys found. Skipping price cache warmup.")
+                pass
         except Exception as e:
             print(f"[Startup] CRITICAL: Failed to verify Stripe Pricing configuration: {e}")
             raise RuntimeError(f"Pricing Configuration Error: {e}")
