@@ -79,17 +79,17 @@ def order_sign():
 
     order = None
     if current_user.is_authenticated:
-        order = Order.query.filter_by(id=order_id, user_id=current_user.id).first()
+        order = Order.get_by(id=order_id, user_id=current_user.id)
     else:
         # Check guest token if implemented, else fail
         # For now, require auth
         guest_token = request.headers.get("X-Guest-Token")
         if guest_token:
              # Basic guest lookup placeholder
-             order = Order.query.filter_by(
+             order = Order.get_by(
                 id=order_id,
                 guest_token=guest_token
-            ).first()
+            )
         
     if not order:
         return jsonify({"success": False, "error": "Order record not found"}), 404

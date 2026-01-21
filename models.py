@@ -57,3 +57,71 @@ class User(UserMixin):
             full_name=dict(user).get('full_name'),
             username=dict(user).get('username')
         )
+
+class Order:
+    def __init__(self, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)
+            
+    @classmethod
+    def get(cls, order_id):
+        db = get_db()
+        row = db.execute("SELECT * FROM orders WHERE id = %s", (order_id,)).fetchone()
+        if not row: return None
+        return cls(**dict(row))
+    
+    @classmethod
+    def get_by(cls, **kwargs):
+        """Simple filter helper (first match)"""
+        db = get_db()
+        clauses = []
+        params = []
+        for k, v in kwargs.items():
+            clauses.append(f"{k} = %s")
+            params.append(v)
+        
+        where = " AND ".join(clauses)
+        sql = f"SELECT * FROM orders WHERE {where} LIMIT 1"
+        row = db.execute(sql, tuple(params)).fetchone()
+        if not row: return None
+        return cls(**dict(row))
+
+    def save(self):
+        """Insert or Update based on id existence"""
+        db = get_db()
+        if hasattr(self, 'id') and self.id:
+            # Update (Partial) - simplified to just known fields or explicit update required
+            # For now, let's assume specific update methods are better, 
+            # or we implement basic update for specific fields.
+            pass
+        else:
+            # Insert
+            cols = []
+            vals = []
+            placeholders = []
+            for k, v in self.__dict__.items():
+                if k.startswith('_'): continue
+                cols.append(k)
+                vals.append(v)
+                placeholders.append("%s")
+            
+            sql = f"INSERT INTO orders ({', '.join(cols)}) VALUES ({', '.join(placeholders)}) RETURNING id"
+            row = db.execute(sql, tuple(vals)).fetchone()
+            self.id = row['id']
+            db.commit()
+
+# Mock db object for legacy imports (e.g. imports Order, db)
+# This allows 'from models import db' to work, giving access to raw connection wrapper if needed
+class DBProxy:
+    @property
+    def session(self):
+        return self
+    
+    def add(self, obj):
+        if hasattr(obj, 'save'):
+            obj.save()
+    
+    def commit(self):
+        get_db().commit()
+        
+db = DBProxy()

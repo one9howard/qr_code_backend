@@ -40,12 +40,15 @@ def checkout_smart_riser():
         material=material,
         sides=sides,
         print_size=size,
-        quantity=1,
-        design_payload={} # No complicated design for riser yet, maybe just text later?
-                          # For now assuming static or simple.
+        quantity=1
+        # design_payload defaults to None/empty in init if not passed? 
+        # Actually my raw Order.__init__ just sets kwargs.
+        # I should pass all cols needed.
     )
-    db.session.add(order)
-    db.session.commit()
+    # Ensure design_payload is set if table requires it (it's nullable usually or jsonb default)
+    order.design_payload = {} 
+    
+    order.save() # Uses raw SQL insert defined in models.py
     
     # Stripe Session
     try:
