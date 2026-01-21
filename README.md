@@ -175,10 +175,10 @@ To verify the Stripe integration end-to-end:
 python app.py
 ```
 
-## Print Server
-The local print server must be running to receive validated orders:
+## Print Fulfillment Worker
+The print worker claims jobs and downloads PDFs for local printing:
 ```bash
-python print_server.py
+python scripts/print_worker.py
 ```
 
 ## Production Deployment
@@ -224,7 +224,6 @@ For production deployment, the following environment variables **must** be set:
 - `STRIPE_WEBHOOK_SECRET` - Stripe webhook signing secret
 - `STRIPE_PRICE_MONTHLY`, `STRIPE_PRICE_ANNUAL`, `STRIPE_PRICE_SIGN` - Stripe price IDs
 - `BASE_URL` - Your production URL (e.g., https://yourdomain.com)
-- `PRINT_SERVER_URL` - Print server endpoint URL
 
 See `.env.example` for a complete template.
 

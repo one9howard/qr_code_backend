@@ -2,7 +2,7 @@ import os
 import requests
 import time
 from database import get_db
-from config import PRINT_SERVER_URL, PRINT_SERVER_TOKEN
+from config import PRINT_SERVER_TOKEN
 from utils.timestamps import utc_iso
 from services.pdf_smartsign import generate_smartsign_pdf
 from constants import (

@@ -3,7 +3,6 @@ import tempfile
 import subprocess
 import sys
 
-
 # Load .env explicitly for tests (since we aren't starting via Flask CLI)
 from dotenv import load_dotenv
 load_dotenv()
@@ -42,6 +41,37 @@ if _db_url and "@db:" in _db_url:
     # Patch DATABASE_URL to use localhost when running tests on host machine (outside Docker network)
     val = _db_url.replace("@db:", "@localhost:")
     os.environ["DATABASE_URL"] = val
+
+
+# SAFETY GUARD: Prevent accidental test runs against remote/production DBs
+def _check_test_db_safety():
+    db_url = os.environ.get("DATABASE_URL", "")
+    if not db_url:
+        return
+        
+    try:
+        from urllib.parse import urlparse
+        parsed = urlparse(db_url)
+        hostname = parsed.hostname or ""
+        
+        # Strict Allow List: localhost only (Docker 'db' alias should have been patched above)
+        is_local = hostname.lower() in ("localhost", "127.0.0.1")
+        
+        if not is_local and os.environ.get("ALLOW_REMOTE_TEST_DB") != "1":
+            print(f"!!! CRITICAL TEST SAFETY ERROR !!!")
+            # Don't print full URL to avoid leaking secrets
+            print(f"DATABASE_URL points to remote host: '{hostname}'")
+            print("Tests are blocked to prevent data loss.")
+            print("To override, set ALLOW_REMOTE_TEST_DB=1")
+            print("Otherwise, use: postgresql://postgres:postgres@localhost:5432/insite_test")
+            sys.exit(1)
+            
+    except Exception as e:
+        print(f"Error checking DATABASE_URL safety: {e}")
+        sys.exit(1)
+
+_check_test_db_safety()
+
 
 
 import pytest

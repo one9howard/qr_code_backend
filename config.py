@@ -70,7 +70,6 @@ PDF_PATH = os.path.join(STATIC_DIR, "pdf")
 
 # URLs
 BASE_URL = get_env_str("BASE_URL", default="http://192.168.1.186:5000")
-PRINT_SERVER_URL = get_env_str("PRINT_SERVER_URL", default="http://127.0.0.1:8080/print-jobs")
 
 # Security: SECRET_KEY
 SECRET_KEY = os.getenv("SECRET_KEY")

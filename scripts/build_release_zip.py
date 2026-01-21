@@ -96,7 +96,6 @@ def get_profile_config(profile: str):
         "failures*.txt",
         "landing.png",
         "design_reference.png",
-        "print_server.py",
 
         # Agent/workflow directories
         ".agent",
