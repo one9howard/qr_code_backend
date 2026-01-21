@@ -14,7 +14,7 @@ def setup_data(client, db):
     property_id = db.execute("INSERT INTO properties (agent_id, address, beds, baths) VALUES (%s, '123 Test St', '3', '2') RETURNING id", (agent_id,)).fetchone()['id']
 
     # Setup Asset for Pro
-    asset_id = db.execute("INSERT INTO sign_assets (user_id, code, label) VALUES (%s, 'PRO123', 'My Sign') RETURNING id", (pro_id,)).fetchone()['id']
+    asset_id = db.execute("INSERT INTO sign_assets (user_id, code, label, active_property_id) VALUES (%s, 'PRO123', 'My Sign', %s) RETURNING id", (pro_id, property_id)).fetchone()['id']
     
     db.commit()
     
@@ -59,9 +59,13 @@ class TestSmartSignPrinting:
         assert asset['background_style'] == 'dark'
         assert asset['include_logo'] is True
 
+    @patch('routes.smart_signs.update_attempt_status')
+    @patch('routes.smart_signs.create_checkout_attempt')
     @patch('routes.smart_signs.stripe.checkout.Session.create')
     @patch('os.environ.get')
-    def test_checkout_flow(self, mock_env, mock_stripe, client, setup_data, db):
+    def test_checkout_flow(self, mock_env, mock_stripe, mock_create_attempt, mock_update_status, client, setup_data, db):
+        # Mock Attempt
+        mock_create_attempt.return_value = {'attempt_token': 'tok', 'idempotency_key': 'key'}
         # Mock Price
         def get_env(key, default=None):
             if key == 'SMARTSIGN_PRICE_CENTS': return '2900'

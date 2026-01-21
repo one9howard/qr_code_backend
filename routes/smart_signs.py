@@ -335,6 +335,7 @@ def checkout_smartsign():
         return redirect(session.url, code=303)
 
     except Exception as e:
+        print(f"!!! CHECKOUT EXCEPTION: {e}")
         current_app.logger.error(f"SmartSign checkout error: {e}")
         flash("Checkout initialization failed. Please try again.", "error")
         return redirect(url_for('smart_signs.order_start', asset_id=asset_id))
