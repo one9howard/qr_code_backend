@@ -150,6 +150,87 @@ def get_property_gating_status(property_id):
         "locked_reason": locked_reason
     }
 
+def get_smart_sign_assets(user_id):
+    """
+    Fetch all SmartSign assets owned by the user.
+    Returns list of dicts.
+    """
+    db = get_db()
+    rows = db.execute("""
+        SELECT * FROM smart_sign_assets 
+        WHERE user_id = %s 
+        ORDER BY created_at DESC
+    """, (user_id,)).fetchall()
+    return [dict(r) for r in rows]
+
+class GatingService:
+    def assign_smart_sign(self, user_id, asset_id, property_id):
+        """
+        Assigns a SmartSign asset to a property.
+        Validates ownership and ensures 1-to-1 mapping if strictly enforced,
+        or updates the pointer.
+        """
+        db = get_db()
+        
+        # Verify ownership
+        asset = db.execute(
+            "SELECT * FROM smart_sign_assets WHERE id = %s AND user_id = %s",
+            (asset_id, user_id)
+        ).fetchone()
+        
+        if not asset:
+            return False, "Asset not found or access denied."
+            
+        # Verify property ownership
+        # Usually checking agent_id -> user_id link
+        prop = db.execute("""
+            SELECT p.id 
+            FROM properties p
+            JOIN agents a ON p.agent_id = a.id
+            WHERE p.id = %s AND a.user_id = %s
+        """, (property_id, user_id)).fetchone()
+        
+        if not prop:
+            return False, "Property not found or access denied."
+            
+        # Perform Assignment
+        # If asset was assigned elsewhere, we overwrite.
+        try:
+            db.execute(
+                "UPDATE smart_sign_assets SET property_id = %s, updated_at = NOW() WHERE id = %s",
+                (property_id, asset_id)
+            )
+            db.commit()
+            return True, "Assigned successfully."
+        except Exception as e:
+            return False, f"Database error: {str(e)}"
+
+    def unassign_smart_sign(self, user_id, asset_id):
+        """
+        Unassigns a property from a SmartSign asset.
+        """
+        db = get_db()
+         # Verify ownership
+        asset = db.execute(
+            "SELECT * FROM smart_sign_assets WHERE id = %s AND user_id = %s",
+            (asset_id, user_id)
+        ).fetchone()
+        
+        if not asset:
+            return False, "Asset not found."
+            
+        try:
+            db.execute(
+                "UPDATE smart_sign_assets SET property_id = NULL, updated_at = NOW() WHERE id = %s",
+                (asset_id,)
+            )
+            db.commit()
+            return True, "Unassigned successfully."
+        except Exception as e:
+            return False, f"Database error: {str(e)}"
+
+gating_service = GatingService()
+
 
 def can_create_property(user_id):
     """
