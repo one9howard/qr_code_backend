@@ -33,7 +33,6 @@ class TestConfigStagingBoot:
         monkeypatch.setenv('STRIPE_WEBHOOK_SECRET', 'whsec_test123')
         monkeypatch.setenv('PRINT_JOBS_TOKEN', 'test-token')
         monkeypatch.setenv('STRIPE_PRICE_MONTHLY', 'price_test_monthly')
-        monkeypatch.setenv('STRIPE_PRICE_SIGN', 'price_test_sign')
 
         # Remove config from sys.modules to force reimport
         for mod_name in list(sys.modules.keys()):

@@ -118,18 +118,16 @@ Configure these in Railway: **Service → Variables**
 | `SMTP_PASS` | `<app-password>` | |
 | `NOTIFY_EMAIL_FROM` | `no-reply@...` | Optional |
 
-#### Stripe Prices (Optional)
-The app uses Stripe Lookup Keys to resolve prices dynamically. If your Stripe account has prices with lookup keys like `18x24_sign`, no additional config is needed.
+#### Stripe Pricing
+Print pricing is resolved via Stripe *Price lookup keys* only (no STRIPE_PRICE_* env vars for prints).
 
-For explicit fallbacks (Required if Lookup Keys not set):
+You must create active Stripe Products + Prices with the lookup keys required by the app (see `services/print_catalog.py`).
+Subscription pricing still uses env vars:
+
 | Variable | Value |
 |----------|-------|
 | `STRIPE_PRICE_MONTHLY` | `price_xxxxx` |
 | `STRIPE_PRICE_ANNUAL` | `price_xxxxx` |
-| `STRIPE_PRICE_SIGN_12X18` | `price_xxxxx` |
-| `STRIPE_PRICE_SIGN_18X24` | `price_xxxxx` |
-| `STRIPE_PRICE_SIGN_24X36` | `price_xxxxx` |
-| `STRIPE_PRICE_SIGN_36X18` | `price_xxxxx` |
 
 ---
 

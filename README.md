@@ -294,7 +294,7 @@ Physical sign prices vary by size. The app uses Stripe **Lookup Keys** to dynami
 3. Set the **Lookup Key** on each price (e.g., `24x36_sign`).
 4. Ensure all products are **Active** (not archived).
 
-**Verification:** Run `python scripts/verify_stripe_prices.py` to confirm all mappings work.
+**Verification:** Run `python scripts/verify_stripe_lookup_keys.py` to confirm all mappings work.
 
 ### File Upload Security
 - Maximum upload size: 16MB

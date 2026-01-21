@@ -74,7 +74,8 @@ PRINT_JOBS_TOKEN=<random-string>
 
 # Stripe Price IDs (REQUIRED - from Stripe Dashboard)
 STRIPE_PRICE_MONTHLY=price_...
-STRIPE_PRICE_SIGN=price_...
+
+# Print products do NOT use env price IDs. They use Stripe Price lookup_keys (see services/print_catalog.py).
 ```
 
 > [!NOTE]
