@@ -116,6 +116,9 @@ def create_app(test_config=None):
     from routes.smart_signs import smart_signs_bp
     app.register_blueprint(smart_signs_bp)
 
+    from routes.listing_kits import listing_kits_bp
+    app.register_blueprint(listing_kits_bp)
+
     # Exemptions
     csrf.exempt(webhook_bp)
     csrf.exempt(leads_bp)

@@ -259,6 +259,8 @@ def handle_payment_checkout(db, session):
     
     if purpose == 'listing_unlock':
         target_type = 'listing_unlock'
+    elif purpose == 'listing_kit':
+        target_type = 'listing_kit'
     elif purpose == 'smart_sign':
         target_type = 'smart_sign'
     else:
@@ -401,6 +403,23 @@ def handle_payment_checkout(db, session):
                     db.commit()
                 except:
                     pass
+    elif final_type == 'listing_kit':
+        # 6. Trigger Listing Kit Generation (Idempotent)
+        current_app.logger.info(f"[Webhook] Triggering Listing Kit generation for Order {order_id}...")
+        try:
+            from services.listing_kits import create_or_get_kit, generate_kit
+            # Create/Get kit record
+            # Use order user_id if possible, or resolve from somewhere?
+            # Order row doesn't store user_id explicitly in this scope, but 'orders' table has user_id.
+            order_row = db.execute("SELECT user_id, property_id FROM orders WHERE id = %s", (order_id,)).fetchone()
+            if order_row:
+                 kit = create_or_get_kit(order_row['user_id'], order_row['property_id'])
+                 generate_kit(kit['id'])
+                 current_app.logger.info(f"[Webhook] Kit {kit['id']} generated successfully.")
+        except Exception as e:
+            current_app.logger.error(f"[Webhook] Failed to generate kit for Order {order_id}: {e}")
+            # Do not rollback payment processing; kit gen failure is non-fatal to payment
+            pass
     else:
         current_app.logger.info(f"[Webhook] Order {order_id} is type '{final_type}'. Skipping physical fulfillment.")
 

@@ -73,6 +73,8 @@ def get_property_gating_status(property_id):
             # Map order_type to paid_via
             if order_type == 'listing_unlock':
                 paid_via = 'listing_unlock'
+            elif order_type == 'listing_kit':
+                paid_via = 'listing_kit'
             elif order_type == 'sign':
                 paid_via = 'sign_order'
             else:
