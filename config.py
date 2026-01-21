@@ -32,7 +32,16 @@ if not DATABASE_URL:
     raise RuntimeError("DATABASE_URL environment variable is required.")
 
 if not DATABASE_URL.startswith("postgres"):
-    raise ValueError(f"CRITICAL: DATABASE_URL must be a PostgreSQL URL. Got: {DATABASE_URL}. Non-Postgres DBs are strictly forbidden.")
+    # Never include credentials in errors/logs.
+    try:
+        from urllib.parse import urlparse
+        p = urlparse(DATABASE_URL)
+        got = f"{p.scheme}://{p.hostname}" if p.scheme else "INVALID_URL"
+    except Exception:
+        got = "INVALID_URL"
+    raise ValueError(
+        f"CRITICAL: DATABASE_URL must be a PostgreSQL URL. Got: {got}. Non-Postgres DBs are strictly forbidden."
+    )
 
 if DATABASE_URL.startswith("postgres://"):
     DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
