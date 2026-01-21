@@ -93,6 +93,7 @@ def get_profile_config(profile: str):
         "*_output*.txt",
         "test_output.txt",
         "test_log.txt",
+        "failures*.txt",
         "landing.png",
         "design_reference.png",
         "print_server.py",

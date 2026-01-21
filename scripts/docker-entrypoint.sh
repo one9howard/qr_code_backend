@@ -16,7 +16,6 @@ if [ "$RUN_MIGRATIONS_ON_STARTUP" = "true" ]; then
   fi
 
   python3 migrate.py
-  python3 migrate.py
 else
   echo "[Entrypoint] Skipping migrations (RUN_MIGRATIONS_ON_STARTUP is not true)."
 fi

@@ -96,3 +96,4 @@ test_inbox/
 
 # Logs
 *.log
+failures*.txt

@@ -7,7 +7,7 @@ import sys
 # Load .env explicitly for tests (since we aren't starting via Flask CLI)
 from dotenv import load_dotenv
 load_dotenv()
-print(f"DEBUG_CONFTEST_TOP: DATABASE_URL={os.environ.get('DATABASE_URL')}")
+
 
 # IMPORTANT: Set env vars BEFORE importing the app/config modules.
 # config.py evaluates env at import time.

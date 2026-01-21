@@ -47,6 +47,14 @@ def migrate():
         print(f"[Manage] ERROR: Only Postgres is supported (got {database_url})")
         sys.exit(1)
 
+    try:
+        from urllib.parse import urlparse
+        if urlparse(database_url).hostname == 'db':
+            print("[Manage] ERROR: DATABASE_URL host is 'db' which only resolves inside docker-compose. Either run migrations inside docker-compose or change host to localhost.")
+            sys.exit(1)
+    except ImportError:
+        pass  # Basic robust fallback if imports fail, though stdlib usually safe
+
     print("[Manage] Detected DATABASE_URL, using Alembic for Postgres...")
     try:
         from alembic.config import Config

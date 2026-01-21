@@ -62,6 +62,25 @@ pip-sync requirements.txt requirements-dev.txt
 pytest -q
 ```
 
+### Local testing (Docker Postgres)
+
+To run tests locally using Docker for the database (Windows compatible):
+
+**Hostname Note:**
+- Use `localhost` when running on your host machine (as below).
+- Use `db` (the service name) only when running *inside* docker-compose.
+
+```powershell
+docker run --name insite-pg -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=insite_test -p 5432:5432 -d postgres:16
+
+$env:DATABASE_URL="postgresql://postgres:postgres@localhost:5432/insite_test"
+python migrate.py
+pytest -q
+
+# Cleanup
+docker rm -f insite-pg
+```
+
 ### Environment Configuration
 
 ```bash
