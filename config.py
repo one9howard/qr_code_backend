@@ -84,12 +84,12 @@ if not SECRET_KEY:
 MAX_CONTENT_LENGTH = 16 * 1024 * 1024
 
 # Print Server Security
-PRINT_SERVER_TOKEN = get_env_str("PRINT_SERVER_TOKEN")
-if not PRINT_SERVER_TOKEN:
+PRINT_JOBS_TOKEN = get_env_str("PRINT_JOBS_TOKEN")
+if not PRINT_JOBS_TOKEN:
     if os.environ.get("FLASK_ENV") == "production":
-        raise ValueError("PRINT_SERVER_TOKEN must be set in production environment.")
+        raise ValueError("PRINT_JOBS_TOKEN must be set in production environment.")
     else:
-        PRINT_SERVER_TOKEN = "dev-token-insecure"
+        PRINT_JOBS_TOKEN = "dev-token-insecure"
 
 # =============================================================================
 # Stripe & App Stage Configuration (Safe Staging)
@@ -245,8 +245,8 @@ def validate_production_config():
     if not is_set(STRIPE_WEBHOOK_SECRET):
         _missing.append("STRIPE_WEBHOOK_SECRET")
 
-    if not is_set(PRINT_SERVER_TOKEN):
-        _missing.append("PRINT_SERVER_TOKEN")
+    if not is_set(PRINT_JOBS_TOKEN):
+        _missing.append("PRINT_JOBS_TOKEN")
     
     # SMTP Configuration (required for lead notifications ONLY in prod)
     # Staging/Test environments can run without email

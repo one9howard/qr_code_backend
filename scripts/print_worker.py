@@ -10,7 +10,7 @@ Workflow:
   4) POST {BASE_URL}/api/print-jobs/<job_id>/downloaded
 
 Auth:
-  Authorization: Bearer <PRINT_SERVER_TOKEN>
+  Authorization: Bearer <PRINT_JOBS_TOKEN>
 """
 
 from __future__ import annotations
@@ -61,7 +61,7 @@ def claim_jobs(base_url: str, token: str, limit: int, timeout: int) -> List[Dict
     url = f"{base_url}/api/print-jobs/claim"
     resp = requests.post(url, headers=auth_headers(token), params={"limit": limit}, timeout=timeout)
     if resp.status_code == 401:
-        raise RuntimeError("Unauthorized: PRINT_SERVER_TOKEN is incorrect")
+        raise RuntimeError("Unauthorized: PRINT_JOBS_TOKEN is incorrect")
     resp.raise_for_status()
     payload = resp.json() if resp.content else {}
     return payload.get("jobs", [])
@@ -184,7 +184,7 @@ def run_loop(
 def parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
     p = argparse.ArgumentParser(description="InSite Signs print worker")
     p.add_argument("--base-url", default=os.environ.get("INSITE_BASE_URL", ""), help="Cloud app base URL")
-    p.add_argument("--token", default=os.environ.get("PRINT_SERVER_TOKEN", ""), help="Bearer token")
+    p.add_argument("--token", default=os.environ.get("PRINT_JOBS_TOKEN", ""), help="Bearer token")
     p.add_argument("--inbox-dir", default=os.environ.get("PRINT_WORKER_INBOX", "/opt/insite_print_worker/inbox"))
     p.add_argument("--poll-seconds", type=float, default=float(os.environ.get("PRINT_WORKER_POLL_SECONDS", "10")))
     p.add_argument("--limit", type=int, default=int(os.environ.get("PRINT_WORKER_LIMIT", "10")))
@@ -201,7 +201,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         print("[worker] ERROR: --base-url (or INSITE_BASE_URL) is required")
         return 2
     if not args.token:
-        print("[worker] ERROR: --token (or PRINT_SERVER_TOKEN) is required")
+        print("[worker] ERROR: --token (or PRINT_JOBS_TOKEN) is required")
         return 2
 
     inbox_dir = Path(args.inbox_dir)

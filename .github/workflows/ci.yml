@@ -29,7 +29,7 @@ jobs:
       APP_STAGE: test
       BASE_URL: http://localhost
       SECRET_KEY: test-secret
-      PRINT_SERVER_TOKEN: test-print-token
+      PRINT_JOBS_TOKEN: test-print-token
       STRIPE_SECRET_KEY: sk_test_dummy
       STRIPE_WEBHOOK_SECRET: whsec_dummy
       STORAGE_BACKEND: local

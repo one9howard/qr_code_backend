@@ -16,7 +16,7 @@ A Flask-based SaaS for generating QR code lawn signs for real estate agents.
 > 1. Rotate keys immediately in [Stripe Dashboard](https://dashboard.stripe.com/apikeys)
 > 2. Update `.env` on all servers
 > 3. Review Stripe access logs for unauthorized usage
-> 4. Regenerate `SECRET_KEY` and `PRINT_SERVER_TOKEN`
+> 4. Regenerate `SECRET_KEY` and `PRINT_JOBS_TOKEN`
 
 Use the release builder script (`python scripts/build_release_zip.py`) to create clean release packages.
 
@@ -409,9 +409,9 @@ python -m services.print_server
 ```
 
 **Run in Production:**
-Require `PRINT_SERVER_TOKEN` environment variable.
+Require `PRINT_JOBS_TOKEN` environment variable.
 ```bash
-export PRINT_SERVER_TOKEN="secure-token-here"
+export PRINT_JOBS_TOKEN="secure-token-here"
 python -m services.print_server
 ```
 

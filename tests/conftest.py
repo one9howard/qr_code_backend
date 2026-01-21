@@ -19,7 +19,7 @@ os.environ.setdefault("FLASK_ENV", "test")
 os.environ.setdefault("APP_STAGE", "test")
 os.environ.setdefault("BASE_URL", "http://localhost")
 os.environ["SECRET_KEY"] = "test-secret"
-os.environ["PRINT_SERVER_TOKEN"] = "test-print-token"
+os.environ["PRINT_JOBS_TOKEN"] = "test-print-token"
 
 def _force_env_if_blank(key: str, value: str):
     v = os.environ.get(key)

@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify, current_app, url_for, send_file
 from database import get_db
-from config import PRINT_SERVER_TOKEN
+from config import PRINT_JOBS_TOKEN
 from utils.storage import get_storage
 import secrets
 from constants import ORDER_STATUS_FULFILLED
@@ -8,12 +8,12 @@ from constants import ORDER_STATUS_FULFILLED
 printing_bp = Blueprint('printing', __name__, url_prefix='/api/print-jobs')
 
 def check_auth():
-    """Verify Bearer token matches PRINT_SERVER_TOKEN constant-time."""
+    """Verify Bearer token matches PRINT_JOBS_TOKEN constant-time."""
     auth_header = request.headers.get("Authorization", "")
     if not auth_header.startswith("Bearer "):
         return False
     token = auth_header.split(" ")[1]
-    return secrets.compare_digest(token, PRINT_SERVER_TOKEN)
+    return secrets.compare_digest(token, PRINT_JOBS_TOKEN)
 
 @printing_bp.route("/<job_id>/pdf", methods=["GET"])
 def download_job_pdf(job_id):

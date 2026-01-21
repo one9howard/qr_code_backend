@@ -43,7 +43,6 @@ cp config.py "$RELEASE_DIR/"
 cp constants.py "$RELEASE_DIR/"
 cp database.py "$RELEASE_DIR/"
 cp models.py "$RELEASE_DIR/"
-cp print_server.py "$RELEASE_DIR/"
 
 # Copy pip-tools files (input and lockfiles)
 cp requirements.in "$RELEASE_DIR/"

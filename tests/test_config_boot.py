@@ -31,7 +31,7 @@ class TestConfigStagingBoot:
         monkeypatch.setenv('STRIPE_SECRET_KEY', 'sk_test_12345')
         monkeypatch.setenv('STRIPE_PUBLISHABLE_KEY', 'pk_test_12345')
         monkeypatch.setenv('STRIPE_WEBHOOK_SECRET', 'whsec_test123')
-        monkeypatch.setenv('PRINT_SERVER_TOKEN', 'test-token')
+        monkeypatch.setenv('PRINT_JOBS_TOKEN', 'test-token')
         monkeypatch.setenv('STRIPE_PRICE_MONTHLY', 'price_test_monthly')
         monkeypatch.setenv('STRIPE_PRICE_SIGN', 'price_test_sign')
 

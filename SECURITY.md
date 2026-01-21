@@ -21,7 +21,7 @@ See `.env.example` for the full list. Key secrets include:
 - `SECRET_KEY` - Flask session encryption
 - `STRIPE_SECRET_KEY` - Stripe API key
 - `STRIPE_WEBHOOK_SECRET` - Webhook signature verification
-- `PRINT_SERVER_TOKEN` - Print server authentication
+- `PRINT_JOBS_TOKEN` - Print server authentication
 
 ### Before Committing
 

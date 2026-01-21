@@ -13,7 +13,7 @@ EnvironmentFile=/etc/insite_print_worker.env
 # Use venv if installer created it
 ExecStart=/opt/insite_print_worker/venv/bin/python -u /opt/insite_print_worker/print_worker.py \
   --base-url ${INSITE_BASE_URL} \
-  --token ${PRINT_SERVER_TOKEN} \
+  --token ${PRINT_JOBS_TOKEN} \
   --inbox-dir ${PRINT_WORKER_INBOX} \
   --poll-seconds ${PRINT_WORKER_POLL_SECONDS} \
   --limit ${PRINT_WORKER_LIMIT} \

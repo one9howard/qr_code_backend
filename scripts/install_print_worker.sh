@@ -2,14 +2,14 @@
 set -euo pipefail
 
 # Usage:
-#   sudo ./install_print_worker.sh https://app.insitesigns.com <PRINT_SERVER_TOKEN> [poll_seconds]
+#   sudo ./install_print_worker.sh https://app.insitesigns.com <PRINT_JOBS_TOKEN> [poll_seconds]
 
 BASE_URL="${1:-}"
 TOKEN="${2:-}"
 POLL_SECONDS="${3:-10}"
 
 if [[ -z "${BASE_URL}" || -z "${TOKEN}" ]]; then
-  echo "Usage: sudo $0 <BASE_URL> <PRINT_SERVER_TOKEN> [poll_seconds]" >&2
+  echo "Usage: sudo $0 <BASE_URL> <PRINT_JOBS_TOKEN> [poll_seconds]" >&2
   exit 2
 fi
 
@@ -46,7 +46,7 @@ chmod 755 "${INSTALL_DIR}/print_worker.py"
 # 5) Write environment file
 cat > "${ENV_FILE}" <<EOF
 INSITE_BASE_URL=${BASE_URL}
-PRINT_SERVER_TOKEN=${TOKEN}
+PRINT_JOBS_TOKEN=${TOKEN}
 PRINT_WORKER_INBOX=${INBOX_DIR}
 PRINT_WORKER_POLL_SECONDS=${POLL_SECONDS}
 PRINT_WORKER_LIMIT=10

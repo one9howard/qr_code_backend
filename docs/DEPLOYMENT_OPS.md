@@ -25,7 +25,7 @@ Each environment needs its own set of secrets stored in AWS SSM via Copilot.
 - `STRIPE_SECRET_KEY`: `sk_test_...` (for test) / `sk_live_...` (for prod).
 - `STRIPE_PUBLISHABLE_KEY`: `pk_test_...` (for test) / `pk_live_...` (for prod).
 - `STRIPE_WEBHOOK_SECRET`: Signing secret from Stripe Dashboard.
-- `PRINT_SERVER_TOKEN`: Secure token.
+- `PRINT_JOBS_TOKEN`: Secure token.
 - `STRIPE_PRICE_MONTHLY`, `STRIPE_PRICE_ANNUAL`, etc. (Matching the environment).
 
 ## 3. Migration Workflow

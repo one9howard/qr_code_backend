@@ -22,7 +22,7 @@ Set environment variables (in `.env` or system):
 
 ```bash
 export INSITE_BASE_URL="https://insitesigns.com"
-export PRINT_SERVER_TOKEN="<prod-token-from-railway>"
+export PRINT_JOBS_TOKEN="<prod-token-from-railway>"
 export PRINT_WORKER_INBOX="./inbox"
 ```
 

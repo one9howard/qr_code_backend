@@ -45,7 +45,7 @@ def atomic_data(db):
 
 def test_claim_jobs_success(client, db, atomic_data):
     """Test correctly claiming a queued job."""
-    headers = {'Authorization': f"Bearer {os.environ.get('PRINT_SERVER_TOKEN')}"}
+    headers = {'Authorization': f"Bearer {os.environ.get('PRINT_JOBS_TOKEN')}"}
 
     resp = client.post('/api/print-jobs/claim?limit=1', headers=headers)
     assert resp.status_code == 200
@@ -69,7 +69,7 @@ def test_claim_unauthorized(client):
 
 def test_mark_downloaded_transition(client, db, atomic_data):
     """Test transition from claimed to downloaded."""
-    headers = {'Authorization': f"Bearer {os.environ.get('PRINT_SERVER_TOKEN')}"}
+    headers = {'Authorization': f"Bearer {os.environ.get('PRINT_JOBS_TOKEN')}"}
     job_id = atomic_data['job_id']
 
     # Ensure claimed status
@@ -96,7 +96,7 @@ def test_mark_downloaded_transition(client, db, atomic_data):
 
 def test_download_pdf(client, db, atomic_data):
     """Test PDF download endpoint."""
-    headers = {'Authorization': f"Bearer {os.environ.get('PRINT_SERVER_TOKEN')}"}
+    headers = {'Authorization': f"Bearer {os.environ.get('PRINT_JOBS_TOKEN')}"}
     job_id = atomic_data['job_id']
 
     # Mock storage
