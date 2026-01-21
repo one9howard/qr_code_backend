@@ -5,7 +5,9 @@ import logging
 import os
 import time
 from models import Order, db
-from config import STRIPE_SIGN_SUCCESS_URL, STRIPE_SIGN_CANCEL_URL, PRIVATE_PDF_DIR, PRIVATE_PREVIEW_DIR
+from config import (
+    STRIPE_SECRET_KEY, STRIPE_SIGN_SUCCESS_URL, STRIPE_SIGN_CANCEL_URL
+), PRIVATE_PDF_DIR, PRIVATE_PREVIEW_DIR
 from utils.sign_options import normalize_sign_size
 
 # Order Blueprint
