@@ -4,9 +4,10 @@ import os
 from dotenv import load_dotenv
 
 # Load .env before reading any environment variables
+# Note: override=False means existing env vars (e.g., from conftest.py) are preserved
 dotenv_path = os.path.join(os.path.dirname(__file__), '.env')
 if os.path.exists(dotenv_path):
-    load_dotenv()
+    load_dotenv(override=False)
     print("[Manage] Loaded .env file")
 
 # Put this script in the root so it can import local modules

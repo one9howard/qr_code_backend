@@ -149,3 +149,75 @@ def get_property_gating_status(property_id):
         "show_gallery": show_gallery,
         "locked_reason": locked_reason
     }
+
+
+def can_create_property(user_id):
+    """
+    Check if user can create a new property based on subscription status and limits.
+    
+    Free tier limits:
+    - Maximum active properties controlled by FREE_TIER_MAX_ACTIVE_PROPERTIES env var (default: 1)
+    - "Active" = property exists and is not deleted
+    
+    Args:
+        user_id: User ID to check
+        
+    Returns:
+        dict: {
+            "allowed": bool,
+            "reason": str | None,  # 'max_listings' if blocked
+            "limit": int,          # free tier limit
+            "current": int         # current active property count
+        }
+    """
+    import os
+    from services.subscriptions import is_subscription_active
+    
+    db = get_db()
+    
+    # 1. Check if user is Pro
+    user = db.execute(
+        "SELECT subscription_status FROM users WHERE id = %s",
+        (user_id,)
+    ).fetchone()
+    
+    if user and is_subscription_active(user['subscription_status']):
+        # Pro users have no limit
+        return {
+            "allowed": True,
+            "reason": None,
+            "limit": None,
+            "current": 0
+        }
+    
+    # 2. Free tier - check property count
+    free_limit = int(os.environ.get("FREE_TIER_MAX_ACTIVE_PROPERTIES", "1"))
+    
+    # Count all properties owned by user (active = exists in DB)
+    # Properties are considered "active" if they exist - simple MVP definition
+    count_result = db.execute(
+        """
+        SELECT COUNT(*) as cnt
+        FROM properties p
+        JOIN agents a ON p.agent_id = a.id
+        WHERE a.user_id = %s
+        """,
+        (user_id,)
+    ).fetchone()
+    
+    current_count = count_result['cnt'] if count_result else 0
+    
+    if current_count >= free_limit:
+        return {
+            "allowed": False,
+            "reason": "max_listings",
+            "limit": free_limit,
+            "current": current_count
+        }
+    
+    return {
+        "allowed": True,
+        "reason": None,
+        "limit": free_limit,
+        "current": current_count
+    }

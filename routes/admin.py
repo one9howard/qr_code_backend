@@ -73,3 +73,39 @@ def retry_fulfillment(order_id):
         flash(f"Retry failed for Order {order_id}: {error_msg}", "error")
             
     return redirect(url_for('admin.order_list'))
+
+
+@admin_bp.route("/admin/metrics")
+def metrics():
+    """Admin metrics page showing last 7 days of event counts."""
+    db = get_db()
+    
+    # Get event counts for last 7 days
+    metrics_data = db.execute("""
+        SELECT 
+            event_name,
+            COUNT(*) as count
+        FROM events
+        WHERE created_at >= NOW() - INTERVAL '7 days'
+        GROUP BY event_name
+        ORDER BY count DESC
+    """).fetchall()
+    
+    # Convert to dict for easy template access
+    counts = {row['event_name']: row['count'] for row in metrics_data}
+    
+    # Get daily breakdown for key events
+    daily_breakdown = db.execute("""
+        SELECT 
+            DATE(created_at) as date,
+            event_name,
+            COUNT(*) as count
+        FROM events
+        WHERE created_at >= NOW() - INTERVAL '7 days'
+        GROUP BY DATE(created_at), event_name
+        ORDER BY DATE(created_at) DESC, event_name
+    """).fetchall()
+    
+    return render_template("admin_metrics.html", 
+                         counts=counts, 
+                         daily_breakdown=daily_breakdown)

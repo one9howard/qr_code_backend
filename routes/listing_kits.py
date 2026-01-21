@@ -76,13 +76,40 @@ def start_kit(property_id):
         generate_kit(kit['id'])
         return jsonify({"status": "generating", "kit_id": kit['id']})
     else:
+        # Track upgrade prompt shown
+        try:
+            from services.events import track_event
+            track_event(
+                'upgrade_prompt_shown',
+                user_id=current_user.id,
+                property_id=property_id,
+                meta={'reason': 'kit_not_purchased'}
+            )
+        except Exception:
+            pass  # Best-effort tracking
+        
         # Create Stripe Checkout
         # Price ID needs to be defined in config (STRIPE_PRICE_LISTING_KIT)
         # Using a fallback for now if env not set, though config should have it.
         price_id = STRIPE_PRICE_LISTING_KIT
         if not price_id or 'price_' not in price_id:
-             # Fallback/Error if not configured
-             return jsonify({"error": "Pricing configuration missing"}), 500
+             # Return 402 with reason code if pricing not configured
+             return jsonify({
+                 "error": "upgrade_required",
+                 "reason": "kit_not_purchased",
+                 "message": "Purchase a Listing Kit for this property or upgrade to Pro."
+             }), 402
+             
+        # Track kit checkout started
+        try:
+            from services.events import track_event
+            track_event(
+                'kit_checkout_started',
+                user_id=current_user.id,
+                property_id=property_id
+            )
+        except Exception:
+            pass  # Best-effort tracking
              
         checkout_params = {
             "mode": "payment",
@@ -121,7 +148,7 @@ def start_kit(property_id):
         from services.stripe_checkout import update_attempt_status
         update_attempt_status(attempt['attempt_token'], 'session_created', stripe_session_id=session.id)
         
-        return jsonify({"status": "payment_required", "checkout_url": session.url})
+        return jsonify({"status": "payment_required", "checkout_url": session.url, "reason": "kit_not_purchased"})
 
 @listing_kits_bp.route('/api/kits/<int:kit_id>/download', methods=['GET'])
 @login_required

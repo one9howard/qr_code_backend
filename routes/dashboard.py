@@ -338,14 +338,51 @@ def assign_smart_sign(asset_id):
         except (TypeError, ValueError):
             flash("Invalid property selection.", "error")
             return redirect(url_for('dashboard.index', _anchor='smart-signs-section'))
-            
+    
+    # Determine reason code for tracking
+    reason_code = None
+    
     try:
         SmartSignsService.assign_asset(asset_id, property_id, current_user.id)
         flash("SmartSign assignment updated.", "success")
     except ValueError as e:
-        flash(str(e), "error")
+        error_msg = str(e)
+        # Determine reason code from error message
+        if "frozen" in error_msg.lower():
+            reason_code = "asset_frozen"
+        elif "activated" in error_msg.lower():
+            reason_code = "not_activated"
+        else:
+            reason_code = "validation_error"
+        
+        # Track event
+        try:
+            from services.events import track_event
+            track_event(
+                'upgrade_prompt_shown',
+                user_id=current_user.id,
+                meta={'reason': 'smart_sign_reassign_blocked', 'blocked_reason': reason_code}
+            )
+        except Exception:
+            pass  # Best-effort tracking
+        
+        flash(error_msg, "error")
     except PermissionError as e:
-        flash(str(e), "error")
+        error_msg = str(e)
+        reason_code = "upgrade_required"
+        
+        # Track event
+        try:
+            from services.events import track_event
+            track_event(
+                'upgrade_prompt_shown',
+                user_id=current_user.id,
+                meta={'reason': 'smart_sign_reassign_blocked', 'blocked_reason': reason_code}
+            )
+        except Exception:
+            pass  # Best-effort tracking
+        
+        flash(f"{error_msg} Upgrade to Pro to reassign SmartSigns.", "error")
     except Exception as e:
         flash("Error assigning SmartSign.", "error")
         print(f"[SmartSigns] Assign Error: {e}")

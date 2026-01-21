@@ -173,42 +173,25 @@ def submit():
             else:
                 # Free Users: Enforce Limit & Expiry
                 
-                # 1. Enforce Max Active Properties Limit
+                # 1. Enforce Max Active Properties Limit using canonical gating service
                 if current_user.is_authenticated:
-                    free_limit = int(os.environ.get("FREE_PLAN_MAX_ACTIVE_PROPERTIES", "1"))
+                    from services.gating import can_create_property
+                    gating_check = can_create_property(current_user.id)
                     
-                    # Count ACTIVE (non-expired) and UNPAID properties
-                    # properties that are effectively "using up" a free slot
-                    # Logic: 
-                    # - Owned by user's agent
-                    # - Not expired (expires_at IS NULL or > NOW) -- Note: checking expires_at IS NULL catch-all might catch old data, 
-                    #   but strictly speaking free properties SHOULD have expires_at. 
-                    #   However, if we have "permanent free" legacy, that counts.
-                    # - NOT PAID via Orders (Unlock/Sign)
-                    
-                    # We need a complex query to exclude paid ones.
-                    # It's safer to fetch candidate properties and check gating status if count is small, 
-                    # but for SQL efficiency:
-                    
-                    # Correct Logic per P0 Requirement:
-                    # Count ONLY properties with an active expiration date (Trial/Free).
-                    # Ignore properties with NULL expiration (Paid/Unlocked/Subscription).
-                    count_query = """
-                        SELECT COUNT(*)
-                        FROM properties p
-                        JOIN agents a ON p.agent_id = a.id
-                        WHERE a.user_id = %s
-                        AND p.expires_at IS NOT NULL 
-                        AND p.expires_at > %s
-                    """
-                    now_iso = datetime.now(timezone.utc).isoformat()
-                    cursor.execute(count_query, (current_user.id, now_iso))
-                    active_free_count = cursor.fetchone()[0]
-                            
-                    if active_free_count >= free_limit:
-                        flash(f"Free plan limit reached ({free_limit} active property). Please upgrade to Pro for unlimited listings.", "error")
-                        # Redirect to billing/upgrade page ideally, or just fail safely
-                        return render_template("submit.html", agent_data=None), 402
+                    if not gating_check['allowed']:
+                        # Track event for analytics
+                        try:
+                            from services.events import track_event
+                            track_event(
+                                'upgrade_prompt_shown',
+                                user_id=current_user.id,
+                                meta={'reason': 'max_listings', 'limit': gating_check['limit'], 'current': gating_check['current']}
+                            )
+                        except Exception:
+                            pass  # Best-effort tracking
+                        
+                        flash(f"Free plan supports {gating_check['limit']} active listing. Upgrade to Pro for unlimited listings.", "error")
+                        return render_template("submit.html", agent_data=None, upgrade_reason='max_listings'), 402
 
                 # 2. Set Expiry
                 from datetime import timedelta

@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container" style="max-width: 800px; margin: 2rem auto; padding: 1rem;">
+    <h1>Admin Metrics</h1>
+    <p style="color: #666;">Last 7 days event counts</p>
+
+    <h2>Summary</h2>
+    <table style="width: 100%; border-collapse: collapse; margin-bottom: 2rem;">
+        <thead>
+            <tr style="background: #f5f5f5;">
+                <th style="text-align: left; padding: 10px; border-bottom: 2px solid #ddd;">Event</th>
+                <th style="text-align: right; padding: 10px; border-bottom: 2px solid #ddd;">Count</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td style="padding: 10px; border-bottom: 1px solid #eee;">Upgrade Prompts Shown</td>
+                <td style="text-align: right; padding: 10px; border-bottom: 1px solid #eee;">{{
+                    counts.get('upgrade_prompt_shown', 0) }}</td>
+            </tr>
+            <tr>
+                <td style="padding: 10px; border-bottom: 1px solid #eee;">Kit Checkouts Started</td>
+                <td style="text-align: right; padding: 10px; border-bottom: 1px solid #eee;">{{
+                    counts.get('kit_checkout_started', 0) }}</td>
+            </tr>
+            <tr>
+                <td style="padding: 10px; border-bottom: 1px solid #eee;">Kit Purchases Completed</td>
+                <td style="text-align: right; padding: 10px; border-bottom: 1px solid #eee;">{{
+                    counts.get('kit_purchased', 0) }}</td>
+            </tr>
+            <tr>
+                <td style="padding: 10px; border-bottom: 1px solid #eee;">Sign Purchases Completed</td>
+                <td style="text-align: right; padding: 10px; border-bottom: 1px solid #eee;">{{
+                    counts.get('sign_purchased', 0) }}</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h2>Daily Breakdown</h2>
+    {% if daily_breakdown %}
+    <table style="width: 100%; border-collapse: collapse;">
+        <thead>
+            <tr style="background: #f5f5f5;">
+                <th style="text-align: left; padding: 10px; border-bottom: 2px solid #ddd;">Date</th>
+                <th style="text-align: left; padding: 10px; border-bottom: 2px solid #ddd;">Event</th>
+                <th style="text-align: right; padding: 10px; border-bottom: 2px solid #ddd;">Count</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in daily_breakdown %}
+            <tr>
+                <td style="padding: 10px; border-bottom: 1px solid #eee;">{{ row.date }}</td>
+                <td style="padding: 10px; border-bottom: 1px solid #eee;">{{ row.event_name }}</td>
+                <td style="text-align: right; padding: 10px; border-bottom: 1px solid #eee;">{{ row.count }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p style="color: #888;">No events recorded in the last 7 days.</p>
+    {% endif %}
+
+    <p style="margin-top: 2rem;">
+        <a href="{{ url_for('admin.order_list') }}" style="color: #2196f3;">← Back to Orders</a>
+    </p>
+</div>
+{% endblock %}
