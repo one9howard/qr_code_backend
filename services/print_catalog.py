@@ -1,19 +1,30 @@
 """Canonical Print Product Catalog & SKU Definitions
 
 Single source of truth for:
-- Available materials and sides per product
-- Valid layout IDs
-- Color palettes
-- Price mapping
+- Available materials per product
+- Strict size enforcement
+- Stripe Lookup Key mapping
+- Resolution of Price IDs via StripePriceResolver
 """
-import os
+import logging
+from services import stripe_price_resolver
 
-# --- Constants ---
+logger = logging.getLogger(__name__)
+
+# --- Product Constants ---
 
 LISTING_SIGN_MATERIALS = ('coroplast_4mm', 'aluminum_040')
 SMART_SIGN_MATERIALS = ('aluminum_040',)
+SMART_RISER_MATERIALS = ('aluminum_040',)
 
-SIDES = ('single', 'double')
+# Strict Size Constraints
+LISTING_SIGN_VALID_SIZES = {
+    'coroplast_4mm': ('12x18', '18x24', '24x36'),
+    'aluminum_040': ('18x24', '24x36', '36x24')  # Note: 36x24 logic for aluminum
+}
+
+SMART_SIGN_VALID_SIZES = ('18x24', '24x36', '36x24')
+SMART_RISER_VALID_SIZES = ('6x24', '6x36')
 
 SMART_SIGN_LAYOUTS = (
     'smart_v1_photo_banner',
@@ -33,85 +44,130 @@ BANNER_COLOR_PALETTE = {
     'gray': '#64748b'
 }
 
-# --- Helpers ---
+# --- Lookup Key Logic ---
 
-def validate_sku(print_product, material, sides):
+def get_lookup_key(print_product: str, print_size: str, material: str = None) -> str:
     """
-    Validate that the combination of product, material, and sides is allowed.
+    Generate the canonical Stripe Lookup Key for the product combo.
+    Format:
+      SmartSign: smart_sign_print_{size}
+      SmartRiser: smart_riser_{size}
+      Listing Sign: listing_sign_{material_short}_{size}  (WAIT - User spec says 'listing_sign_coroplast_18x24')
+    
+    User Schema:
+      SmartSign (Alum): smart_sign_print_18x24
+      SmartRiser (Alum): smart_riser_6x24
+      Listing (Coro): listing_sign_coroplast_18x24
+      Listing (Alum): listing_sign_aluminum_18x24
+    """
+    if print_product == 'smart_sign':
+        # Material is always aluminum, not in key
+        return f"smart_sign_print_{print_size}"
+        
+    elif print_product == 'smart_riser':
+        # Material is always aluminum, not in key
+        return f"smart_riser_{print_size}"
+        
+    elif print_product == 'listing_sign':
+        if not material:
+            raise ValueError("Material required for listing sign key")
+        
+        # Mappings for material part of key
+        # User defined: listing_sign_coroplast_12x18 -> 'coroplast'
+        # User defined: listing_sign_aluminum_18x24 -> 'aluminum'
+        mat_key = 'coroplast' if 'coroplast' in material else 'aluminum'
+        return f"listing_sign_{mat_key}_{print_size}"
+        
+    raise ValueError(f"Unknown product for lookup key: {print_product}")
+
+
+def validate_sku_strict(print_product, print_size, material):
+    """
+    Strict validation of product/size/material combos.
     Returns (ok: bool, reason: str).
     """
-    if sides not in SIDES:
-        return False, f"Invalid sides: {sides}"
-        
-    if print_product == 'listing_sign':
-        if material not in LISTING_SIGN_MATERIALS:
-            return False, f"Invalid material for Listing Sign: {material}"
-        return True, ""
-        
-    elif print_product == 'smart_sign':
+    if not print_product or not print_size:
+        return False, "Missing product or size"
+    
+    # 1. Product Rules
+    if print_product == 'smart_sign':
         if material not in SMART_SIGN_MATERIALS:
-            return False, f"Invalid material for SmartSign: {material}"
-        return True, ""
+             return False, "invalid_material"
+        if print_size not in SMART_SIGN_VALID_SIZES:
+             return False, "invalid_size"
+             
+    elif print_product == 'smart_riser':
+        if material not in SMART_RISER_MATERIALS:
+             return False, "invalid_material"
+        if print_size not in SMART_RISER_VALID_SIZES:
+            return False, "invalid_size"
+            
+    elif print_product == 'listing_sign':
+        if material not in LISTING_SIGN_MATERIALS:
+             return False, "invalid_material"
         
-    return False, f"Unknown print product: {print_product}"
+        # Dependent sizing
+        allowed = LISTING_SIGN_VALID_SIZES.get(material, ())
+        if print_size not in allowed:
+            return False, f"invalid_size_for_material"
+            
+    else:
+        return False, "invalid_product"
+        
+    return True, ""
 
+
+def get_price_id(print_product, print_size, material):
+    """
+    Get the Stripe Price ID using the Resolver.
+    Validates SKU first.
+    """
+    ok, reason = validate_sku_strict(print_product, print_size, material)
+    if not ok:
+        raise ValueError(f"Invalid SKU: {reason}")
+    
+    key = get_lookup_key(print_product, print_size, material)
+    
+    # Resolve (will use cache)
+    return stripe_price_resolver.resolve_price_id(key)
+
+
+def get_all_required_lookup_keys() -> list[str]:
+    """
+    Helper to generate list of all lookup keys for warm_cache.
+    Iterates all valid combos.
+    """
+    keys = []
+    
+    # Smart Signs
+    for size in SMART_SIGN_VALID_SIZES:
+        keys.append(get_lookup_key('smart_sign', size, 'aluminum_040'))
+        
+    # Smart Risers
+    for size in SMART_RISER_VALID_SIZES:
+        keys.append(get_lookup_key('smart_riser', size, 'aluminum_040'))
+        
+    # Listing Signs
+    for mat in LISTING_SIGN_MATERIALS:
+        sizes = LISTING_SIGN_VALID_SIZES.get(mat, [])
+        for size in sizes:
+            keys.append(get_lookup_key('listing_sign', size, mat))
+            
+    return keys
+
+# --- Validation Helpers ---
 
 def validate_layout(print_product, layout_id):
-    """
-    Validate layout ID for the given product.
-    Returns (ok: bool, reason: str).
-    """
     if print_product == 'smart_sign':
         if layout_id not in SMART_SIGN_LAYOUTS:
             return False, f"Invalid SmartSign layout: {layout_id}"
         return True, ""
-        
     elif print_product == 'listing_sign':
-        # Listing signs use existing flexible layout logic (e.g. 'classic_luxury', etc.)
-        # For now, we assume any non-empty string is potentially valid, 
-        # or we could strictly check against existing known layouts if desired.
-        # But per instructions: "Listing: keep existing, but expose a list function..."
         if not layout_id:
             return False, "Layout ID required"
         return True, ""
-        
+    elif print_product == 'smart_riser':
+        # Risers might not have layouts yet? Assuming generic or none required.
+        # Minimal for now:
+        return True, ""
     return False, f"Unknown print product: {print_product}"
-
-def get_price_id(print_product, material, sides):
-    """
-    Get the Stripe Price ID for a valid SKU.
-    Raises ValueError if SKU invalid or env var missing.
-    NO secrets printed.
-    """
-    valid, reason = validate_sku(print_product, material, sides)
-    if not valid:
-        raise ValueError(f"Cannot get price for invalid SKU: {reason}")
-
-    env_var = None
-    
-    if print_product == 'listing_sign':
-        if material == 'coroplast_4mm' and sides == 'single':
-            env_var = 'STRIPE_PRICE_LISTING_CORO_SINGLE'
-        elif material == 'coroplast_4mm' and sides == 'double':
-            env_var = 'STRIPE_PRICE_LISTING_CORO_DOUBLE'
-        elif material == 'aluminum_040' and sides == 'single':
-            env_var = 'STRIPE_PRICE_LISTING_ALUM_SINGLE'
-        elif material == 'aluminum_040' and sides == 'double':
-            env_var = 'STRIPE_PRICE_LISTING_ALUM_DOUBLE'
-            
-    elif print_product == 'smart_sign':
-        # SmartSign is Aluminum only
-        if material == 'aluminum_040' and sides == 'single':
-            env_var = 'STRIPE_PRICE_SMART_ALUM_SINGLE'
-        elif material == 'aluminum_040' and sides == 'double':
-            env_var = 'STRIPE_PRICE_SMART_ALUM_DOUBLE'
-
-    if not env_var:
-        # Should be covered by validate_sku logic, but safe fallback
-        raise ValueError(f"No price mapping for {print_product} {material} {sides}")
-
-    price_id = os.environ.get(env_var)
-    if not price_id:
-        raise ValueError(f"Missing configuration: {env_var} is not set.")
-        
-    return price_id

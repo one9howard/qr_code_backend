@@ -1,7 +1,7 @@
 from flask import Flask, request, redirect, url_for
 from flask_login import LoginManager
 from flask_wtf.csrf import CSRFProtect
-from config import UPLOAD_DIR, PROPERTY_PHOTOS_DIR, SECRET_KEY, MAX_CONTENT_LENGTH, TRUST_PROXY_HEADERS, PROXY_FIX_NUM_PROXIES, IS_PRODUCTION, STRIPE_PRICE_MONTHLY, STRIPE_PRICE_ANNUAL, STRIPE_PRICE_SIGN, STRIPE_PUBLISHABLE_KEY, SESSION_COOKIE_HTTPONLY, SESSION_COOKIE_SAMESITE, SESSION_COOKIE_SECURE, REMEMBER_COOKIE_HTTPONLY, REMEMBER_COOKIE_SECURE, PREFERRED_URL_SCHEME, STORAGE_BACKEND, INSTANCE_DIR
+from config import UPLOAD_DIR, PROPERTY_PHOTOS_DIR, SECRET_KEY, MAX_CONTENT_LENGTH, TRUST_PROXY_HEADERS, PROXY_FIX_NUM_PROXIES, IS_PRODUCTION, STRIPE_PRICE_MONTHLY, STRIPE_PRICE_ANNUAL, STRIPE_PUBLISHABLE_KEY, SESSION_COOKIE_HTTPONLY, SESSION_COOKIE_SAMESITE, SESSION_COOKIE_SECURE, REMEMBER_COOKIE_HTTPONLY, REMEMBER_COOKIE_SECURE, PREFERRED_URL_SCHEME, STORAGE_BACKEND, INSTANCE_DIR
 from database import close_connection
 from models import User
 import os
@@ -69,8 +69,26 @@ def create_app(test_config=None):
     # Stripe Config
     app.config['STRIPE_PRICE_MONTHLY'] = STRIPE_PRICE_MONTHLY
     app.config['STRIPE_PRICE_ANNUAL'] = STRIPE_PRICE_ANNUAL
-    app.config['STRIPE_PRICE_SIGN'] = STRIPE_PRICE_SIGN
     app.config['STRIPE_PUBLISHABLE_KEY'] = STRIPE_PUBLISHABLE_KEY
+
+    # --- FAIL-FAST PRICING CHECK ---
+    # In production/dev (not tests), verify all Stripe Lookup Keys exist.
+    if not (os.environ.get('APP_STAGE') == 'test' or os.environ.get('FLASK_ENV') == 'test'):
+        try:
+            from services.print_catalog import get_all_required_lookup_keys
+            from services.stripe_price_resolver import warm_cache
+            
+            with app.app_context():
+                # Check if we have Stripe keys at all first
+                if app.config.get('STRIPE_SECRET_KEY'):
+                    print("[Startup] Warming Stripe Price Cache...")
+                    keys = get_all_required_lookup_keys()
+                    warm_cache(keys)
+                else:
+                    print("[Startup] WARNING: No Stripe keys found. Skipping price cache warmup.")
+        except Exception as e:
+            print(f"[Startup] CRITICAL: Failed to verify Stripe Pricing configuration: {e}")
+            raise RuntimeError(f"Pricing Configuration Error: {e}")
 
     # Template Helpers
     from utils.template_helpers import get_storage_url
@@ -115,6 +133,9 @@ def create_app(test_config=None):
     
     from routes.smart_signs import smart_signs_bp
     app.register_blueprint(smart_signs_bp)
+
+    from routes.smart_riser import smart_riser_bp
+    app.register_blueprint(smart_riser_bp)
 
     from routes.listing_kits import listing_kits_bp
     app.register_blueprint(listing_kits_bp)

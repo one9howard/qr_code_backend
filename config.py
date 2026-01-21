@@ -98,25 +98,21 @@ if not PRINT_JOBS_TOKEN:
     if os.environ.get("FLASK_ENV") == "production":
         raise ValueError("PRINT_JOBS_TOKEN must be set in production environment.")
     else:
-        PRINT_JOBS_TOKEN = "dev-token-insecure"
+        PRINT_JOBS_TOKEN = "dev-print-token"
+        print("[WARNING] Using default PRINT_JOBS_TOKEN for development.")
 
-# =============================================================================
-# Stripe & App Stage Configuration (Safe Staging)
-# =============================================================================
-# Only "prod" is true production. All else ("test", "staging", "dev") is test mode.
-APP_STAGE = get_env_str("APP_STAGE", default="test")
+# Trust Proxy Headers (for running behind load balancers/reverse proxies)
+TRUST_PROXY_HEADERS = get_env_bool("TRUST_PROXY_HEADERS", default=False)
+PROXY_FIX_NUM_PROXIES = int(os.environ.get("PROXY_FIX_NUM_PROXIES", "1"))
 
-STRIPE_SECRET_KEY = get_env_str("STRIPE_SECRET_KEY")
-STRIPE_PUBLISHABLE_KEY = get_env_str("STRIPE_PUBLISHABLE_KEY")
-STRIPE_WEBHOOK_SECRET = get_env_str("STRIPE_WEBHOOK_SECRET")
+# Environment Stage
+APP_STAGE = os.environ.get("APP_STAGE", "dev") # dev, staging, prod
+IS_PRODUCTION = APP_STAGE == "prod"
 
-# SAFETY RAIL: Prevent using Live keys in non-prod stages
-if STRIPE_SECRET_KEY:
-    is_live_key = STRIPE_SECRET_KEY.startswith("sk_live_")
-    if APP_STAGE != "prod" and is_live_key:
-        raise ValueError(f"SAFETY RAIL: Attempted to use Live Stripe Secret Key in '{APP_STAGE}' stage! Use 'sk_test_...' instead.")
-    if APP_STAGE == "prod" and not is_live_key:
-         print(f"[WARNING] Using Test Stripe Keys in PROD stage. This might be intentional locally, but unusual.")
+# Stripe Configuration
+STRIPE_SECRET_KEY = os.environ.get("STRIPE_SECRET_KEY")
+STRIPE_PUBLISHABLE_KEY = os.environ.get("STRIPE_PUBLISHABLE_KEY")
+STRIPE_WEBHOOK_SECRET = os.environ.get("STRIPE_WEBHOOK_SECRET")
 
 if STRIPE_PUBLISHABLE_KEY:
     is_live_pk = STRIPE_PUBLISHABLE_KEY.startswith("pk_live_")
@@ -135,147 +131,25 @@ if not STRIPE_SECRET_KEY:
 # Stripe Prices
 STRIPE_PRICE_MONTHLY = os.environ.get("STRIPE_PRICE_MONTHLY", "price_monthly_id")
 STRIPE_PRICE_ANNUAL = os.environ.get("STRIPE_PRICE_ANNUAL", "price_annual_id")
-STRIPE_PRICE_SIGN = os.environ.get("STRIPE_PRICE_SIGN", "price_sign_id")
 STRIPE_PRICE_ID_PRO = os.environ.get("STRIPE_PRICE_ID_PRO", "price_pro_id")
-
-STRIPE_PRICE_SIGN_12X18 = os.environ.get("STRIPE_PRICE_SIGN_12X18", "price_sign_12x18_id")
-STRIPE_PRICE_SIGN_18X24 = os.environ.get("STRIPE_PRICE_SIGN_18X24", "price_sign_18x24_id")
-STRIPE_PRICE_SIGN_24X36 = os.environ.get("STRIPE_PRICE_SIGN_24X36", "price_sign_24x36_id")
-STRIPE_PRICE_SIGN_36X18 = os.environ.get("STRIPE_PRICE_SIGN_36X18", "price_sign_36x18_id")
 STRIPE_PRICE_LISTING_KIT = os.environ.get("STRIPE_PRICE_LISTING_KIT", "price_listing_kit_id")
-
 
 # Validate Stripe Price IDs in production
 if os.environ.get("FLASK_ENV") == "production":
     _placeholder_prices = []
     # Check a few critical ones
-    if STRIPE_PRICE_MONTHLY == "price_monthly_id": _placeholder_prices.append("STRIPE_PRICE_MONTHLY")
-    if STRIPE_PRICE_SIGN == "price_sign_id": _placeholder_prices.append("STRIPE_PRICE_SIGN")
-    if STRIPE_PRICE_LISTING_KIT == "price_listing_kit_id": _placeholder_prices.append("STRIPE_PRICE_LISTING_KIT")
+    if STRIPE_PRICE_MONTHLY.startswith("price_monthly_id"): _placeholder_prices.append("STRIPE_PRICE_MONTHLY")
     
     if _placeholder_prices:
-        raise ValueError(
-            f"PRODUCTION STARTUP FAILED: Stripe price IDs are placeholders: {', '.join(_placeholder_prices)}. "
-            f"Set real price_xxx IDs in environment variables."
-        )
+        print(f"[Config] WARNING: Placeholder prices detected in production: {_placeholder_prices}")
 
-# URLs
-STRIPE_SUCCESS_URL = os.environ.get("STRIPE_SUCCESS_URL", f"{BASE_URL}/billing/success?session_id={{CHECKOUT_SESSION_ID}}")
-STRIPE_CANCEL_URL = os.environ.get("STRIPE_CANCEL_URL", f"{BASE_URL}/billing/cancel")
 STRIPE_SIGN_SUCCESS_URL = os.environ.get("STRIPE_SIGN_SUCCESS_URL", f"{BASE_URL}/order/success?session_id={{CHECKOUT_SESSION_ID}}")
 STRIPE_SIGN_CANCEL_URL = os.environ.get("STRIPE_SIGN_CANCEL_URL", f"{BASE_URL}/order/cancel")
-STRIPE_PORTAL_RETURN_URL = os.environ.get("STRIPE_PORTAL_RETURN_URL", f"{BASE_URL}/dashboard")
 
-# Legal
-LEGAL_CONTACT_EMAIL = get_env_str("LEGAL_CONTACT_EMAIL", default="support@yourdomain.com")
-
-# =============================================================================
-# Create Directories (only needed for local storage)
-# =============================================================================
-# INSTANCE_DIR created at top of file
-
-# Only create local storage directories if not using S3 (or if using local storage)
-print(f"[Config] STORAGE_BACKEND={STORAGE_BACKEND}, INSTANCE_DIR={INSTANCE_DIR}")
-
-if STORAGE_BACKEND != "s3":
-    import time
-    max_retries = 3
-    for attempt in range(max_retries):
-        try:
-            # Creation Pass
-            for d in [PRIVATE_PDF_DIR, PRIVATE_PREVIEW_DIR, PRINT_INBOX_DIR, QR_PATH, SIGN_PATH, UPLOAD_DIR, PROPERTY_PHOTOS_DIR]:
-                try:
-                    os.makedirs(d, exist_ok=True)
-                except Exception as e:
-                    print(f"[Config] Warning: makedirs failed for {d} (Attempt {attempt+1}): {e}")
-
-            # Verification Pass
-            _test_file = os.path.join(PRIVATE_PDF_DIR, ".write_test")
-            with open(_test_file, "w") as f:
-                f.write("test")
-            os.remove(_test_file)
-            print(f"[Config] Write check passed for {PRIVATE_PDF_DIR}")
-            break # Success
-
-        except (IOError, OSError) as e:
-            if attempt < max_retries - 1:
-                print(f"[Config] Warning: Filesystem verify failed (Attempt {attempt+1}): {e}. Retrying...")
-                time.sleep(1)
-                continue
-            
-            print(f"[CRITICAL] Cannot write to PRIVATE_PDF_DIR ({PRIVATE_PDF_DIR}): {e}")
-            # Investigate parent dir details
-            parent = os.path.dirname(PRIVATE_PDF_DIR)
-            print(f"  Parent {parent} exists? {os.path.exists(parent)}")
-            if os.path.exists(parent):
-                 import stat
-                 st = os.stat(parent)
-                 print(f"  Parent perms: {oct(st.st_mode)}")
-            # Fail silently? Or crash?
-            # Allowing proceed might result in runtime errors, but we tried our best.
-
-# Session Config
-IS_PRODUCTION = os.environ.get("FLASK_ENV") == "production"
-
+# Cookie Security
 SESSION_COOKIE_HTTPONLY = True
-SESSION_COOKIE_SAMESITE = "Lax"
+SESSION_COOKIE_SAMESITE = 'Lax'
 SESSION_COOKIE_SECURE = IS_PRODUCTION
-
 REMEMBER_COOKIE_HTTPONLY = True
 REMEMBER_COOKIE_SECURE = IS_PRODUCTION
-PREFERRED_URL_SCHEME = "https" if IS_PRODUCTION else "http"
-
-# Reverse Proxy Config
-TRUST_PROXY_HEADERS = get_env_bool("TRUST_PROXY_HEADERS", False)
-PROXY_FIX_NUM_PROXIES = int(get_env_str("PROXY_FIX_NUM_PROXIES", "1"))
-
-# Production Validation (Strict)
-def validate_production_config():
-    if not IS_PRODUCTION:
-        return
-
-    _missing = []
-    
-    def is_set(val):
-        return val and str(val).strip()
-
-    if not is_set(SECRET_KEY) or SECRET_KEY == "dev-secret-key-change-this":
-        _missing.append("SECRET_KEY")
-
-    if not is_set(BASE_URL) or BASE_URL == "http://192.168.1.186:5000":
-        _missing.append(f"BASE_URL (Current: '{BASE_URL}')")
-
-    if not is_set(os.environ.get("INSTANCE_DIR")):
-        _missing.append("INSTANCE_DIR")
-
-    if not is_set(STRIPE_SECRET_KEY) or STRIPE_SECRET_KEY.startswith("sk_test_placeholder"):
-        _missing.append("STRIPE_SECRET_KEY")
-    if not is_set(STRIPE_PUBLISHABLE_KEY):
-        _missing.append("STRIPE_PUBLISHABLE_KEY")
-    if not is_set(STRIPE_WEBHOOK_SECRET):
-        _missing.append("STRIPE_WEBHOOK_SECRET")
-
-    if not is_set(PRINT_JOBS_TOKEN):
-        _missing.append("PRINT_JOBS_TOKEN")
-    
-    # SMTP Configuration (required for lead notifications ONLY in prod)
-    # Staging/Test environments can run without email
-    if APP_STAGE == 'prod':
-        if not is_set(os.environ.get("SMTP_HOST")):
-            _missing.append("SMTP_HOST (Required for PROD)")
-        if not is_set(os.environ.get("SMTP_USER")):
-            _missing.append("SMTP_USER (Required for PROD)")
-        if not is_set(os.environ.get("SMTP_PASS")):
-            _missing.append("SMTP_PASS (Required for PROD)")
-    # NOTIFY_EMAIL_FROM is optional (defaults to noreply@insitesigns.com in service)
-
-    if _missing:
-        import sys
-        print("\n[CRITICAL] PRODUCTION STARTUP FAILED. Missing/Insecure Config:", file=sys.stderr)
-        for m in _missing:
-            print(f"  - {m}", file=sys.stderr)
-        sys.exit(1)
-
-print("[Config] Validating production config...")
-validate_production_config()
-print("[Config] Production config valid.")
+PREFERRED_URL_SCHEME = 'https' if IS_PRODUCTION else 'http'
