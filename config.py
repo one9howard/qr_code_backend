@@ -146,6 +146,11 @@ if os.environ.get("FLASK_ENV") == "production":
 STRIPE_SIGN_SUCCESS_URL = os.environ.get("STRIPE_SIGN_SUCCESS_URL", f"{BASE_URL}/order/success?session_id={{CHECKOUT_SESSION_ID}}")
 STRIPE_SIGN_CANCEL_URL = os.environ.get("STRIPE_SIGN_CANCEL_URL", f"{BASE_URL}/order/cancel")
 
+# Generic Billing / Subscription URLs
+STRIPE_SUCCESS_URL = os.environ.get("STRIPE_SUCCESS_URL", f"{BASE_URL}/billing/success?session_id={{CHECKOUT_SESSION_ID}}")
+STRIPE_CANCEL_URL = os.environ.get("STRIPE_CANCEL_URL", f"{BASE_URL}/billing/cancel")
+STRIPE_PORTAL_RETURN_URL = os.environ.get("STRIPE_PORTAL_RETURN_URL", f"{BASE_URL}/dashboard")
+
 # Cookie Security
 SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SAMESITE = 'Lax'
