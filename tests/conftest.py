@@ -21,12 +21,17 @@ os.environ.setdefault("APP_STAGE", "test")
 os.environ.setdefault("BASE_URL", "http://localhost")
 os.environ["SECRET_KEY"] = "test-secret"
 os.environ["PRINT_SERVER_TOKEN"] = "test-print-token"
+
+def _force_env_if_blank(key: str, value: str):
+    v = os.environ.get(key)
+    if v is None or not str(v).strip():
+        os.environ[key] = value
+
 # Robustly set test secrets (overriding empty/poisoned .env values)
-if not os.environ.get("STRIPE_SECRET_KEY", "").strip():
-    os.environ["STRIPE_SECRET_KEY"] = "sk_test_dummy"
-if not os.environ.get("STRIPE_WEBHOOK_SECRET", "").strip():
-    os.environ["STRIPE_WEBHOOK_SECRET"] = "whsec_dummy"
-os.environ.setdefault("STORAGE_BACKEND", "local")
+_force_env_if_blank("STRIPE_SECRET_KEY", "sk_test_dummy")
+_force_env_if_blank("STRIPE_WEBHOOK_SECRET", "whsec_dummy")
+_force_env_if_blank("STRIPE_PUBLISHABLE_KEY", "pk_test_dummy")  # harmless if unused
+
 
 # Fix DATABASE_URL for local test execution (Windows Host -> Docker Service mismatch)
 _db_url = os.environ.get("DATABASE_URL")
