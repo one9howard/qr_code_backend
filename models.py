@@ -123,5 +123,9 @@ class DBProxy:
     
     def commit(self):
         get_db().commit()
+
+    def execute(self, sql, params=None):
+        """Delegates execute to the underlying raw connection (compatibility layer)."""
+        return get_db().execute(sql, params)
         
 db = DBProxy()
