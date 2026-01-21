@@ -166,6 +166,13 @@ body.saas-landing>.container {
     padding: 20px 0 100px 0;
 }
 
+.hero-logo {
+    height: 54px;
+    width: auto;
+    display: block;
+    margin: 2rem auto;
+}
+
 .hero-text h1 {
     font-size: 3.5rem;
     /* ~56px */

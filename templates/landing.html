@@ -15,9 +15,11 @@
     <div class="container-saas">
         <!-- Navigation -->
         <nav class="saas-nav">
+            <!-- Logo moved to Hero
             <a href="/" class="nav-logo">
                 <img class="nav-logo-img" src="{{ url_for('static', filename='img/logo.png') }}" alt="InSite Signs">
             </a>
+            -->
 
             <div class="nav-links" id="nav-links">
                 <a href="#product">Product</a>
@@ -41,6 +43,7 @@
         <div class="hero-content">
             <!-- Left: Copy -->
             <div class="hero-text">
+                <img class="hero-logo" src="{{ url_for('static', filename='img/logo.png') }}" alt="InSite Signs">
                 <h1>One system for every listing in your brokerage.</h1>
                 <p>Standardized sign workflow, lead capture, attribution, and follow-up.</p>
 
