@@ -159,7 +159,33 @@ def order_sign():
     raw_sign_size = order['sign_size']
     sign_size = normalize_sign_size(raw_sign_size)
     
-    price_id, lookup_key = get_price_id_for_size(sign_size)
+    # Phase 5: Strict SKU & Pricing
+    # 1. Read Material/Sides from request
+    material = request.get_json().get('material', 'coroplast_4mm')
+    sides = request.get_json().get('sides', 'single')
+    
+    # 2. Validate SKU
+    from services.print_catalog import validate_sku, get_price_id
+    ok, reason = validate_sku('listing_sign', material, sides)
+    if not ok:
+        return jsonify({"success": False, "error": f"Invalid SKU: {reason}"}), 400
+        
+    # 3. Get Strict Price ID
+    try:
+        price_id = get_price_id('listing_sign', material, sides)
+    except ValueError as e:
+        return jsonify({"success": False, "error": str(e)}), 400
+        
+    # 4. Update Order with SKU Spec
+    db.execute("""
+        UPDATE orders 
+        SET print_product='listing_sign', material=%s, sides=%s 
+        WHERE id=%s
+    """, (material, sides, order['id']))
+    db.commit()
+    
+    # Legacy lookup key (optional, can be empty string if not used by Stripe anymore)
+    lookup_key = ""
     
     checkout_params = {
         'line_items': [{'price': price_id, 'quantity': 1}],

@@ -197,99 +197,125 @@ def checkout_smartsign():
     asset_id = (request.form.get('asset_id') or '').strip() or None
     property_id_raw = (request.form.get('property_id') or '').strip() or None
 
+    
+    # Phase 5: Collect Payload & Validations
     asset = None
-
-    # 0) Pricing
-    price_val, price_type = get_smartsign_price()
-    if not price_val:
-        flash("Ordering configuration error.", "error")
-        return redirect(url_for('dashboard.index'))
-
-    db = get_db()
-
-    # 1) Resolve (or create) the SignAsset and canonical property_id
     if asset_id:
-        # Reorder existing asset -> property is derived from current assignment
         asset = check_access(asset_id)
         if asset['is_frozen']:
             flash("Frozen assets cannot be ordered.", "error")
             return redirect(url_for('dashboard.index'))
 
+    layout_id = request.form.get('layout_id')
+    sides = request.form.get('sides', 'single')
+    
+    # Files & Storage
+    from utils.storage import get_storage
+    storage = get_storage()
+    headshot_key = asset.get('headshot_key') if asset else None
+    logo_key = asset.get('logo_key') if asset else None
+    
+    if request.files.get('headshot_file'):
+        f = request.files['headshot_file']
+        if f.filename:
+            ext = os.path.splitext(f.filename)[1]
+            k = f"uploads/brands/{current_user.id}_new_head{ext}"
+            headshot_key = storage.put_file(f, k)
+            
+    if request.files.get('logo_file'):
+        f = request.files['logo_file']
+        if f.filename:
+            ext = os.path.splitext(f.filename)[1]
+            k = f"uploads/brands/{current_user.id}_new_logo{ext}"
+            logo_key = storage.put_file(f, k)
+            
+    payload = {
+        'banner_color_id': request.form.get('banner_color_id'),
+        'agent_name': request.form.get('agent_name'),
+        'agent_phone': request.form.get('agent_phone'),
+        'agent_email': request.form.get('agent_email'),
+        'brokerage_name': request.form.get('brokerage_name'),
+        'agent_headshot_key': headshot_key,
+        'agent_logo_key': logo_key
+    }
+    
+    # Validation
+    from services.printing.validation import validate_smartsign_payload
+    errors = validate_smartsign_payload(layout_id, payload)
+    if errors:
+        for e in errors: flash(e, 'error')
+        return redirect(url_for('smart_signs.order_start', asset_id=asset_id))
+        
+    # Pricing
+    from services.print_catalog import get_price_id
+    try:
+        price_id = get_price_id('smart_sign', 'aluminum_040', sides)
+    except ValueError as e:
+        flash(f"Configuration Error: {e}", "error")
+        return redirect(url_for('smart_signs.order_start'))
+
+    db = get_db()
+
+    # 1) Resolve Property
+    property_id = None
+    if asset:
         property_id = asset['active_property_id']
-        if not property_id:
-            flash("This SmartSign is not assigned to a listing. Assign it before ordering.", "error")
-            return redirect(url_for('dashboard.index', _anchor='smart-signs-section'))
-
     else:
-        # New asset order -> require explicit property selection
+        # New Asset Case
         if not property_id_raw:
-            flash("Please select a property to assign the sign to.", "error")
+            flash("Property required.", "error")
             return redirect(url_for('smart_signs.order_start'))
-
         try:
             property_id = int(property_id_raw)
-        except Exception:
-            flash("Invalid property selected.", "error")
-            return redirect(url_for('smart_signs.order_start'))
+        except:
+             flash("Invalid property.", "error")
+             return redirect(url_for('smart_signs.order_start'))
 
-        # Ownership guard (service layer does not enforce this for creation)
+        # Ownership guard
         valid_prop = db.execute(
-            """SELECT 1
-                 FROM properties p
-                 JOIN agents a ON p.agent_id = a.id
-                WHERE p.id = %s AND a.user_id = %s""",
+            """SELECT 1 FROM properties p JOIN agents a ON p.agent_id = a.id WHERE p.id = %s AND a.user_id = %s""",
             (property_id, current_user.id)
         ).fetchone()
         if not valid_prop:
-            flash("Invalid property selected.", "error")
+            flash("Invalid property.", "error")
             return redirect(url_for('smart_signs.order_start'))
 
+        # Create Asset (legacy requirement)
         from services.smart_signs import SmartSignsService
         try:
-            asset_row = SmartSignsService.create_asset_for_purchase(
-                current_user.id,
-                property_id=property_id,
-                label=None
-            )
-            asset = dict(asset_row)
-            asset_id = asset['id']
+             # Create asset
+             asset_row = SmartSignsService.create_asset_for_purchase(
+                current_user.id, property_id=property_id, label=None
+             )
+             asset_id = asset_row['id']
+             asset = dict(asset_row)
         except Exception as e:
-            current_app.logger.error(f"SmartSign asset creation error: {e}")
-            flash("Error initiating sign. Please try again.", "error")
-            return redirect(url_for('smart_signs.order_start'))
+             current_app.logger.error(f"Asset creation failed: {e}")
+             flash("Error creating sign asset", "error")
+             return redirect(url_for('smart_signs.order_start'))
 
     stripe.api_key = STRIPE_SECRET_KEY
+    import json
 
-    # 2) Create Order (MUST include property_id)
+    # 2) Create Order (With Phase 5 Columns)
     row = db.execute(
         """
-        INSERT INTO orders (user_id, property_id, sign_asset_id, status, order_type, created_at)
-        VALUES (%s, %s, %s, 'pending_payment', 'smart_sign', CURRENT_TIMESTAMP)
+        INSERT INTO orders (
+            user_id, property_id, sign_asset_id, status, order_type, created_at,
+            print_product, material, sides, layout_id, design_payload, design_version
+        )
+        VALUES (%s, %s, %s, 'pending_payment', 'smart_sign', CURRENT_TIMESTAMP,
+                'smart_sign', 'aluminum_040', %s, %s, %s, 1)
         RETURNING id
         """,
-        (current_user.id, property_id, asset_id)
+        (current_user.id, property_id, asset_id, sides, layout_id, json.dumps(payload))
     ).fetchone()
     order_id = row['id']
     db.commit()
 
     # 3) Build Stripe Checkout params
-    line_item = {'quantity': 1}
-    code_display = asset['code'] if asset else "NEW"
-
-    if price_type == 'id':
-        line_item['price'] = price_val
-    else:
-        line_item['price_data'] = {
-            'currency': 'usd',
-            'product_data': {
-                'name': f"SmartSign Print: {code_display}",
-                'description': "18x24 PVC SmartSign (Pro)",
-            },
-            'unit_amount': price_val,
-        }
-
     checkout_params = {
-        'line_items': [line_item],
+        'line_items': [{'price': price_id, 'quantity': 1}],
         'mode': 'payment',
         'success_url': STRIPE_SIGN_SUCCESS_URL,
         'cancel_url': STRIPE_SIGN_CANCEL_URL,
@@ -303,6 +329,7 @@ def checkout_smartsign():
             'user_id': str(current_user.id),
         },
     }
+
 
     # 4) Create Session (idempotent)
     try:

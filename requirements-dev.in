@@ -12,3 +12,5 @@
 # --- Dev/test tools ---
 pip-tools>=7.5.2,<8
 pytest>=9.0.2,<10
+PyPDF2>=3.0.0
+

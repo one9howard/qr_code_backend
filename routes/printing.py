@@ -107,9 +107,6 @@ def claim_jobs():
         j_id = job['job_id']
         download_url = url_for('printing.download_job_pdf', job_id=j_id, _external=True)
         
-        # Legacy/Debug presigned URL (optional)
-        # We prefer the authenticated endpoint now
-        
         results.append({
             "job_id": j_id,
             "order_id": job['order_id'],
@@ -119,6 +116,25 @@ def claim_jobs():
             "shipping_json": job['shipping_json'],
             "created_at": job['created_at'].isoformat() if job['created_at'] else None
         })
+        
+    # Phase 5: Inject Print Metadata
+    if results:
+        order_ids = [r['order_id'] for r in results]
+        meta_rows = db.execute(
+            "SELECT id, print_product, material, sides, layout_id FROM orders WHERE id = ANY(%s)",
+            (order_ids,)
+        ).fetchall()
+        meta_map = {r['id']: r for r in meta_rows}
+        
+        for r in results:
+            om = meta_map.get(r['order_id'])
+            if om:
+                r.update({
+                    "print_product": om['print_product'],
+                    "material": om['material'],
+                    "sides": om['sides'],
+                    "layout_id": om['layout_id']
+                })
         
     return jsonify({"jobs": results})
 

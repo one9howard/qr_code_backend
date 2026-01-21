@@ -75,8 +75,43 @@ def fulfill_order(order_id):
         # Return True so calling processes (webhooks) consider it "handled" and don't retry.
         return True
 
-    # SmartSign PDF Generation (On-Demand)
-    if order_type == 'smart_sign' and not order['sign_pdf_path']:
+    # Phase 5: Productized Generation
+    print_product = dict(order).get('print_product')
+    if print_product and not order.get('sign_pdf_path'):
+        print(f"[Fulfillment] Generating PDF for SKU {print_product} Order {order_id}...")
+        try:
+             import io
+             pdf_bytes = None
+             if print_product == 'listing_sign':
+                 from services.printing.listing_sign import generate_listing_sign_pdf
+                 pdf_bytes = generate_listing_sign_pdf(db, dict(order))
+             elif print_product == 'smart_sign':
+                 from services.printing.smart_sign import generate_smart_sign_pdf
+                 pdf_bytes = generate_smart_sign_pdf(db, dict(order))
+             else:
+                 raise ValueError(f"Unknown print_product: {print_product}")
+
+             # Save to Storage
+             from utils.storage import get_storage
+             key = f"pdfs/order_{order_id}/{print_product}_{int(time.time())}.pdf"
+             storage = get_storage()
+             storage.put_file(io.BytesIO(pdf_bytes), key, content_type='application/pdf')
+             
+             db.execute("UPDATE orders SET sign_pdf_path = %s WHERE id = %s", (key, order_id))
+             db.commit()
+             # Refresh map
+             order = db.execute("SELECT * FROM orders WHERE id = %s", (order_id,)).fetchone()
+
+        except Exception as e:
+             err = f"Generator Failed: {str(e)}"
+             print(f"[Fulfillment] {err}")
+             db.execute("UPDATE orders SET status=%s, fulfillment_error=%s WHERE id=%s", 
+                        (ORDER_STATUS_PRINT_FAILED, err, order_id))
+             db.commit()
+             return False
+
+    # SmartSign PDF Generation (Legacy Fallback)
+    if not print_product and order_type == 'smart_sign' and not order['sign_pdf_path']:
         print(f"[Fulfillment] Generating PDF for SmartSign Order {order_id}...")
         try:
             asset_id = order['sign_asset_id']
