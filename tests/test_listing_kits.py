@@ -174,3 +174,38 @@ def test_paid_kit_allows_start_freely(client, db, kit_data):
         assert resp.status_code == 200
         assert resp.json['status'] == 'generating'
         mock_gen.assert_called_once()
+
+
+def test_listing_unlock_does_not_grant_kit_generation(client, db, kit_data):
+    """Regression test: Listing unlock purchase should NOT allow kit generation."""
+    client.post('/login', data={'email': kit_data['basic_email'], 'password': 'hash'})
+    
+    # 1. Insert PAID order for 'listing_unlock'
+    db.execute(
+        "INSERT INTO orders (user_id, property_id, status, order_type) VALUES (%s, %s, 'paid', 'listing_unlock')",
+        (kit_data['basic_id'], kit_data['prop_basic_id'])
+    )
+    db.commit()
+    
+    # 2. Attempt to start kit generation
+    with patch('stripe.checkout.Session.create') as mock_stripe:
+        mock_stripe.return_value = MagicMock(id='sess_unlock_fail', url='https://stripe.com/pay_kit')
+        
+        resp = client.post(f"/api/kits/{kit_data['prop_basic_id']}/start")
+        
+        # Should be redirected to payment (200 with status='payment_required'), NOT 200 generating
+        assert resp.status_code == 200
+        assert resp.json['status'] == 'payment_required'
+        assert resp.json['checkout_url'] == 'https://stripe.com/pay_kit'
+    
+    # 3. Now verify PAID 'listing_kit' DOES work
+    db.execute(
+        "UPDATE orders SET order_type='listing_kit' WHERE user_id=%s AND property_id=%s",
+        (kit_data['basic_id'], kit_data['prop_basic_id'])
+    )
+    db.commit()
+    
+    with patch('routes.listing_kits.generate_kit') as mock_gen:
+        resp = client.post(f"/api/kits/{kit_data['prop_basic_id']}/start")
+        assert resp.status_code == 200
+        assert resp.json['status'] == 'generating'

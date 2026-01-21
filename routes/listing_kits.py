@@ -65,7 +65,7 @@ def start_kit(property_id):
     # OR check if property is already unlocked via previous listing_kit purchase?
     # If they paid once, they can regenerate freely.
     gating = get_property_gating_status(property_id)
-    is_paid_for = gating['paid_via'] in ('listing_kit', 'listing_unlock', 'subscription')
+    is_paid_for = gating['paid_via'] in ('listing_kit', 'subscription')
     
     can_generate_freely = is_pro or (is_paid_for)
     

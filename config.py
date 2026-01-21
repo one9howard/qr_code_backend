@@ -142,7 +142,7 @@ STRIPE_PRICE_SIGN_12X18 = os.environ.get("STRIPE_PRICE_SIGN_12X18", "price_sign_
 STRIPE_PRICE_SIGN_18X24 = os.environ.get("STRIPE_PRICE_SIGN_18X24", "price_sign_18x24_id")
 STRIPE_PRICE_SIGN_24X36 = os.environ.get("STRIPE_PRICE_SIGN_24X36", "price_sign_24x36_id")
 STRIPE_PRICE_SIGN_36X18 = os.environ.get("STRIPE_PRICE_SIGN_36X18", "price_sign_36x18_id")
-STRIPE_PRICE_LISTING_KIT = os.environ.get("STRIPE_PRICE_LISTING_UNLOCK", "price_listing_lock_id")
+STRIPE_PRICE_LISTING_KIT = os.environ.get("STRIPE_PRICE_LISTING_KIT", "price_listing_kit_id")
 
 
 # Validate Stripe Price IDs in production
@@ -151,6 +151,7 @@ if os.environ.get("FLASK_ENV") == "production":
     # Check a few critical ones
     if STRIPE_PRICE_MONTHLY == "price_monthly_id": _placeholder_prices.append("STRIPE_PRICE_MONTHLY")
     if STRIPE_PRICE_SIGN == "price_sign_id": _placeholder_prices.append("STRIPE_PRICE_SIGN")
+    if STRIPE_PRICE_LISTING_KIT == "price_listing_kit_id": _placeholder_prices.append("STRIPE_PRICE_LISTING_KIT")
     
     if _placeholder_prices:
         raise ValueError(
