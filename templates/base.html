@@ -23,14 +23,15 @@
         <div class="nav-center">
             {% if current_user.is_authenticated %}
             <div class="nav-stack">
-                {% if request.endpoint not in ['orders.success', 'billing.success'] %}
+                {% if request.endpoint not in ['orders.success', 'billing.success', 'smart_signs.order_start',
+                'account.index', 'campaigns.list_campaigns'] %}
                 <a href="{{ url_for('dashboard.index') }}" class="glass-button secondary nav-btn">
                     Dashboard
                 </a>
                 {% endif %}
                 {% if request.endpoint not in ['account.index', 'agent.submit', 'orders.success', 'public.privacy',
                 'dashboard.edit_property', 'billing.index', 'billing.success', 'auth.verify_email', 'public.terms',
-                'public.about', 'campaigns.list_campaigns'] %}
+                'public.about', 'campaigns.list_campaigns', 'smart_signs.order_start'] %}
                 <a href="{{ url_for('account.index') }}" class="nav-username" title="Account Settings">
                     {{ current_user.display_name }}
                 </a>
@@ -43,7 +44,7 @@
         <div class="nav-right flex-center gap-md">
             {% if request.endpoint not in ['public.privacy', 'public.terms', 'public.about', 'agent.submit',
             'orders.success', 'account.index', 'campaigns.list_campaigns',
-            'auth.login', 'auth.register', 'billing.success'] %}
+            'auth.login', 'auth.register', 'billing.success', 'smart_signs.order_start'] %}
             <a href="{{ url_for('public.landing') }}" class="home-link">
                 <svg viewBox="0 0 24 24" width="28" height="28" fill="white">
                     <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" />
