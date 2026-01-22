@@ -55,16 +55,16 @@
         <header class="app-header">
             <div style="display: flex; align-items: center; gap: 16px;">
                 <button class="mobile-menu-trigger"
-                    onclick="document.getElementById('sidebar').classList.toggle('active')">☰</button>
+                    onclick="document.getElementById('sidebar').classList.toggle('active')"
+                    style="background: none; border: none; cursor: pointer; color: white; display: flex; align-items: center;">
+                    <svg viewBox="0 0 24 24" width="28" height="28" stroke="white" stroke-width="2" fill="none">
+                        <path d="M3 12h18M3 6h18M3 18h18" />
+                    </svg>
+                </button>
                 <h1 class="page-title">Dashboard</h1>
             </div>
             <div class="header-actions">
-                <a href="{{ url_for('public.home') }}" class="btn-icon" title="Go to Home"
-                    style="margin-right: 12px; display: flex; align-items: center;">
-                    <svg viewBox="0 0 24 24" width="24" height="24" fill="white">
-                        <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" />
-                    </svg>
-                </a>
+
                 <a href="#properties-section" class="btn-create" title="Order for a Property">Order Sign</a>
             </div>
         </header>
