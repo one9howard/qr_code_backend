@@ -9,6 +9,22 @@
 <div class="app-layout">
     <!-- Sidebar -->
     <aside class="app-sidebar" id="sidebar">
+        <!-- Close Button (Mobile) -->
+        <button class="close-sidebar-btn" onclick="document.getElementById('sidebar').classList.remove('active')"
+            style="display: none; position: absolute; top: 16px; right: 16px; background: none; border: none; color: white; font-size: 24px; cursor: pointer; z-index: 50;">
+            &times;
+        </button>
+        <script>
+            // Simple CSS injection for mobile visibility
+            const style = document.createElement('style');
+            style.textContent = `
+                @media (max-width: 768px) {
+                    .close-sidebar-btn { display: block !important; }
+                }
+            `;
+            document.head.appendChild(style);
+        </script>
+
         <a href="/" class="sidebar-logo">
             <img src="{{ url_for('static', filename='img/logo.png') }}" alt="InSite Signs" style="height: 36px;">
         </a>
@@ -38,7 +54,7 @@
                     <div class="user-name">{{ current_user.display_name }}</div>
                     <div class="user-role">
                         {% if current_user.is_pro %}
-                        <span style="color: #4facfe;">Pro Plan</span>
+                        <span style="color: #4facfe;">Pro (Active)</span>
                         {% else %}
                         Free Plan
                         {% endif %}
@@ -64,8 +80,6 @@
                 <h1 class="page-title">Dashboard</h1>
             </div>
             <div class="header-actions">
-
-                <a href="#properties-section" class="btn-create" title="Order for a Property">Order Sign</a>
             </div>
         </header>
 
@@ -87,7 +101,7 @@
                 <div class="stat-label">Subscription</div>
                 <div class="stat-value" style="font-size: 1.5rem;">
                     {% if current_user.is_pro %}
-                    <span class="badge badge-green">PRO ACTIVE</span>
+                    <span class="badge badge-green">Pro (Active)</span>
                     {% else %}
                     <span class="badge badge-gray">FREE</span>
                     <a href="{{ url_for('billing.index') }}"
@@ -96,340 +110,378 @@
                 </div>
             </div>
 
+
+
             <!-- Analytics Chart (Full Width for Pro) -->
             <div class="card col-span-8">
                 <div style="display: flex; justify-content: space-between; margin-bottom: 20px;">
-                    <h3 style="margin: 0; font-size: 1.1rem;">Analytics Overview</h3>
-                    {% if not is_pro %}
-                    <span class="badge badge-orange">🔒 Upgrade to Unlock</span>
-                    {% endif %}
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 20px;">
+                        <h3 style="margin: 0; font-size: 1.1rem;">Analytics Overview</h3>
+                        {% if not is_pro %}
+                        <span class="badge badge-orange">🔒 Upgrade to Unlock</span>
+                        {% endif %}
+                    </div>
+
+                    <div class="chart-container">
+                        {% if is_pro and chart_data %}
+                        <canvas id="leadsChart"></canvas>
+                        {% elif not is_pro %}
+                        <!-- Blurred Placeholder for Free Users -->
+                        <div
+                            style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.4); backdrop-filter: blur(4px); z-index: 10;">
+                            <a href="{{ url_for('billing.index') }}" class="btn-create">Unlock Pro Analytics</a>
+                        </div>
+                        <!-- Fake visual for background -->
+                        <svg width="100%" height="100%" viewBox="0 0 800 300" preserveAspectRatio="none"
+                            style="opacity: 0.2;">
+                            <path d="M0,250 Q100,200 200,220 T400,150 T600,100 T800,50" fill="none" stroke="#0077ff"
+                                stroke-width="3" />
+                        </svg>
+                        {% else %}
+                        <div
+                            style="display: flex; align-items: center; justify-content: center; height: 100%; color: var(--text-muted);">
+                            No data available yet.
+                        </div>
+                        {% endif %}
+                    </div>
                 </div>
 
-                <div class="chart-container">
-                    {% if is_pro and chart_data %}
-                    <canvas id="leadsChart"></canvas>
-                    {% elif not is_pro %}
-                    <!-- Blurred Placeholder for Free Users -->
-                    <div
-                        style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.4); backdrop-filter: blur(4px); z-index: 10;">
-                        <a href="{{ url_for('billing.index') }}" class="btn-create">Unlock Pro Analytics</a>
+                <!-- Top Properties (Side Widget) -->
+                <div class="card col-span-4">
+                    <h3 style="margin: 0 0 20px 0; font-size: 1.1rem;">Top Properties</h3>
+                    {% if analytics and analytics.top_properties %}
+                    <div style="display: flex; flex-direction: column; gap: 12px;">
+                        {% for prop in analytics.top_properties[:5] %}
+                        <div
+                            style="display: flex; justify-content: space-between; align-items: center; padding: 8px; background: rgba(255,255,255,0.02); border-radius: 6px;">
+                            <span
+                                style="font-size: 0.9rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 140px;">{{
+                                prop.address }}</span>
+                            <span class="badge badge-blue">{{ prop.lead_count }} leads</span>
+                        </div>
+                        {% endfor %}
                     </div>
-                    <!-- Fake visual for background -->
-                    <svg width="100%" height="100%" viewBox="0 0 800 300" preserveAspectRatio="none"
-                        style="opacity: 0.2;">
-                        <path d="M0,250 Q100,200 200,220 T400,150 T600,100 T800,50" fill="none" stroke="#0077ff"
-                            stroke-width="3" />
-                    </svg>
                     {% else %}
+                    <p style="color: var(--text-muted); font-size: 0.9rem;">No property activity yet.</p>
+                    {% endif %}
+                </div>
+
+                <!-- Leads Table -->
+                <div class="card col-span-12" id="leads-section">
                     <div
-                        style="display: flex; align-items: center; justify-content: center; height: 100%; color: var(--text-muted);">
-                        No data available yet.
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <h3 style="margin: 0; font-size: 1.1rem;">Recent Leads</h3>
+                        {% if is_pro and total_lead_count > 0 %}
+                        <a href="{{ url_for('leads.export_leads_csv') }}"
+                            style="color: var(--primary); font-size: 0.9rem; text-decoration: none;">Export CSV</a>
+                        {% endif %}
                     </div>
-                    {% endif %}
-                </div>
-            </div>
 
-            <!-- Top Properties (Side Widget) -->
-            <div class="card col-span-4">
-                <h3 style="margin: 0 0 20px 0; font-size: 1.1rem;">Top Properties</h3>
-                {% if analytics and analytics.top_properties %}
-                <div style="display: flex; flex-direction: column; gap: 12px;">
-                    {% for prop in analytics.top_properties[:5] %}
+                    <div class="table-container">
+                        {% if leads %}
+                        <table class="saas-table">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Property</th>
+                                    <th>Status</th>
+                                    <th>Date</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for lead in leads %}
+                                <tr>
+                                    <td>
+                                        <div style="font-weight: 500;">{{ lead.buyer_name }}</div>
+                                        <div style="font-size: 0.8rem; color: var(--text-muted);">{{
+                                            lead.buyer_email }}
+                                        </div>
+                                    </td>
+                                    <td>{{ lead.property_address[:30] }}...</td>
+                                    <td>
+                                        <span
+                                            class="badge {% if lead.status == 'new' %}badge-green{% else %}badge-gray{% endif %}">
+                                            {{ lead.status | title }}
+                                        </span>
+                                    </td>
+                                    <td style="color: var(--text-muted);">{{ (lead.created_at|string)[:10] if
+                                        lead.created_at else 'N/A' }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+
+                        {% if not is_pro and total_lead_count > free_lead_limit %}
+                        <div style="padding: 16px; text-align: center; border-top: 1px solid var(--border-glass);">
+                            <span style="color: var(--warning); margin-right: 8px;">🔒 {{ total_lead_count -
+                                free_lead_limit
+                                }} more leads hidden</span>
+                            <a href="{{ url_for('billing.index') }}"
+                                style="color: white; text-decoration: underline;">Upgrade to View</a>
+                        </div>
+                        {% endif %}
+
+                        {% else %}
+                        <div style="text-align: center; padding: 32px; color: var(--text-muted);">
+                            No leads found.
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Properties Table -->
+                <div class="card col-span-12" id="properties-section">
                     <div
-                        style="display: flex; justify-content: space-between; align-items: center; padding: 8px; background: rgba(255,255,255,0.02); border-radius: 6px;">
-                        <span
-                            style="font-size: 0.9rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 140px;">{{
-                            prop.address }}</span>
-                        <span class="badge badge-blue">{{ prop.lead_count }} leads</span>
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <h3 style="margin: 0; font-size: 1.1rem;">Your Properties</h3>
                     </div>
-                    {% endfor %}
-                </div>
-                {% else %}
-                <p style="color: var(--text-muted); font-size: 0.9rem;">No property activity yet.</p>
-                {% endif %}
-            </div>
 
-            <!-- Leads Table -->
-            <div class="card col-span-12" id="leads-section">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                    <h3 style="margin: 0; font-size: 1.1rem;">Recent Leads</h3>
-                    {% if is_pro and total_lead_count > 0 %}
-                    <a href="{{ url_for('leads.export_leads_csv') }}"
-                        style="color: var(--primary); font-size: 0.9rem; text-decoration: none;">Export CSV</a>
-                    {% endif %}
-                </div>
-
-                <div class="table-container">
-                    {% if leads %}
-                    <table class="saas-table">
-                        <thead>
-                            <tr>
-                                <th>Name</th>
-                                <th>Property</th>
-                                <th>Status</th>
-                                <th>Date</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for lead in leads %}
-                            <tr>
-                                <td>
-                                    <div style="font-weight: 500;">{{ lead.buyer_name }}</div>
-                                    <div style="font-size: 0.8rem; color: var(--text-muted);">{{ lead.buyer_email }}
-                                    </div>
-                                </td>
-                                <td>{{ lead.property_address[:30] }}...</td>
-                                <td>
-                                    <span
-                                        class="badge {% if lead.status == 'new' %}badge-green{% else %}badge-gray{% endif %}">
-                                        {{ lead.status | title }}
-                                    </span>
-                                </td>
-                                <td style="color: var(--text-muted);">{{ (lead.created_at|string)[:10] if
-                                    lead.created_at else 'N/A' }}</td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-
-                    {% if not is_pro and total_lead_count > free_lead_limit %}
-                    <div style="padding: 16px; text-align: center; border-top: 1px solid var(--border-glass);">
-                        <span style="color: var(--warning); margin-right: 8px;">🔒 {{ total_lead_count -
-                            free_lead_limit
-                            }} more leads hidden</span>
-                        <a href="{{ url_for('billing.index') }}"
-                            style="color: white; text-decoration: underline;">Upgrade to View</a>
-                    </div>
-                    {% endif %}
-
-                    {% else %}
-                    <div style="text-align: center; padding: 32px; color: var(--text-muted);">
-                        No leads found.
-                    </div>
-                    {% endif %}
-                </div>
-            </div>
-
-            <!-- Properties Table -->
-            <div class="card col-span-12" id="properties-section">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                    <h3 style="margin: 0; font-size: 1.1rem;">Your Properties</h3>
-                </div>
-
-                <div class="table-container">
-                    {% if properties %}
-                    <table class="saas-table">
-                        <thead>
-                            <tr>
-                                <th>Address</th>
-                                <th>Scans</th>
-                                <th>Status</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for property in properties %}
-                            <tr>
-                                <td>
-                                    <div style="font-weight: 500;">{{ property.address }}</div>
-                                    <div style="font-size: 0.8rem; color: var(--text-muted);">{{ property.price if
-                                        property.price else 'Price not set' }}</div>
-                                </td>
-                                <td>
-                                    <span class="badge badge-blue">{{ property.scan_count }}</span>
-                                </td>
-                                <td>
-                                    <span class="badge 
+                    <div class="table-container">
+                        {% if properties %}
+                        <table class="saas-table">
+                            <thead>
+                                <tr>
+                                    <th>Address</th>
+                                    <th>Sign Type</th>
+                                    <th>Scans</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for property in properties %}
+                                <tr>
+                                    <td>
+                                        <div style="font-weight: 500;">{{ property.address }}</div>
+                                        <div style="font-size: 0.8rem; color: var(--text-muted);">{{ property.price
+                                            if
+                                            property.price else 'Price not set' }}</div>
+                                    </td>
+                                    <td>
+                                        {% if property.sign_type == 'Smart Sign' %}
+                                        <span class="badge badge-purple">Smart Sign</span>
+                                        {% elif property.sign_type == 'Listing Sign' %}
+                                        <span class="badge badge-blue">Listing Sign</span>
+                                        {% else %}
+                                        <span style="color: var(--text-muted); font-size: 0.85rem;">None</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="badge badge-blue">{{ property.scan_count }}</span>
+                                    </td>
+                                    <td>
+                                        <span class="badge 
                                         {% if property.status_color == 'active' %}badge-green
                                         {% elif property.status_color == 'pro' %}badge-blue
                                         {% elif property.status_color == 'paid_unlock' %}badge-purple
                                         {% elif property.status_color == 'expired' %}badge-orange
                                         {% else %}badge-gray{% endif %}">
-                                        {{ property.status_label }}
-                                    </span>
+                                            {{ property.status_label }}
+                                        </span>
 
-                                    <!-- Show Unlock CTA for Expired OR Active (Free) properties if not paid -->
-                                    <!-- Use status_color logic: Check if it is NOT pro/paid_unlock -->
-                                    {% if property.status_color in ['expired', 'active'] %}
-                                    <div style="margin-top: 6px; display: flex; gap: 5px;">
-                                        <!-- Unlock Digital -->
-                                        <form
-                                            action="{{ url_for('billing.unlock_listing_checkout', property_id=property.id) }}"
-                                            method="POST" style="display: inline;">
-                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                            <button type="submit" class="badge badge-purple"
-                                                style="font-size: 0.75rem; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; padding: 4px 8px; font-weight: 600;">
-                                                🔓 Unlock
-                                            </button>
-                                        </form>
+                                        <!-- Show Unlock CTA for Expired OR Active (Free) properties if not paid -->
+                                        <!-- Use status_color logic: Check if it is NOT pro/paid_unlock -->
+                                        {% if property.status_color in ['expired', 'active'] %}
+                                        <div style="margin-top: 6px; display: flex; gap: 5px;">
+                                            <!-- Unlock Digital -->
+                                            <form
+                                                action="{{ url_for('billing.unlock_listing_checkout', property_id=property.id) }}"
+                                                method="POST" style="display: inline;">
+                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                <button type="submit" class="badge badge-purple"
+                                                    style="font-size: 0.75rem; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; padding: 4px 8px; font-weight: 600;">
+                                                    🔓 Unlock
+                                                </button>
+                                            </form>
 
-                                        <!-- Order Sign -->
-                                        <a href="{{ url_for('orders.order_sign_start', property_id=property.id) }}"
-                                            class="badge badge-green"
-                                            style="font-size: 0.75rem; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; padding: 4px 8px; font-weight: 600; text-decoration: none;">
-                                            📦 Sign
-                                        </a>
-                                    </div>
-                                    {% endif %}
-                                </td>
-                                <td>
-                                    <div style="display: flex; gap: 12px; align-items: center;">
-                                        <a href="{{ url_for('properties.internal_agent_redirect', property_id=property.id) }}"
-                                            target="_blank" style="color: var(--text-main); font-size: 0.9rem;">View</a>
-                                        <a href="{{ url_for('dashboard.edit_property', property_id=property.id) }}"
-                                            style="color: var(--text-main); font-size: 0.9rem;">Edit</a>
-                                        <a href="{{ url_for('campaigns.list_campaigns', property_id=property.id) }}"
-                                            style="color: var(--primary); font-size: 0.9rem;">QR & Marketing</a>
-                                    </div>
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                    {% else %}
-                    <div style="text-align: center; padding: 32px; color: var(--text-muted);">
-                        No properties found. <a href="{{ url_for('agent.submit') }}"
-                            style="color: var(--primary);">Create one now</a>.
-                    </div>
-                    {% endif %}
-                </div>
-            </div>
-
-            <!-- SmartSigns Section (MVP) -->
-            <div class="card col-span-12" id="smart-signs-section">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                    <div>
-                        <h3 style="margin: 0; font-size: 1.1rem; display: flex; align-items: center; gap: 8px;">
-                            📦 SmartSigns
-                            {% if not is_pro %}
-                            <span class="badge badge-orange" style="font-size: 0.75rem;">PRO FEATURE</span>
-                            {% endif %}
-                        </h3>
-                        <p style="margin: 4px 0 0 0; font-size: 0.85rem; color: var(--text-muted);">
-                            Reusable QR codes you can reassign to any property.
-                        </p>
-                    </div>
-                    {% if is_pro %}
-                    <a href="{{ url_for('smart_signs.order_start') }}" class="btn-create"
-                        style="font-size: 0.9rem;">Order SmartSign</a>
-                    {% else %}
-                    <a href="{{ url_for('billing.index') }}" class="btn-create"
-                        style="background: var(--warning); color: #fff;">Upgrade to Order</a>
-                    {% endif %}
-                </div>
-
-                <div class="table-container">
-                    {% if sign_assets %}
-                    <table class="saas-table">
-                        <thead>
-                            <tr>
-                                <th>Label / Code</th>
-                                <th>Assigned Property</th>
-                                <th>Status</th>
-                                <th>Scans</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for asset in sign_assets %}
-                            <tr>
-                                <td>
-                                    <div style="font-weight: 500;">{{ asset.label }}</div>
-                                    <a href="{{ url_for('properties.qr_scan_redirect', code=asset.code) }}"
-                                        target="_blank"
-                                        style="font-family: monospace; font-size: 0.85rem; color: var(--primary);">
-                                        {{ asset.code }}
-                                    </a>
-                                </td>
-                                <td>
-                                    {% if asset.active_property_id %}
-                                    <div style="display: flex; align-items: center; gap: 6px;">
-                                        <span
-                                            style="width: 8px; height: 8px; background: #10b981; border-radius: 50%; display: inline-block;"></span>
-                                        {{ asset.property_address or 'Unknown Property' }}
-                                    </div>
-                                    {% else %}
-                                    <div style="color: var(--text-muted);">Not Assigned</div>
-                                    {% endif %}
-                                </td>
-                                <td>
-                                    {% if asset.is_frozen %}
-                                    <span class="badge badge-orange">Frozen</span>
-                                    {% elif not asset.activated_at %}
-                                    <span class="badge badge-gray" style="background:#eab308;color:white;">Pending
-                                        Activation</span>
-                                    {% else %}
-                                    <span class="badge badge-green">Active</span>
-                                    {% endif %}
-                                </td>
-                                <td>
-                                    <span class="badge badge-gray">{{ asset.scan_count }}</span>
-                                </td>
-                                <td>
-                                    {% if is_pro and not asset.is_frozen and asset.activated_at %}
-                                    <form action="{{ url_for('dashboard.assign_smart_sign', asset_id=asset.id) }}"
-                                        method="POST" style="display: flex; gap: 8px; align-items: center;">
-                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-
-                                        <select name="property_id"
-                                            style="background: rgba(0,0,0,0.2); border: 1px solid var(--border-glass); color: white; padding: 4px 8px; border-radius: 4px; max-width: 150px;">
-                                            <option value="unassigned" {% if not asset.active_property_id %}selected{%
-                                                endif %}>
-                                                Unassigned</option>
-                                            {% for p in properties %}
-                                            <option value="{{ p.id }}" {% if p.id==asset.active_property_id %}selected{%
-                                                endif %}>
-                                                {{ p.address[:20] }}{% if p.address|length > 20 %}...{% endif %}
-                                            </option>
-                                            {% endfor %}
-                                        </select>
-                                        <button type="submit" class="badge badge-blue"
-                                            style="border: none; cursor: pointer;">Save</button>
-
-                                        <!-- SmartSign Actions -->
-                                        <div style="height: 20px; border-left: 1px solid var(--border-glass);"></div>
-
-                                        <a href="{{ url_for('smart_signs.edit_smartsign', asset_id=asset.id) }}"
-                                            class="badge badge-gray" title="Customize Design">
-                                            ✏️ Edit
-                                        </a>
-
-                                        <a href="{{ url_for('smart_signs.order_start', asset_id=asset.id) }}"
-                                            class="badge badge-green" title="Order Printed Sign">
-                                            📦 Order
-                                        </a>
-                                    </form>
-                                    {% elif asset.is_frozen %}
-                                    <span class="badge badge-orange" title="Reactivate subscription to reassign">❄️
-                                        Frozen</span>
-                                    {% elif not asset.activated_at %}
-                                    <span class="badge badge-gray" title="Must be activated by purchase"
-                                        style="background:#eab308;color:white;">
-                                        Pending Activation
-                                    </span>
-                                    {% else %}
-                                    <a href="{{ url_for('billing.index') }}" class="badge badge-orange">Upgrade to
-                                        Assign</a>
-                                    {% endif %}
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                    {% else %}
-                    <div style="text-align: center; padding: 32px; color: var(--text-muted);">
-                        No SmartSigns created yet.
-                        {% if not is_pro %}
-                        <br><a href="{{ url_for('billing.index') }}" style="color: var(--primary);">Upgrade to Pro</a>
-                        to get
-                        started.
+                                            <!-- Order Sign -->
+                                            <a href="{{ url_for('orders.order_sign_start', property_id=property.id) }}"
+                                                class="badge badge-green"
+                                                style="font-size: 0.75rem; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; padding: 4px 8px; font-weight: 600; text-decoration: none;">
+                                                📦 Sign
+                                            </a>
+                                        </div>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div style="display: flex; gap: 12px; align-items: center;">
+                                            <a href="{{ url_for('properties.internal_agent_redirect', property_id=property.id) }}"
+                                                target="_blank"
+                                                style="color: var(--text-main); font-size: 0.9rem;">View</a>
+                                            <a href="{{ url_for('dashboard.edit_property', property_id=property.id) }}"
+                                                style="color: var(--text-main); font-size: 0.9rem;">Edit</a>
+                                            <a href="{{ url_for('campaigns.list_campaigns', property_id=property.id) }}"
+                                                style="color: var(--primary); font-size: 0.9rem;">QR & Marketing</a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                        {% else %}
+                        <div style="text-align: center; padding: 32px; color: var(--text-muted);">
+                            No properties found. <a href="{{ url_for('agent.submit') }}"
+                                style="color: var(--primary);">Create one now</a>.
+                        </div>
                         {% endif %}
                     </div>
-                    {% endif %}
                 </div>
-            </div>
 
-        </div>
+                <!-- SmartSigns Section (MVP) -->
+                <div class="card col-span-12" id="smart-signs-section">
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <div>
+                            <h3 style="margin: 0; font-size: 1.1rem; display: flex; align-items: center; gap: 8px;">
+                                📦 SmartSigns
+                                {% if not is_pro %}
+                                <span class="badge badge-orange" style="font-size: 0.75rem;">PRO FEATURE</span>
+                                {% endif %}
+                            </h3>
+                            <p style="margin: 4px 0 0 0; font-size: 0.85rem; color: var(--text-muted);">
+                                Reusable/Reassignable QR Code Signs.
+                            </p>
+                        </div>
+                        {% if is_pro %}
+                        <a href="{{ url_for('smart_signs.order_start') }}" class="btn-create"
+                            style="font-size: 0.9rem;">Order SmartSign</a>
+                        {% else %}
+                        <a href="{{ url_for('billing.index') }}" class="btn-create"
+                            style="background: var(--warning); color: #fff;">Upgrade to Order</a>
+                        {% endif %}
+                    </div>
+
+                    <div class="table-container">
+                        {% if sign_assets %}
+                        <table class="saas-table">
+                            <thead>
+                                <tr>
+                                    <th>Label / Code</th>
+                                    <th>Assigned Property</th>
+                                    <th>Status</th>
+                                    <th>Scans</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for asset in sign_assets %}
+                                <tr>
+                                    <td>
+                                        <div style="font-weight: 500;">{{ asset.label }}</div>
+                                        <a href="{{ url_for('properties.qr_scan_redirect', code=asset.code) }}"
+                                            target="_blank"
+                                            style="font-family: monospace; font-size: 0.85rem; color: var(--primary);">
+                                            {{ asset.code }}
+                                        </a>
+                                    </td>
+                                    <td>
+                                        {% if asset.active_property_id %}
+                                        <div style="display: flex; align-items: center; gap: 6px;">
+                                            <span
+                                                style="width: 8px; height: 8px; background: #10b981; border-radius: 50%; display: inline-block;"></span>
+                                            {{ asset.property_address or 'Unknown Property' }}
+                                        </div>
+                                        {% else %}
+                                        <div style="color: var(--text-muted);">Not Assigned</div>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if asset.is_frozen %}
+                                        <span class="badge badge-orange">Frozen</span>
+                                        {% elif not asset.activated_at %}
+                                        <span class="badge badge-gray" style="background:#eab308;color:white;">Pending
+                                            Activation</span>
+                                        {% else %}
+                                        <span class="badge badge-green">Active</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="badge badge-gray">{{ asset.scan_count }}</span>
+                                    </td>
+                                    <td>
+                                        {% if is_pro and not asset.is_frozen and asset.activated_at %}
+                                        <form action="{{ url_for('dashboard.assign_smart_sign', asset_id=asset.id) }}"
+                                            method="POST" style="display: flex; gap: 8px; align-items: center;">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                                            <select name="property_id"
+                                                style="background: rgba(0,0,0,0.2); border: 1px solid var(--border-glass); color: white; padding: 4px 8px; border-radius: 4px; max-width: 150px;">
+                                                <option value="unassigned" {% if not asset.active_property_id
+                                                    %}selected{% endif %}>
+                                                    Unassigned</option>
+                                                {% for p in properties %}
+                                                <option value="{{ p.id }}" {% if p.id==asset.active_property_id
+                                                    %}selected{% endif %}>
+                                                    {{ p.address[:20] }}{% if p.address|length > 20 %}...{% endif %}
+                                                </option>
+                                                {% endfor %}
+                                            </select>
+                                            <button type="submit" class="badge badge-blue"
+                                                style="border: none; cursor: pointer;">Save</button>
+
+                                            <!-- SmartSign Actions -->
+                                            <div style="height: 20px; border-left: 1px solid var(--border-glass);">
+                                            </div>
+
+                                            <a href="{{ url_for('smart_signs.edit_smartsign', asset_id=asset.id) }}"
+                                                class="badge badge-gray" title="Customize Design">
+                                                ✏️ Edit
+                                            </a>
+
+                                            <a href="{{ url_for('smart_signs.order_start', asset_id=asset.id) }}"
+                                                class="badge badge-green" title="Order Printed Sign">
+                                                📦 Order
+                                            </a>
+                                        </form>
+                                        {% elif asset.is_frozen %}
+                                        <span class="badge badge-orange" title="Reactivate subscription to reassign">❄️
+                                            Frozen</span>
+                                        {% elif not asset.activated_at %}
+                                        <span class="badge badge-gray" title="Must be activated by purchase"
+                                            style="background:#eab308;color:white;">
+                                            Pending Activation
+                                        </span>
+                                        {% else %}
+                                        <a href="{{ url_for('billing.index') }}" class="badge badge-orange">Upgrade
+                                            to
+                                            Assign</a>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                        {% else %}
+                        <div style="text-align: center; padding: 32px; color: var(--text-muted);">
+                            No SmartSigns created yet.
+                            {% if not is_pro %}
+                            <br><a href="{{ url_for('billing.index') }}" style="color: var(--primary);">Upgrade to
+                                Pro</a>
+                            to get
+                            started.
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Listing Signs Card (New) -->
+                <div class="card col-span-12" id="listing-signs-section">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <h3 style="margin: 0; font-size: 1.1rem; display: flex; align-items: center; gap: 8px;">
+                                🛑 Listing Signs
+                            </h3>
+                            <p style="margin: 4px 0 0 0; font-size: 0.85rem; color: var(--text-muted);">
+                                Property-specific sign. Available in Coroplast and Aluminum.
+                            </p>
+                        </div>
+                        <a href="#properties-section" class="btn-create" style="font-size: 0.9rem;">Order Listing
+                            Sign</a>
+                    </div>
+                </div>
+
+            </div>
     </main>
 </div>
 

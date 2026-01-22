@@ -24,7 +24,7 @@
             {% if current_user.is_authenticated %}
             <div class="nav-stack">
                 {% if request.endpoint not in ['orders.success', 'billing.success', 'smart_signs.order_start',
-                'account.index', 'campaigns.list_campaigns'] %}
+                'account.index', 'campaigns.list_campaigns', 'agent.submit'] %}
                 <a href="{{ url_for('dashboard.index') }}" class="glass-button secondary nav-btn">
                     Dashboard
                 </a>

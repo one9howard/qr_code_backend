@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block title %}Choose Your Sign | InSite Signs{% endblock %}
+
+{% block body_class %}saas-landing{% endblock %}
+
+{% block content %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/pages/landing_saas.css') }}">
+
+<div class="features-section" style="padding-top: 120px; min-height: 100vh;">
+    <div class="container-saas">
+        <h2 class="section-title">Choose Your Sign Type</h2>
+        <p style="text-align: center; color: var(--text-muted); margin-bottom: 40px;">Select the best sign for your
+            needs to get started.</p>
+
+        <div class="features-grid" style="grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));">
+            <!-- Smart Sign Card -->
+            <div class="pricing-card pro" style="border: 1px solid var(--primary);">
+                <div class="pricing-badge">REUSABLE</div>
+                <div class="pricing-title">Smart Sign</div>
+                <div class="pricing-price" style="font-size: 1.5rem; color: var(--text-main);">For Open Houses &
+                    Branding</div>
+                <ul class="pricing-features">
+                    <li>🔄 Reusable/Reassignable QR Code Signs</li>
+                    <li>📱 Perfect for Open Houses</li>
+                    <li>🎨 Customizable Agent Branding</li>
+                    <li>📊 Lifetime Analytics</li>
+                </ul>
+                <a href="{{ url_for('smart_signs.order_start') }}" class="btn-primary">Create Smart Sign</a>
+            </div>
+
+            <!-- Listing Sign Card -->
+            <div class="pricing-card">
+                <div class="pricing-badge" style="background: var(--text-muted);">ONE-TIME</div>
+                <div class="pricing-title">Listing Sign</div>
+                <div class="pricing-price" style="font-size: 1.5rem; color: var(--text-main);">For Specific Properties
+                </div>
+                <ul class="pricing-features">
+                    <li>🏠 Tied to One Property Address</li>
+                    <li>🛠 Available in Coroplast and Aluminum</li>
+                    <li>📍 Auto-Generated Property Page</li>
+                    <li>📦 Ship Direct to Listing</li>
+                </ul>
+                <a href="{{ url_for('agent.submit') }}" class="btn-secondary">Create Listing Sign</a>
+            </div>
+        </div>
+
+        <div style="text-align: center; margin-top: 50px;">
+            <a href="{{ url_for('dashboard.index') }}" style="color: var(--text-muted);">Back to Dashboard</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

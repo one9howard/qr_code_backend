@@ -89,6 +89,24 @@ def index():
         else:
             created_date = "N/A"
             
+        # Determine sign type (MVP: Simple N+1 query)
+        sign_type = None
+        # Valid orders: signed or kit
+        has_listing_sign = db.execute(
+            "SELECT 1 FROM orders WHERE property_id=%s AND order_type IN ('sign', 'listing_kit', 'smart_riser') LIMIT 1", 
+            (p['id'],)
+        ).fetchone()
+        
+        has_smart_sign = db.execute(
+            "SELECT 1 FROM sign_assets WHERE active_property_id=%s LIMIT 1",
+            (p['id'],)
+        ).fetchone()
+        
+        if has_smart_sign:
+            sign_type = "Smart Sign"
+        elif has_listing_sign:
+            sign_type = "Listing Sign"
+            
         properties_view.append({
             "id": p['id'],
             "address": p['address'],
@@ -97,6 +115,7 @@ def index():
             "scan_count": p['scan_count'],
             "status_label": status_label,
             "status_color": status_color,
+            "sign_type": sign_type,
             "days_remaining": gating['days_remaining'],
             "locked_reason": gating['locked_reason']
         })

@@ -23,3 +23,8 @@ def privacy():
 def terms():
     """Display the Terms of Service page."""
     return render_template("terms.html")
+
+@public_bp.route("/select-sign")
+def select_sign():
+    """Display the Sign Selection page (Smart vs Listing)."""
+    return render_template("public/select_sign.html")
