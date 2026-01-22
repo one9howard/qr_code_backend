@@ -24,30 +24,53 @@ def generate_smart_riser_pdf(order, output_path):
 
     width = width_in * inch
     height = height_in * inch
+    bleed = 0.125 * inch
     
-    c = canvas.Canvas(output_path, pagesize=(width, height))
+    # 1. Fetch QR
+    from utils.qr_vector import draw_vector_qr
+    from database import get_db
+    from config import BASE_URL
     
-    # Simple Content for now (Placeholder logic until real design)
-    # Just draw a border and the product name/ID to prove generation
+    qr_url = f"{BASE_URL}" 
+    payload = order.design_payload or {}
+    asset_id = payload.get('sign_asset_id')
+    
+    if asset_id:
+        db = get_db()
+        asset = db.execute("SELECT code FROM sign_assets WHERE id = %s", (asset_id,)).fetchone()
+        if asset:
+            qr_url = f"{BASE_URL}/r/{asset['code']}"
+
+    c = canvas.Canvas(output_path, pagesize=(width + 2*bleed, height + 2*bleed))
+    
     def draw_page(c):
         c.saveState()
+        c.translate(bleed, bleed)
+        
         # White background
         c.setFillColor(colors.white)
-        c.rect(0, 0, width, height, fill=1)
+        c.rect(0, 0, width, height, fill=1, stroke=0)
         
-        # Border
-        c.setStrokeColor(colors.black)
-        c.setLineWidth(5)
-        c.rect(10, 10, width - 20, height - 20)
+        # QR Code - Left side
+        # Max QR size constrained by height - margin
+        qr_size = height * 0.8
+        qr_x = height * 0.1 # Padding from left
+        qr_y = height * 0.1
         
-        # Text
+        draw_vector_qr(c, qr_url, x=qr_x, y=qr_y, size=qr_size)
+        
+        # Text - Centered in remaining space
         c.setFillColor(colors.black)
-        c.setFont("Helvetica-Bold", 36)
-        text = f"SmartRiser {size_str}"
-        c.drawCentredString(width / 2, height / 2, text)
         
-        c.setFont("Helvetica", 12)
-        c.drawCentredString(width / 2, height / 2 - 40, f"Order: {order.id}")
+        text_x = (width + qr_x + qr_size) / 2
+        text_y = height / 2 - 10
+        
+        c.setFont("Helvetica-Bold", 72)
+        c.drawCentredString(text_x, text_y + 20, "SCAN FOR INFO")
+        
+        c.setFont("Helvetica", 24)
+        code_label = f"SmartRiser {size_str}"
+        c.drawCentredString(text_x, text_y - 60, code_label)
         
         c.restoreState()
 

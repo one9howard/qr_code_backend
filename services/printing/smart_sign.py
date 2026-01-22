@@ -92,18 +92,32 @@ def _draw_minimal(c: canvas.Canvas, ctx: SmartContext, payload: dict, order):
     c.setFillColorRGB(*hex_to_rgb(hex_bg))
     c.rect(-ctx.bleed, -ctx.bleed, ctx.width + 2*ctx.bleed, ctx.height + 2*ctx.bleed, fill=1, stroke=0)
     
-    # QR Code (Mock or Real)
+    # QR Code (Real)
+    from utils.qr_vector import draw_vector_qr
+    from database import get_db
+    from config import BASE_URL
+    
+    qr_url = f"{BASE_URL}" # Default fallback
+    asset_id = payload.get('sign_asset_id')
+    
+    if asset_id:
+        db = get_db()
+        asset = db.execute("SELECT code FROM sign_assets WHERE id = %s", (asset_id,)).fetchone()
+        if asset:
+            qr_url = f"{BASE_URL}/r/{asset['code']}"
+
     qr_size = 8 * inch
+    # Center QR
     qr_x = (ctx.width - qr_size) / 2
+    # Vertically positioned (adjust as needed)
     qr_y = (ctx.height - qr_size) / 2 + 2*inch
     
     # White box for QR
     c.setFillColorRGB(1,1,1)
     c.rect(qr_x - 0.25*inch, qr_y - 0.25*inch, qr_size + 0.5*inch, qr_size + 0.5*inch, fill=1, stroke=0)
     
-    # ... Draw QR logic ... (Use placeholder text for implementation speed if QR util missing)
-    c.setFillColorRGB(0,0,0)
-    c.drawCentredString(qr_x + qr_size/2, qr_y + qr_size/2, "QR CODE HERE")
+    # Draw Vector QR
+    draw_vector_qr(c, qr_url, x=qr_x, y=qr_y, size=qr_size)
 
     # Agent Info
     c.setFillColorRGB(1,1,1)

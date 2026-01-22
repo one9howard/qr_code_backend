@@ -28,35 +28,110 @@ def generate_listing_sign_pdf(order, output_path):
     # To save time and reduce risk, we reuse the DRAW functions from `utils.pdf_generator`
     # but we control the CANVAS and PAGE loop here.
     
-    # We need to gather the `data` dict expected by `_draw_standard_layout`.
-    # We need to gather the `data` dict expected by `_draw_standard_layout`.
-    from database import get_db
-    from models import User
-    from utils.qr import generate_qr_code_url
-    
-    # Fetch related
-    prop_id = order.property_id
-    user_id = order.user_id
-    
+    # 2. Fetch Data (scan-friendly)
     db = get_db()
+    prop_row = db.execute("SELECT * FROM properties WHERE id = %s", (order.property_id,)).fetchone()
+    # User associated with order (or property agent?) - Usually Property Agent is best for sign info, 
+    # but Order has user_id. Let's use Property Agent data if possible, or Order User.
+    # Listing Sign typically reflects the Agent on the Property.
+    # property -> agent_id -> users table.
+    agent_row = None
+    if prop_row['agent_id']:
+        agent_row = db.execute("""
+            SELECT u.*, a.brokerage_name, a.custom_color 
+            FROM agents a 
+            JOIN users u ON a.user_id = u.id 
+            WHERE a.id = %s
+        """, (prop_row['agent_id'],)).fetchone()
     
-    # Re-fetch full objects via SQL
-    prop = db.execute("SELECT * FROM properties WHERE id = %s", (prop_id,)).fetchone()
-    # User can be fetched via User model which supports get_by or raw sql
-    user_row = db.execute("SELECT * FROM users WHERE id = %s", (user_id,)).fetchone()
-    
-    if not prop or not user_row:
-        raise ValueError("Property or User not found for order")
+    if not agent_row:
+         # Fallback to order user
+         agent_row = db.execute("SELECT * FROM users WHERE id = %s", (order.user_id,)).fetchone()
 
-    # Map to expected object interface (dot notation or dict access)
-    # prop is a RealDictRow usually, so prop['address'] works. 
-    # But existing code below might use dot notation: prop.address.
-    # Let's wrap explicitly or change downstream usage.
-    # checking downstream usage... "address = prop.address"
-    # So we need an object or change downstream to use dict access.
-    # Let's change downstream to use dict access OR Wraps. 
-    # Simplest: use a dict access below or a simple class.
-    # Actually, let's just update the extraction below.
+    if not prop_row or not agent_row:
+        raise ValueError(f"Missing data for Order {order.id}")
+
+    # 3. Prepare Attributes
+    from config import BASE_URL
+    
+    # helper for safe dict access
+    def get(row, k, default=''):
+        return str(row[k]) if row and row[k] else default
+
+    address = get(prop_row, 'address', 'Address TBD')
+    beds = get(prop_row, 'beds', '0')
+    baths = get(prop_row, 'baths', '0')
+    sqft = get(prop_row, 'sqft', '')
+    
+    # Format Price
+    price_val = prop_row['price']
+    price = f"${price_val:,}" if price_val else ""
+    
+    agent_name = get(agent_row, 'full_name', 'Agent')
+    brokerage = get(agent_row, 'brokerage_name', 'Brokerage')
+    agent_email = get(agent_row, 'email', '')
+    agent_phone = get(agent_row, 'phone_number', '') # Assuming column exists
+    
+    # Keys
+    agent_photo_key = agent_row.get('photo_storage_key') # Column guess? Or lookup 'agent_headshot_key'
+    # Actually, previous schema might use 'photo_url' or similar. 
+    # Safest: pass None if we aren't sure of column name, or try 'profile_photo_url' if logical.
+    # But utils.pdf_generator expects a KEY to fetch from storage.
+    # Let's assume None for now to avoid broken image links unless we verified schema.
+    
+    # Sign Config
+    sign_color = agent_row.get('custom_color') or '#000000'
+    sign_size = order.print_size or '18x24'
+    
+    # QR URL (Real)
+    # Redirect code/id
+    qr_url = f"{BASE_URL}/s/{prop_row['id']}" # Standard Property Redirect
+    
+    # 4. Generate PDF (Double Sided)
+    from utils.pdf_generator import LayoutSpec, SIGN_SIZES, DEFAULT_SIGN_SIZE, _draw_standard_layout, _draw_landscape_split_layout
+    import io
+    
+    # Config
+    if sign_size not in SIGN_SIZES: sign_size = DEFAULT_SIGN_SIZE
+    size_config = SIGN_SIZES[sign_size]
+    layout = LayoutSpec(size_config['width_in'], size_config['height_in'])
+    
+    pdf_buffer = io.BytesIO()
+    c = canvas.Canvas(pdf_buffer, pagesize=(layout.width + 2*layout.bleed, layout.height + 2*layout.bleed))
+    
+    # Draw 2 identical pages
+    for page_num in range(2):
+        c.translate(layout.bleed, layout.bleed)
+        
+        # Draw Layout
+        if sign_size == "36x18":
+             _draw_landscape_split_layout(
+                c, layout, address, beds, baths, sqft, price,
+                agent_name, brokerage, agent_email, agent_phone,
+                None, agent_photo_key, sign_color, qr_value=qr_url
+            )
+        else:
+            _draw_standard_layout(
+                c, layout, address, beds, baths, sqft, price,
+                agent_name, brokerage, agent_email, agent_phone,
+                None, agent_photo_key, sign_color, qr_value=qr_url
+            )
+        
+        c.showPage()
+    
+    c.save()
+    pdf_buffer.seek(0)
+    
+    # 5. Save to Storage
+    from utils.filenames import make_sign_asset_basename
+    
+    folder = f"pdfs/order_{order.id}"
+    basename = make_sign_asset_basename(order.id, sign_size)
+    pdf_key = f"{folder}/{basename}.pdf"
+    
+    storage.put_file(pdf_buffer, pdf_key, content_type="application/pdf")
+    
+    return pdf_key
     
     class Box:
         def __init__(self, data):

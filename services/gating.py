@@ -150,7 +150,7 @@ def get_property_gating_status(property_id):
         "locked_reason": locked_reason
     }
 
-def get_smart_sign_assets(user_id):
+def get_sign_assets(user_id):
     """
     Fetch all SmartSign assets owned by the user.
     Returns list of dicts.

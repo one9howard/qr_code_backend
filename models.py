@@ -87,13 +87,25 @@ class Order:
         return cls(**dict(row))
 
     def save(self):
-        """Insert or Update based on id existence"""
         db = get_db()
+        from psycopg2.extras import Json
+        
         if hasattr(self, 'id') and self.id:
-            # Update (Partial) - simplified to just known fields or explicit update required
-            # For now, let's assume specific update methods are better, 
-            # or we implement basic update for specific fields.
-            pass
+            # Update
+            cols = []
+            vals = []
+            for k, v in self.__dict__.items():
+                if k.startswith('_') or k == 'id': continue
+                cols.append(f"{k} = %s")
+                if isinstance(v, (dict, list)):
+                    vals.append(Json(v))
+                else:
+                    vals.append(v)
+            
+            sql = f"UPDATE orders SET {', '.join(cols)} WHERE id = %s"
+            vals.append(self.id)
+            db.execute(sql, tuple(vals))
+            db.commit()
         else:
             # Insert
             cols = []
@@ -102,7 +114,12 @@ class Order:
             for k, v in self.__dict__.items():
                 if k.startswith('_'): continue
                 cols.append(k)
-                vals.append(v)
+                
+                if isinstance(v, (dict, list)):
+                    vals.append(Json(v))
+                else:
+                    vals.append(v)
+                    
                 placeholders.append("%s")
             
             sql = f"INSERT INTO orders ({', '.join(cols)}) VALUES ({', '.join(placeholders)}) RETURNING id"

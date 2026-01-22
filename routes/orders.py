@@ -39,14 +39,8 @@ def download_pdf(order_id):
     Download the generated PDF for an order.
     Disabled for MVP Phase 5/6 - Fulfillment handles printing directly.
     """
-    # order = Order.query.filter_by(id=order_id).first_or_404()
-    # if current_user.id != order.user_id and not current_user.is_admin:
-    #     abort(403)
-    # 
-    # if not order.sign_pdf_path or not os.path.exists(order.sign_pdf_path):
-    #     abort(404)
-    #     
-    # return send_file(order.sign_pdf_path, as_attachment=True, download_name=f"sign_order_{order_id}.pdf")
+    # Disabled for MVP Phase 5/6 - Fulfillment handles printing directly.
+    # Legacy code removed.
     abort(404) # Not exposed to users directly
 
 @orders_bp.route('/order/sign/start/<int:property_id>')
