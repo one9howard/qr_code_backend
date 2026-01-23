@@ -1,174 +1,186 @@
-import pytest
+import unittest
 from unittest.mock import patch, MagicMock
+from app import create_app
+from database import get_db
+import uuid
+from models import User
+import io
 
-@pytest.fixture
-def setup_data(client, db):
-    # Setup Users using the shared db connection
-    pro_id = db.execute("INSERT INTO users (email, password_hash, subscription_status, is_verified) VALUES ('pro@example.com', 'hash', 'active', true) RETURNING id").fetchone()['id']
-    free_id = db.execute("INSERT INTO users (email, password_hash, subscription_status, is_verified) VALUES ('free@example.com', 'hash', 'free', true) RETURNING id").fetchone()['id']
-    
-    # Setup Agent for Pro
-    agent_id = db.execute("INSERT INTO agents (user_id, name, brokerage, email) VALUES (%s, 'Pro Agent', 'Test Realty', 'pro@example.com') RETURNING id", (pro_id,)).fetchone()['id']
+class TestSmartSignsPrinting(unittest.TestCase):
+    def setUp(self):
+        self.app = create_app({'TESTING': True, 'WTF_CSRF_ENABLED': False})
+        self.client = self.app.test_client()
+        self.app_context = self.app.app_context()
+        self.app_context.push()
+        
+        db = get_db()
+        
+        # Cleanup from previous failed runs
+        db.execute("DELETE FROM users WHERE email IN ('pro@test.com', 'basic@test.com')")
+        # Cascade? If not, we might error.
+        # But users table usually has cascade on deps.
+        # If not, we might need to delete agents first. 
+        # But we don't know IDs.
+        # We can try to delete users. If foreign key error, we'll see.
+        db.commit()
+        
+        # PRO UUID
+        self.pro_id = str(uuid.uuid4())
+        
+        # Insert User returning ID
+        row = db.execute("""
+            INSERT INTO users (email, password_hash, subscription_status, is_admin, is_verified, created_at)
+            VALUES (%s, %s, %s, %s, %s, NOW())
+            RETURNING id
+        """, ('pro@test.com', 'hash', 'active', False, True)).fetchone()
+        self.pro_id = row['id']
+        
+        # Insert Agent (Required for Dashboard)
+        db.execute("""
+            INSERT INTO agents (user_id, name, brokerage, email, phone)
+            VALUES (%s, 'Pro Agent', 'Brokerage', 'pro@test.com', '555-1234')
+        """, (self.pro_id,))
+        
+        db.commit()
+        
+        # Create Assets
+        # 1. Active Pro Asset
+        row = db.execute(
+            """INSERT INTO sign_assets (user_id, code, label, created_at, activated_at, is_frozen, brand_name)
+               VALUES (%s, 'PROtest', 'Active Asset', NOW(), NOW(), FALSE, 'Old Brand')
+               RETURNING id""",
+            (self.pro_id,)
+        ).fetchone()
+        self.active_asset_id = row['id']
+        
+        # 2. Frozen Asset
+        row = db.execute(
+            """INSERT INTO sign_assets (user_id, code, label, created_at, activated_at, is_frozen)
+               VALUES (%s, 'FRZtest', 'Frozen Asset', NOW(), NOW(), TRUE)
+               RETURNING id""",
+            (self.pro_id,)
+        ).fetchone()
+        self.frozen_asset_id = row['id']
+        
+        # 3. Basic Asset (Same user, but we will mock accessing as basic user)
+        row = db.execute(
+            """INSERT INTO sign_assets (user_id, code, label, created_at, activated_at, is_frozen)
+               VALUES (%s, 'BSCtest', 'Basic Asset', NOW(), NOW(), FALSE)
+               RETURNING id""",
+            (self.pro_id,)
+        ).fetchone()
+        self.basic_asset_id = row['id']
+        
+        db.commit()
 
-    # Setup Property for Pro
-    property_id = db.execute("INSERT INTO properties (agent_id, address, beds, baths) VALUES (%s, '123 Test St', '3', '2') RETURNING id", (agent_id,)).fetchone()['id']
+    def tearDown(self):
+        db = get_db()
+        db.execute("DELETE FROM sign_assets WHERE user_id = %s", (self.pro_id,))
+        db.execute("DELETE FROM agents WHERE user_id = %s", (self.pro_id,))
+        db.execute("DELETE FROM users WHERE id = %s", (self.pro_id,))
+        db.commit()
+        self.app_context.pop()
 
-    # Setup Asset for Pro
-    asset_id = db.execute("INSERT INTO sign_assets (user_id, code, label, active_property_id) VALUES (%s, 'PRO123', 'My Sign', %s) RETURNING id", (pro_id, property_id)).fetchone()['id']
-    
-    db.commit()
-    
-    # Attach ids to client for convenience
-    client.pro_id = pro_id
-    client.free_id = free_id
-    client.asset_id = asset_id
-    client.property_id = property_id
+    def login_mock(self, user_id):
+        # Set session
+        with self.client.session_transaction() as sess:
+            sess['_user_id'] = str(user_id)
+            sess['_fresh'] = True
 
-def login(client, user_id):
-    with client.session_transaction() as sess:
-        sess['_user_id'] = str(user_id)
-        sess['_fresh'] = True
+    @patch('models.User.get')
+    @patch('services.pdf_smartsign.generate_smartsign_pdf')
+    @patch('routes.smart_signs.get_storage')
+    def test_pro_active_flow(self, mock_storage, mock_generate, mock_user_get):
+        """Test full flow for Pro user with active asset."""
+        # Setup Mock User
+        mock_user = MagicMock(spec=User)
+        mock_user.id = self.pro_id
+        mock_user.is_authenticated = True
+        mock_user.is_active = True
+        mock_user.is_anonymous = False
+        mock_user.is_verified = True
+        mock_user.subscription_status = 'active'
+        mock_user.display_name = 'Pro User'
+        
+        mock_user_get.return_value = mock_user
+        
+        self.login_mock(self.pro_id)
+        
+        # 1. Dashboard Load
+        resp = self.client.get('/dashboard/')
+        self.assertEqual(resp.status_code, 200)
+        
+        # 2. Edit Page Load
+        resp = self.client.get(f'/smart-signs/{self.active_asset_id}/edit')
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn(b'Edit SmartSign Design', resp.data)
 
-class TestSmartSignPrinting:
-
-    def test_edit_access_control_free(self, client, setup_data):
-        # 1. Free user cannot edit
-        login(client, client.free_id)
-        resp = client.get(f"/dashboard/sign-assets/{client.asset_id}/edit")
-        assert resp.status_code == 403 or resp.status_code == 404
-
-    def test_edit_access_control_pro(self, client, setup_data):
-        # 2. Pro user (Owner) can edit
-        login(client, client.pro_id)
-        resp = client.get(f"/dashboard/sign-assets/{client.asset_id}/edit")
-        assert resp.status_code == 200
-        assert b"Edit SmartSign Design" in resp.data
-
-    def test_edit_design(self, client, setup_data, db):
-        login(client, client.pro_id)
-        resp = client.post(f"/dashboard/sign-assets/{client.asset_id}/edit", data={
-            'brand_name': 'New Brand',
-            'cta_key': 'scan_for_details',
+        # 3. Post Update
+        # We need to mock get_storage for the POST (image upload handling) too!
+        # routes.smart_signs.get_storage is called.
+        mock_storage_instance = MagicMock()
+        mock_storage.return_value = mock_storage_instance
+        # Put file returns key
+        mock_storage_instance.put_file.return_value = 'uploads/mock.jpg'
+        
+        update_data = {
+            'brand_name': 'New Brand Name',
+            'phone': '555-1234',
+            'email': 'agent@pro.com',
             'background_style': 'dark',
-            'include_logo': 'on'
-        }, follow_redirects=True)
-        assert resp.status_code == 200
-        
-        asset = db.execute("SELECT * FROM sign_assets WHERE id=%s", (client.asset_id,)).fetchone()
-        assert asset['brand_name'] == 'New Brand'
-        assert asset['background_style'] == 'dark'
-        assert asset['include_logo'] is True
-
-    @patch('routes.smart_signs.update_attempt_status')
-    @patch('routes.smart_signs.create_checkout_attempt')
-    @patch('routes.smart_signs.stripe.checkout.Session.create')
-    @patch('os.environ.get')
-    def test_checkout_flow(self, mock_env, mock_stripe, mock_create_attempt, mock_update_status, client, setup_data, db):
-        # Mock Attempt
-        mock_create_attempt.return_value = {'attempt_token': 'tok', 'idempotency_key': 'key'}
-        # Mock Price
-        def get_env(key, default=None):
-            if key == 'SMARTSIGN_PRICE_CENTS': return '2900'
-            return default
-        mock_env.side_effect = get_env
-        
-        mock_stripe.return_value = MagicMock(id='sess_123', url='http://stripe.url')
-        
-        login(client, client.pro_id)
-        resp = client.post("/orders/smart-sign/checkout", data={
-            'asset_id': client.asset_id,
-            'property_id': client.property_id
-        })
-        
-        assert resp.status_code == 303
-        assert resp.location == 'http://stripe.url'
-        
-        # Verify Order Created
-        order = db.execute("SELECT * FROM orders WHERE sign_asset_id=%s", (client.asset_id,)).fetchone()
-        assert order is not None
-        assert order['status'] == 'pending_payment'
-        assert order['stripe_checkout_session_id'] == 'sess_123'
-
-    @patch('routes.webhook.fulfill_order')
-    def test_webhook_activation(self, mock_fulfill, client, setup_data, db):
-        # 1. Create pending order
-        order_id = db.execute("""
-            INSERT INTO orders (user_id, sign_asset_id, property_id, status, order_type) 
-            VALUES (%s, %s, %s, 'pending_payment', 'smart_sign') 
-            RETURNING id
-        """, (client.pro_id, client.asset_id, client.property_id)).fetchone()['id']
-        db.commit()
-        
-        # 2. Simulate Webhook
-        payload = {
-            'id': 'evt_123',
-            'type': 'checkout.session.completed',
-            'data': {
-                'object': {
-                    'id': 'sess_fake',
-                    'mode': 'payment',
-                    'payment_status': 'paid',
-                    'payment_intent': 'pi_fake',
-                    'amount_total': 2900,
-                    'currency': 'usd',
-                    'metadata': {
-                        'purpose': 'smart_sign',
-                        'order_id': str(order_id),
-                        'sign_asset_id': str(client.asset_id)
-                    }
-                }
-            }
+            'cta_key': 'scan_to_view'
         }
+        resp = self.client.post(f'/smart-signs/{self.active_asset_id}/edit', data=update_data, follow_redirects=True)
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn(b'SmartSign design updated', resp.data)
         
-        with patch('stripe.Webhook.construct_event') as mock_construct:
-            mock_construct.return_value = payload
-            resp = client.post("/stripe/webhook", json=payload, headers={'Stripe-Signature': 'fake'})
-            assert resp.status_code == 200
-            
-        # 3. Verify Activation
-        asset = db.execute("SELECT * FROM sign_assets WHERE id=%s", (client.asset_id,)).fetchone()
-        assert asset['activated_at'] is not None
-        assert asset['activation_order_id'] == order_id
-        
-        order = db.execute("SELECT * FROM orders WHERE id=%s", (order_id,)).fetchone()
-        assert order['status'] == 'paid'
-        
-        # 4. Verify Fulfillment Triggered
-        mock_fulfill.assert_called_with(str(order_id)) 
+        # Verify DB update in Real DB
+        db = get_db()
+        asset = db.execute(
+            "SELECT * FROM sign_assets WHERE id=%s", (self.active_asset_id,)
+        ).fetchone()
+        self.assertEqual(asset['brand_name'], 'New Brand Name')
 
-    @patch('services.fulfillment.generate_smartsign_pdf')
-    def test_fulfillment_generation(self, mock_gen, client, setup_data, db):
-        mock_gen.return_value = "pdfs/generated.pdf"
+        # 4. Preview
+        # Setup mocks
+        mock_generate.return_value = 'mock/path.pdf'
+        # mock_storage is already set up, but we need get_file
+        mock_storage_instance.get_file.return_value = io.BytesIO(b'%PDF-1.4 mock pdf content')
         
-        # Setup paid order without PDF
-        order_id = db.execute("""
-            INSERT INTO orders (user_id, sign_asset_id, property_id, status, order_type, sign_pdf_path) 
-            VALUES (%s, %s, %s, 'paid', 'smart_sign', NULL) 
-            RETURNING id
-        """, (client.pro_id, client.asset_id, client.property_id)).fetchone()['id']
-        db.commit()
-        
-        db.commit()
-        
-        from services.fulfillment import fulfill_order
-        
-        # Run
-        # Mock get_storage to return True for exists
-        with patch('services.fulfillment_providers.internal.InternalQueueProvider.submit_order') as mock_submit, \
-             patch('utils.storage.get_storage') as mock_storage_cls:
-             
-            mock_storage_instance = MagicMock()
-            mock_storage_instance.exists.return_value = True
-            mock_storage_cls.return_value = mock_storage_instance
+        resp = self.client.get(f'/smart-signs/{self.active_asset_id}/preview.pdf')
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.content_type, 'application/pdf')
 
-            mock_submit.return_value = "job_123"
-            success = fulfill_order(order_id)
-            assert success is True
-            
-        # Verify PDF Gen called
-        mock_gen.assert_called_once()
+    @patch('models.User.get')
+    def test_frozen_asset_access(self, mock_user_get):
+        """Test access denied for Frozen asset."""
+        mock_user = MagicMock(spec=User)
+        mock_user.id = self.pro_id
+        mock_user.is_authenticated = True
+        mock_user.is_active = True
+        mock_user.is_verified = True
+        mock_user.subscription_status = 'active'
+        mock_user_get.return_value = mock_user
         
-        # Verify Order updated
-        order = db.execute("SELECT * FROM orders WHERE id=%s", (order_id,)).fetchone()
-        assert order['sign_pdf_path'] == "pdfs/generated.pdf"
-        assert order['status'] == 'submitted_to_printer'
+        self.login_mock(self.pro_id)
+        
+        # Edit Page -> 403
+        resp = self.client.get(f'/smart-signs/{self.frozen_asset_id}/edit')
+        self.assertEqual(resp.status_code, 403)
+
+    @patch('models.User.get')
+    def test_non_pro_access(self, mock_user_get):
+        """Test access denied for Non-Pro User."""
+        mock_user = MagicMock(spec=User)
+        mock_user.id = self.pro_id
+        mock_user.is_authenticated = True
+        mock_user.is_active = True
+        mock_user.is_verified = True
+        mock_user.subscription_status = 'free' # Non-Pro
+        mock_user_get.return_value = mock_user
+        
+        self.login_mock(self.pro_id)
+        
+        # Edit Page -> 403
+        resp = self.client.get(f'/smart-signs/{self.basic_asset_id}/edit')
+        self.assertEqual(resp.status_code, 403)

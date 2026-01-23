@@ -1,4 +1,4 @@
-from flask import Blueprint, request, render_template, jsonify, flash, redirect, url_for, current_app, abort
+from flask import Blueprint, request, render_template, jsonify, flash, redirect, url_for, current_app, abort, send_file
 from flask_login import login_required, current_user
 import stripe
 import os
@@ -10,58 +10,171 @@ from models import db, Order, User
 from database import get_db
 # Use subscriptions for entitlement checks
 from services.subscriptions import is_subscription_active
-# Keep gating only for asset assignment logic if needed, or prefer specialized service
-from services.gating import gating_service, get_sign_assets
 from utils.storage import get_storage
 from services.events import track_event
+from services.pdf_smartsign import STYLE_MAP, CTA_MAP, generate_smartsign_pdf
 
 smart_signs_bp = Blueprint('smart_signs', __name__, url_prefix='/smart-signs')
 
-@smart_signs_bp.route('/manage')
-@login_required
-def manage():
-    """Dashboard for managing SmartSigns."""
-    assets = get_sign_assets(current_user.id)
-    return render_template('smart_signs/manage.html', assets=assets)
+# --- Edit / Preview ---
 
-@smart_signs_bp.route('/assign', methods=['POST'])
+@smart_signs_bp.route('/<int:asset_id>/edit', methods=['GET', 'POST'])
 @login_required
-def assign_property():
-    """Assign a property to a SmartSign asset."""
-    asset_id = request.form.get('asset_id')
-    property_id = request.form.get('property_id')
+def edit_smartsign(asset_id):
+    """
+    Edit SmartSign Design.
     
-    if not asset_id or not property_id:
-        flash("Missing asset or property selection.", "error")
-        return redirect(url_for('smart_signs.manage'))
+    Access Control:
+    - Must own asset
+    - Must be Pro user
+    - Must be activated
+    - Must not be frozen
+    """
+    db = get_db()
+    
+    # 1. Fetch Asset
+    asset = db.execute(
+        "SELECT * FROM sign_assets WHERE id=%s AND user_id=%s",
+        (asset_id, current_user.id)
+    ).fetchone()
+    
+    if not asset:
+        abort(404)
         
-    success, message = gating_service.assign_smart_sign(current_user.id, asset_id, property_id)
-    if success:
-        flash("SmartSign assigned successfully.", "success")
-    else:
-        flash(message, "error")
+    asset = dict(asset)
+    
+    # 2. Status Checks
+    # a. Pro Check
+    if not is_subscription_active(current_user.subscription_status):
+        abort(403) # Must be Pro
         
-    return redirect(url_for('smart_signs.manage'))
+    # b. Activation Check
+    if not asset.get('activated_at'):
+        abort(403) # Must be activated
+        
+    # c. Frozen Check
+    if asset.get('is_frozen'):
+        abort(403) # Frozen
+        
+    # POST - Save
+    if request.method == 'POST':
+        storage = get_storage()
+        updates = []
+        params = []
+        
+        # Text Fields
+        brand_name = request.form.get('brand_name', '')[:60]
+        phone = request.form.get('phone', '')[:32]
+        email = request.form.get('email', '')[:254]
+        
+        # Styles
+        bg_style = request.form.get('background_style')
+        if bg_style not in STYLE_MAP: bg_style = 'solid_blue'
+        
+        cta_key = request.form.get('cta_key')
+        if cta_key not in CTA_MAP: cta_key = 'scan_for_details'
+        
+        # Booleans
+        inc_logo = 'include_logo' in request.form
+        inc_head = 'include_headshot' in request.form
+        
+        updates.extend([
+            "brand_name=%s", "phone=%s", "email=%s", 
+            "background_style=%s", "cta_key=%s", 
+            "include_logo=%s", "include_headshot=%s"
+        ])
+        params.extend([
+            brand_name, phone, email, bg_style, cta_key, inc_logo, inc_head
+        ])
+        
+        # File Uploads
+        if 'logo_file' in request.files:
+            f = request.files['logo_file']
+            if f and f.filename:
+                ext = os.path.splitext(f.filename)[1].lower()
+                key = f"uploads/brands/{current_user.id}/smartsign_logo_{asset_id}{ext}"
+                try:
+                    storage.put_file(f, key)
+                    updates.append("agent_logo_key=%s")
+                    params.append(key)
+                except Exception as e:
+                    print(f"Logo upload error: {e}")
+                    
+        if 'headshot_file' in request.files:
+            f = request.files['headshot_file']
+            if f and f.filename:
+                ext = os.path.splitext(f.filename)[1].lower()
+                key = f"uploads/brands/{current_user.id}/smartsign_headshot_{asset_id}{ext}"
+                try:
+                    storage.put_file(f, key)
+                    updates.append("agent_headshot_key=%s")
+                    params.append(key)
+                except Exception as e:
+                    print(f"Headshot upload error: {e}")
 
-@smart_signs_bp.route('/unassign', methods=['POST'])
+        # Execute Update
+        if updates:
+            sql = f"UPDATE sign_assets SET {', '.join(updates)}, updated_at=NOW() WHERE id=%s"
+            params.append(asset_id)
+            db.execute(sql, tuple(params))
+            db.commit()
+            
+        flash("SmartSign design updated.", "success")
+        return redirect(url_for('smart_signs.edit_smartsign', asset_id=asset_id))
+
+    # GET - Render Template
+    # Pass style options for dropdowns
+    return render_template(
+        'smartsign_edit.html',
+        asset=asset,
+        bg_options=list(STYLE_MAP.keys()),
+        cta_options=list(CTA_MAP.keys())
+    )
+
+@smart_signs_bp.route('/<int:asset_id>/preview.pdf')
 @login_required
-def unassign_property():
-    """Unassign a property from a SmartSign."""
-    asset_id = request.form.get('asset_id')
-    if not asset_id:
-        flash("Missing asset ID.", "error")
-        return redirect(url_for('smart_signs.manage'))
+def preview_smartsign(asset_id):
+    """
+    Generate and serve PDF preview.
+    """
+    db = get_db()
+    asset = db.execute(
+        "SELECT * FROM sign_assets WHERE id=%s AND user_id=%s",
+        (asset_id, current_user.id)
+    ).fetchone()
+    
+    if not asset:
+        abort(404)
         
-    success, message = gating_service.unassign_smart_sign(current_user.id, asset_id)
-    if success:
-        flash("SmartSign unassigned.", "success")
-    else:
-        flash(message, "error")
+    # Same access controls?
+    # Yes
+    if not is_subscription_active(current_user.subscription_status) or \
+       not asset['activated_at'] or \
+       asset['is_frozen']:
+        abort(403)
         
-    return redirect(url_for('smart_signs.manage'))
+    # Generate
+    try:
+        # Pass row directly
+        # order_id=None -> tmp location or deterministic?
+        # Use None to just generate.
+        # Wait, generate returns a KEY.
+        key = generate_smartsign_pdf(asset, order_id=None)
+        
+        # Read back and serve
+        storage = get_storage()
+        file_data = storage.get_file(key)
+        
+        return send_file(
+            file_data,
+            mimetype='application/pdf',
+            as_attachment=False,
+            download_name='preview.pdf'
+        )
+    except Exception as e:
+        print(f"Preview Error: {e}")
+        return "Error generating preview", 500
 
-
-# --- Purchase Flow ---
 
 @smart_signs_bp.route('/order/start')
 @login_required
@@ -91,13 +204,7 @@ def order_start():
     return render_template('smart_signs/order_form.html', colors=colors, asset_id=asset_id)
 
 
-def check_access(asset_id):
-    # Helper to check ownership
-    db = get_db()
-    data = db.execute("SELECT * FROM sign_assets WHERE id=%s AND user_id=%s", (asset_id, current_user.id)).fetchone()
-    if not data:
-        abort(404)
-    return dict(data)
+
 
 @smart_signs_bp.route('/checkout', methods=['POST'])
 @login_required

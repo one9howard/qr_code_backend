@@ -184,14 +184,14 @@ def generate_smartsign_pdf(asset, order_id=None):
 
     # Logo - Top Left if included
     include_logo = bool(_read(asset, 'include_logo'))
-    logo_key = _read(asset, 'logo_key')
+    logo_key = _read(asset, 'agent_logo_key') or _read(asset, 'logo_key') # Fallback for safety
     if include_logo and logo_key:
         size = layout.width * 0.15
         draw_corner_image(logo_key, layout.margin, layout.height - layout.margin - size, size)
 
     # Headshot - Top Right if included
     include_headshot = bool(_read(asset, 'include_headshot'))
-    headshot_key = _read(asset, 'headshot_key')
+    headshot_key = _read(asset, 'agent_headshot_key') or _read(asset, 'headshot_key') # Fallback
     if include_headshot and headshot_key:
         size = layout.width * 0.15
         draw_corner_image(headshot_key, layout.width - layout.margin - size, layout.height - layout.margin - size, size)
