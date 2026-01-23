@@ -146,12 +146,12 @@ def test_open_house_mode(client, db, feature_data):
     # Normal View
     response = client.get("/p/open-st")
     assert response.status_code == 200
-    assert b"Open House Check-In" not in response.data
+    assert b"Open House" not in response.data
 
     # Open House View
     response = client.get("/p/open-st?mode=open_house")
     assert response.status_code == 200
-    assert b"Open House Check-In" in response.data
+    assert b"Open House" in response.data
 
 
 # --- Gating Render ---
@@ -194,7 +194,8 @@ def test_gating_rendering(client, db, feature_data):
     response = client.get(f"/p/{pro_prop_slug}")
     assert response.status_code == 200
     html = response.data.decode()
-    assert 'class="gallery"' in html or 'description-box' in html
+    # Check for content sections that only render in PAID state
+    assert 'gallery-section' in html or 'section-title' in html
 
 
 # --- Cleanup ---

@@ -1,190 +1,467 @@
 /**
- * Property Page Logic
- * Handles navigation history, lead forms, and UI interactions.
+ * Property Page JavaScript
+ * Handles navigation, lead forms, lightbox, events, and gated content interactions.
+ * 
+ * NO JQUERY DEPENDENCY - Pure vanilla JS
+ * All actions fail silently if elements/endpoints missing
  */
 
-document.addEventListener("DOMContentLoaded", () => {
-    // --- Close Button Logic ---
-    const closeBtn = document.getElementById("close-property");
-    if (closeBtn) {
-        closeBtn.addEventListener("click", (e) => {
-            e.preventDefault();
-            exitPropertyPage();
-        });
+(function () {
+    'use strict';
+
+    // ============================================================
+    // GLOBALS & STATE
+    // ============================================================
+    const DATA = window.PROPERTY_DATA || {};
+    let lightboxIndex = 0;
+
+    // ============================================================
+    // INIT ON DOM READY
+    // ============================================================
+    document.addEventListener('DOMContentLoaded', init);
+
+    function init() {
+        initCloseButton();
+        initLeadForm();
+        initMessageToggle();
+        initLightbox();
+        initGatedContent();
+        initMobileActions();
+        initKeyboardNav();
+        initScrollToCTA();
     }
 
-    // --- Keyboard Shortcuts ---
-    document.addEventListener("keydown", (e) => {
-        if (e.key === "Escape") {
-            const modal = document.getElementById('lead-modal');
-            if (modal && modal.style.display === 'flex') {
-                closeLeadModal();
-            } else {
-                exitPropertyPage();
+    // ============================================================
+    // CLOSE BUTTON LOGIC
+    // ============================================================
+    function initCloseButton() {
+        const closeBtn = document.getElementById('close-property');
+        if (closeBtn) {
+            closeBtn.addEventListener('click', handleClose);
+        }
+    }
+
+    function handleClose(e) {
+        if (e) e.preventDefault();
+
+        // 1. Check for return_to query param
+        const urlParams = new URLSearchParams(window.location.search);
+        const returnTo = urlParams.get('return_to');
+        if (returnTo) {
+            window.location.href = returnTo;
+            return;
+        }
+
+        // 2. Check if referrer is same origin
+        const ref = document.referrer;
+        if (ref) {
+            try {
+                const refUrl = new URL(ref);
+                if (refUrl.origin === window.location.origin) {
+                    window.location.href = ref;
+                    return;
+                }
+            } catch (e) {
+                // Invalid URL, continue
             }
         }
-    });
 
-    // --- Lead Modal Triggers ---
-    // Attach to any button with class 'trigger-lead-modal'
-    document.querySelectorAll('.trigger-lead-modal').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            e.preventDefault();
-            openLeadModal();
+        // 3. Try history.back()
+        if (window.history.length > 1) {
+            window.history.back();
+            // Fallback if back doesn't navigate away
+            setTimeout(() => {
+                window.location.href = '/';
+            }, 500);
+            return;
+        }
+
+        // 4. Final fallback
+        window.location.href = '/';
+    }
+
+    // ============================================================
+    // KEYBOARD NAVIGATION
+    // ============================================================
+    function initKeyboardNav() {
+        document.addEventListener('keydown', (e) => {
+            // Escape closes modals/lightbox or exits page
+            if (e.key === 'Escape') {
+                const lightbox = document.getElementById('lightbox');
+                const upsell = document.getElementById('upsell-sheet');
+
+                if (lightbox && lightbox.style.display !== 'none') {
+                    closeLightbox();
+                } else if (upsell && upsell.style.display !== 'none') {
+                    closeUpsellSheet();
+                } else {
+                    handleClose();
+                }
+            }
+
+            // Arrow keys for lightbox
+            if (document.getElementById('lightbox')?.style.display !== 'none') {
+                if (e.key === 'ArrowLeft') lightboxPrev();
+                if (e.key === 'ArrowRight') lightboxNext();
+            }
         });
-    });
+    }
 
-    // --- Mobile Action Bar: Scroll to Request Info ---
-    const scrollBtn = document.getElementById('scroll-to-contact');
-    if (scrollBtn) {
-        scrollBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            const contactSection = document.getElementById('agent-contact-section');
-            if (contactSection) {
-                contactSection.scrollIntoView({ behavior: 'smooth' });
+    // ============================================================
+    // LEAD FORM
+    // ============================================================
+    function initLeadForm() {
+        const form = document.getElementById('lead-form');
+        if (!form) return;
+
+        form.addEventListener('submit', handleLeadSubmit);
+    }
+
+    async function handleLeadSubmit(e) {
+        e.preventDefault();
+
+        const form = e.target;
+        const errorEl = document.getElementById('lead-form-error');
+        const successEl = document.getElementById('lead-form-success');
+        const submitBtn = document.getElementById('lead-submit-btn');
+
+        // Hide previous messages
+        if (errorEl) { errorEl.style.display = 'none'; errorEl.textContent = ''; }
+        if (successEl) { successEl.style.display = 'none'; successEl.textContent = ''; }
+
+        // Disable button
+        const originalText = submitBtn ? submitBtn.textContent : '';
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Sending...';
+        }
+
+        // Collect form data
+        const formData = {
+            property_id: form.property_id?.value || DATA.id,
+            buyer_name: form.buyer_name?.value || '',
+            buyer_email: form.buyer_email?.value || '',
+            buyer_phone: form.buyer_phone?.value || '',
+            preferred_contact: form.preferred_contact?.value || 'email',
+            best_time: form.best_time?.value || '',
+            message: form.message?.value || '',
+            consent: form.consent?.checked || false,
+            website: form.website?.value || '', // Honeypot
+            request_type: form.request_type?.value || 'info'
+        };
+
+        try {
+            const response = await fetch('/api/leads/submit', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(formData)
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                if (successEl) {
+                    successEl.textContent = data.message || 'Request sent successfully!';
+                    successEl.style.display = 'block';
+                }
+                form.reset();
+                sendEvent('lead_submitted', { request_type: formData.request_type });
             } else {
-                // Fallback if section missing
-                openLeadModal();
+                if (errorEl) {
+                    errorEl.textContent = data.message || data.error || 'An error occurred';
+                    errorEl.style.display = 'block';
+                }
             }
-        });
-    }
-});
-
-/**
- * Robust Exit Strategy
- * return_to > window.opener > document.referrer > history.back > /
- */
-function exitPropertyPage() {
-    const urlParams = new URLSearchParams(window.location.search);
-    const returnTo = urlParams.get('return_to');
-
-    // 1. Explicit Return
-    if (returnTo) {
-        window.location.href = returnTo;
-        return;
-    }
-
-    // 2. Script-opened window (try to close)
-    if (window.opener && !window.opener.closed) {
-        window.close();
-        // Fallthrough if blocked
-    }
-
-    // 3. Referrer (different from current)
-    const ref = document.referrer;
-    if (ref && ref !== window.location.href) {
-        window.location.href = ref;
-        return;
-    }
-
-    // 4. History Back
-    if (window.history.length > 1) {
-        window.history.back();
-        // Fallback in case history.back() is just a hash change or stuck
-        setTimeout(() => {
-            window.location.href = "/";
-        }, 500);
-        return;
-    }
-
-    // 5. Root Fallback
-    window.location.href = "/";
-}
-
-// --- Lead Modal Functions ---
-
-function openLeadModal() {
-    const modal = document.getElementById('lead-modal');
-    if (modal) {
-        modal.style.display = 'flex';
-        document.body.style.overflow = 'hidden';
-    }
-}
-
-function closeLeadModal() {
-    const modal = document.getElementById('lead-modal');
-    if (modal) {
-        modal.style.display = 'none';
-        document.body.style.overflow = '';
-    }
-}
-
-// Close on outside click
-document.addEventListener('click', (e) => {
-    if (e.target.id === 'lead-modal') closeLeadModal();
-});
-
-
-/**
- * Submit Lead Form
- */
-async function submitLeadForm(e) {
-    e.preventDefault();
-
-    const form = document.getElementById('lead-form');
-    // Sanity check
-    if (!form) return;
-
-    const errorEl = document.getElementById('lead-form-error');
-    const successEl = document.getElementById('lead-form-success');
-    const submitBtn = document.getElementById('lead-submit-btn');
-
-    if (errorEl) errorEl.style.display = 'none';
-    if (successEl) successEl.style.display = 'none';
-    if (submitBtn) {
-        submitBtn.disabled = true;
-        const originalText = submitBtn.textContent;
-        submitBtn.textContent = 'Submitting...';
-    }
-
-    const formData = {
-        property_id: form.property_id.value,
-        buyer_name: form.buyer_name.value,
-        buyer_email: form.buyer_email.value,
-        buyer_phone: form.buyer_phone.value,
-        preferred_contact: form.preferred_contact.value,
-        best_time: form.best_time.value,
-        message: form.message.value,
-        consent: form.consent.checked,
-        website: form.website.value  // Honeypot
-    };
-
-    try {
-        const response = await fetch('/api/leads/submit', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(formData)
-        });
-
-        const data = await response.json();
-
-        if (data.success) {
-            if (successEl) {
-                successEl.textContent = data.message || 'Request submitted successfully!';
-                successEl.style.display = 'block';
-            }
-            form.reset();
-            setTimeout(() => closeLeadModal(), 2000);
-
-            // Optional: Tracking
-            if (window.trackEvent) window.trackEvent('lead_submitted');
-
-        } else {
+        } catch (err) {
+            console.error('Lead form error:', err);
             if (errorEl) {
-                errorEl.textContent = data.message || data.error || 'An error occurred';
+                errorEl.textContent = 'Network error. Please try again.';
                 errorEl.style.display = 'block';
             }
-        }
-    } catch (err) {
-        if (errorEl) {
-            errorEl.textContent = 'Network error. Please try again.';
-            errorEl.style.display = 'block';
-        }
-        console.error(err);
-    } finally {
-        if (submitBtn) {
-            submitBtn.disabled = false;
-            submitBtn.textContent = 'Submit Request'; // Restore text
+        } finally {
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.textContent = originalText || 'Send request';
+            }
         }
     }
-}
+
+    // ============================================================
+    // MESSAGE TOGGLE
+    // ============================================================
+    function initMessageToggle() {
+        const toggle = document.getElementById('toggle-message');
+        const field = document.getElementById('message-field');
+
+        if (toggle && field) {
+            toggle.addEventListener('click', () => {
+                const isHidden = field.style.display === 'none';
+                field.style.display = isHidden ? 'block' : 'none';
+                toggle.textContent = isHidden ? '- Hide message' : '+ Add a message';
+            });
+        }
+    }
+
+    // ============================================================
+    // SCROLL TO CTA
+    // ============================================================
+    function initScrollToCTA() {
+        // Desktop "Request info" button scrolls to form
+        const scrollBtn = document.getElementById('scroll-to-form-btn');
+        if (scrollBtn) {
+            scrollBtn.addEventListener('click', () => {
+                const form = document.getElementById('lead-form');
+                if (form) {
+                    form.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    // Focus first input
+                    setTimeout(() => {
+                        const firstInput = form.querySelector('input[type="text"]');
+                        if (firstInput) firstInput.focus();
+                    }, 500);
+                }
+                sendEvent('cta_click', { type: 'request_info' });
+            });
+        }
+
+        // "Request a tour" button
+        const tourBtn = document.getElementById('request-tour');
+        if (tourBtn) {
+            tourBtn.addEventListener('click', () => {
+                // Set request type
+                const requestType = document.getElementById('request_type');
+                if (requestType) requestType.value = 'tour';
+
+                // Scroll to form
+                const form = document.getElementById('lead-form');
+                if (form) {
+                    form.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    setTimeout(() => {
+                        const firstInput = form.querySelector('input[type="text"]');
+                        if (firstInput) firstInput.focus();
+                    }, 500);
+                }
+                sendEvent('cta_click', { type: 'request_tour' });
+            });
+        }
+    }
+
+    // ============================================================
+    // MOBILE ACTION BAR
+    // ============================================================
+    function initMobileActions() {
+        const infoBtn = document.getElementById('mobile-request-info');
+        if (infoBtn) {
+            infoBtn.addEventListener('click', () => {
+                // On mobile, scroll to form or open upsell if gated
+                if (DATA.tier === 'free' || DATA.tier === 'expired') {
+                    showUpsellSheet('request_info');
+                } else {
+                    const form = document.getElementById('lead-form');
+                    // Form is in rail which is hidden on mobile - scroll to page bottom
+                    // Instead, scroll to about section which is always visible
+                    window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+                }
+                sendEvent('cta_click', { type: 'request_info' });
+            });
+        }
+
+        // Track call/email clicks
+        document.querySelectorAll('[data-action="call"]').forEach(btn => {
+            btn.addEventListener('click', () => sendEvent('cta_click', { type: 'call' }));
+        });
+
+        document.querySelectorAll('[data-action="email"]').forEach(btn => {
+            btn.addEventListener('click', () => sendEvent('cta_click', { type: 'email' }));
+        });
+    }
+
+    // ============================================================
+    // LIGHTBOX (PAID only)
+    // ============================================================
+    function initLightbox() {
+        if (!DATA.photos || DATA.photos.length === 0) return;
+
+        const lightbox = document.getElementById('lightbox');
+        if (!lightbox) return;
+
+        // Open triggers
+        document.getElementById('open-lightbox')?.addEventListener('click', () => openLightbox(0));
+        document.getElementById('open-lightbox-more')?.addEventListener('click', () => openLightbox(5));
+        document.getElementById('view-all-photos')?.addEventListener('click', () => openLightbox(0));
+
+        // Gallery items
+        document.querySelectorAll('.gallery-item').forEach(item => {
+            item.addEventListener('click', () => {
+                const idx = parseInt(item.dataset.index, 10) || 0;
+                openLightbox(idx);
+            });
+        });
+
+        // Thumbnail buttons
+        document.querySelectorAll('.thumb-btn[data-index]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const idx = parseInt(btn.dataset.index, 10) || 0;
+                // Update hero image
+                const heroImg = document.getElementById('hero-image');
+                if (heroImg && DATA.photos[idx]) {
+                    heroImg.src = DATA.photos[idx];
+                }
+                // Update active state
+                document.querySelectorAll('.thumb-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+            });
+        });
+
+        // Controls
+        document.getElementById('lightbox-close')?.addEventListener('click', closeLightbox);
+        document.getElementById('lightbox-prev')?.addEventListener('click', lightboxPrev);
+        document.getElementById('lightbox-next')?.addEventListener('click', lightboxNext);
+
+        // Close on backdrop click
+        lightbox.addEventListener('click', (e) => {
+            if (e.target === lightbox) closeLightbox();
+        });
+    }
+
+    function openLightbox(index) {
+        const lightbox = document.getElementById('lightbox');
+        if (!lightbox || !DATA.photos || DATA.photos.length === 0) return;
+
+        lightboxIndex = index;
+        updateLightboxImage();
+        lightbox.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeLightbox() {
+        const lightbox = document.getElementById('lightbox');
+        if (lightbox) {
+            lightbox.style.display = 'none';
+            document.body.style.overflow = '';
+        }
+    }
+
+    function lightboxPrev() {
+        if (!DATA.photos) return;
+        lightboxIndex = (lightboxIndex - 1 + DATA.photos.length) % DATA.photos.length;
+        updateLightboxImage();
+    }
+
+    function lightboxNext() {
+        if (!DATA.photos) return;
+        lightboxIndex = (lightboxIndex + 1) % DATA.photos.length;
+        updateLightboxImage();
+    }
+
+    function updateLightboxImage() {
+        const img = document.getElementById('lightbox-img');
+        const counter = document.getElementById('lightbox-counter');
+        if (img && DATA.photos && DATA.photos[lightboxIndex]) {
+            img.src = DATA.photos[lightboxIndex];
+        }
+        if (counter && DATA.photos) {
+            counter.textContent = `${lightboxIndex + 1} / ${DATA.photos.length}`;
+        }
+    }
+
+    // ============================================================
+    // GATED CONTENT (FREE/EXPIRED)
+    // ============================================================
+    function initGatedContent() {
+        if (DATA.tier === 'paid') return;
+
+        // Continue reading trigger
+        const continueBtn = document.querySelector('.continue-reading');
+        if (continueBtn) {
+            continueBtn.addEventListener('click', () => {
+                sendEvent('gated_content_attempt', {
+                    content_type: 'description',
+                    trigger: 'continue_reading'
+                });
+                showUpsellSheet('continue_reading');
+            });
+        }
+
+        // Gallery locked click
+        const galleryLocked = document.querySelector('.gallery-locked');
+        if (galleryLocked) {
+            galleryLocked.addEventListener('click', () => {
+                sendEvent('gated_content_attempt', {
+                    content_type: 'photos',
+                    trigger: 'click_gallery'
+                });
+                showUpsellSheet('click_gallery');
+            });
+        }
+    }
+
+    // ============================================================
+    // UPSELL SHEET
+    // ============================================================
+    function showUpsellSheet(trigger) {
+        const sheet = document.getElementById('upsell-sheet');
+        if (!sheet) return;
+
+        sheet.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+        sendEvent('upsell_shown', { trigger });
+
+        // Close handlers
+        document.getElementById('upsell-close')?.addEventListener('click', closeUpsellSheet);
+        document.getElementById('upsell-backdrop')?.addEventListener('click', closeUpsellSheet);
+        document.getElementById('upsell-contact')?.addEventListener('click', () => {
+            closeUpsellSheet();
+            // Scroll to form or trigger contact
+            const agentRail = document.getElementById('agent-rail');
+            if (agentRail && window.innerWidth >= 1024) {
+                agentRail.scrollIntoView({ behavior: 'smooth' });
+            } else {
+                // On mobile, show email option
+                const email = document.querySelector('[data-action="email"]');
+                if (email) email.click();
+            }
+        });
+    }
+
+    function closeUpsellSheet() {
+        const sheet = document.getElementById('upsell-sheet');
+        if (sheet) {
+            sheet.style.display = 'none';
+            document.body.style.overflow = '';
+            sendEvent('upsell_dismissed', {});
+        }
+    }
+
+    // ============================================================
+    // EVENT TRACKING (Best-effort, no-throw)
+    // ============================================================
+    function sendEvent(eventName, data) {
+        try {
+            // Merge with property context
+            const payload = {
+                event: eventName,
+                property_id: DATA.id,
+                tier: DATA.tier,
+                timestamp: new Date().toISOString(),
+                ...data
+            };
+
+            // Try /api/events if it exists
+            fetch('/api/events', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            }).catch(() => {
+                // Silently ignore - endpoint may not exist
+            });
+
+            // Also call global trackEvent if available
+            if (typeof window.trackEvent === 'function') {
+                window.trackEvent(eventName, payload);
+            }
+        } catch (err) {
+            // Silently ignore all errors
+        }
+    }
+
+})();

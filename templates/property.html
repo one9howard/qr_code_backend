@@ -4,294 +4,388 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>{{ property.address }} | {{ property.agent_name }}</title>
 
-    <!-- Core Styles -->
+    {# SEO Title: Address | Beds/Baths | CTA #}
+    <title>{{ property.address or 'Property' }} | {{ property.beds }} bd {{ property.baths }} ba | Request info</title>
+
+    {# Core Styles #}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/pages/property.css') }}">
 
-    <!-- FontAwesome (if not already in style.css, assuming it is or similar icon lib is available. 
-         Using text fallbacks if FA not present, but classes indicate intent) -->
+    {# ============================================================
+    OG / META TAGS - IN HEAD ONLY
 
-    <!-- GATED Open Graph Tags -->
+    GATING RULE: og:image ONLY renders for PAID listings with photos.
+    FREE/EXPIRED must NOT leak any photo URLs.
+    ============================================================ #}
     <meta property="og:title" content="{{ property.address }}">
     <meta property="og:description"
-        content="{{ property.beds }} Bed, {{ property.baths }} Bath | Listed by {{ property.agent_name }}">
+        content="{{ property.beds }} Bed, {{ property.baths }} Bath{% if property.sqft %} · {{ property.sqft }} sqft{% endif %} | Listed by {{ property.agent_name }}">
     <meta property="og:url" content="{{ request.url }}">
     <meta name="twitter:card" content="summary_large_image">
 
-    {# STRICT GATING: Only render OG Image if PAID #}
     {% if gating.is_paid and photos %}
     <meta property="og:image" content="{{ get_storage_url(photos[0]) }}">
-    {% else %}
-    {# Fallback generic image or nothing. Do NOT leak photo URL. #}
-    {#
-    <meta property="og:image" content="{{ url_for('static', filename='img/logo.png', _external=True) }}"> #}
     {% endif %}
-
+    {# NO og:image for FREE/EXPIRED - intentionally omitted to prevent photo leakage #}
 </head>
 
-<body class="property-page">
+<body class="property-page"
+    data-tier="{{ 'paid' if gating.is_paid else ('expired' if gating.is_expired else 'free') }}">
 
-    <!-- 1. Global Close Action -->
-    <a href="#" id="close-property" class="close-action" aria-label="Close">
-        <span>&times;</span>
-    </a>
+    {# ============================================================
+    PHOTO LEAKAGE PREVENTION RULE (DO NOT REMOVE THIS COMMENT)
 
-    <!-- 2. Hero Section -->
-    {% if gating.is_paid and photos %}
-    <!-- PAID: Photo Hero -->
-    <div class="hero-banner" style="background-image: url('{{ get_storage_url(photos[0]) }}');">
-        <div class="hero-overlay"></div>
-    </div>
-    {% else %}
-    <!-- FREE/EXPIRED: Locked Hero -->
-    <div class="hero-banner locked">
-        <div style="text-align: center; color: rgba(255,255,255,0.3);">
-            <span style="font-size: 4rem;">🔒</span>
-            {% if gating.is_expired %}
-            <p>Listing Expired</p>
-            {% else %}
-            <p>Preview Mode</p>
+    ABSOLUTE REQUIREMENT: In FREE and EXPIRED states:
+    - ZERO real listing photo URLs anywhere in rendered HTML
+    - NO get_storage_url(photo) calls for listing photos
+    - NO style="background-image: url(...)" with photo URLs
+    - NO photos array embedded in JavaScript
+    - NO og:image pointing to listing photos
+
+    Agent headshots ARE allowed (they are not listing content).
+    Photo COUNT as plain text is allowed (e.g., "28 photos").
+
+    Any code that renders photos MUST be wrapped in:
+    {% if gating.is_paid and photos %}...{% endif %}
+    ============================================================ #}
+
+    {# ============ TOPBAR ============ #}
+    <header class="property-topbar">
+        <button type="button" id="close-property" class="topbar-close" aria-label="Close">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M18 6L6 18M6 6l12 12" />
+            </svg>
+        </button>
+        <span class="topbar-brand">InSite Signs</span>
+    </header>
+
+    {# ============ HERO SECTION ============ #}
+    <section class="hero">
+        {% if gating.is_paid and photos %}
+        {# PAID: Photo hero with thumbnails #}
+        <div class="hero-main" id="hero-main">
+            <img src="{{ get_storage_url(photos[0]) }}" alt="{{ property.address }}" class="hero-image" id="hero-image">
+            <button type="button" class="hero-photo-count" id="open-lightbox">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                    <path
+                        d="M4 4h7V2H4c-1.1 0-2 .9-2 2v7h2V4zm6 9l-4 5h12l-3-4-2.03 2.71L10 13zm7-4.5c0-.83-.67-1.5-1.5-1.5S14 7.67 14 8.5s.67 1.5 1.5 1.5S17 9.33 17 8.5zM20 2h-7v2h7v7h2V4c0-1.1-.9-2-2-2zm0 18h-7v2h7c1.1 0 2-.9 2-2v-7h-2v7zM4 13H2v7c0 1.1.9 2 2 2h7v-2H4v-7z" />
+                </svg>
+                {{ photos|length }} Photos
+            </button>
+        </div>
+        {% if photos|length > 1 %}
+        <div class="hero-thumbnails">
+            {% for photo in photos[:5] %}
+            <button type="button" class="thumb-btn" data-index="{{ loop.index0 }}">
+                <img src="{{ get_storage_url(photo) }}" alt="Photo {{ loop.index }}" loading="lazy">
+            </button>
+            {% endfor %}
+            {% if photos|length > 5 %}
+            <button type="button" class="thumb-btn thumb-more" id="open-lightbox-more">
+                +{{ photos|length - 5 }}
+            </button>
             {% endif %}
         </div>
-        <div class="hero-overlay"></div>
-    </div>
-    {% endif %}
+        {% endif %}
 
+        {% else %}
+        {# FREE/EXPIRED: Locked hero - NO photo URLs #}
+        <div class="hero-locked">
+            <div class="hero-lock-icon">🔒</div>
+            {% if gating.is_expired %}
+            <p class="hero-lock-text">Listing Expired</p>
+            {% else %}
+            <p class="hero-lock-text">Listing Preview Locked</p>
+            {% if photos %}
+            <p class="hero-lock-count">{{ photos|length }} photos available</p>
+            {% endif %}
+            {% endif %}
+        </div>
+        {% endif %}
 
-    <!-- 3. Main Container -->
-    <div class="property-container">
+        {# Facts Overlay - Always shown #}
+        <div class="hero-facts">
+            <h1 class="facts-address">{{ property.address }}</h1>
+            <div class="facts-row">
+                {% if gating.is_paid and property.price %}
+                <span class="facts-price">{{ property.price }}</span>
+                {% endif %}
+                <span class="facts-stat">{{ property.beds }} bd</span>
+                <span class="facts-divider">|</span>
+                <span class="facts-stat">{{ property.baths }} ba</span>
+                {% if property.sqft %}
+                <span class="facts-divider">|</span>
+                <span class="facts-stat">{{ property.sqft }} sqft</span>
+                {% endif %}
+            </div>
+            <div class="facts-badges">
+                {% if open_house_mode %}
+                <span class="badge badge-openhouse">Open House</span>
+                {% endif %}
+                {% if gating.is_expired %}
+                <span class="badge badge-expired">Expired</span>
+                {% elif not gating.is_paid %}
+                <span class="badge badge-locked">Preview</span>
+                {% endif %}
+            </div>
+        </div>
+    </section>
 
+    {# ============ MAIN LAYOUT ============ #}
+    <main class="property-main">
         <div class="property-grid">
 
-            <!-- LEFT COLUMN: Content -->
+            {# LEFT COLUMN: Content #}
             <div class="content-column">
 
-                <!-- Main Header -->
-                <div class="property-header-card">
-                    <h1 class="property-title max-w-full break-words">{{ property.address }}</h1>
-
-                    <div class="property-stats">
-                        {% if gating.is_paid and property.price %}
-                        <div class="stat-item" style="color: #fff; font-weight: bold; margin-right: 15px;">
-                            {{ property.price }}
-                        </div>
-                        {% endif %}
-
-                        <div class="stat-item">
-                            <span>🛏️ {{ property.beds }} Beds</span>
-                        </div>
-                        <div class="stat-item">
-                            <span>🛁 {{ property.baths }} Baths</span>
-                        </div>
-                        {% if property.sqft %}
-                        <div class="stat-item">
-                            <span>📐 {{ property.sqft }} Sq Ft</span>
-                        </div>
-                        {% endif %}
-                    </div>
-
-                    {% if open_house_mode %}
-                    <div style="margin-top: 15px;">
-                        <span class="badge"
-                            style="background: #e74c3c; padding: 5px 10px; border-radius: 4px; font-size: 0.9rem;">
-                            Open House Check-In
-                        </span>
-                    </div>
-                    {% endif %}
-                </div>
-
-                <!-- Gating Logic: Content View -->
-                {% if gating.is_paid %}
-
-                <!-- Description -->
-                <div class="content-section description-box">
-                    <h3>About this Home</h3>
+                {# About Section #}
+                <section class="content-section" id="about-section">
+                    <h2 class="section-title">About this home</h2>
+                    {% if gating.is_paid %}
                     <div class="description-text">
                         {{ property.description or "No description provided." }}
                     </div>
-                </div>
-
-                <!-- Gallery -->
-                {% if photos and photos|length > 1 %}
-                <div class="content-section gallery">
-                    <h3>Gallery</h3>
-                    <div class="gallery-grid">
-                        {% for photo in photos[:6] %}
-                        <img src="{{ get_storage_url(photo) }}" alt="Home Photo" loading="lazy"
-                            onclick="alert('Full lightbox coming in Phase 2'); /* Placeholder for fancy lightbox */">
-                        {% endfor %}
+                    {% elif gating.is_expired %}
+                    <div class="description-expired">
+                        <p>This listing is no longer active. Contact the agent for current availability or similar
+                            properties.</p>
                     </div>
-                    {% if photos|length > 6 %}
-                    <div style="text-align: center; margin-top: 15px;">
-                        <button class="btn-outline" style="width: 100%;">View All {{ photos|length }} Photos</button>
+                    {% else %}
+                    {# FREE: Teaser with expand trigger #}
+                    <div class="description-teaser">
+                        <p class="teaser-text">{{ (property.description or "")[:250] }}{% if property.description and
+                            property.description|length > 250 %}...{% endif %}</p>
+                        {% if property.description and property.description|length > 250 %}
+                        <button type="button" class="continue-reading" data-trigger="continue_reading">
+                            Continue reading
+                        </button>
+                        {% endif %}
                     </div>
                     {% endif %}
-                </div>
-                {% endif %}
+                </section>
 
-                {% else %}
-
-                <!-- LOCKED Message -->
-                <div class="locked-notification">
-                    <h3 style="color: #ffc107; margin-bottom: 15px;">🔒 Listing Content Locked</h3>
-                    <p style="color: #ccc; margin-bottom: 25px;">
-                        This listing is currently in <strong>{{ "Expired" if gating.is_expired else "Free" }}
-                            Mode</strong>.
-                        Photos and detailed description are hidden.
-                    </p>
-
-                    <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
-                        <a href="{{ url_for('dashboard.index') }}" class="btn-primary">
-                            Owner Dashboard
-                        </a>
+                {# Highlights / Features Section #}
+                {% if property.beds or property.baths or property.sqft %}
+                <section class="content-section" id="highlights-section">
+                    <h2 class="section-title">Highlights</h2>
+                    <div class="feature-chips">
+                        {% if property.beds %}
+                        <span class="chip">🛏️ {{ property.beds }} Bedrooms</span>
+                        {% endif %}
+                        {% if property.baths %}
+                        <span class="chip">🛁 {{ property.baths }} Bathrooms</span>
+                        {% endif %}
+                        {% if property.sqft %}
+                        <span class="chip">📐 {{ property.sqft }} sq ft</span>
+                        {% endif %}
+                        {% if property.property_type %}
+                        <span class="chip">🏠 {{ property.property_type }}</span>
+                        {% endif %}
+                        {% if property.year_built %}
+                        <span class="chip">📅 Built {{ property.year_built }}</span>
+                        {% endif %}
+                        {% if property.lot_size %}
+                        <span class="chip">🌳 {{ property.lot_size }} lot</span>
+                        {% endif %}
                     </div>
-                </div>
-
+                </section>
                 {% endif %}
 
-                <!-- Content End -->
-                <div style="height: 50px;"></div>
+                {# Gallery Section #}
+                <section class="content-section" id="gallery-section">
+                    <h2 class="section-title">Photos</h2>
+                    {% if gating.is_paid and photos and photos|length > 1 %}
+                    {# PAID: Render gallery grid #}
+                    <div class="gallery-grid">
+                        {% for photo in photos[:12] %}
+                        <button type="button" class="gallery-item" data-index="{{ loop.index0 }}">
+                            <img src="{{ get_storage_url(photo) }}" alt="Photo {{ loop.index }}" loading="lazy">
+                        </button>
+                        {% endfor %}
+                    </div>
+                    {% if photos|length > 12 %}
+                    <button type="button" class="btn-outline view-all-photos" id="view-all-photos">
+                        View all {{ photos|length }} photos
+                    </button>
+                    {% endif %}
+
+                    {% else %}
+                    {# FREE/EXPIRED: Locked gallery card - NO photo URLs #}
+                    <div class="gallery-locked" data-trigger="click_gallery">
+                        <div class="lock-icon">🔒</div>
+                        <p class="lock-title">Photos locked</p>
+                        {% if photos %}
+                        <p class="lock-count">{{ photos|length }} photos available with full listing</p>
+                        {% endif %}
+                        <button type="button" class="btn-unlock" data-trigger="click_gallery">
+                            Unlock photos
+                        </button>
+                    </div>
+                    {% endif %}
+                </section>
+
+                {# Open House / Tour Request #}
+                {% if open_house_mode or True %}
+                <section class="content-section" id="tour-section">
+                    <h2 class="section-title">Schedule a tour</h2>
+                    <p class="tour-text">Interested in seeing this property in person?</p>
+                    <button type="button" class="btn-primary btn-tour" id="request-tour">
+                        Request a tour
+                    </button>
+                </section>
+                {% endif %}
+
+                {# Spacer for mobile action bar #}
+                <div class="mobile-spacer"></div>
             </div>
 
-
-            <!-- RIGHT COLUMN: Sticky Rail (Desktop Only via CSS) -->
-            <div class="sticky-rail">
+            {# RIGHT COLUMN: Sticky Agent Rail (Desktop) #}
+            <aside class="agent-rail" id="agent-rail">
                 <div class="agent-card">
                     {% if property.agent_photo %}
-                    {# Securely render agent photo - these are public usually #}
                     <img src="{{ get_storage_url(property.agent_photo) }}" class="agent-photo"
                         alt="{{ property.agent_name }}">
                     {% else %}
-                    <div class="agent-photo"
-                        style="background: #333; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px;">
-                        👤
+                    <div class="agent-photo agent-photo-placeholder">
+                        <span>👤</span>
                     </div>
                     {% endif %}
+                    <h3 class="agent-name">{{ property.agent_name }}</h3>
+                    <p class="agent-brokerage">{{ property.brokerage }}</p>
 
-                    <h3>{{ property.agent_name }}</h3>
-                    <div class="brokerage">{{ property.brokerage }}</div>
+                    {# Primary CTA #}
+                    <button type="button" class="btn-primary btn-request-info" id="scroll-to-form-btn">
+                        Request info
+                    </button>
 
-                    <div class="agent-actions" id="agent-contact-section">
-                        <button class="btn-primary trigger-lead-modal" style="width: 100%;">
-                            Request Info
+                    {# Inline Lead Form #}
+                    <form id="lead-form" class="lead-form" autocomplete="on">
+                        <input type="hidden" name="property_id" value="{{ property.id }}">
+                        <input type="hidden" name="request_type" id="request_type" value="info">
+
+                        {# Honeypot #}
+                        <div class="hp-field">
+                            <input type="text" name="website" id="website" tabindex="-1" autocomplete="off">
+                        </div>
+
+                        <div class="form-group">
+                            <input type="text" name="buyer_name" id="buyer_name" placeholder="Your name" required
+                                class="form-input">
+                        </div>
+                        <div class="form-group">
+                            <input type="email" name="buyer_email" id="buyer_email" placeholder="Email" required
+                                class="form-input">
+                        </div>
+                        <div class="form-group">
+                            <input type="tel" name="buyer_phone" id="buyer_phone" placeholder="Phone"
+                                class="form-input">
+                        </div>
+
+                        {# Collapsible message #}
+                        <div class="form-group message-toggle">
+                            <button type="button" class="toggle-message" id="toggle-message">
+                                + Add a message
+                            </button>
+                        </div>
+                        <div class="form-group message-field" id="message-field" style="display: none;">
+                            <textarea name="message" id="message" placeholder="I'm interested in..." rows="3"
+                                class="form-input"></textarea>
+                        </div>
+
+                        <input type="hidden" name="preferred_contact" value="email">
+                        <input type="hidden" name="best_time" value="">
+
+                        <div class="form-group consent-group">
+                            <label class="consent-label">
+                                <input type="checkbox" name="consent" id="consent" required>
+                                <span>I agree to be contacted by {{ property.agent_name }} regarding this
+                                    property.</span>
+                            </label>
+                        </div>
+
+                        <div id="lead-form-error" class="form-error"></div>
+                        <div id="lead-form-success" class="form-success"></div>
+
+                        <button type="submit" id="lead-submit-btn" class="btn-primary btn-submit">
+                            Send request
                         </button>
+                    </form>
 
+                    {# Secondary actions #}
+                    <div class="agent-actions">
                         {% if property.agent_phone %}
-                        <a href="tel:{{ property.agent_phone }}" class="btn-secondary" style="width: 100%;">
-                            Call Agent
+                        <a href="tel:{{ property.agent_phone }}" class="btn-secondary btn-call" data-action="call">
+                            📞 Call
                         </a>
                         {% endif %}
-
-                        <a href="mailto:{{ property.agent_email }}" class="btn-outline" style="width: 100%;">
-                            Email Agent
+                        <a href="mailto:{{ property.agent_email }}" class="btn-outline btn-email" data-action="email">
+                            ✉️ Email
                         </a>
                     </div>
                 </div>
-            </div>
+            </aside>
 
         </div>
+    </main>
+
+    {# ============ MOBILE ACTION BAR (Fixed Bottom) ============ #}
+    <div class="mobile-action-bar" id="mobile-action-bar">
+        {% if property.agent_phone %}
+        <a href="tel:{{ property.agent_phone }}" class="mobile-btn mobile-btn-call" data-action="call">
+            📞<span>Call</span>
+        </a>
+        {% endif %}
+        <button type="button" class="mobile-btn mobile-btn-info" id="mobile-request-info" data-action="request_info">
+            💬<span>Request info</span>
+        </button>
+        <a href="mailto:{{ property.agent_email }}" class="mobile-btn mobile-btn-email" data-action="email">
+            ✉️<span>Email</span>
+        </a>
     </div>
 
-
-    <!-- 4. Mobile Action Bar (Fixed Bottom) -->
-    <div class="mobile-action-bar">
-        <div style="display: flex; align-items: center; gap: 10px;">
-            {% if property.agent_photo %}
-            <img src="{{ get_storage_url(property.agent_photo) }}"
-                style="width: 40px; height: 40px; border-radius: 50%; border: 2px solid #4facfe;">
-            {% endif %}
-            <div style="font-size: 0.9rem; line-height: 1.2;">
-                <div style="color: white; font-weight: bold;">{{ property.agent_name }}</div>
-                <div
-                    style="color: #888; font-size: 0.8rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100px;">
-                    {{ property.brokerage }}
-                </div>
-            </div>
+    {# ============ LIGHTBOX (PAID only, built by JS) ============ #}
+    <div id="lightbox" class="lightbox" style="display: none;">
+        <button type="button" class="lightbox-close" id="lightbox-close">&times;</button>
+        <button type="button" class="lightbox-nav lightbox-prev" id="lightbox-prev">&lt;</button>
+        <div class="lightbox-content">
+            <img src="" alt="Property photo" id="lightbox-img">
+            <div class="lightbox-counter" id="lightbox-counter"></div>
         </div>
+        <button type="button" class="lightbox-nav lightbox-next" id="lightbox-next">&gt;</button>
+    </div>
 
-        <div style="display: flex; gap: 10px; flex: 1; justify-content: flex-end;">
-            {% if property.agent_phone %}
-            <a href="tel:{{ property.agent_phone }}" class="mobile-contact-btn secondary" style="flex: 0 0 50px;"
-                aria-label="Call">
-                📞
-            </a>
-            {% endif %}
-            <button class="mobile-contact-btn primary trigger-lead-modal" style="flex: 1; max-width: 150px;">
-                Contact
+    {# ============ UPSELL SHEET (For FREE/EXPIRED gated content) ============ #}
+    <div id="upsell-sheet" class="upsell-sheet" style="display: none;">
+        <div class="upsell-backdrop" id="upsell-backdrop"></div>
+        <div class="upsell-content">
+            <button type="button" class="upsell-close" id="upsell-close">&times;</button>
+            <div class="upsell-icon">🔒</div>
+            <h3 class="upsell-title">Unlock full listing</h3>
+            <p class="upsell-text">Photos and full description are available with the complete listing. Contact the
+                agent for access.</p>
+            <button type="button" class="btn-primary upsell-cta" id="upsell-contact">
+                Contact agent
             </button>
         </div>
     </div>
 
-
-    <!-- 5. Lead Generation Modal -->
-    <div id="lead-modal" class="lead-modal">
-        <div class="lead-modal-content">
-            <span class="close-modal-x" onclick="closeLeadModal()">&times;</span>
-
-            <h2 style="color: white; margin-bottom: 20px; font-size: 1.5rem;">Contact {{ property.agent_name }}</h2>
-
-            <form id="lead-form" onsubmit="submitLeadForm(event)">
-                <input type="hidden" name="property_id" value="{{ property.id }}">
-
-                <!-- Honeypot -->
-                <div style="display: none;">
-                    <input type="text" name="website" id="website" tabindex="-1" autocomplete="off">
-                </div>
-
-                <div style="margin-bottom: 15px;">
-                    <input type="text" name="buyer_name" placeholder="Your Name" required
-                        style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #444; background: rgba(255,255,255,0.05); color: white;">
-                </div>
-
-                <div style="margin-bottom: 15px;">
-                    <input type="email" name="buyer_email" placeholder="Your Email" required
-                        style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #444; background: rgba(255,255,255,0.05); color: white;">
-                </div>
-
-                <div style="margin-bottom: 15px;">
-                    <input type="tel" name="buyer_phone" placeholder="Phone Number"
-                        style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #444; background: rgba(255,255,255,0.05); color: white;">
-                </div>
-
-                <div style="margin-bottom: 15px;">
-                    <select name="preferred_contact"
-                        style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #444; background: rgba(255,255,255,0.05); color: white;">
-                        <option value="email">Prefer Email</option>
-                        <option value="text">Prefer Text</option>
-                        <option value="call">Prefer Call</option>
-                    </select>
-                </div>
-
-                <!-- Hidden inputs for simplicty, can add back if needed -->
-                <input type="hidden" name="best_time" value="">
-
-                <div style="margin-bottom: 15px;">
-                    <textarea name="message" rows="3" placeholder="I'm interested in..."
-                        style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #444; background: rgba(255,255,255,0.05); color: white;"></textarea>
-                </div>
-
-                <div style="margin-bottom: 20px; display: flex; gap: 10px;">
-                    <input type="checkbox" id="consent" name="consent" required style="width: 20px; height: 20px;">
-                    <label for="consent" style="font-size: 0.8rem; color: #aaa; line-height: 1.3;">
-                        I agree to be contacted by {{ property.agent_name }} regarding this property.
-                    </label>
-                </div>
-
-                <div id="lead-form-error" style="color: #ff6b6b; margin-bottom: 10px; display: none;"></div>
-                <div id="lead-form-success" style="color: #2ed573; margin-bottom: 10px; display: none;"></div>
-
-                <button type="submit" id="lead-submit-btn" class="btn-primary"
-                    style="width: 100%; padding: 15px; font-size: 1.1rem;">
-                    Send Request
-                </button>
-            </form>
-        </div>
-    </div>
-
-    <!-- Scripts -->
-    <script src="{{ url_for('static', filename='js/pages/property.js') }}"></script>
+    {# ============ SCRIPTS ============ #}
+    {# Pass minimal server data to JS - NO PHOTO URLS for FREE/EXPIRED #}
+    <script>
+        window.PROPERTY_DATA = {
+            id: {{ property.id }},
+        tier: "{{ 'paid' if gating.is_paid else ('expired' if gating.is_expired else 'free') }}",
+            {% if gating.is_paid and photos %}
+        photos: [{% for p in photos %}"{{ get_storage_url(p) }}"{% if not loop.last %}, {% endif %} {% endfor %}],
+        {% else %}
+        photos: [],
+            photoCount: { { photos | length if photos else 0 } },
+        {% endif %}
+        agentName: "{{ property.agent_name|e }}"
+        };
+    </script>
+    <script src="{{ url_for('static', filename='js/pages/property.js') }}" defer></script>
 
 </body>
 
