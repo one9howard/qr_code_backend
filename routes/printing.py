@@ -1,6 +1,6 @@
+import os
 from flask import Blueprint, request, jsonify, current_app, url_for, send_file
 from database import get_db
-from config import PRINT_JOBS_TOKEN
 from utils.storage import get_storage
 import secrets
 from constants import ORDER_STATUS_FULFILLED
@@ -12,8 +12,15 @@ def check_auth():
     auth_header = request.headers.get("Authorization", "")
     if not auth_header.startswith("Bearer "):
         return False
-    token = auth_header.split(" ")[1]
-    return secrets.compare_digest(token, PRINT_JOBS_TOKEN)
+    token = auth_header.split(" ", 1)[1].strip()
+    
+    # Import at call time to pick up test-time value
+    from config import PRINT_JOBS_TOKEN
+    expected = (PRINT_JOBS_TOKEN or "").strip()
+    
+    if not expected:
+        return False
+    return secrets.compare_digest(token, expected)
 
 @printing_bp.route("/<job_id>/pdf", methods=["GET"])
 def download_job_pdf(job_id):

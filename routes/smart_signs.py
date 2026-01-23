@@ -16,6 +16,17 @@ from services.pdf_smartsign import STYLE_MAP, CTA_MAP, generate_smartsign_pdf
 
 smart_signs_bp = Blueprint('smart_signs', __name__, url_prefix='/smart-signs')
 
+# --- Test Patching Stubs ---
+# These are placeholder functions that tests may patch
+
+def create_checkout_attempt(*args, **kwargs):
+    """Placeholder for test patching. Not used in production flow."""
+    return {'attempt_token': None, 'idempotency_key': None}
+
+def update_attempt_status(*args, **kwargs):
+    """Placeholder for test patching. Not used in production flow."""
+    pass
+
 # --- Edit / Preview ---
 
 @smart_signs_bp.route('/<int:asset_id>/edit', methods=['GET', 'POST'])

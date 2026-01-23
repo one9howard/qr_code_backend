@@ -106,7 +106,7 @@
                 {% if gating.is_paid %}
 
                 <!-- Description -->
-                <div class="content-section">
+                <div class="content-section description-box">
                     <h3>About this Home</h3>
                     <div class="description-text">
                         {{ property.description or "No description provided." }}
@@ -115,7 +115,7 @@
 
                 <!-- Gallery -->
                 {% if photos and photos|length > 1 %}
-                <div class="content-section">
+                <div class="content-section gallery">
                     <h3>Gallery</h3>
                     <div class="gallery-grid">
                         {% for photo in photos[:6] %}

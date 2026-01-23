@@ -81,13 +81,12 @@ def metrics():
     db = get_db()
     
     # Get event counts for last 7 days
-    # Get event counts for last 7 days
     metrics_data = db.execute("""
         SELECT 
             event_type as event_name,
             COUNT(*) as count
         FROM app_events
-        WHERE created_at >= NOW() - INTERVAL '7 days'
+        WHERE occurred_at >= NOW() - INTERVAL '7 days'
         GROUP BY event_type
         ORDER BY count DESC
     """).fetchall()
@@ -98,13 +97,13 @@ def metrics():
     # Get daily breakdown for key events
     daily_breakdown = db.execute("""
         SELECT 
-            DATE(created_at) as date,
+            DATE(occurred_at) as date,
             event_type as event_name,
             COUNT(*) as count
         FROM app_events
-        WHERE created_at >= NOW() - INTERVAL '7 days'
-        GROUP BY DATE(created_at), event_type
-        ORDER BY DATE(created_at) DESC, event_type
+        WHERE occurred_at >= NOW() - INTERVAL '7 days'
+        GROUP BY DATE(occurred_at), event_type
+        ORDER BY DATE(occurred_at) DESC, event_type
     """).fetchall()
     
     return render_template("admin_metrics.html", 

@@ -78,8 +78,8 @@ def warm_cache(required_keys: list[str]) -> None:
 
     logger.info(f"Warming Stripe price cache for {len(required_keys)} keys...")
     
-    # De-duplicate
-    unique_keys = list(set(required_keys))
+    # De-duplicate while preserving order (Python 3.7+ dicts maintain insertion order)
+    unique_keys = list(dict.fromkeys(required_keys))
     
     # Batch in chunks of 10
     batch_size = 10

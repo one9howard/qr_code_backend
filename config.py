@@ -107,7 +107,8 @@ PROXY_FIX_NUM_PROXIES = int(os.environ.get("PROXY_FIX_NUM_PROXIES", "1"))
 
 # Environment Stage
 APP_STAGE = os.environ.get("APP_STAGE", "dev") # dev, staging, prod
-IS_PRODUCTION = APP_STAGE == "prod"
+FLASK_ENV = os.environ.get("FLASK_ENV", "development")
+IS_PRODUCTION = (FLASK_ENV == "production")
 
 # Stripe Configuration
 STRIPE_SECRET_KEY = os.environ.get("STRIPE_SECRET_KEY")

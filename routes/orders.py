@@ -253,3 +253,100 @@ def resize_order():
         
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+
+@orders_bp.route('/orders/smart-sign/checkout', methods=['POST'])
+@login_required
+def smart_sign_checkout():
+    """
+    SmartSign Option B Checkout Endpoint.
+    
+    Required Form Data:
+    - asset_id: The sign_asset to purchase
+    - property_id: The property to associate with the order
+    
+    Creates an order and redirects to Stripe Checkout.
+    """
+    from database import get_db
+    
+    db = get_db()
+    
+    # 1. Read form data
+    asset_id = request.form.get('asset_id')
+    property_id = request.form.get('property_id')
+    
+    if not asset_id or not property_id:
+        return jsonify({'error': 'asset_id and property_id are required'}), 400
+    
+    try:
+        asset_id = int(asset_id)
+        property_id = int(property_id)
+    except (ValueError, TypeError):
+        return jsonify({'error': 'Invalid asset_id or property_id'}), 400
+    
+    # 2. Validate asset ownership
+    asset = db.execute(
+        "SELECT * FROM sign_assets WHERE id = %s AND user_id = %s",
+        (asset_id, current_user.id)
+    ).fetchone()
+    
+    if not asset:
+        return jsonify({'error': 'Asset not found or not owned by user'}), 404
+    
+    # 3. Create order
+    order_row = db.execute("""
+        INSERT INTO orders (
+            user_id, property_id, sign_asset_id, order_type, status, created_at
+        ) VALUES (%s, %s, %s, %s, %s, CURRENT_TIMESTAMP)
+        RETURNING id
+    """, (
+        current_user.id,
+        property_id,
+        asset_id,
+        'smart_sign',
+        'pending_payment'
+    )).fetchone()
+    order_id = order_row['id']
+    db.commit()
+    
+    # 4. Create Stripe Checkout Session
+    try:
+        checkout_session = stripe.checkout.Session.create(
+            payment_method_types=['card'],
+            line_items=[{
+                'price_data': {
+                    'currency': 'usd',
+                    'unit_amount': int(os.environ.get('SMARTSIGN_PRICE_CENTS', 5000)),
+                    'product_data': {
+                        'name': 'SmartSign',
+                    },
+                },
+                'quantity': 1,
+            }],
+            mode='payment',
+            success_url=STRIPE_SIGN_SUCCESS_URL,
+            cancel_url=STRIPE_SIGN_CANCEL_URL,
+            client_reference_id=str(order_id),
+            metadata={
+                'purpose': 'smart_sign',
+                'property_id': str(property_id),
+                'order_id': str(order_id),
+                'sign_asset_id': str(asset_id),
+                'user_id': str(current_user.id)
+            }
+        )
+        
+        # 5. Save stripe session ID
+        db.execute(
+            "UPDATE orders SET stripe_checkout_session_id = %s WHERE id = %s",
+            (checkout_session.id, order_id)
+        )
+        db.commit()
+        
+        # 6. Redirect to Stripe
+        return redirect(checkout_session.url, code=303)
+        
+    except Exception as e:
+        logger.error(f"SmartSign checkout error: {e}")
+        return jsonify({'error': str(e)}), 500
+

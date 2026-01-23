@@ -117,6 +117,10 @@ def validate_sku_strict(print_product, print_size, material):
     return True, ""
 
 
+# Backward-compatible alias
+validate_sku = validate_sku_strict
+
+
 def get_price_id(print_product, print_size, material):
     """
     Get the Stripe Price ID using the Resolver.
