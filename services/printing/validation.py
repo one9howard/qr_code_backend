@@ -3,6 +3,9 @@
 Enforces:
 - SmartSign payload strictness (fields, lengths, colors)
 - Image verification (resolution)
+
+Note: Accepts both agent_headshot_key/agent_logo_key (legacy) AND 
+headshot_key/logo_key (DB truth). Normalizes internally.
 """
 import re
 from io import BytesIO
@@ -14,6 +17,7 @@ from services.print_catalog import (
     validate_layout
 )
 from utils.storage import get_storage
+
 
 def validate_smartsign_payload(layout_id, payload):
     """
@@ -27,6 +31,8 @@ def validate_smartsign_payload(layout_id, payload):
     - agent_email optional (<= 60, must have @)
     - brokerage_name optional (<= 50)
     - images: if key present, must exist and meet min_res
+    
+    Accepts both legacy (agent_*_key) and DB column names (*_key).
     """
     errors = []
     
@@ -68,19 +74,16 @@ def validate_smartsign_payload(layout_id, payload):
     # 6. Image Validation
     storage = get_storage()
     
-    # helper for image checking
-    def check_image(key_field, min_w, min_h):
-        key = payload.get(key_field)
+    def check_image(key_field, legacy_field, min_w, min_h):
+        """Check image by key - accepts both legacy and DB column names."""
+        # Try DB column name first, fall back to legacy
+        key = payload.get(key_field) or payload.get(legacy_field)
         if key:
             if not storage.exists(key):
                 errors.append(f"{key_field} file not found: {key}")
                 return
 
             try:
-                # We need to read the file to check dims. 
-                # This might be slow for S3, but 'Strict' requirement says verify.
-                # Use HEAD info if possible? No, need strict pixel dims.
-                # get_file returns BytesIO
                 file_obj = storage.get_file(key)
                 img = Image.open(file_obj)
                 w, h = img.size
@@ -89,10 +92,31 @@ def validate_smartsign_payload(layout_id, payload):
             except Exception as e:
                 errors.append(f"Failed to validate {key_field}: {str(e)}")
 
-    check_image('agent_headshot_key', 500, 500)
-    check_image('agent_logo_key', 300, 300)
+    # Check for both legacy (agent_*_key) and DB column (*_key) names
+    check_image('headshot_key', 'agent_headshot_key', 500, 500)
+    check_image('logo_key', 'agent_logo_key', 300, 300)
 
     return errors
+
+
+def normalize_payload_keys(payload):
+    """
+    Normalize legacy agent_*_key names to DB column names.
+    Returns new payload dict with normalized keys.
+    """
+    normalized = dict(payload)
+    
+    # Map legacy -> DB column names
+    key_map = {
+        'agent_headshot_key': 'headshot_key',
+        'agent_logo_key': 'logo_key',
+    }
+    
+    for legacy_key, db_key in key_map.items():
+        if legacy_key in normalized and db_key not in normalized:
+            normalized[db_key] = normalized.pop(legacy_key)
+    
+    return normalized
 
 
 def validate_order_print_spec(order):
@@ -102,13 +126,10 @@ def validate_order_print_spec(order):
     """
     errors = []
     
-    # Accept either a dict/row mapping (common in this codebase) or an ORM-like object.
+    # Accept either a dict/row mapping or an ORM-like object
     get = (order.get if hasattr(order, "get") else lambda k, d=None: getattr(order, k, d))
 
     if not get("print_product"):
-        # If it's a legacy order, maybe skip? But instructions say 'Strict'.
-        # Assuming this is called for NEW print jobs or checkout.
-        # If order is already created, we validate what we have.
         return ["Missing print_product"]
 
     # Validate SKU

@@ -6,7 +6,7 @@ import json
 import uuid
 from datetime import datetime
 from config import STRIPE_SECRET_KEY, STRIPE_SIGN_SUCCESS_URL, STRIPE_SIGN_CANCEL_URL
-from models import db, Order, User
+from models import User
 from database import get_db
 # Use subscriptions for entitlement checks
 from services.subscriptions import is_subscription_active
@@ -95,7 +95,7 @@ def edit_smartsign(asset_id):
                 key = f"uploads/brands/{current_user.id}/smartsign_logo_{asset_id}{ext}"
                 try:
                     storage.put_file(f, key)
-                    updates.append("agent_logo_key=%s")
+                    updates.append("logo_key=%s")
                     params.append(key)
                 except Exception as e:
                     print(f"Logo upload error: {e}")
@@ -107,7 +107,7 @@ def edit_smartsign(asset_id):
                 key = f"uploads/brands/{current_user.id}/smartsign_headshot_{asset_id}{ext}"
                 try:
                     storage.put_file(f, key)
-                    updates.append("agent_headshot_key=%s")
+                    updates.append("headshot_key=%s")
                     params.append(key)
                 except Exception as e:
                     print(f"Headshot upload error: {e}")
@@ -327,31 +327,28 @@ def checkout_smartsign():
 
     # Add asset ID to payload so the print generator knows what QR to generate
     payload['sign_asset_id'] = new_asset_id
+    
+    # Normalize payload keys (agent_*_key -> *_key)
+    from services.printing.validation import normalize_payload_keys
+    payload = normalize_payload_keys(payload)
 
-    # 7. Create Order
-    # Model handles JSON wrapping now.
-    order = Order(
-        user_id=current_user.id,
-        order_type='smart_sign',
-        status='pending',
-        print_product=print_product,
-        material=material,
-        sides=sides,
-        print_size=size,
-        layout_id=layout_id,
-        design_payload=payload, 
-        design_version=1
-    )
-    order.save()
+    # 7. Create Order via raw SQL (no Order() model)
+    from psycopg2.extras import Json
+    order_row = db.execute("""
+        INSERT INTO orders (
+            user_id, order_type, status, print_product, material, sides,
+            print_size, layout_id, design_payload, design_version, sign_asset_id
+        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        RETURNING id
+    """, (
+        current_user.id, 'smart_sign', 'pending_payment', print_product, 
+        material, sides, size, layout_id, Json(payload), 1, new_asset_id
+    )).fetchone()
+    order_id = order_row['id']
+    db.commit()
     
     # 8. Stripe Session
     try:
-        from services.stripe_price_resolver import get_stripe_price_id_by_lookup_key
-        # We need the stripe price ID. 
-        # get_price_id returned our internal ID or stripe ID? 
-        # print_catalog.get_price_id likely returns the Stripe Price ID (string) if configured correctly?
-        # Let's check print_catalog.py later. Assuming price_id IS the Stripe ID.
-        
         checkout_session = stripe.checkout.Session.create(
             payment_method_types=['card'],
             line_items=[{
@@ -361,12 +358,12 @@ def checkout_smartsign():
             mode='payment',
             success_url=STRIPE_SIGN_SUCCESS_URL,
             cancel_url=STRIPE_SIGN_CANCEL_URL,
-            client_reference_id=str(order.id),
+            client_reference_id=str(order_id),
             metadata={
                 'order_type': 'smart_sign',
-                'order_id': order.id,
+                'order_id': order_id,
                 'user_id': current_user.id,
-                'sign_asset_id': new_asset_id # Critical for Webhook Activation
+                'sign_asset_id': new_asset_id  # Critical for Webhook Activation
             }
         )
         
@@ -377,3 +374,4 @@ def checkout_smartsign():
     except Exception as e:
         current_app.logger.error(f"Stripe Error: {e}")
         return redirect(url_for('smart_signs.order_start'))
+

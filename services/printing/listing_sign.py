@@ -1,40 +1,56 @@
-import os
+"""
+Listing Sign PDF Generator
+
+Generates print-ready PDFs for listing signs.
+Always produces 2 pages (front/back) for double-sided printing.
+Returns storage key (not local path).
+"""
+import io
+import logging
 from reportlab.pdfgen import canvas
 from reportlab.lib.units import inch
-from utils.pdf_generator import _draw_standard_layout, _draw_landscape_split_layout
+from database import get_db
 from utils.storage import get_storage
-import logging
+from utils.pdf_generator import LayoutSpec, SIGN_SIZES, DEFAULT_SIGN_SIZE, _draw_standard_layout, _draw_landscape_split_layout, hex_to_rgb
+from config import BASE_URL
 
 logger = logging.getLogger(__name__)
 
-def generate_listing_sign_pdf(order, output_path):
+
+def generate_listing_sign_pdf(order, output_path=None):
     """
     Generate the high-res PDF for a Listing Sign.
     Enforces Phase 6 rules: Always Double Sided (2 pages).
+    
+    Args:
+        order: Order dict/row object with order data
+        output_path: Deprecated - ignored. Returns storage key.
+    
+    Returns:
+        str: Storage key for generated PDF
     """
-    
-    # 1. Parse Order Data
-    # order maps to DB row. We need 'design_payload' (if using new flow) 
-    # OR we reconstruct from property data like `utils.pdf_generator` did.
-    # Current `order` object in fulfillment is `db.Row` or `Model`.
-    
-    # For robust retro-compatibility and Phase 5/6 transition, we try to use
-    # the data stored in the order (cached snapshot) if available, 
-    # otherwise fetch from property.
-    # But `utils.pdf_generator` fetches from property DB.
-    
-    # Let's trust `utils.pdf_generator`'s data gathering logic or
-    # implement a cleaner extractor here.
-    # To save time and reduce risk, we reuse the DRAW functions from `utils.pdf_generator`
-    # but we control the CANVAS and PAGE loop here.
-    
-    # 2. Fetch Data (scan-friendly)
     db = get_db()
-    prop_row = db.execute("SELECT * FROM properties WHERE id = %s", (order.property_id,)).fetchone()
-    # User associated with order (or property agent?) - Usually Property Agent is best for sign info, 
-    # but Order has user_id. Let's use Property Agent data if possible, or Order User.
-    # Listing Sign typically reflects the Agent on the Property.
-    # property -> agent_id -> users table.
+    storage = get_storage()
+    
+    # Handle both dict-like and object-like access
+    def get_val(obj, key, default=None):
+        if hasattr(obj, 'get'):
+            return obj.get(key, default)
+        return getattr(obj, key, default)
+    
+    order_id = get_val(order, 'id')
+    property_id = get_val(order, 'property_id')
+    user_id = get_val(order, 'user_id')
+    
+    # Fetch property data
+    prop_row = db.execute(
+        "SELECT * FROM properties WHERE id = %s", (property_id,)
+    ).fetchone()
+    
+    if not prop_row:
+        raise ValueError(f"Property {property_id} not found for order {order_id}")
+    
+    # Fetch agent data
     agent_row = None
     if prop_row['agent_id']:
         agent_row = db.execute("""
@@ -45,199 +61,80 @@ def generate_listing_sign_pdf(order, output_path):
         """, (prop_row['agent_id'],)).fetchone()
     
     if not agent_row:
-         # Fallback to order user
-         agent_row = db.execute("SELECT * FROM users WHERE id = %s", (order.user_id,)).fetchone()
+        # Fallback to order user
+        agent_row = db.execute(
+            "SELECT * FROM users WHERE id = %s", (user_id,)
+        ).fetchone()
 
     if not prop_row or not agent_row:
-        raise ValueError(f"Missing data for Order {order.id}")
+        raise ValueError(f"Missing data for Order {order_id}")
 
-    # 3. Prepare Attributes
-    from config import BASE_URL
-    
-    # helper for safe dict access
+    # Helper for safe dict access
     def get(row, k, default=''):
-        return str(row[k]) if row and row[k] else default
+        return str(row[k]) if row and row.get(k) else default
 
+    # Build data
     address = get(prop_row, 'address', 'Address TBD')
     beds = get(prop_row, 'beds', '0')
     baths = get(prop_row, 'baths', '0')
     sqft = get(prop_row, 'sqft', '')
     
-    # Format Price
-    price_val = prop_row['price']
-    price = f"${price_val:,}" if price_val else ""
+    price_val = prop_row.get('price')
+    price = f"${int(price_val):,}" if price_val else ""
     
     agent_name = get(agent_row, 'full_name', 'Agent')
-    brokerage = get(agent_row, 'brokerage_name', 'Brokerage')
+    brokerage = get(agent_row, 'brokerage_name', '')
     agent_email = get(agent_row, 'email', '')
-    agent_phone = get(agent_row, 'phone_number', '') # Assuming column exists
+    agent_phone = get(agent_row, 'phone_number', '')
     
-    # Keys
-    agent_photo_key = agent_row.get('photo_storage_key') # Column guess? Or lookup 'agent_headshot_key'
-    # Actually, previous schema might use 'photo_url' or similar. 
-    # Safest: pass None if we aren't sure of column name, or try 'profile_photo_url' if logical.
-    # But utils.pdf_generator expects a KEY to fetch from storage.
-    # Let's assume None for now to avoid broken image links unless we verified schema.
-    
-    # Sign Config
+    # Sign config
     sign_color = agent_row.get('custom_color') or '#000000'
-    sign_size = order.print_size or '18x24'
+    sign_size = get_val(order, 'print_size') or '18x24'
     
-    # QR URL (Real)
-    # Redirect code/id
-    qr_url = f"{BASE_URL}/s/{prop_row['id']}" # Standard Property Redirect
+    # QR URL
+    qr_url = f"{BASE_URL}/s/{prop_row['id']}"
     
-    # 4. Generate PDF (Double Sided)
-    from utils.pdf_generator import LayoutSpec, SIGN_SIZES, DEFAULT_SIGN_SIZE, _draw_standard_layout, _draw_landscape_split_layout
-    import io
-    
-    # Config
-    if sign_size not in SIGN_SIZES: sign_size = DEFAULT_SIGN_SIZE
+    # Layout config
+    if sign_size not in SIGN_SIZES:
+        sign_size = DEFAULT_SIGN_SIZE
     size_config = SIGN_SIZES[sign_size]
     layout = LayoutSpec(size_config['width_in'], size_config['height_in'])
     
+    # Generate PDF in memory
     pdf_buffer = io.BytesIO()
     c = canvas.Canvas(pdf_buffer, pagesize=(layout.width + 2*layout.bleed, layout.height + 2*layout.bleed))
     
-    # Draw 2 identical pages
+    # Determine if landscape (width > height)
+    is_landscape = size_config['width_in'] > size_config['height_in']
+    
+    # Draw 2 identical pages (front/back)
     for page_num in range(2):
+        c.saveState()
         c.translate(layout.bleed, layout.bleed)
         
-        # Draw Layout
-        if sign_size == "36x18":
-             _draw_landscape_split_layout(
+        if is_landscape:
+            _draw_landscape_split_layout(
                 c, layout, address, beds, baths, sqft, price,
                 agent_name, brokerage, agent_email, agent_phone,
-                None, agent_photo_key, sign_color, qr_value=qr_url
+                None, None, sign_color, qr_value=qr_url
             )
         else:
             _draw_standard_layout(
                 c, layout, address, beds, baths, sqft, price,
                 agent_name, brokerage, agent_email, agent_phone,
-                None, agent_photo_key, sign_color, qr_value=qr_url
+                None, None, sign_color, qr_value=qr_url
             )
         
+        c.restoreState()
         c.showPage()
     
     c.save()
     pdf_buffer.seek(0)
     
-    # 5. Save to Storage
-    from utils.filenames import make_sign_asset_basename
-    
-    folder = f"pdfs/order_{order.id}"
-    basename = make_sign_asset_basename(order.id, sign_size)
-    pdf_key = f"{folder}/{basename}.pdf"
+    # Save to storage
+    folder = f"pdfs/order_{order_id}"
+    pdf_key = f"{folder}/listing_sign_{sign_size}.pdf"
     
     storage.put_file(pdf_buffer, pdf_key, content_type="application/pdf")
     
     return pdf_key
-    
-    class Box:
-        def __init__(self, data):
-            for k,v in data.items():
-                setattr(self, k, v)
-    
-    prop = Box(prop)
-    # user = Box(user_row) # User might be complex, let's use what we need.
-    # User might be used for agent info.
-    
-    # Prepare Data Dict
-    # This mimics `utils.pdf_generator.get_sign_data`
-    address = prop.address
-    price = prop.price  # Note: prop.price is raw. We need formatting? 
-    # Wait, original code said `price = prop.price_formatted`. 
-    # Does DB have price_formatted? Probably NOT. Property model likely had a property.
-    # We need to format it. "${:,}".format(prop.price)
-    
-    price_val = prop.price
-    price = f"${price_val:,}" if price_val else ""
-    
-    beds = prop.beds
-    baths = prop.baths
-    sqft = prop.sqft
-    
-    # Agent info (User profile)
-    agent_name = f"{user.first_name} {user.last_name}"
-    brokerage = user.brokerage_name or ""
-    agent_email = user.email
-    agent_phone = user.phone_number or ""
-    agent_photo_key = user.profile_photo_key
-    
-    # Layout Config
-    # Check `order.print_size`
-    # For `coroplast_4mm` or `aluminum_040`, we rely on size.
-    # But `_draw_standard_layout` is hardcoded for 18x24 layout logic mostly?
-    # Wait, the existing `_draw_standard_layout` uses `layout.bleed` etc.
-    # It seems to handle scaling?
-    # Actually, `utils.pdf_generator` handles different sizes by checking `layout_id` or `size`.
-    
-    raw_size = order.print_size or "18x24"
-    sign_size = raw_size.lower() # e.g. "18x24"
-    
-    # Colors
-    sign_color = order.design_payload.get('color', 'blue') if order.design_payload else 'blue'
-    
-    # QR
-    qr_value = f"https://insitesigns.com/p/{prop.public_id}" # Example
-    # Or use existing logic
-    qr_key = None # We generate on fly or use cached?
-    
-    # Config for Drawing
-    # We need a `LayoutConfig` object mimicking the namedtuple in `pdf_generator`
-    from collections import namedtuple
-    LayoutConfig = namedtuple('LayoutConfig', ['width', 'height', 'bleed', 'safe_margin'])
-    
-    # Parse Size
-    try:
-        w_str, h_str = sign_size.split('x')
-        width_in = float(w_str)
-        height_in = float(h_str)
-    except:
-        width_in, height_in = 24, 18
-        
-    # Standard bleed 0.125
-    layout = LayoutConfig(width_in*inch, height_in*inch, 0.125*inch, 0.25*inch)
-    
-    # Unit name for canvas (not used by draw func but good for canvas init)
-    # Actually we pass points to canvas
-    
-    width = layout.width + 2*layout.bleed
-    height = layout.height + 2*layout.bleed
-    
-    # Data bundle for draw func
-    data = {} # The draw funcs above take args directly, not a dict.
-    
-    # Build PDF
-    # Always Double Sided (2 Pages) per instructions
-    can = canvas.Canvas(output_path, pagesize=(width, height))
-    
-    # Helper to call draw
-    def draw_face(is_back):
-        can.saveState()
-        # Translate for bleed
-        can.translate(layout.bleed, layout.bleed)
-        
-        layout_func = _draw_standard_layout
-        if sign_size == "36x18":
-            layout_func = _draw_landscape_split_layout
-        
-        # Call legacy draw
-        layout_func(
-            can, layout, address, beds, baths, sqft, price,
-            agent_name, brokerage, agent_email, agent_phone,
-            qr_key, agent_photo_key, sign_color, qr_value
-        )
-        can.restoreState()
-
-    # Page 1 (Front)
-    draw_face(is_back=False)
-    can.showPage()
-    
-    # Page 2 (Back) - Duplicate of Front
-    draw_face(is_back=True)
-    can.showPage()
-    
-    can.save()
-    
-    return output_path

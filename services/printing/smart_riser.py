@@ -1,17 +1,54 @@
-import os
+"""
+SmartRiser PDF Generator
+
+Generates print-ready PDFs for SmartRiser products.
+Always produces 2 pages (front/back) for double-sided printing.
+Returns storage key (not local path).
+
+Specs:
+- 2 Pages (Front/Back match)
+- Aluminum only
+- Sizes: 6x24, 6x36
+"""
+import io
+import logging
 from reportlab.pdfgen import canvas
 from reportlab.lib.units import inch
 from reportlab.lib import colors
+from database import get_db
+from utils.storage import get_storage
 
-def generate_smart_riser_pdf(order, output_path):
+logger = logging.getLogger(__name__)
+
+
+def generate_smart_riser_pdf(order, output_path=None):
     """
     Generate print-ready PDF for SmartRiser.
-    Specs:
-      - 2 Pages (Front/Back match)
-      - Aluminum only
-      - Sizes: 6x24, 6x36
+    
+    Args:
+        order: Order dict/row object with order data
+        output_path: Deprecated - ignored. Returns storage key.
+    
+    Returns:
+        str: Storage key for generated PDF
     """
-    size_str = order.print_size # e.g. "6x24"
+    storage = get_storage()
+    
+    # Handle both dict-like and object-like access
+    def get_val(obj, key, default=None):
+        if hasattr(obj, 'get'):
+            return obj.get(key, default)
+        return getattr(obj, key, default)
+    
+    order_id = get_val(order, 'id')
+    size_str = get_val(order, 'print_size')
+    payload = get_val(order, 'design_payload') or {}
+    
+    # Parse JSON if needed
+    if isinstance(payload, str):
+        import json
+        payload = json.loads(payload)
+    
     if not size_str:
         raise ValueError("Print size missing for SmartRiser")
         
@@ -26,13 +63,11 @@ def generate_smart_riser_pdf(order, output_path):
     height = height_in * inch
     bleed = 0.125 * inch
     
-    # 1. Fetch QR
+    # Fetch QR URL
     from utils.qr_vector import draw_vector_qr
-    from database import get_db
     from config import BASE_URL
     
     qr_url = f"{BASE_URL}" 
-    payload = order.design_payload or {}
     asset_id = payload.get('sign_asset_id')
     
     if asset_id:
@@ -41,7 +76,9 @@ def generate_smart_riser_pdf(order, output_path):
         if asset:
             qr_url = f"{BASE_URL}/r/{asset['code']}"
 
-    c = canvas.Canvas(output_path, pagesize=(width + 2*bleed, height + 2*bleed))
+    # Generate PDF in memory
+    pdf_buffer = io.BytesIO()
+    c = canvas.Canvas(pdf_buffer, pagesize=(width + 2*bleed, height + 2*bleed))
     
     def draw_page(c):
         c.saveState()
@@ -52,9 +89,8 @@ def generate_smart_riser_pdf(order, output_path):
         c.rect(0, 0, width, height, fill=1, stroke=0)
         
         # QR Code - Left side
-        # Max QR size constrained by height - margin
         qr_size = height * 0.8
-        qr_x = height * 0.1 # Padding from left
+        qr_x = height * 0.1
         qr_y = height * 0.1
         
         draw_vector_qr(c, qr_url, x=qr_x, y=qr_y, size=qr_size)
@@ -83,4 +119,12 @@ def generate_smart_riser_pdf(order, output_path):
     c.showPage()
     
     c.save()
-    return output_path
+    pdf_buffer.seek(0)
+    
+    # Save to storage
+    folder = f"pdfs/order_{order_id}"
+    pdf_key = f"{folder}/smart_riser_{size_str}.pdf"
+    
+    storage.put_file(pdf_buffer, pdf_key, content_type="application/pdf")
+    
+    return pdf_key

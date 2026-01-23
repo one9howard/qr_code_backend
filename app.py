@@ -159,8 +159,11 @@ def create_app(test_config=None):
     from routes.smart_signs import smart_signs_bp
     app.register_blueprint(smart_signs_bp)
 
-    from routes.smart_riser import smart_riser_bp
-    app.register_blueprint(smart_riser_bp)
+    # SmartRiser - behind feature flag (not fully implemented)
+    from config import ENABLE_SMART_RISER
+    if ENABLE_SMART_RISER:
+        from routes.smart_riser import smart_riser_bp
+        app.register_blueprint(smart_riser_bp)
 
     from routes.listing_kits import listing_kits_bp
     app.register_blueprint(listing_kits_bp)

@@ -130,8 +130,10 @@ def generate_pdf_sign(address, beds, baths, sqft, price, agent_name, brokerage,
     # Translate origin (bleed offset)
     c.translate(layout.bleed, layout.bleed)
 
-    # Dispatch based on size/layout
-    if sign_size == "36x18":
+    # Dispatch based on dimensions: use landscape layout if width > height
+    is_landscape = size_config['width_in'] > size_config['height_in']
+    
+    if is_landscape:
         _draw_landscape_split_layout(
             c, layout, address, beds, baths, sqft, price,
             agent_name, brokerage, agent_email, agent_phone,
