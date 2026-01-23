@@ -9,6 +9,19 @@ class SmartSignsService:
         Create a new Sign Asset for a purchase.
         Status: Inactive (pending payment).
         """
+        # Delegating to main create_asset
+        return SmartSignsService.create_asset(user_id, property_id, label, activated=False)
+
+    @staticmethod
+    def create_asset(user_id, property_id=None, label=None, activated=False):
+        """
+        Create a new Sign Asset.
+        Args:
+            user_id: Owner
+            property_id: Optional property link
+            label: Optional internal label
+            activated: Bool. If True, valid immediately (Phase 1 manual creation).
+        """
         db = get_db()
         
         # 1. Generate Unique Code
@@ -19,17 +32,31 @@ class SmartSignsService:
             if db.execute("SELECT 1 FROM qr_variants WHERE code = %s", (code,)).fetchone(): continue
             break
         
-        # 2. Insert Asset (Frozen/Inactive by default)
-        # We set activated_at=NULL initially.
-        # We link active_property_id immediately so it's ready upon activation.
-        row = db.execute(
-            """
-            INSERT INTO sign_assets (user_id, code, label, active_property_id, is_frozen)
-            VALUES (%s, %s, %s, %s, false)
-            RETURNING id, code, label
-            """,
-            (user_id, code, label, property_id)
-        ).fetchone()
+        # 2. Insert Asset
+        activated_at_val = 'NOW()' if activated else 'NULL'
+        
+        # Need to handle 'NOW()' vs literal NULL carefully with parameterized query
+        # Easier to check boolean
+        
+        if activated:
+             row = db.execute(
+                """
+                INSERT INTO sign_assets (user_id, code, label, active_property_id, is_frozen, activated_at)
+                VALUES (%s, %s, %s, %s, false, NOW())
+                RETURNING id, code, label
+                """,
+                (user_id, code, label, property_id)
+            ).fetchone()
+        else:
+             row = db.execute(
+                """
+                INSERT INTO sign_assets (user_id, code, label, active_property_id, is_frozen, activated_at)
+                VALUES (%s, %s, %s, %s, false, NULL)
+                RETURNING id, code, label
+                """,
+                (user_id, code, label, property_id)
+            ).fetchone()
+            
         db.commit()
         return row
 

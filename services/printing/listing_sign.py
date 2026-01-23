@@ -12,7 +12,9 @@ from reportlab.lib.units import inch
 from database import get_db
 from utils.storage import get_storage
 from utils.pdf_generator import LayoutSpec, SIGN_SIZES, DEFAULT_SIGN_SIZE, _draw_standard_layout, _draw_landscape_split_layout, hex_to_rgb
+from utils.pdf_generator import LayoutSpec, SIGN_SIZES, DEFAULT_SIGN_SIZE, _draw_standard_layout, _draw_landscape_split_layout, hex_to_rgb
 from config import BASE_URL
+from utils.qr_urls import property_scan_url
 
 logger = logging.getLogger(__name__)
 
@@ -92,7 +94,24 @@ def generate_listing_sign_pdf(order, output_path=None):
     sign_size = get_val(order, 'print_size') or '18x24'
     
     # QR URL
-    qr_url = f"{BASE_URL}/s/{prop_row['id']}"
+    # QR URL
+    # Use canonical helper - strictly no /s/ allowed
+    qr_code = prop_row.get('qr_code')
+    if not qr_code:
+        # Fallback if DB data bad (Phase 1 sanity)
+        # Assuming we might need to generate one or fail?
+        # For now, let's use the property ID if no code (legacy) but really we should fail if strictly Phase 1.
+        # However, user spec says "Create single canonical helper ... use property.qr_code"
+        # If property.qr_code is None, we have a data problem.
+        # Let's assume property.qr_code exists or we rely on the helper to fail/be handled.
+        # But wait, existing code used ID. The prompt says "use property.qr_code to build the QR URL".
+        # Let's try to get 'qr_code' from prop_row.
+        qr_code = prop_row.get('qr_code')
+        if not qr_code:
+             # Critical Failure for Phase 1
+             raise ValueError(f"Property {prop_row['id']} has no qr_code. Cannot generate valid Listing Sign.")
+    
+    qr_url = property_scan_url(BASE_URL, qr_code)
     
     # Layout config
     if sign_size not in SIGN_SIZES:

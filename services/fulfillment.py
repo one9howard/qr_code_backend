@@ -48,15 +48,32 @@ def fulfill_order(order_id):
     
     # 2. Validate status - only process 'paid' orders
     # If already 'submitted_to_printer', check idempotency
+    
+    # STRICT IDEMPOTENCY CHECK
+    # Always check if a print_job already exists for this order, regardless of status.
+    idempotency_key = f"order_{order_id}"
+    existing_job = db.execute(
+        "SELECT job_id FROM print_jobs WHERE idempotency_key = %s",
+        (idempotency_key,)
+    ).fetchone()
+    
+    if existing_job:
+        print(f"[Fulfillment] Idempotency hit: Print job {existing_job['job_id']} already exists for order {order_id}")
+        # Ensure order status is consistent
+        if status != 'submitted_to_printer':
+             db.execute(
+                "UPDATE orders SET status = 'submitted_to_printer', provider_job_id = %s, updated_at = NOW() WHERE id = %s",
+                (existing_job['job_id'], order_id)
+             )
+             db.commit()
+        return True
+
     if status == 'submitted_to_printer':
-        # Check if print_job exists
-        existing = db.execute(
-            "SELECT job_id FROM print_jobs WHERE idempotency_key = %s",
-            (f"order_{order_id}",)
-        ).fetchone()
-        if existing:
-            print(f"[Fulfillment] Already fulfilled (job={existing['job_id']})")
-            return True
+        # If we are here, no print_job was found (maybe manual DB update?), but status says submitted.
+        # We should proceed to re-submit or fail?
+        # Safe bet: Retry submission if job is missing.
+        print(f"[Fulfillment] Order {order_id} is 'submitted_to_printer' but no job found. Retrying.")
+    
     
     if status != 'paid':
         logger.warning(f"[Fulfillment] Order {order_id} status is '{status}', expected 'paid'")
@@ -188,68 +205,12 @@ def _generate_smartsign_pdf(db, order, storage):
 
 def _generate_listing_sign_pdf(db, order, storage):
     """Generate Listing Sign PDF and store in storage."""
-    from utils.pdf_generator import generate_pdf_sign
-    from config import BASE_URL
+    # STRICT: Delegate to canonical generator
+    from services.printing.listing_sign import generate_listing_sign_pdf
     
-    order_id = order['id']
-    property_id = order.get('property_id')
-    
-    if not property_id:
-        logger.error(f"[Fulfillment] No property_id for listing sign order {order_id}")
-        return None
-    
-    # Load property
-    prop = db.execute(
-        "SELECT * FROM properties WHERE id = %s", (property_id,)
-    ).fetchone()
-    
-    if not prop:
-        logger.error(f"[Fulfillment] Property {property_id} not found")
-        return None
-    
-    # Load agent info
-    agent_id = prop.get('agent_id')
-    agent = None
-    if agent_id:
-        agent = db.execute("""
-            SELECT u.*, a.brokerage_name, a.custom_color 
-            FROM agents a 
-            JOIN users u ON a.user_id = u.id 
-            WHERE a.id = %s
-        """, (agent_id,)).fetchone()
-    
-    if not agent:
-        # Fallback to order user
-        agent = db.execute(
-            "SELECT * FROM users WHERE id = %s", (order['user_id'],)
-        ).fetchone()
-    
-    # Build QR URL
-    qr_url = f"{BASE_URL}/s/{property_id}"
-    
-    # Get sign parameters
-    sign_size = order.get('print_size') or '18x24'
-    sign_color = None
-    if agent:
-        sign_color = agent.get('custom_color')
-    
-    # Generate PDF (returns storage key)
     try:
-        pdf_key = generate_pdf_sign(
-            address=prop.get('address', 'Address TBD'),
-            beds=str(prop.get('beds', '')),
-            baths=str(prop.get('baths', '')),
-            sqft=str(prop.get('sqft', '')),
-            price=_format_price(prop.get('price')),
-            agent_name=agent.get('full_name', 'Agent') if agent else 'Agent',
-            brokerage=agent.get('brokerage_name', '') if agent else '',
-            agent_email=agent.get('email', '') if agent else '',
-            agent_phone=agent.get('phone_number', '') if agent else '',
-            sign_color=sign_color,
-            sign_size=sign_size,
-            order_id=order_id,
-            qr_value=qr_url
-        )
+        # Pass the full order object (dict-like)
+        pdf_key = generate_listing_sign_pdf(order)
         print(f"[Fulfillment] Generated listing sign PDF: {pdf_key}")
         return pdf_key
     except Exception as e:

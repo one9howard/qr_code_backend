@@ -336,10 +336,24 @@ def edit_property(property_id):
 @dashboard_bp.route("/smart-signs/create", methods=["POST"])
 @login_required
 def create_smart_sign():
-    """Restricted: Manual creation disabled (Option B)."""
-    # Option B requirement: Abort 404 for this route
-    from flask import abort
-    abort(404)
+    """Manual creation for Pro users (Phase 1)."""
+    if not current_user.is_pro:
+        flash("SmartSigns are a Pro feature. Upgrade to create assets manually.", "error")
+        return redirect(url_for('dashboard.index'))
+    
+    from services.smart_signs import SmartSignsService
+    
+    try:
+        # Phase 1: Create activated asset immediately
+        asset = SmartSignsService.create_asset(
+            user_id=current_user.id,
+            activated=True # Phase 1: Immediate activation
+        )
+        flash(f"SmartSign created! Code: {asset['code']}", "success")
+    except Exception as e:
+        flash(f"Error creating SmartSign: {e}", "error")
+        
+    return redirect(url_for('dashboard.index', _anchor='smart-signs-section'))
 
 
 @dashboard_bp.route("/smart-signs/<int:asset_id>/assign", methods=["POST"])

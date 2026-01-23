@@ -19,7 +19,9 @@ SERVER_EVENTS = {
     "checkout_started",
     "subscription_activated",
     "agent_action_executed",
-    "agent_action_failed"
+    "agent_action_failed",
+    "upgrade_prompt_shown",
+    "kit_checkout_started"
 }
 
 CLIENT_EVENTS = {

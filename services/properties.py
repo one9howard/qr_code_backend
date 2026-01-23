@@ -108,11 +108,11 @@ def delete_property_fully(property_id: int):
         # leads (FK -> properties)
         db.execute("DELETE FROM leads WHERE property_id = %s", (property_id,))
         
-        # order_agent_snapshot (FK -> orders)
-        db.execute("""
-            DELETE FROM order_agent_snapshot 
-            WHERE order_id IN (SELECT id FROM orders WHERE property_id = %s)
-        """, (property_id,))
+        # order_agent_snapshot (Legacy table, deprecated usage)
+        # db.execute("""
+        #     DELETE FROM order_agent_snapshot 
+        #     WHERE order_id IN (SELECT id FROM orders WHERE property_id = %s)
+        # """, (property_id,))
         
         # checkout_attempts (FK -> orders, if column exists)
         # Check if table exists first to be safe or just try/except

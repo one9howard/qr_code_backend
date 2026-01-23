@@ -46,6 +46,16 @@
 
                 <!-- Size Selector -->
                 <div class="sign-meta">
+                    <!-- Material (New) -->
+                    <div style="margin-bottom: 15px;">
+                        <label class="size-label" style="display:block; margin-bottom:5px;">Material:</label>
+                        <select id="material-selector" class="size-dropdown" {% if is_locked %}disabled{% endif %}
+                            style="width: 100%; margin-bottom: 0;">
+                            <option value="coroplast_4mm" selected>Coroplast (Standard)</option>
+                            <option value="aluminum_040">Aluminum (Premium)</option>
+                        </select>
+                    </div>
+
                     <label for="size-selector" class="size-label">Sign Size:</label>
                     <select id="size-selector" class="size-dropdown" {% if is_locked %}disabled{% endif %}>
                         <option value="12x18" {% if sign_size=='12x18' %}selected{% endif %}>12" × 18"</option>
@@ -53,6 +63,8 @@
                         </option>
                         <option value="24x36" {% if sign_size=='24x36' %}selected{% endif %}>24" × 36" (Large)</option>
                         <option value="36x18" {% if sign_size=='36x18' %}selected{% endif %}>36" × 18" (Landscape)
+                        </option>
+                        <option value="36x24" {% if sign_size=='36x24' %}selected{% endif %}>36" × 24" (Aluminum Only)
                         </option>
                     </select>
                     <span id="resize-status" class="resize-status"></span>

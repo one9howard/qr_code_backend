@@ -42,6 +42,12 @@ function orderSign() {
         order_id: config.orderId
     };
 
+    // Include material if selector exists
+    const materialSelector = document.getElementById('material-selector');
+    if (materialSelector) {
+        requestBody.material = materialSelector.value;
+    }
+
     // Include guest_token if present
     if (config.guestToken) {
         requestBody.guest_token = config.guestToken;
@@ -109,6 +115,7 @@ function resizeSign(newSize) {
     sizeSelector.disabled = true;
 
     const requestBody = {
+        order_id: config.orderId,
         size: newSize
     };
 

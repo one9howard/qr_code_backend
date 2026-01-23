@@ -1,0 +1,213 @@
+============================= test session starts =============================
+platform win32 -- Python 3.14.0, pytest-9.0.2, pluggy-1.6.0 -- C:\Python314\python.exe
+cachedir: .pytest_cache
+rootdir: C:\Users\player1\Desktop\InSite_signs
+configfile: pytest.ini
+collecting ... collected 2 items
+
+tests/test_fulfillment.py::test_fulfill_order_enqueues_one_print_job FAILED [ 50%]
+tests/test_fulfillment.py::test_fulfill_order_idempotency FAILED         [100%]
+
+================================== FAILURES ===================================
+__________________ test_fulfill_order_enqueues_one_print_job __________________
+
+db = <database.PostgresDB object at 0x00000219A364ECF0>, app = <Flask 'app'>
+
+    def test_fulfill_order_enqueues_one_print_job(db, app):
+        """Test that fulfill_order creates print_job and updates order status."""
+        # Setup: user -> agent -> property -> order
+        user_id = db.execute(
+            "INSERT INTO users (email, password_hash, is_verified, is_admin) VALUES (%s, %s, %s, %s) RETURNING id",
+            ("u@example.com", "x", True, False),
+        ).fetchone()[0]
+    
+        agent_id = db.execute(
+            "INSERT INTO agents (user_id, name, brokerage, email, phone, photo_filename) VALUES (%s, %s, %s, %s, %s, %s) RETURNING id",
+            (user_id, "Agent", "Broker", "a@example.com", None, None),
+        ).fetchone()[0]
+    
+        property_id = db.execute(
+            "INSERT INTO properties (agent_id, address, beds, baths, sqft, price, description, slug, qr_code) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s) RETURNING id",
+            (agent_id, "123 Test St", "3", "2", "1000", "100000", "desc", "slug", "qr1"),
+        ).fetchone()[0]
+    
+        # Setup: source PDF in storage
+        from utils.storage import get_storage
+        storage = get_storage()
+        source_key = f"uploads/orders/order_test.pdf"
+        storage.put_file(b"%PDF-1.4\n%%EOF\n", source_key)
+    
+        # Create order with 'paid' status
+        order_id = db.execute(
+            """INSERT INTO orders (user_id, property_id, sign_pdf_path, status, order_type)
+               VALUES (%s, %s, %s, 'paid', 'sign') RETURNING id""",
+            (user_id, property_id, source_key),
+        ).fetchone()[0]
+        db.commit()
+    
+        from services.fulfillment import fulfill_order
+    
+        # First call should succeed
+        ok1 = fulfill_order(order_id)
+>       assert ok1 is True
+E       assert False is True
+
+tests\test_fulfillment.py:48: AssertionError
+---------------------------- Captured stdout setup ----------------------------
+[Manage] Loaded .env file
+[Manage] Starting database migration...
+[Manage] DATABASE_URL format: postgresql://postgres:****@localhost:5432/insitesigns
+[Manage] Detected DATABASE_URL, using Alembic for Postgres...
+[Manage] Alembic migration to 'head' successful.
+[Manage] Database migration completed successfully.
+[App] create_app() called
+[App] Flask app instance created
+{"timestamp": "2026-01-23T09:58:11.003040", "level": "INFO", "message": "Logger setup complete. JSON formatted logs enabled.", "logger": "app", "module": "logger", "lineno": 66}
+[Startup] Dev Warning: Cache warm failed: Invalid API Key provided: sk_test_*ummy
+[App] create_app() called
+[App] Flask app instance created
+{"timestamp": "2026-01-23T09:58:11.482185", "level": "INFO", "message": "Logger setup complete. JSON formatted logs enabled.", "logger": "app", "module": "logger", "lineno": 66}
+[Startup] Dev Warning: Cache warm failed: Invalid API Key provided: sk_test_*ummy
+---------------------------- Captured stderr setup ----------------------------
+INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.
+INFO  [alembic.runtime.migration] Will assume transactional DDL.
+----------------------------- Captured log setup ------------------------------
+INFO     app:logger.py:66 Logger setup complete. JSON formatted logs enabled.
+ERROR    services.stripe_price_resolver:stripe_price_resolver.py:114 Stripe API error refreshing keys ['smart_riser_6x36', 'listing_sign_coroplast_12x18', 'listing_sign_aluminum_24x36', 'listing_sign_aluminum_36x24', 'listing_sign_aluminum_18x24', 'listing_sign_coroplast_24x36', 'smart_sign_print_18x24', 'smart_riser_6x24', 'listing_sign_coroplast_18x24', 'smart_sign_print_36x24']: Invalid API Key provided: sk_test_*ummy
+INFO     app:logger.py:66 Logger setup complete. JSON formatted logs enabled.
+ERROR    services.stripe_price_resolver:stripe_price_resolver.py:114 Stripe API error refreshing keys ['smart_riser_6x36', 'listing_sign_coroplast_12x18', 'listing_sign_aluminum_24x36', 'listing_sign_aluminum_36x24', 'listing_sign_aluminum_18x24', 'listing_sign_coroplast_24x36', 'smart_sign_print_18x24', 'smart_riser_6x24', 'listing_sign_coroplast_18x24', 'smart_sign_print_36x24']: Invalid API Key provided: sk_test_*ummy
+---------------------------- Captured stdout call -----------------------------
+[Fulfillment] Processing Order 1 (type=sign, status=paid)
+[Fulfillment] Using existing PDF: uploads/orders/order_test.pdf
+[DB] Query Failed: column "updated_at" of relation "orders" does not exist
+LINE 5:                 updated_at = NOW()
+                        ^
+
+[DB] SQL: 
+            UPDATE orders 
+            SET status = 'submitted_to_printer',
+                provider_job_id = %s,
+                updated_at = NOW()
+            WHERE id = %s
+        
+------------------------------ Captured log call ------------------------------
+ERROR    services.fulfillment:fulfillment.py:120 [Fulfillment] Failed for order 1: column "updated_at" of relation "orders" does not exist
+LINE 5:                 updated_at = NOW()
+                        ^
+Traceback (most recent call last):
+  File "C:\Users\player1\Desktop\InSite_signs\services\fulfillment.py", line 107, in fulfill_order
+    db.execute("""
+    ~~~~~~~~~~^^^^
+        UPDATE orders
+        ^^^^^^^^^^^^^
+    ...<3 lines>...
+        WHERE id = %s
+        ^^^^^^^^^^^^^
+    """, (job_id, order_id))
+    ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\player1\Desktop\InSite_signs\database.py", line 46, in execute
+    raise e
+  File "C:\Users\player1\Desktop\InSite_signs\database.py", line 40, in execute
+    cur.execute(sql, params)
+    ~~~~~~~~~~~^^^^^^^^^^^^^
+  File "C:\Users\player1\AppData\Roaming\Python\Python314\site-packages\psycopg2\extras.py", line 146, in execute
+    return super().execute(query, vars)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+psycopg2.errors.UndefinedColumn: column "updated_at" of relation "orders" does not exist
+LINE 5:                 updated_at = NOW()
+                        ^
+_______________________ test_fulfill_order_idempotency ________________________
+
+db = <database.PostgresDB object at 0x00000219A6626AD0>, app = <Flask 'app'>
+
+    def test_fulfill_order_idempotency(db, app):
+        """Test that duplicate calls don't create duplicate print_jobs."""
+        # Setup minimal order
+        user_id = db.execute(
+            "INSERT INTO users (email, password_hash, is_verified, is_admin) VALUES (%s, %s, %s, %s) RETURNING id",
+            ("u2@example.com", "x", True, False),
+        ).fetchone()[0]
+    
+        agent_id = db.execute(
+            "INSERT INTO agents (user_id, name, brokerage, email, phone, photo_filename) VALUES (%s, %s, %s, %s, %s, %s) RETURNING id",
+            (user_id, "Agent2", "Broker2", "a2@example.com", None, None),
+        ).fetchone()[0]
+    
+        property_id = db.execute(
+            "INSERT INTO properties (agent_id, address, beds, baths, sqft, price, description, slug, qr_code) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s) RETURNING id",
+            (agent_id, "456 Test Ave", "4", "3", "2000", "200000", "desc2", "slug2", "qr2"),
+        ).fetchone()[0]
+    
+        from utils.storage import get_storage
+        storage = get_storage()
+        source_key = f"uploads/orders/order_test2.pdf"
+        storage.put_file(b"%PDF-1.4\n%%EOF\n", source_key)
+    
+        order_id = db.execute(
+            """INSERT INTO orders (user_id, property_id, sign_pdf_path, status, order_type)
+               VALUES (%s, %s, %s, 'paid', 'sign') RETURNING id""",
+            (user_id, property_id, source_key),
+        ).fetchone()[0]
+        db.commit()
+    
+        from services.fulfillment import fulfill_order
+    
+        # Call multiple times
+        for _ in range(3):
+            result = fulfill_order(order_id)
+>           assert result is True
+E           assert False is True
+
+tests\test_fulfillment.py:103: AssertionError
+---------------------------- Captured stdout setup ----------------------------
+[App] create_app() called
+[App] Flask app instance created
+{"timestamp": "2026-01-23T09:58:12.028801", "level": "INFO", "message": "Logger setup complete. JSON formatted logs enabled.", "logger": "app", "module": "logger", "lineno": 66}
+[Startup] Dev Warning: Cache warm failed: Invalid API Key provided: sk_test_*ummy
+----------------------------- Captured log setup ------------------------------
+INFO     app:logger.py:66 Logger setup complete. JSON formatted logs enabled.
+ERROR    services.stripe_price_resolver:stripe_price_resolver.py:114 Stripe API error refreshing keys ['smart_riser_6x36', 'listing_sign_coroplast_12x18', 'listing_sign_aluminum_24x36', 'listing_sign_aluminum_36x24', 'listing_sign_aluminum_18x24', 'listing_sign_coroplast_24x36', 'smart_sign_print_18x24', 'smart_riser_6x24', 'listing_sign_coroplast_18x24', 'smart_sign_print_36x24']: Invalid API Key provided: sk_test_*ummy
+---------------------------- Captured stdout call -----------------------------
+[Fulfillment] Processing Order 1 (type=sign, status=paid)
+[Fulfillment] Using existing PDF: uploads/orders/order_test2.pdf
+[DB] Query Failed: column "updated_at" of relation "orders" does not exist
+LINE 5:                 updated_at = NOW()
+                        ^
+
+[DB] SQL: 
+            UPDATE orders 
+            SET status = 'submitted_to_printer',
+                provider_job_id = %s,
+                updated_at = NOW()
+            WHERE id = %s
+        
+------------------------------ Captured log call ------------------------------
+ERROR    services.fulfillment:fulfillment.py:120 [Fulfillment] Failed for order 1: column "updated_at" of relation "orders" does not exist
+LINE 5:                 updated_at = NOW()
+                        ^
+Traceback (most recent call last):
+  File "C:\Users\player1\Desktop\InSite_signs\services\fulfillment.py", line 107, in fulfill_order
+    db.execute("""
+    ~~~~~~~~~~^^^^
+        UPDATE orders
+        ^^^^^^^^^^^^^
+    ...<3 lines>...
+        WHERE id = %s
+        ^^^^^^^^^^^^^
+    """, (job_id, order_id))
+    ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\player1\Desktop\InSite_signs\database.py", line 46, in execute
+    raise e
+  File "C:\Users\player1\Desktop\InSite_signs\database.py", line 40, in execute
+    cur.execute(sql, params)
+    ~~~~~~~~~~~^^^^^^^^^^^^^
+  File "C:\Users\player1\AppData\Roaming\Python\Python314\site-packages\psycopg2\extras.py", line 146, in execute
+    return super().execute(query, vars)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+psycopg2.errors.UndefinedColumn: column "updated_at" of relation "orders" does not exist
+LINE 5:                 updated_at = NOW()
+                        ^
+=========================== short test summary info ===========================
+FAILED tests/test_fulfillment.py::test_fulfill_order_enqueues_one_print_job
+FAILED tests/test_fulfillment.py::test_fulfill_order_idempotency - assert Fal...
+============================== 2 failed in 2.94s ==============================

@@ -57,3 +57,16 @@ def test_non_admin_cannot_access_metrics(client, db):
     
     # Should be forbidden
     assert resp.status_code == 403
+
+def test_metrics_data_display(client, db, admin_user):
+    """Test that metrics actually show data from app_events."""
+    client.post('/login', data={'email': admin_user['email'], 'password': admin_user['password']})
+    
+    # Seed new app items
+    db.execute("INSERT INTO app_events (event_type, source, occurred_at) VALUES ('checkout_started', 'server', NOW())")
+    db.execute("INSERT INTO app_events (event_type, source, occurred_at) VALUES ('property_view', 'server', NOW())")
+    db.commit()
+    
+    resp = client.get('/admin/metrics')
+    assert b'checkout_started' in resp.data
+    assert b'property_view' in resp.data
