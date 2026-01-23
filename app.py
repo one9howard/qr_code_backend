@@ -19,6 +19,7 @@ from routes.leads import leads_bp
 from routes.account import account_bp
 from routes.lead_management import lead_management_bp
 from routes.campaigns import campaigns_bp
+from routes.events import events_bp
 
 def create_app(test_config=None):
     print("[App] create_app() called")
@@ -150,6 +151,7 @@ def create_app(test_config=None):
     app.register_blueprint(account_bp)
     app.register_blueprint(lead_management_bp)
     app.register_blueprint(campaigns_bp)
+    app.register_blueprint(events_bp)
     
     from routes.printing import printing_bp
     app.register_blueprint(printing_bp)
@@ -203,11 +205,41 @@ def create_app(test_config=None):
         if request.endpoint and request.endpoint.startswith('static'):
             return
             
+        # 1. Verification Check
         from flask_login import current_user
         if current_user.is_authenticated and not current_user.is_verified:
             allowed_routes = ['auth.verify_email', 'auth.logout', 'auth.resend_verification']
             if request.endpoint not in allowed_routes:
                 return redirect(url_for('auth.verify_email'))
+    
+    @app.before_request
+    def request_correlation():
+        # Request ID
+        import uuid
+        req_id = request.headers.get("X-Request-ID")
+        if not req_id:
+            req_id = str(uuid.uuid4())
+        from flask import g
+        g.request_id = req_id
+        
+    @app.after_request
+    def session_cookie_middleware(response):
+        # Session ID correlation (independent of auth)
+        if not request.cookies.get('sid'):
+            import uuid
+            import datetime
+            sid = str(uuid.uuid4())
+            # 90 days
+            expires = datetime.datetime.now() + datetime.timedelta(days=90)
+            secure = app.config.get('SESSION_COOKIE_SECURE', False)
+            response.set_cookie(
+                'sid', sid,
+                expires=expires,
+                httponly=True,
+                samesite='Lax',
+                secure=secure
+            )
+        return response
 
     return app
 

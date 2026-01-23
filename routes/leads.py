@@ -92,17 +92,43 @@ def submit_lead():
     buyer_email = data.get("buyer_email", "").strip()
     consent = data.get("consent")
     
+    # --- Event Tracker Helper ---
+    from services.events import track_event
+    
+    def track_lead_attempt(success, error=None, tier_state="unknown"):
+        track_event(
+            "lead_submitted",
+            source="server",
+            property_id=property_id if property_id else None,
+            payload={
+                "success": success,
+                "error_code": error,
+                "tier_state": tier_state,
+                "honeypot_triggered": bool(data.get("website")),
+                "lead_fields": {
+                    "has_phone": bool(data.get("buyer_phone")),
+                    "has_email": bool(data.get("buyer_email")), # Boolean only
+                    "has_message": bool(data.get("message"))
+                }
+            }
+        )
+
     if not property_id:
+        track_lead_attempt(False, "missing_property_id")
         return jsonify({"success": False, "error": "Missing property_id"}), 400
     if not buyer_name:
+        track_lead_attempt(False, "missing_name")
         return jsonify({"success": False, "error": "Name is required"}), 400
     if not buyer_email:
+        track_lead_attempt(False, "missing_email")
         return jsonify({"success": False, "error": "Email is required"}), 400
     if not consent:
+        track_lead_attempt(False, "missing_consent")
         return jsonify({"success": False, "error": "Consent is required"}), 400
     
     # Basic email validation
     if "@" not in buyer_email or "." not in buyer_email:
+        track_lead_attempt(False, "invalid_email")
         return jsonify({"success": False, "error": "Invalid email address"}), 400
     
     # Optional fields
@@ -122,14 +148,20 @@ def submit_lead():
     ).fetchone()
     
     if not property_row:
+        track_lead_attempt(False, "property_not_found")
         return jsonify({"success": False, "error": "Property not found"}), 404
     
     # --- Expiry Check (Single Source of Truth) ---
     from services.gating import get_property_gating_status
     gating = get_property_gating_status(property_id)
     
+    tier_state = "FREE"
+    if gating.get('is_paid'): tier_state = "PAID"
+    elif gating.get('is_expired'): tier_state = "EXPIRED"
+    
     if gating['is_expired'] and not gating['is_paid']:
         current_app.logger.info(f"[Leads] Rejected lead for expired property {property_id}")
+        track_lead_attempt(False, "expired", tier_state)
         return jsonify({
             "success": False,
             "error": "expired",
@@ -169,6 +201,9 @@ def submit_lead():
             f"[Leads] New lead {lead_id} for property {property_id} from {buyer_email}"
         )
         
+        # Track Success (Lead Submitted)
+        track_lead_attempt(True, None, tier_state)
+        
         # Send Notification (synchronous with audit update)
         from services.notifications import send_lead_notification_email
         agent_email = db.execute("SELECT email FROM agents WHERE id = %s", (agent_id,)).fetchone()['email']
@@ -186,6 +221,8 @@ def submit_lead():
         success, error_msg, outcome_status = send_lead_notification_email(agent_email, lead_payload)
         
         # --- Audit Log: Update notification status ---
+        event_status = "lead_notification_sent"
+        
         if outcome_status == 'sent':
             db.execute(
                 "UPDATE lead_notifications SET status = 'sent', sent_at = %s WHERE id = %s",
@@ -193,11 +230,24 @@ def submit_lead():
             )
         else:
             # outcome_status is 'skipped' or 'failed'
+            event_status = "lead_notification_failed"
             db.execute(
                 "UPDATE lead_notifications SET status = %s, last_error = %s WHERE id = %s",
                 (outcome_status, error_msg[:500] if error_msg else "Unknown error", notification_id)
             )
         db.commit()
+        
+        # Track Notification Event
+        track_event(
+            event_status,
+            source="server",
+            property_id=property_id,
+            payload={
+                "status": outcome_status,
+                "provider": "email", # Default
+                "error_code": error_msg[:100] if error_msg else None
+            }
+        )
         
         return jsonify({
             "success": True,
@@ -206,6 +256,7 @@ def submit_lead():
         
     except Exception as e:
         current_app.logger.error(f"[Leads] Error saving lead: {e}")
+        track_lead_attempt(False, "db_error", tier_state)
         return jsonify({
             "success": False, 
             "error": "Failed to submit request. Please try again."

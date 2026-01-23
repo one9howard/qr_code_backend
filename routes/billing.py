@@ -123,6 +123,25 @@ def checkout():
             stripe_session_id=checkout_session.id
         )
         
+        # --- Track Event ---
+        from services.events import track_event
+        plan_name = 'pro'
+        interval = 'unknown'
+        if price_id == STRIPE_PRICE_MONTHLY: interval = 'month'
+        elif price_id == STRIPE_PRICE_ANNUAL: interval = 'year'
+        
+        track_event(
+            "checkout_started",
+            source="server",
+            user_id=current_user.id,
+            payload={
+                "plan": plan_name,
+                "interval": interval,
+                "price_id": price_id,
+                "session_id": checkout_session.id
+            }
+        )
+        
         current_app.logger.info(f"[Billing] Created session {checkout_session.id} for attempt {attempt['attempt_token']}")
         return redirect(checkout_session.url, code=303)
         
@@ -150,6 +169,8 @@ def checkout():
             update_attempt_status(attempt['attempt_token'], 'failed', error_message=str(e))
         flash("An unexpected error occurred. Please try again.", "error")
         return redirect(url_for('billing.index'))
+
+
 
 @billing_bp.route("/billing/portal")
 @login_required

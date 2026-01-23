@@ -127,6 +127,50 @@ class Order:
             self.id = row['id']
             db.commit()
 
+
+class AppEvent:
+    def __init__(self, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)
+    
+    @classmethod
+    def create(cls, **kwargs):
+        """
+        Create and save an event in one go.
+        Normally handled by services/events.py via helper, but this allows direct usage.
+        """
+        db = get_db()
+        from psycopg2.extras import Json
+        
+        cols = []
+        vals = []
+        placeholders = []
+        
+        for k, v in kwargs.items():
+            if k == 'id' or k.startswith('_'): continue
+            
+            cols.append(k)
+            if k == 'payload' and isinstance(v, (dict, list)):
+                vals.append(Json(v))
+            else:
+                vals.append(v)
+            placeholders.append("%s")
+            
+        sql = f"INSERT INTO app_events ({', '.join(cols)}) VALUES ({', '.join(placeholders)}) RETURNING id"
+        row = db.execute(sql, tuple(vals)).fetchone()
+        db.commit()
+        
+        return cls(**kwargs, id=row['id'])
+
+    @classmethod
+    def get_by_property(cls, property_id, limit=50):
+        db = get_db()
+        rows = db.execute(
+            "SELECT * FROM app_events WHERE property_id = %s ORDER BY occurred_at DESC LIMIT %s",
+            (property_id, limit)
+        ).fetchall()
+        return [cls(**dict(r)) for r in rows]
+
 # Mock db object for legacy imports (e.g. imports Order, db)
 # This allows 'from models import db' to work, giving access to raw connection wrapper if needed
 class DBProxy:
@@ -144,5 +188,8 @@ class DBProxy:
     def execute(self, sql, params=None):
         """Delegates execute to the underlying raw connection (compatibility layer)."""
         return get_db().execute(sql, params)
+        
+    def cursor(self):
+        return get_db().cursor()
         
 db = DBProxy()

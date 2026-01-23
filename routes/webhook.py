@@ -223,6 +223,19 @@ def handle_subscription_checkout(db, session):
         WHERE id = %s
     ''', (customer_id, subscription_id, status, end_date_iso, user_id))
     db.commit()
+    
+    # --- Track Event ---
+    from services.events import track_event
+    track_event(
+        "subscription_activated",
+        source="server",
+        user_id=user_id,
+        payload={
+            "stripe_subscription_id": subscription_id,
+            "status": status,
+            "session_id": session.get('id')
+        }
+    )
 
 
 def handle_payment_checkout(db, session):

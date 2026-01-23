@@ -232,7 +232,7 @@ def property_page(slug):
     # Find by canonical slug
     property_row = db.execute(
         "SELECT p.*, a.name as agent_name, a.brokerage, a.email as agent_email, "
-        "a.phone as agent_phone, a.photo_filename as agent_photo "
+        "a.phone as agent_phone, a.photo_filename as agent_photo, a.user_id as agent_user_id "
         "FROM properties p "
         "JOIN agents a ON p.agent_id = a.id "
         "WHERE p.slug = %s",
@@ -245,7 +245,7 @@ def property_page(slug):
             property_id = int(slug.split('-')[0])
             property_row = db.execute(
                 "SELECT p.*, a.name as agent_name, a.brokerage, a.email as agent_email, "
-                "a.phone as agent_phone, a.photo_filename as agent_photo "
+                "a.phone as agent_phone, a.photo_filename as agent_photo, a.user_id as agent_user_id "
                 "FROM properties p "
                 "JOIN agents a ON p.agent_id = a.id "
                 "WHERE p.id = %s",
@@ -266,9 +266,22 @@ def property_page(slug):
     
     property_id = property_row['id']
     
+    # --- Gating Check (Single Source of Truth) ---
+    from services.gating import get_property_gating_status
+    gating = get_property_gating_status(property_id)
+    
+    # Determine Tier State
+    tier_state = "FREE"
+    if gating.get('is_paid'):
+        tier_state = "PAID"
+    elif gating.get('is_expired'):
+        tier_state = "EXPIRED"
+
     # --- Log Page View (NOT scan) ---
     try:
         from utils.net import get_client_ip
+        from services.events import track_event
+        
         ip_address = get_client_ip()
         user_agent = request.headers.get('User-Agent', '')[:500]
         referrer = (request.referrer or '')[:500]
@@ -277,6 +290,7 @@ def property_page(slug):
         is_internal = 1 if request.cookies.get(INTERNAL_VIEW_COOKIE) == '1' else 0
         source = 'dashboard' if is_internal else 'public'
         
+        # 1. Legacy Logging
         db.execute(
             """INSERT INTO property_views 
                (property_id, ip_address, user_agent, referrer, is_internal, source) 
@@ -284,13 +298,26 @@ def property_page(slug):
             (property_id, ip_address, user_agent, referrer or None, is_internal, source)
         )
         db.commit()
+        
+        # 2. Canonical App Event
+        track_event(
+            "property_view",
+            source="server",
+            property_id=property_id,
+            user_id=property_row['agent_user_id'], # The agent who owns the property
+            qr_code=property_row.get('qr_code'),
+            payload={
+                "tier_state": tier_state,
+                "referrer": referrer,
+                "utm_source": request.args.get('utm_source'),
+                "utm_medium": request.args.get('utm_medium'),
+                "is_mobile": "Mobile" in user_agent,
+                "is_internal": bool(is_internal)
+            }
+        )
+        
     except Exception as e:
         print(f"[Analytics] Error logging page view: {e}")
-    
-    # --- Gating Check (Single Source of Truth) ---
-    from services.gating import get_property_gating_status
-    
-    gating = get_property_gating_status(property_id)
     
     # Expired and unpaid -> 410 Gone
     if gating['is_expired'] and not gating['is_paid']:
