@@ -26,17 +26,24 @@ class StorageBackend:
 
 class LocalStorage(StorageBackend):
     def __init__(self, base_dir, base_url):
-        self.base_dir = base_dir
+        self.base_dir = os.path.abspath(base_dir)
         self.base_url = base_url
         os.makedirs(self.base_dir, exist_ok=True)
 
     def _get_abs_path(self, key):
-        # Prevent traversal
-        filename = secure_filename(os.path.basename(key))
-        folder = os.path.dirname(key)
-        # Simply join base_dir + key
-        # We assume key is relative path like "uploads/properties/123.jpg"
-        return os.path.join(self.base_dir, key)
+        """
+        Get absolute path for a storage key.
+        Raises ValueError on path traversal attempts.
+        """
+        # Normalize and resolve the path
+        abs_path = os.path.normpath(os.path.join(self.base_dir, key))
+        abs_path = os.path.abspath(abs_path)
+        
+        # Security: Ensure path is within base_dir
+        if not abs_path.startswith(self.base_dir + os.sep) and abs_path != self.base_dir:
+            raise ValueError(f"Path traversal detected: {key}")
+        
+        return abs_path
 
     def put_file(self, file_storage, key, content_type=None):
         abs_path = self._get_abs_path(key)
@@ -63,9 +70,8 @@ class LocalStorage(StorageBackend):
         return key
 
     def get_url(self, key, expires_seconds=3600):
-        # Local URL (served via static or route)
-        # We handle this by mapping raw keys to URLs
-        return f"{self.base_url}/{key}".replace("\\", "/")
+        # Local URL served via /storage/ route in dev
+        return f"{self.base_url}/storage/{key}".replace("\\", "/")
 
     def get_file(self, key):
         abs_path = self._get_abs_path(key)

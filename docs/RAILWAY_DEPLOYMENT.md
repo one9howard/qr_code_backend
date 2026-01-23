@@ -65,7 +65,7 @@ Configure these in Railway: **Service → Variables**
 | `FLASK_ENV` | `production` | Triggers production checks |
 | `BASE_URL` | `https://staging.insitesigns.com` | No trailing slash |
 | `SECRET_KEY` | `<generate-random-64-char>` | Use `openssl rand -hex 32` |
-| `PRINT_JOBS_TOKEN` | `<any-secure-token>` | Can use same generation method |
+| `PRINT_JOBS_TOKEN` | `<any-secure-token>` | Can use same generation method. Also accepts `PRINT_SERVER_TOKEN` as alias. |
 
 #### Database
 | Variable | Value | Notes |

@@ -336,7 +336,7 @@ def edit_property(property_id):
 @dashboard_bp.route("/smart-signs/create", methods=["POST"])
 @login_required
 def create_smart_sign():
-    """Manual creation for Pro users (Phase 1)."""
+    """Manual creation for Pro users (Phase 1) - Creates DRAFT asset."""
     if not current_user.is_pro:
         flash("SmartSigns are a Pro feature. Upgrade to create assets manually.", "error")
         return redirect(url_for('dashboard.index'))
@@ -344,12 +344,13 @@ def create_smart_sign():
     from services.smart_signs import SmartSignsService
     
     try:
-        # Phase 1: Create activated asset immediately
+        # Option B: Create as draft (activated_at NULL)
+        # Activation happens only via SmartSign purchase
         asset = SmartSignsService.create_asset(
             user_id=current_user.id,
-            activated=True # Phase 1: Immediate activation
+            activated=False  # Option B: Activation via purchase only
         )
-        flash(f"SmartSign created! Code: {asset['code']}", "success")
+        flash(f"SmartSign draft created! Code: {asset['code']}. Purchase a SmartSign to activate.", "info")
     except Exception as e:
         flash(f"Error creating SmartSign: {e}", "error")
         

@@ -16,6 +16,7 @@
 | Variable | Description | Default |
 |----------|-------------|---------|
 | `FREE_TIER_RETENTION_DAYS` | Days before unpaid listings expire | `7` |
+| `PRINT_SERVER_TOKEN` | Alias for `PRINT_JOBS_TOKEN` (either works) | - |
 
 ## Background Jobs (Cron)
 

@@ -93,10 +93,10 @@ if not SECRET_KEY:
 MAX_CONTENT_LENGTH = 16 * 1024 * 1024
 
 # Print Server Security
-PRINT_JOBS_TOKEN = get_env_str("PRINT_JOBS_TOKEN")
+PRINT_JOBS_TOKEN = get_env_str("PRINT_JOBS_TOKEN") or get_env_str("PRINT_SERVER_TOKEN")
 if not PRINT_JOBS_TOKEN:
     if os.environ.get("FLASK_ENV") == "production":
-        raise ValueError("PRINT_JOBS_TOKEN must be set in production environment.")
+        raise ValueError("PRINT_JOBS_TOKEN (or PRINT_SERVER_TOKEN) must be set in production environment.")
     else:
         PRINT_JOBS_TOKEN = "dev-print-token"
         print("[WARNING] Using default PRINT_JOBS_TOKEN for development.")

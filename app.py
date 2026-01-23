@@ -168,6 +168,9 @@ def create_app(test_config=None):
     from routes.listing_kits import listing_kits_bp
     app.register_blueprint(listing_kits_bp)
 
+    from routes.storage_files import storage_files_bp
+    app.register_blueprint(storage_files_bp)
+
     # Exemptions
     csrf.exempt(webhook_bp)
     csrf.exempt(leads_bp)

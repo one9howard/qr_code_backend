@@ -61,7 +61,11 @@ def qr_scan_redirect(code):
     asset, asset_property_row = SmartSignsService.resolve_asset(code)
 
     if asset:
-        # SmartSign Found
+        # SmartSign Found - Check activation status (Option B)
+        if asset['activated_at'] is None:
+            # Not activated - must purchase SmartSign to activate
+            return render_template("sign_asset_not_activated.html", asset=asset)
+        
         if not asset_property_row:
             # Unassigned -> Render Unassigned Page
             # Note: Cannot log to qr_scans because property_id is NOT NULL in schema.

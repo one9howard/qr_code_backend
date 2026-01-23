@@ -12,7 +12,6 @@ from reportlab.lib.units import inch
 from database import get_db
 from utils.storage import get_storage
 from utils.pdf_generator import LayoutSpec, SIGN_SIZES, DEFAULT_SIGN_SIZE, _draw_standard_layout, _draw_landscape_split_layout, hex_to_rgb
-from utils.pdf_generator import LayoutSpec, SIGN_SIZES, DEFAULT_SIGN_SIZE, _draw_standard_layout, _draw_landscape_split_layout, hex_to_rgb
 from config import BASE_URL
 from utils.qr_urls import property_scan_url
 
@@ -52,23 +51,38 @@ def generate_listing_sign_pdf(order, output_path=None):
     if not prop_row:
         raise ValueError(f"Property {property_id} not found for order {order_id}")
     
-    # Fetch agent data
+    # Fetch agent data with correct schema columns
     agent_row = None
+    agent_name = "Agent"
+    brokerage = ""
+    agent_phone = ""
+    agent_email = ""
+    
     if prop_row['agent_id']:
         agent_row = db.execute("""
-            SELECT u.*, a.brokerage_name, a.custom_color 
+            SELECT a.id, a.name as agent_name, a.brokerage, a.phone, a.email as agent_email,
+                   u.full_name, u.email as user_email
             FROM agents a 
             JOIN users u ON a.user_id = u.id 
             WHERE a.id = %s
         """, (prop_row['agent_id'],)).fetchone()
     
-    if not agent_row:
+    if agent_row:
+        # Agent display name priority: agents.name > users.full_name > "Agent"
+        agent_name = agent_row.get('agent_name') or agent_row.get('full_name') or "Agent"
+        brokerage = agent_row.get('brokerage') or ""
+        agent_phone = agent_row.get('phone') or ""
+        agent_email = agent_row.get('agent_email') or agent_row.get('user_email') or ""
+    else:
         # Fallback to order user
-        agent_row = db.execute(
+        user_row = db.execute(
             "SELECT * FROM users WHERE id = %s", (user_id,)
         ).fetchone()
+        if user_row:
+            agent_name = user_row.get('full_name') or "Agent"
+            agent_email = user_row.get('email') or ""
 
-    if not prop_row or not agent_row:
+    if not prop_row:
         raise ValueError(f"Missing data for Order {order_id}")
 
     # Helper for safe dict access
@@ -84,13 +98,8 @@ def generate_listing_sign_pdf(order, output_path=None):
     price_val = prop_row.get('price')
     price = f"${int(price_val):,}" if price_val else ""
     
-    agent_name = get(agent_row, 'full_name', 'Agent')
-    brokerage = get(agent_row, 'brokerage_name', '')
-    agent_email = get(agent_row, 'email', '')
-    agent_phone = get(agent_row, 'phone_number', '')
-    
-    # Sign config
-    sign_color = agent_row.get('custom_color') or '#000000'
+    # Sign config - use default color (custom_color doesn't exist in schema)
+    sign_color = '#000000'
     sign_size = get_val(order, 'print_size') or '18x24'
     
     # QR URL
