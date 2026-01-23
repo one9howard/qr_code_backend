@@ -171,6 +171,67 @@ class AppEvent:
         ).fetchall()
         return [cls(**dict(r)) for r in rows]
 
+class AgentAction:
+    def __init__(self, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)
+    
+    @classmethod
+    def create(cls, **kwargs):
+        db = get_db()
+        from psycopg2.extras import Json
+        
+        cols = []
+        vals = []
+        placeholders = []
+        
+        for k, v in kwargs.items():
+            if k == 'id' or k.startswith('_'): continue
+            
+            cols.append(k)
+            if k in ('proposal', 'execution', 'policy_snapshot', 'input_event_refs') and isinstance(v, (dict, list)):
+                vals.append(Json(v))
+            else:
+                vals.append(v)
+            placeholders.append("%s")
+            
+        sql = f"INSERT INTO agent_actions ({', '.join(cols)}) VALUES ({', '.join(placeholders)}) RETURNING id"
+        row = db.execute(sql, tuple(vals)).fetchone()
+        db.commit()
+        
+        return cls(**kwargs, id=row['id'])
+
+    def save(self):
+        db = get_db()
+        from psycopg2.extras import Json
+        
+        if hasattr(self, 'id') and self.id:
+            # Update
+            cols = []
+            vals = []
+            for k, v in self.__dict__.items():
+                if k.startswith('_') or k == 'id': continue
+                cols.append(f"{k} = %s")
+                if k in ('proposal', 'execution', 'policy_snapshot', 'input_event_refs') and isinstance(v, (dict, list)):
+                    vals.append(Json(v))
+                else:
+                    vals.append(v)
+            
+            # Explicitly force updated_at=now() on save
+            cols.append("updated_at = now()")
+            
+            sql = f"UPDATE agent_actions SET {', '.join(cols)} WHERE id = %s"
+            vals.append(self.id)
+            db.execute(sql, tuple(vals))
+            db.commit()
+    
+    @classmethod
+    def get(cls, action_id):
+        db = get_db()
+        row = db.execute("SELECT * FROM agent_actions WHERE id = %s", (action_id,)).fetchone()
+        if not row: return None
+        return cls(**dict(row))
+
 # Mock db object for legacy imports (e.g. imports Order, db)
 # This allows 'from models import db' to work, giving access to raw connection wrapper if needed
 class DBProxy:

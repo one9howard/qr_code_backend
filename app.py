@@ -214,26 +214,34 @@ def create_app(test_config=None):
     
     @app.before_request
     def request_correlation():
-        # Request ID
         import uuid
+        from flask import g
+        
+        # 1. Request ID
         req_id = request.headers.get("X-Request-ID")
         if not req_id:
             req_id = str(uuid.uuid4())
-        from flask import g
         g.request_id = req_id
         
+        # 2. Session ID (Correlation)
+        sid = request.cookies.get('sid')
+        if not sid:
+            sid = str(uuid.uuid4())
+            g.set_sid_cookie = True # Signal to after_request
+        else:
+            g.set_sid_cookie = False
+        g.sid = sid
+
     @app.after_request
     def session_cookie_middleware(response):
-        # Session ID correlation (independent of auth)
-        if not request.cookies.get('sid'):
-            import uuid
+        # Apply SID cookie if needed
+        if getattr(g, 'set_sid_cookie', False) and hasattr(g, 'sid'):
             import datetime
-            sid = str(uuid.uuid4())
             # 90 days
             expires = datetime.datetime.now() + datetime.timedelta(days=90)
             secure = app.config.get('SESSION_COOKIE_SECURE', False)
             response.set_cookie(
-                'sid', sid,
+                'sid', g.sid,
                 expires=expires,
                 httponly=True,
                 samesite='Lax',
