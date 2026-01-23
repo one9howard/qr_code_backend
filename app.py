@@ -234,6 +234,7 @@ def create_app(test_config=None):
 
     @app.after_request
     def session_cookie_middleware(response):
+        from flask import g
         # Apply SID cookie if needed
         if getattr(g, 'set_sid_cookie', False) and hasattr(g, 'sid'):
             import datetime
