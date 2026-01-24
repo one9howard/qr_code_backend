@@ -140,10 +140,10 @@ curl -X POST http://localhost:5000/api/events \
 
 ### Verify Events in Database
 ```sql
-SELECT event_type, property_id, payload, created_at 
+SELECT event_type, property_id, payload, occurred_at 
 FROM app_events 
 WHERE event_type IN ('cta_click', 'gated_content_attempt', 'upsell_shown')
-ORDER BY created_at DESC LIMIT 10;
+ORDER BY occurred_at DESC LIMIT 10;
 ```
 
 ### Browser QA Checklist

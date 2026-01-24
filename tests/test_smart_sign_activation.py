@@ -135,3 +135,40 @@ class TestSmartSignActivation:
         # Attempt to assign should raise
         with pytest.raises(ValueError, match="activated"):
             SmartSignsService.assign_asset(asset['id'], prop_id, user_id)
+    
+    def test_unassigned_active_asset_scan_logs_to_app_events(self, app, client, db):
+        """
+        Unassigned SmartSign scans log to app_events (Option 2).
+        Event type: smart_sign_scan, source: server
+        """
+        # Setup user
+        db.execute("""
+            INSERT INTO users (email, password_hash, subscription_status) 
+            VALUES ('scan_log@test.com', 'x', 'active')
+        """)
+        user_id = db.execute("SELECT id FROM users WHERE email='scan_log@test.com'").fetchone()[0]
+        db.commit()
+        
+        # Create and activate asset (but don't assign)
+        asset = SmartSignsService.create_asset_for_purchase(user_id, None, "Scan Log Test")
+        db.execute("""
+            UPDATE sign_assets SET activated_at=NOW(), is_frozen=false WHERE id=%s
+        """, (asset['id'],))
+        db.commit()
+        
+        # Scan the unassigned asset
+        resp = client.get(f"/r/{asset['code']}")
+        assert resp.status_code == 200  # Unassigned page
+        
+        # Verify scan was logged to app_events
+        event = db.execute("""
+            SELECT * FROM app_events 
+            WHERE event_type = 'smart_sign_scan' 
+              AND sign_asset_id = %s
+            ORDER BY occurred_at DESC LIMIT 1
+        """, (asset['id'],)).fetchone()
+        
+        assert event is not None, "smart_sign_scan event should be logged"
+        assert event['source'] == 'server'
+        assert event['sign_asset_id'] == asset['id']
+

@@ -67,8 +67,22 @@ def qr_scan_redirect(code):
             return render_template("sign_asset_not_activated.html", asset=asset)
         
         if not asset_property_row:
-            # Unassigned -> Render Unassigned Page
-            # Note: Cannot log to qr_scans because property_id is NOT NULL in schema.
+            # Unassigned -> Log scan via app_events and Render Unassigned Page
+            # Using app_events (Option 2) avoids qr_scans.property_id NOT NULL constraint
+            try:
+                from services.events import track_event
+                track_event(
+                    "smart_sign_scan",
+                    source="server",
+                    sign_asset_id=asset['id'],
+                    payload={
+                        "scan_type": "unassigned",
+                        "asset_code": asset['code']
+                    }
+                )
+            except Exception as e:
+                print(f"[Analytics] Error logging unassigned SmartSign scan: {e}")
+            
             return render_template("sign_asset_unassigned.html", asset=asset)
         
         # Assigned -> Proceed to setup redirect
