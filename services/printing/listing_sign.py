@@ -188,13 +188,13 @@ def generate_listing_sign_pdf(order, output_path=None):
             _draw_landscape_split_layout(
                 c, layout, address, beds, baths, sqft, price,
                 agent_name, brokerage, agent_email, agent_phone,
-                None, None, sign_color, qr_value=qr_url
+                None, None, sign_color, qr_value=qr_url, user_id=user_id
             )
         else:
             _draw_standard_layout(
                 c, layout, address, beds, baths, sqft, price,
                 agent_name, brokerage, agent_email, agent_phone,
-                None, None, sign_color, qr_value=qr_url
+                None, None, sign_color, qr_value=qr_url, user_id=user_id
             )
         
         c.restoreState()

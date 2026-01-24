@@ -64,7 +64,7 @@ def generate_smart_riser_pdf(order, output_path=None):
     bleed = 0.125 * inch
     
     # Fetch QR URL
-    from utils.qr_vector import draw_vector_qr
+    from utils.pdf_generator import draw_qr
     from config import BASE_URL
     
     qr_url = f"{BASE_URL}" 
@@ -80,6 +80,9 @@ def generate_smart_riser_pdf(order, output_path=None):
     pdf_buffer = io.BytesIO()
     c = canvas.Canvas(pdf_buffer, pagesize=(width + 2*bleed, height + 2*bleed))
     
+    # Extract user_id
+    user_id = get_val(order, 'user_id')
+
     def draw_page(c):
         c.saveState()
         c.translate(bleed, bleed)
@@ -93,7 +96,7 @@ def generate_smart_riser_pdf(order, output_path=None):
         qr_x = height * 0.1
         qr_y = height * 0.1
         
-        draw_vector_qr(c, qr_url, x=qr_x, y=qr_y, size=qr_size)
+        draw_qr(c, qr_url, x=qr_x, y=qr_y, size=qr_size, user_id=user_id)
         
         # Text - Centered in remaining space
         c.setFillColor(colors.black)

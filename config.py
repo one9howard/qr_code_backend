@@ -162,4 +162,5 @@ PREFERRED_URL_SCHEME = 'https' if IS_PRODUCTION else 'http'
 
 # Feature Flags
 ENABLE_SMART_RISER = get_env_bool('ENABLE_SMART_RISER', default=False)
+ENABLE_QR_LOGO = get_env_bool('ENABLE_QR_LOGO', default=False)
 

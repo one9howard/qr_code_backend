@@ -53,7 +53,7 @@ def generate_kit(kit_id):
     prop = db.execute(
         """
         SELECT p.*, a.name as agent_name, a.brokerage, a.email as agent_email, a.phone as agent_phone,
-               u.email as user_email
+               u.email as user_email, u.id as user_id
         FROM properties p
         JOIN agents a ON p.agent_id = a.id
         JOIN users u ON a.user_id = u.id
@@ -161,13 +161,13 @@ def _generate_flyer(prop):
         
     # QR Code
     qr_url = f"{BASE_URL}/r/{prop['qr_code']}" if prop['qr_code'] else f"{BASE_URL}/p/{prop['slug']}"
-    from utils.qr_vector import draw_vector_qr
+    from utils.pdf_generator import draw_qr
     
     # Draw QR at bottom right
     qr_size = 150
     qr_x = width - margin - qr_size
     qr_y = margin
-    draw_vector_qr(c, qr_url, qr_x, qr_y, qr_size)
+    draw_qr(c, qr_url, x=qr_x, y=qr_y, size=qr_size, user_id=prop.get('user_id'))
     
     # Footer: Agent Info
     c.setFont("Helvetica-Bold", 12)

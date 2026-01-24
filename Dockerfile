@@ -13,7 +13,7 @@ WORKDIR /app
 # - build-essential, gcc: for compiling some python deps
 # - libpq-dev: for psycopg2
 RUN apt-get update && apt-get install -y --no-install-recommends \
-  curl build-essential gcc libpq-dev \
+  curl build-essential gcc libpq-dev libzbar0 \
   && rm -rf /var/lib/apt/lists/*
 
 # Install Python dependencies

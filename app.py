@@ -171,10 +171,14 @@ def create_app(test_config=None):
     from routes.storage_files import storage_files_bp
     app.register_blueprint(storage_files_bp)
 
+    from routes.branding import branding_bp
+    app.register_blueprint(branding_bp)
+
     # Exemptions
     csrf.exempt(webhook_bp)
     csrf.exempt(leads_bp)
     csrf.exempt(printing_bp)
+    csrf.exempt(branding_bp)
     csrf.exempt(events_bp)  # Public pages post client events without CSRF token
 
     # Dev/Admin

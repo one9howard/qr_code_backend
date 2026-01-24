@@ -61,17 +61,69 @@ class LayoutSpec:
         self.price_y = self.qr_y - (0.04 * self.height)
 
 
+# =============================================================================
+# QR Drawing Helper (Switchable Vector/Raster)
+# =============================================================================
+from utils.qr_vector import draw_vector_qr
+from utils.qr_image import render_qr_png
+from services.branding import get_user_qr_logo_bytes
+from config import ENABLE_QR_LOGO
+from reportlab.lib.utils import ImageReader
+import io
+
+logger = logging.getLogger(__name__)
+
+def draw_qr(c, qr_value: str, x, y, size, *, user_id: int | None = None, **kwargs):
+    """
+    Draw a QR code at (x, y) with dimension `size` x `size`.
+    
+    Logic:
+    - If ENABLE_QR_LOGO is True AND user_id provided AND user has logo enabled:
+        - Generate Raster PNG (ECC H + Logo)
+        - Draw Image
+    - Else:
+        - Draw standard Vector QR (ECC M/H via kwargs)
+    """
+    # 1. Try Logo Path
+    if ENABLE_QR_LOGO and user_id:
+        try:
+            logo_bytes = get_user_qr_logo_bytes(user_id)
+            if logo_bytes:
+                # Render High-Res Raster
+                # Resolution: target at least 1024px, or 10x size in points if larger?
+                # 1024px is usually plenty for signs (300dpi @ 3 inches = 900px)
+                # Let's ensure at least 10 pixels per point density if size is huge?
+                # standard 1024 is safe default.
+                
+                png_data = render_qr_png(qr_value, size_px=1024, logo_png=logo_bytes)
+                
+                # ReportLab drawImage
+                # c.drawImage(image, x, y, width=None, height=None)
+                # Need ImageReader
+                img_reader = ImageReader(io.BytesIO(png_data))
+                c.drawImage(img_reader, x, y, width=size, height=size, mask='auto')
+                return
+        except Exception as e:
+            logger.error(f"Failed to draw logo QR for user {user_id}: {e}. Fallback to vector.")
+            
+    # 2. Vector Fallback (Standard)
+    # Pass kwargs like quiet, ecc_level
+    draw_vector_qr(c, qr_value, x, y, size, **kwargs)
+
+
+
 def hex_to_rgb(hex_color: str) -> tuple:
     """Convert hex color to RGB tuple (0-1 range for reportlab)."""
     hex_color = hex_color.lstrip('#')
     return tuple(int(hex_color[i:i+2], 16) / 255 for i in (0, 2, 4))
 
 
-def generate_pdf_sign(address, beds, baths, sqft, price, agent_name, brokerage, 
-                      agent_email, agent_phone, qr_key=None, agent_photo_key=None, 
+def generate_pdf_sign(address, beds, baths, sqft, price, agent_name, brokerage, agent_email, agent_phone,
+                      qr_key=None, agent_photo_key=None, 
                       sign_color=None, sign_size=None, order_id=None, qr_value=None,
                       # Legacy parameters for backward compatibility with tests
-                      qr_path=None, agent_photo_path=None, return_path=False):
+                      qr_path=None, agent_photo_path=None, return_path=False,
+                      user_id=None):
     """
     Generate a PDF sign with customizable color and size.
     Layout scales proportionally to the page dimensions.
@@ -80,24 +132,19 @@ def generate_pdf_sign(address, beds, baths, sqft, price, agent_name, brokerage,
         address: Property street address
         beds: Number of bedrooms
         baths: Number of bathrooms
-        sqft: Square footage (optional)
-        price: Asking price (optional)
-        agent_name: Agent's name
+        sqft: Square footage string (e.g. "2,500 sqft")
+        price: Formatted price string (e.g. "$550,000")
+        agent_name: Agent's full name
         brokerage: Brokerage name
         agent_email: Agent's email
         agent_phone: Agent's phone number
-        qr_key: Storage key for QR code (new style)
-        agent_photo_key: Storage key for agent headshot (new style)
-        sign_color: Hex color for banner (e.g., '#1F6FEB')
-        sign_size: Size preset key (e.g., '18x24', '24x36')
-        order_id: Order ID for deterministic path (optional)
-        qr_value: URL to encode in QR (preferred over qr_key for vector rendering)
-        qr_path: DEPRECATED - filesystem path for QR (legacy tests)
-        agent_photo_path: DEPRECATED - filesystem path for agent photo (legacy tests)
-        return_path: If True, return filesystem path instead of storage key
-        
-    Returns:
-        str: Storage key (normal) or filesystem path (legacy/return_path=True)
+        qr_key: Storage key for QR code image (Legacy/Unused if vector)
+        agent_photo_key: Storage key for agent photo
+        sign_color: Hex color code (e.g. "#1F6FEB")
+        sign_size: Size key from SIGN_SIZES (e.g. "18x24")
+        order_id: Optional ID for tracking/filenames
+        qr_value: The value to generate the QR code from (URL)
+        user_id: The ID of the user (for logo preferences)
     """
     # Explicit legacy mode detection:
     # - order_id is None (local tooling like generate_sample_pdfs.py)
@@ -127,28 +174,32 @@ def generate_pdf_sign(address, beds, baths, sqft, price, agent_name, brokerage,
         pagesize=(layout.width + 2 * layout.bleed, layout.height + 2 * layout.bleed)
     )
     
-    # Translate origin (bleed offset)
-    c.translate(layout.bleed, layout.bleed)
-
-    # Dispatch based on dimensions: use landscape layout if width > height
+    # Determine if landscape (width > height)
     is_landscape = size_config['width_in'] > size_config['height_in']
     
-    if is_landscape:
-        _draw_landscape_split_layout(
-            c, layout, address, beds, baths, sqft, price,
-            agent_name, brokerage, agent_email, agent_phone,
-            qr_key, agent_photo_key, sign_color, qr_value,
-            agent_photo_path=agent_photo_path  # Pass legacy path
-        )
-    else:
-        _draw_standard_layout(
-            c, layout, address, beds, baths, sqft, price,
-            agent_name, brokerage, agent_email, agent_phone,
-            qr_key, agent_photo_key, sign_color, qr_value,
-            agent_photo_path=agent_photo_path  # Pass legacy path
-        )
+    # Draw 2 identical pages (front/back)
+    for page_num in range(2):
+        c.saveState()
+        c.translate(layout.bleed, layout.bleed)
+        
+        if is_landscape:
+            _draw_landscape_split_layout(
+                c, layout, address, beds, baths, sqft, price,
+                agent_name, brokerage, agent_email, agent_phone,
+                qr_key, agent_photo_key, sign_color, qr_value=qr_value,
+                agent_photo_path=agent_photo_path, user_id=user_id
+            )
+        else:
+            _draw_standard_layout(
+                c, layout, address, beds, baths, sqft, price,
+                agent_name, brokerage, agent_email, agent_phone,
+                qr_key, agent_photo_key, sign_color, qr_value=qr_value,
+                agent_photo_path=agent_photo_path, user_id=user_id
+            )
+        
+        c.restoreState()
+        c.showPage()
     
-    c.showPage()
     c.save()
     
     pdf_buffer.seek(0)
@@ -268,7 +319,7 @@ def _draw_standard_layout(c, layout, address, beds, baths, sqft, price,
             qr_url = "https://example.com"  # Fallback
         
         # Draw vector QR (print-grade, no raster scaling)
-        draw_vector_qr(c, qr_url, qr_x, qr_y, qr_size, quiet=quiet, ecc_level="H")
+        draw_qr(c, qr_url, qr_x, qr_y, qr_size, quiet=quiet, ecc_level="H", user_id=user_id)
         
         # Draw CTA below QR
         c.setFont("Helvetica-Bold", cta_font_size)
@@ -383,7 +434,7 @@ def _draw_standard_layout(c, layout, address, beds, baths, sqft, price,
 def _draw_landscape_split_layout(c, layout, address, beds, baths, sqft, price,
                                  agent_name, brokerage, agent_email, agent_phone,
                                  qr_key, agent_photo_key, sign_color, qr_value=None,
-                                 agent_photo_path=None):
+                                 agent_photo_path=None, user_id=None):
     """
     Split 50/50 Layout for Landscape Signs (36x18).
     Left: Agent Photo + Property Info + Contact
@@ -458,7 +509,7 @@ def _draw_landscape_split_layout(c, layout, address, beds, baths, sqft, price,
             qr_url = "https://example.com"  # Fallback
         
         # Draw vector QR (print-grade, no raster scaling)
-        draw_vector_qr(c, qr_url, qr_x, qr_y, qr_size, quiet=quiet, ecc_level="H")
+        draw_qr(c, qr_url, qr_x, qr_y, qr_size, quiet=quiet, ecc_level="H", user_id=user_id)
         
         # Draw CTA below QR
         cta_font_size = layout.address_font * 0.4  # Proportional to address font

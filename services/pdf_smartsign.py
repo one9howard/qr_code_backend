@@ -8,7 +8,7 @@ from reportlab.lib.utils import ImageReader
 import io
 import os
 from constants import SIGN_SIZES, DEFAULT_SIGN_SIZE
-from utils.qr_vector import draw_vector_qr
+from utils.pdf_generator import draw_qr
 from utils.storage import get_storage
 from config import BASE_URL
 
@@ -66,13 +66,14 @@ class SmartSignLayout:
         self.sub_font = max(18, min(48, 0.04 * self.width))
         self.cta_font = max(32, min(96, 0.09 * self.width))
 
-def generate_smartsign_pdf(asset, order_id=None):
+def generate_smartsign_pdf(asset, order_id=None, user_id=None):
     """
     Generate a branded SmartSign PDF.
     
     Args:
         asset: sign_assets row object (or dict-like)
         order_id: Optional ID for deterministic output path
+        user_id: Optional User ID for QR logo preferences
         
     Returns:
         str: Storage key
@@ -155,7 +156,7 @@ def generate_smartsign_pdf(asset, order_id=None):
         c.roundRect(qr_x - pad, qr_y - pad, qr_size + 2*pad, qr_size + 2*pad, 10, fill=1, stroke=0)
 
     try:
-        draw_vector_qr(c, qr_url, qr_x, qr_y, qr_size)
+        draw_qr(c, qr_url, x=qr_x, y=qr_y, size=qr_size, user_id=user_id)
     except Exception as e:
         print(f"[SmartSign] QR Error: {e}")
 

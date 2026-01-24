@@ -121,7 +121,7 @@ def _draw_minimal(c: canvas.Canvas, ctx: SmartContext, payload: dict, order):
     c.rect(-ctx.bleed, -ctx.bleed, ctx.width + 2*ctx.bleed, ctx.height + 2*ctx.bleed, fill=1, stroke=0)
     
     # QR Code
-    from utils.qr_vector import draw_vector_qr
+    from utils.pdf_generator import draw_qr
     from config import BASE_URL
     
     qr_url = f"{BASE_URL}"
@@ -141,7 +141,20 @@ def _draw_minimal(c: canvas.Canvas, ctx: SmartContext, payload: dict, order):
     c.setFillColorRGB(1,1,1)
     c.rect(qr_x - 0.25*inch, qr_y - 0.25*inch, qr_size + 0.5*inch, qr_size + 0.5*inch, fill=1, stroke=0)
     
-    draw_vector_qr(c, qr_url, x=qr_x, y=qr_y, size=qr_size)
+    # Extract user_id from order
+    # Helper to get val is in generate function, but 'order' passed here is the row/dict
+    user_id = None
+    if isinstance(order, dict):
+        user_id = order.get('user_id')
+    elif hasattr(order, 'user_id'):
+        user_id = order.user_id
+    elif hasattr(order, '__getitem__'): # Row
+        try:
+            user_id = order['user_id']
+        except:
+            pass
+
+    draw_qr(c, qr_url, x=qr_x, y=qr_y, size=qr_size, user_id=user_id)
 
     # Agent Info
     c.setFillColorRGB(1,1,1)
