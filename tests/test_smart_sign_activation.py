@@ -65,9 +65,16 @@ class TestSmartSignActivation:
         
         # Create and ACTIVATE asset
         asset = SmartSignsService.create_asset_for_purchase(user_id, None, "Active Test")
+        
+        # Create mock order for activation
+        order_id = db.execute(
+            "INSERT INTO orders (user_id, status, order_type, created_at, updated_at) VALUES (%s, 'paid', 'smart_sign', NOW(), NOW()) RETURNING id",
+            (user_id,)
+        ).fetchone()[0]
+        
         db.execute("""
-            UPDATE sign_assets SET activated_at=NOW(), is_frozen=false WHERE id=%s
-        """, (asset['id'],))
+            UPDATE sign_assets SET activated_at=NOW(), is_frozen=false, activation_order_id=%s WHERE id=%s
+        """, (order_id, asset['id'],))
         db.commit()
         
         # Assign to property
@@ -93,9 +100,16 @@ class TestSmartSignActivation:
         
         # Create and activate, but don't assign
         asset = SmartSignsService.create_asset_for_purchase(user_id, None, "Unassigned Active")
+        
+        # Create mock order for activation
+        order_id = db.execute(
+            "INSERT INTO orders (user_id, status, order_type, created_at, updated_at) VALUES (%s, 'paid', 'smart_sign', NOW(), NOW()) RETURNING id",
+            (user_id,)
+        ).fetchone()[0]
+        
         db.execute("""
-            UPDATE sign_assets SET activated_at=NOW(), is_frozen=false WHERE id=%s
-        """, (asset['id'],))
+            UPDATE sign_assets SET activated_at=NOW(), is_frozen=false, activation_order_id=%s WHERE id=%s
+        """, (order_id, asset['id'],))
         db.commit()
         
         # Scan
@@ -151,9 +165,16 @@ class TestSmartSignActivation:
         
         # Create and activate asset (but don't assign)
         asset = SmartSignsService.create_asset_for_purchase(user_id, None, "Scan Log Test")
+        
+        # Create mock order for activation
+        order_id = db.execute(
+            "INSERT INTO orders (user_id, status, order_type, created_at, updated_at) VALUES (%s, 'paid', 'smart_sign', NOW(), NOW()) RETURNING id",
+            (user_id,)
+        ).fetchone()[0]
+        
         db.execute("""
-            UPDATE sign_assets SET activated_at=NOW(), is_frozen=false WHERE id=%s
-        """, (asset['id'],))
+            UPDATE sign_assets SET activated_at=NOW(), is_frozen=false, activation_order_id=%s WHERE id=%s
+        """, (order_id, asset['id'],))
         db.commit()
         
         # Scan the unassigned asset

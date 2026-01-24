@@ -317,17 +317,11 @@ def checkout_smartsign():
              return redirect(url_for('smart_signs.order_start'))
         new_asset_id = asset_id
     else:
-        # New Asset
-        # Generate a unique code (e.g. 8 chars)
-        # We need to ensure uniqueness.
-        while True:
-            code = uuid.uuid4().hex[:8].upper()
-            exists = db.execute("SELECT 1 FROM sign_assets WHERE code = %s", (code,)).fetchone()
-            if not exists:
-                break
+        # New Asset - use canonical uniqueness helper
+        from utils.qr_codes import generate_unique_code
+        code = generate_unique_code(db, length=12)
         
         # Insert Inactive Asset
-        # Returning ID
         row = db.execute("""
             INSERT INTO sign_assets (user_id, code, label, created_at, activated_at, is_frozen)
             VALUES (%s, %s, %s, NOW(), NULL, FALSE)

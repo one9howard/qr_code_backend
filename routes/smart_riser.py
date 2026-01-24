@@ -40,13 +40,10 @@ def checkout_smart_riser():
     except ValueError as e:
         return jsonify({'error': str(e)}), 400
         
-    # Create Asset (Option B)
+    # Create Asset (Option B) - use canonical uniqueness helper
     db = get_db()
-    
-    while True:
-        code = uuid.uuid4().hex[:8].upper()
-        if not db.execute("SELECT 1 FROM sign_assets WHERE code=%s", (code,)).fetchone():
-            break
+    from utils.qr_codes import generate_unique_code
+    code = generate_unique_code(db, length=12)
             
     row = db.execute("""
         INSERT INTO sign_assets (user_id, code, label, created_at, activated_at, is_frozen)

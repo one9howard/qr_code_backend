@@ -1,6 +1,6 @@
-import secrets
 from database import get_db
 from services.subscriptions import is_subscription_active
+from utils.qr_codes import generate_unique_code
 
 class SmartSignsService:
     @staticmethod
@@ -9,56 +9,80 @@ class SmartSignsService:
         Create a new Sign Asset for a purchase.
         Status: Inactive (pending payment).
         """
-        # Delegating to main create_asset
-        return SmartSignsService.create_asset(user_id, property_id, label, activated=False)
+        # Delegating to main create_asset (always unactivated)
+        return SmartSignsService.create_asset(user_id, property_id, label)
 
     @staticmethod
-    def create_asset(user_id, property_id=None, label=None, activated=False):
+    def create_asset(user_id, property_id=None, label=None):
         """
-        Create a new Sign Asset.
+        Create a new Sign Asset (ALWAYS UNACTIVATED).
+        
+        Option B enforcement: Assets are ONLY activated via activate_asset()
+        which requires a valid activation_order_id.
+        
         Args:
             user_id: Owner
             property_id: Optional property link
             label: Optional internal label
-            activated: Bool. If True, valid immediately (Phase 1 manual creation).
+            
+        Returns:
+            Row with id, code, label
         """
         db = get_db()
         
-        # 1. Generate Unique Code
-        while True:
-            code = secrets.token_urlsafe(9)[:12] # 12 chars
-            if db.execute("SELECT 1 FROM sign_assets WHERE code = %s", (code,)).fetchone(): continue
-            if db.execute("SELECT 1 FROM properties WHERE qr_code = %s", (code,)).fetchone(): continue
-            if db.execute("SELECT 1 FROM qr_variants WHERE code = %s", (code,)).fetchone(): continue
-            break
+        # 1. Generate Unique Code via canonical helper
+        code = generate_unique_code(db, length=12)
         
-        # 2. Insert Asset
-        activated_at_val = 'NOW()' if activated else 'NULL'
-        
-        # Need to handle 'NOW()' vs literal NULL carefully with parameterized query
-        # Easier to check boolean
-        
-        if activated:
-             row = db.execute(
-                """
-                INSERT INTO sign_assets (user_id, code, label, active_property_id, is_frozen, activated_at)
-                VALUES (%s, %s, %s, %s, false, NOW())
-                RETURNING id, code, label
-                """,
-                (user_id, code, label, property_id)
-            ).fetchone()
-        else:
-             row = db.execute(
-                """
-                INSERT INTO sign_assets (user_id, code, label, active_property_id, is_frozen, activated_at)
-                VALUES (%s, %s, %s, %s, false, NULL)
-                RETURNING id, code, label
-                """,
-                (user_id, code, label, property_id)
-            ).fetchone()
+        # 2. Insert Asset (ALWAYS unactivated)
+        row = db.execute(
+            """
+            INSERT INTO sign_assets (user_id, code, label, active_property_id, is_frozen, activated_at)
+            VALUES (%s, %s, %s, %s, false, NULL)
+            RETURNING id, code, label
+            """,
+            (user_id, code, label, property_id)
+        ).fetchone()
             
         db.commit()
         return row
+    
+    @staticmethod
+    def activate_asset(asset_id: int, activation_order_id: int) -> None:
+        """
+        Activate a SmartSign asset via a paid order.
+        
+        Option B enforcement: This is the ONLY way to activate an asset.
+        
+        Args:
+            asset_id: The sign_assets.id to activate
+            activation_order_id: The orders.id that authorized activation
+            
+        Raises:
+            ValueError: If asset not found or already activated
+        """
+        db = get_db()
+        
+        # Fetch asset
+        asset = db.execute(
+            "SELECT * FROM sign_assets WHERE id = %s", (asset_id,)
+        ).fetchone()
+        
+        if not asset:
+            raise ValueError(f"Asset {asset_id} not found")
+        
+        if asset['activated_at'] is not None:
+            raise ValueError(f"Asset {asset_id} already activated")
+        
+        # Activate with order reference
+        db.execute(
+            """
+            UPDATE sign_assets 
+            SET activated_at = NOW(), activation_order_id = %s, updated_at = NOW()
+            WHERE id = %s
+            """,
+            (activation_order_id, asset_id)
+        )
+        db.commit()
 
     @staticmethod
     def assign_asset(asset_id, property_id, user_id):
