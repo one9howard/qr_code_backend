@@ -355,7 +355,7 @@
         <button type="button" class="lightbox-nav lightbox-next" id="lightbox-next">&gt;</button>
     </div>
 
-    {# ============ UPSELL SHEET (For FREE/EXPIRED gated content) ============ #}
+    {# ============ UPSELL SHEET (For FREE/EXPIRED gated content - ONLY for photos/description) ============ #}
     <div id="upsell-sheet" class="upsell-sheet" style="display: none;">
         <div class="upsell-backdrop" id="upsell-backdrop"></div>
         <div class="upsell-content">
@@ -370,6 +370,55 @@
         </div>
     </div>
 
+    {# ============ MOBILE LEAD MODAL (Always accessible - lead capture must NOT be blocked) ============ #}
+    <div id="mobile-lead-modal" class="lead-modal" style="display: none;">
+        <div class="lead-modal-backdrop" id="mobile-lead-backdrop"></div>
+        <div class="lead-modal-content">
+            <button type="button" class="modal-close" id="mobile-lead-close">&times;</button>
+            <h2 class="modal-title">Contact {{ property.agent_name }}</h2>
+
+            <form id="mobile-lead-form" class="lead-form" autocomplete="on">
+                <input type="hidden" name="property_id" value="{{ property.id }}">
+                <input type="hidden" name="request_type" id="mobile_request_type" value="info">
+
+                {# Honeypot #}
+                <div class="hp-field">
+                    <input type="text" name="website" tabindex="-1" autocomplete="off">
+                </div>
+
+                <div class="form-group">
+                    <input type="text" name="buyer_name" placeholder="Your name" required class="form-input">
+                </div>
+                <div class="form-group">
+                    <input type="email" name="buyer_email" placeholder="Email" required class="form-input">
+                </div>
+                <div class="form-group">
+                    <input type="tel" name="buyer_phone" placeholder="Phone" class="form-input">
+                </div>
+                <div class="form-group">
+                    <textarea name="message" placeholder="I'm interested in..." rows="3" class="form-input"></textarea>
+                </div>
+
+                <input type="hidden" name="preferred_contact" value="email">
+                <input type="hidden" name="best_time" value="">
+
+                <div class="form-group consent-group">
+                    <label class="consent-label">
+                        <input type="checkbox" name="consent" required>
+                        <span>I agree to be contacted by {{ property.agent_name }} regarding this property.</span>
+                    </label>
+                </div>
+
+                <div id="mobile-lead-error" class="form-error"></div>
+                <div id="mobile-lead-success" class="form-success"></div>
+
+                <button type="submit" id="mobile-lead-submit" class="btn-primary btn-submit">
+                    Send request
+                </button>
+            </form>
+        </div>
+    </div>
+
     {# ============ SCRIPTS ============ #}
     {# Pass minimal server data to JS - NO PHOTO URLS for FREE/EXPIRED #}
     <script>
@@ -378,9 +427,10 @@
         tier: "{{ 'paid' if gating.is_paid else ('expired' if gating.is_expired else 'free') }}",
             {% if gating.is_paid and photos %}
         photos: [{% for p in photos %}"{{ get_storage_url(p) }}"{% if not loop.last %}, {% endif %} {% endfor %}],
+        photoCount: {{ photos|length }},
         {% else %}
         photos: [],
-            photoCount: { { photos | length if photos else 0 } },
+            photoCount: {{ photos|length if photos else 0 }},
         {% endif %}
         agentName: "{{ property.agent_name|e }}"
         };

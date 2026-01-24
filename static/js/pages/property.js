@@ -27,6 +27,7 @@
         initLightbox();
         initGatedContent();
         initMobileActions();
+        initMobileLeadModal();
         initKeyboardNav();
         initScrollToCTA();
     }
@@ -252,15 +253,9 @@
         const infoBtn = document.getElementById('mobile-request-info');
         if (infoBtn) {
             infoBtn.addEventListener('click', () => {
-                // On mobile, scroll to form or open upsell if gated
-                if (DATA.tier === 'free' || DATA.tier === 'expired') {
-                    showUpsellSheet('request_info');
-                } else {
-                    const form = document.getElementById('lead-form');
-                    // Form is in rail which is hidden on mobile - scroll to page bottom
-                    // Instead, scroll to about section which is always visible
-                    window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
-                }
+                // IMPORTANT: Lead capture must NOT be blocked by upsell
+                // Always open the mobile lead modal for all tiers
+                openMobileLeadModal();
                 sendEvent('cta_click', { type: 'request_info' });
             });
         }
@@ -273,6 +268,124 @@
         document.querySelectorAll('[data-action="email"]').forEach(btn => {
             btn.addEventListener('click', () => sendEvent('cta_click', { type: 'email' }));
         });
+    }
+
+    // ============================================================
+    // MOBILE LEAD MODAL
+    // ============================================================
+    function initMobileLeadModal() {
+        const modal = document.getElementById('mobile-lead-modal');
+        if (!modal) return;
+
+        // Close handlers
+        document.getElementById('mobile-lead-close')?.addEventListener('click', closeMobileLeadModal);
+        document.getElementById('mobile-lead-backdrop')?.addEventListener('click', closeMobileLeadModal);
+
+        // Form submission
+        const form = document.getElementById('mobile-lead-form');
+        if (form) {
+            form.addEventListener('submit', handleMobileLeadSubmit);
+        }
+    }
+
+    function openMobileLeadModal(requestType) {
+        const modal = document.getElementById('mobile-lead-modal');
+        if (!modal) return;
+
+        // Set request type if provided
+        if (requestType) {
+            const typeField = document.getElementById('mobile_request_type');
+            if (typeField) typeField.value = requestType;
+        }
+
+        modal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+
+        // Focus first input
+        setTimeout(() => {
+            const firstInput = modal.querySelector('input[type="text"]');
+            if (firstInput) firstInput.focus();
+        }, 100);
+    }
+
+    function closeMobileLeadModal() {
+        const modal = document.getElementById('mobile-lead-modal');
+        if (modal) {
+            modal.style.display = 'none';
+            document.body.style.overflow = '';
+        }
+    }
+
+    async function handleMobileLeadSubmit(e) {
+        e.preventDefault();
+
+        const form = e.target;
+        const errorEl = document.getElementById('mobile-lead-error');
+        const successEl = document.getElementById('mobile-lead-success');
+        const submitBtn = document.getElementById('mobile-lead-submit');
+
+        // Hide previous messages
+        if (errorEl) { errorEl.style.display = 'none'; errorEl.textContent = ''; }
+        if (successEl) { successEl.style.display = 'none'; successEl.textContent = ''; }
+
+        // Disable button
+        const originalText = submitBtn ? submitBtn.textContent : '';
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Sending...';
+        }
+
+        // Collect form data
+        const formData = {
+            property_id: form.property_id?.value || DATA.id,
+            buyer_name: form.buyer_name?.value || '',
+            buyer_email: form.buyer_email?.value || '',
+            buyer_phone: form.buyer_phone?.value || '',
+            preferred_contact: form.preferred_contact?.value || 'email',
+            best_time: form.best_time?.value || '',
+            message: form.message?.value || '',
+            consent: form.consent?.checked || false,
+            website: form.website?.value || '', // Honeypot
+            request_type: form.request_type?.value || 'info'
+        };
+
+        try {
+            const response = await fetch('/api/leads/submit', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(formData)
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                if (successEl) {
+                    successEl.textContent = data.message || 'Request sent successfully!';
+                    successEl.style.display = 'block';
+                }
+                form.reset();
+                sendEvent('lead_submitted', { request_type: formData.request_type });
+
+                // Close modal after success
+                setTimeout(() => closeMobileLeadModal(), 2000);
+            } else {
+                if (errorEl) {
+                    errorEl.textContent = data.message || data.error || 'An error occurred';
+                    errorEl.style.display = 'block';
+                }
+            }
+        } catch (err) {
+            console.error('Lead form error:', err);
+            if (errorEl) {
+                errorEl.textContent = 'Network error. Please try again.';
+                errorEl.style.display = 'block';
+            }
+        } finally {
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.textContent = originalText || 'Send request';
+            }
+        }
     }
 
     // ============================================================
@@ -437,27 +550,40 @@
     // ============================================================
     function sendEvent(eventName, data) {
         try {
-            // Merge with property context
-            const payload = {
-                event: eventName,
+            // Build payload object - NO PII allowed
+            const safeData = { ...data };
+            // Remove any accidentally included PII
+            delete safeData.buyer_name;
+            delete safeData.buyer_email;
+            delete safeData.buyer_phone;
+            delete safeData.message;
+            delete safeData.email;
+            delete safeData.phone;
+            delete safeData.name;
+
+            // Add context
+            safeData.tier = DATA.tier;
+            safeData.timestamp = new Date().toISOString();
+
+            // Build request body per API contract
+            const body = {
+                event_type: eventName,
                 property_id: DATA.id,
-                tier: DATA.tier,
-                timestamp: new Date().toISOString(),
-                ...data
+                payload: safeData
             };
 
             // Try /api/events if it exists
             fetch('/api/events', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
+                body: JSON.stringify(body)
             }).catch(() => {
                 // Silently ignore - endpoint may not exist
             });
 
             // Also call global trackEvent if available
             if (typeof window.trackEvent === 'function') {
-                window.trackEvent(eventName, payload);
+                window.trackEvent(eventName, body);
             }
         } catch (err) {
             // Silently ignore all errors
