@@ -19,7 +19,8 @@ function getConfig() {
         orderUrl: configEl.dataset.orderUrl,
         resizeUrl: configEl.dataset.resizeUrl,
         orderStatus: configEl.dataset.orderStatus,
-        isLocked: configEl.dataset.isLocked === 'true'
+        isLocked: configEl.dataset.isLocked === 'true',
+        isGuest: configEl.dataset.isGuest === 'true'
     };
 }
 
@@ -105,7 +106,8 @@ function resizeSign(newSize) {
     const statusEl = document.getElementById('resize-status');
     const previewImg = document.getElementById('preview-image');
 
-    if (!config || config.isLocked) {
+    if (!config || config.isLocked || config.isGuest) {
+        // Don't attempt resize for guest users - selector should be disabled anyway
         return;
     }
 

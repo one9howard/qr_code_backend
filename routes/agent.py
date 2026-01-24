@@ -291,8 +291,8 @@ def submit():
                 """
                 INSERT INTO orders (
                     user_id, guest_email, property_id, status, sign_pdf_path,
-                    guest_token, guest_token_created_at, sign_color, sign_size
-                ) VALUES (%s, %s, %s, %s, NULL, %s, %s, %s, %s)
+                    guest_token, guest_token_created_at, sign_color, sign_size, print_size
+                ) VALUES (%s, %s, %s, %s, NULL, %s, %s, %s, %s, %s)
                 RETURNING id
                 """,
                 (
@@ -304,6 +304,7 @@ def submit():
                     token_created_at,
                     sign_color,
                     sign_size,
+                    sign_size,  # print_size = sign_size for consistency
                 ),
             )
             order_id = cursor.fetchone()['id']
@@ -344,10 +345,10 @@ def submit():
                 sign_size=sign_size,
             )
 
-            # Step 4: Update order with PDF key
+            # Step 4: Update order with PDF key and print_size
             cursor.execute(
-                "UPDATE orders SET sign_pdf_path = %s WHERE id = %s",
-                (pdf_key, order_id),
+                "UPDATE orders SET sign_pdf_path = %s, print_size = %s WHERE id = %s",
+                (pdf_key, sign_size, order_id),
             )
 
             # Save guest token(s) to session

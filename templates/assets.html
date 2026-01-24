@@ -8,9 +8,10 @@
 <!-- Config Data for JS -->
 <div id="assets-page-config" data-order-id="{{ order_id }}" data-guest-token="{{ guest_token if guest_token else '' }}"
     data-csrf-token="{{ csrf_token() }}" data-order-url="{{ url_for('orders.order_sign') }}"
-    data-resize-url="{{ url_for('orders.resize_order', order_id=order_id) }}"
+    data-resize-url="{{ url_for('orders.resize_order') }}"
     data-order-status="{{ order_status if order_status else 'pending_payment' }}"
-    data-is-locked="{{ 'true' if is_locked else 'false' }}" style="display: none;">
+    data-is-locked="{{ 'true' if is_locked else 'false' }}"
+    data-is-guest="{{ 'true' if not current_user.is_authenticated else 'false' }}" style="display: none;">
 </div>
 
 <div class="submit-container" style="justify-content: center; min-height: 80vh; margin-top: 2rem;">
@@ -49,15 +50,16 @@
                     <!-- Material (New) -->
                     <div style="margin-bottom: 15px;">
                         <label class="size-label" style="display:block; margin-bottom:5px;">Material:</label>
-                        <select id="material-selector" class="size-dropdown" {% if is_locked %}disabled{% endif %}
-                            style="width: 100%; margin-bottom: 0;">
+                        <select id="material-selector" class="size-dropdown" {% if is_locked or not
+                            current_user.is_authenticated %}disabled{% endif %} style="width: 100%; margin-bottom: 0;">
                             <option value="coroplast_4mm" selected>Coroplast (Standard)</option>
                             <option value="aluminum_040">Aluminum (Premium)</option>
                         </select>
                     </div>
 
                     <label for="size-selector" class="size-label">Sign Size:</label>
-                    <select id="size-selector" class="size-dropdown" {% if is_locked %}disabled{% endif %}>
+                    <select id="size-selector" class="size-dropdown" {% if is_locked or not
+                        current_user.is_authenticated %}disabled{% endif %}>
                         <option value="12x18" {% if sign_size=='12x18' %}selected{% endif %}>12" × 18"</option>
                         <option value="18x24" {% if sign_size=='18x24' %}selected{% endif %}>18" × 24" (Standard)
                         </option>
@@ -70,18 +72,23 @@
                     <span id="resize-status" class="resize-status"></span>
                     {% if is_locked %}
                     <span class="locked-notice">Size locked (order paid)</span>
+                    {% elif not current_user.is_authenticated %}
+                    <span class="locked-notice">Log in to change size</span>
                     {% endif %}
                 </div>
 
                 <div class="action-buttons">
                     <!-- Order Physical Sign Button -->
+                    {% if current_user.is_authenticated %}
                     <a href="javascript:void(0)" class="glass-button secondary accent order-btn" id="order-btn">
-                        {% if not current_user.is_authenticated %}
-                        Order Physical Lawn Sign (Guest)
-                        {% else %}
                         Order Physical Lawn Sign
-                        {% endif %}
                     </a>
+                    {% else %}
+                    <a href="{{ url_for('auth.login', next=request.url) }}"
+                        class="glass-button secondary accent order-btn">
+                        Log In to Order Sign
+                    </a>
+                    {% endif %}
                 </div>
             </div>
             {% endif %}

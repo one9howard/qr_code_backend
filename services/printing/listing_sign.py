@@ -142,9 +142,9 @@ def generate_listing_sign_pdf(order, output_path=None):
     price_val = prop_row.get('price')
     price = _format_price(price_val)
     
-    # Sign config - use default color (custom_color doesn't exist in schema)
-    sign_color = '#000000'
-    sign_size = get_val(order, 'print_size') or '18x24'
+    # Sign config - use order's persisted color and size
+    sign_color = get_val(order, 'sign_color') or '#1F6FEB'  # DEFAULT_SIGN_COLOR fallback
+    sign_size = get_val(order, 'print_size') or get_val(order, 'sign_size') or '18x24'
     
     # QR URL
     # QR URL

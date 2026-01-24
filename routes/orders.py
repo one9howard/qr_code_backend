@@ -14,23 +14,50 @@ logger = logging.getLogger(__name__)
 
 @orders_bp.route('/orders/<int:order_id>/preview.webp')
 def order_preview(order_id):
-    """Serve the WebP preview for a specific order."""
+    """
+    Serve the WebP preview for a specific order.
+    Uses deterministic preview key from storage (no preview_path column).
+    Supports both authenticated users and guest_token access.
+    """
+    from io import BytesIO
+    from utils.storage import get_storage
+    from utils.filenames import make_sign_asset_basename
+    from constants import LAYOUT_VERSION, DEFAULT_SIGN_SIZE
+    
     order = Order.get(order_id)
     if not order:
         abort(404)
     
-    # Auth check: User must own order OR be admin OR use a signed token (future)
-    if not current_user.is_authenticated or (current_user.id != order.user_id and not current_user.is_admin):
-        # Allow if guest token matches (for future guest checkout)
-        # For now, strictly enforce login
+    # Authorization check:
+    # 1. Authenticated user who owns the order OR is admin
+    # 2. Guest with valid guest_token
+    authorized = False
+    
+    if current_user.is_authenticated:
+        if current_user.id == order.user_id or getattr(current_user, 'is_admin', False):
+            authorized = True
+    
+    if not authorized:
+        # Check guest_token from query params
+        guest_token = request.args.get('guest_token')
+        if guest_token and order.guest_token and guest_token == order.guest_token:
+            authorized = True
+    
+    if not authorized:
         abort(403)
-
-    if not order.preview_path:
-        abort(404)
-        
+    
+    # Compute deterministic preview key
+    normalized_size = normalize_sign_size(order.sign_size or DEFAULT_SIGN_SIZE)
+    basename = make_sign_asset_basename(order_id, normalized_size, LAYOUT_VERSION)
+    preview_key = f"previews/order_{order_id}/{basename}.webp"
+    
+    # Fetch from storage
+    storage = get_storage()
     try:
-        return send_file(order.preview_path, mimetype='image/webp')
-    except FileNotFoundError:
+        file_data = storage.get_file(preview_key)
+        return send_file(file_data, mimetype='image/webp')
+    except Exception as e:
+        logger.warning(f"Preview not found for order {order_id}: {preview_key} - {e}")
         abort(404)
 
 @orders_bp.route('/orders/<int:order_id>/download')
@@ -199,60 +226,116 @@ def order_cancel():
 @login_required
 def resize_order():
     """
-    Resize an existing order (regenerate preview).
-    Used when user changes size dropdown on the preview page.
+    Resize an existing order - regenerates BOTH PDF and preview.
+    Returns JSON: {success: true, size: "...", preview_url: "..."}
     """
+    from database import get_db, get_agent_data_for_order
+    from utils.storage import get_storage
+    from utils.pdf_generator import generate_pdf_sign
+    from utils.pdf_preview import render_pdf_to_web_preview
+    from utils.qr_urls import property_scan_url
+    from constants import SIGN_SIZES, DEFAULT_SIGN_COLOR
+    from config import BASE_URL
+    
     data = request.get_json()
     order_id = data.get('order_id')
     new_size = data.get('size')
     
     if not order_id or not new_size:
-        return jsonify({'error': 'Missing params'}), 400
-        
-    # RAW SQL REPLACEMENT
-    from database import get_db
+        return jsonify({'success': False, 'error': 'missing_params'}), 400
+    
+    # Validate size
+    normalized_size = normalize_sign_size(new_size)
+    if normalized_size not in SIGN_SIZES:
+        return jsonify({'success': False, 'error': 'invalid_size'}), 400
+    
     db = get_db()
     
+    # Load order - must be owned by current user
     order = Order.get_by(id=order_id, user_id=current_user.id)
     if not order:
-        abort(404)
+        return jsonify({'success': False, 'error': 'unauthorized'}), 403
     
-    # Update size
-    # order.sign_size = new_size # attribute update if object
-    # order.print_size = new_size 
-    
-    db.execute("""
-        UPDATE orders 
-        SET sign_size = %s,
-            print_size = %s,
-            updated_at = NOW()
-        WHERE id = %s
-    """, (new_size, new_size, order_id))
-    db.commit()
-    
-    # Trigger regeneration (assuming logic exists in services or agent route utils)
-    # For MVP, we might just update the record and expect the frontend to reload 
-    # or call the generation endpoint again.
-    # But strictly, we should regenerate the PDF/Preview here.
-    
-    # Re-using the logic from agent.submit_property or similar is complex.
-    # For now, we update the DB. The frontend likely re-requests the preview image 
-    # which might trigger generation on fly or we assume client handles re-submission.
-    
-    # BUT wait, `order.sign_pdf_path` needs to be updated.
-    # Simplest approach: Call the generator directly.
-    from utils.pdf_generator import generate_sign_pdf
-    from utils.storage import get_storage
+    # Check if order is already paid (locked)
+    if order.status not in ('pending_payment', None):
+        return jsonify({'success': False, 'error': 'order_locked_paid'}), 400
     
     try:
-        # We need data to generate.
-        # ... (Gather data from order/property) ...
-        # This is non-trivial without refactoring `submit` logic.
-        # Assuming for now we just acknowledge the size change.
-        return jsonify({'status': 'ok', 'size': new_size})
+        # Load property
+        prop = db.execute(
+            "SELECT * FROM properties WHERE id = %s",
+            (order.property_id,)
+        ).fetchone()
+        
+        if not prop:
+            return jsonify({'success': False, 'error': 'property_not_found'}), 404
+        
+        # Load agent data (snapshot preferred)
+        agent = get_agent_data_for_order(order_id)
+        if not agent:
+            return jsonify({'success': False, 'error': 'agent_not_found'}), 404
+        
+        # Build QR URL from property.qr_code
+        qr_code = prop.get('qr_code')
+        if not qr_code:
+            return jsonify({'success': False, 'error': 'missing_qr_code'}), 500
+        
+        qr_url = property_scan_url(BASE_URL, qr_code)
+        
+        # Get sign customization from order (use persisted values!)
+        sign_color = order.sign_color or DEFAULT_SIGN_COLOR
+        
+        # Regenerate PDF with new size
+        pdf_key = generate_pdf_sign(
+            address=prop.get('address', ''),
+            beds=prop.get('beds', ''),
+            baths=prop.get('baths', ''),
+            sqft=prop.get('sqft', ''),
+            price=prop.get('price', ''),
+            agent_name=agent.get('name', ''),
+            brokerage=agent.get('brokerage', ''),
+            agent_email=agent.get('email', ''),
+            agent_phone=agent.get('phone', ''),
+            qr_key=None,  # Using qr_value instead
+            agent_photo_key=agent.get('photo_filename'),
+            sign_color=sign_color,
+            sign_size=normalized_size,
+            order_id=order_id,
+            qr_value=qr_url,
+        )
+        
+        # Regenerate preview
+        preview_key = render_pdf_to_web_preview(
+            pdf_key=pdf_key,
+            order_id=order_id,
+            sign_size=normalized_size,
+        )
+        
+        # Update DB atomically
+        db.execute("""
+            UPDATE orders 
+            SET sign_size = %s,
+                print_size = %s,
+                sign_pdf_path = %s,
+                updated_at = NOW()
+            WHERE id = %s
+        """, (normalized_size, normalized_size, pdf_key, order_id))
+        db.commit()
+        
+        # Build preview URL for response
+        preview_url = url_for('orders.order_preview', order_id=order_id)
+        
+        return jsonify({
+            'success': True,
+            'size': normalized_size,
+            'preview_url': preview_url
+        })
         
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        logger.error(f"Resize failed for order {order_id}: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': 'render_failed', 'message': str(e)}), 500
 
 
 @orders_bp.route('/orders/smart-sign/checkout', methods=['POST'])
