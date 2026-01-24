@@ -15,12 +15,12 @@ import secrets
 campaigns_bp = Blueprint('campaigns', __name__)
 
 def generate_variant_code():
-    """Generate unique code for QR variant."""
-    db = get_db()
-    while True:
-        code = secrets.token_urlsafe(6) # 8 chars
-        if not db.execute("SELECT 1 FROM qr_variants WHERE code = %s", (code,)).fetchone():
-            return code
+    """Generate unique code for QR variant.
+    
+    Single source of truth: utils/qr_codes.generate_unique_code
+    """
+    from utils.qr_codes import generate_unique_code
+    return generate_unique_code(get_db(), length=8)
 
 @campaigns_bp.route("/dashboard/properties/<int:property_id>/campaigns")
 @login_required

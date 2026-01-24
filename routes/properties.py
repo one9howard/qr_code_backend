@@ -34,12 +34,12 @@ def compute_visitor_hash(ip: str, user_agent: str) -> str:
 
 
 def generate_qr_code() -> str:
-    """Generate a unique 12-char URL-safe shortcode for QR URLs."""
-    db = get_db()
-    while True:
-        code = secrets.token_urlsafe(9)[:12]
-        if not db.execute("SELECT 1 FROM properties WHERE qr_code = %s", (code,)).fetchone():
-            return code
+    """Generate a unique 12-char URL-safe shortcode for QR URLs.
+    
+    Single source of truth: utils/qr_codes.generate_unique_code
+    """
+    from utils.qr_codes import generate_unique_code
+    return generate_unique_code(get_db(), length=12)
 
 
 # =============================================================================

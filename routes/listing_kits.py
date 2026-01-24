@@ -4,7 +4,6 @@ from flask_login import login_required, current_user
 from database import get_db
 from models import User
 from services.listing_kits import create_or_get_kit, generate_kit
-from services.gating import get_property_gating_status
 from services.stripe_checkout import create_checkout_attempt
 from config import STRIPE_PRICE_LISTING_KIT
 from utils.storage import get_storage
@@ -58,16 +57,18 @@ def start_kit(property_id):
     if not prop:
         return jsonify({"error": "Property not found or unauthorized"}), 404
         
-    # 2. Check Subscription / Gating
+    # 2. Check Subscription / Entitlements
+    # Kit purchase enables kit regeneration WITHOUT unlocking property
     from services.subscriptions import is_subscription_active
+    from services.entitlements import has_paid_listing_kit
+    
     is_pro = is_subscription_active(current_user.subscription_status)
     
-    # OR check if property is already unlocked via previous listing_kit purchase?
-    # If they paid once, they can regenerate freely.
-    gating = get_property_gating_status(property_id)
-    is_paid_for = gating['paid_via'] in ('listing_kit', 'subscription')
+    # Check if user has paid for listing_kit for this property
+    # This is SEPARATE from property paid status (listing_kit does NOT unlock property)
+    is_paid_for = has_paid_listing_kit(current_user.id, property_id)
     
-    can_generate_freely = is_pro or (is_paid_for)
+    can_generate_freely = is_pro or is_paid_for
     
     kit = create_or_get_kit(current_user.id, property_id)
     

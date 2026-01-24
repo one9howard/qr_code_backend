@@ -228,12 +228,10 @@ def submit():
 
             cursor.execute("UPDATE properties SET slug = %s WHERE id = %s", (prop_slug, property_id))
 
-            # Generate unique QR shortcode
-            while True:
-                qr_code = secrets.token_urlsafe(9)[:12]  # 12-char URL-safe code
-                cursor.execute("SELECT 1 FROM properties WHERE qr_code = %s", (qr_code,))
-                if not cursor.fetchone():
-                    break
+            # Generate unique QR shortcode using the global uniqueness helper
+            # Single source of truth: utils/qr_codes.generate_unique_code
+            from utils.qr_codes import generate_unique_code
+            qr_code = generate_unique_code(db, length=12)
             cursor.execute("UPDATE properties SET qr_code = %s WHERE id = %s", (qr_code, property_id))
 
             # Handle property photos

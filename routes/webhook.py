@@ -365,9 +365,14 @@ def handle_payment_checkout(db, session):
             property_id = None
 
     if property_id:
-        db.execute("UPDATE properties SET expires_at = NULL WHERE id = %s", (property_id,))
-        db.commit()
-        current_app.logger.info(f"[Webhook] Property {property_id} unlocked for Order {order_id} (expires_at=NULL).")
+        # ONLY unlock property for sign, listing_unlock, or smart_sign
+        # listing_kit purchase must NOT unlock property - it only enables kit generation
+        if final_type in ('sign', 'listing_unlock', 'smart_sign'):
+            db.execute("UPDATE properties SET expires_at = NULL WHERE id = %s", (property_id,))
+            db.commit()
+            current_app.logger.info(f"[Webhook] Property {property_id} unlocked for Order {order_id} (expires_at=NULL).")
+        else:
+            current_app.logger.info(f"[Webhook] Property {property_id} NOT unlocked for Order {order_id} (order_type={final_type}).")
 
     # 4. SmartSign Activation (Idempotent)
     if final_type == 'smart_sign':

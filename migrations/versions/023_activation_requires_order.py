@@ -53,13 +53,14 @@ def upgrade():
     
     for (asset_id,) in bad_assets:
         # Try to find a paid order for this asset
+        # Use ANY with array for safe Postgres binding (avoids fragile tuple IN clause)
         order = conn.execute(text("""
             SELECT id FROM orders 
             WHERE sign_asset_id = :asset_id 
               AND order_type = 'smart_sign'
-              AND status IN :statuses
+              AND status = ANY(:statuses)
             ORDER BY id LIMIT 1
-        """), {"asset_id": asset_id, "statuses": PAID_STATUSES}).fetchone()
+        """), {"asset_id": asset_id, "statuses": list(PAID_STATUSES)}).fetchone()
         
         if order:
             # Link to the order

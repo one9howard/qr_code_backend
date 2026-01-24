@@ -87,8 +87,11 @@ def test_basic_requires_checkout(client, db, kit_data):
         assert order['status'] == 'pending_payment'
 
 def test_webhook_fulfills_kit(client, db, kit_data):
-    """Webhook payment triggers generation and unlocks property."""
-    # 1. Create pending order
+    """Webhook payment triggers kit generation but does NOT unlock property."""
+    # 1. Create pending order with an explicit expires_at value
+    test_expiry = '2025-12-31T00:00:00+00:00'
+    db.execute("UPDATE properties SET expires_at = %s WHERE id = %s", (test_expiry, kit_data['prop_basic_id']))
+    
     order_id = db.execute(
         "INSERT INTO orders (user_id, property_id, status, order_type, amount_total_cents, currency) VALUES (%s, %s, 'pending_payment', 'listing_kit', 0, 'usd') RETURNING id",
         (kit_data['basic_id'], kit_data['prop_basic_id'])
@@ -132,9 +135,10 @@ def test_webhook_fulfills_kit(client, db, kit_data):
                 order = db.execute("SELECT status FROM orders WHERE id=%s", (order_id,)).fetchone()
                 assert order['status'] == 'paid'
                 
-                # Verify Property Unlock (expires_at -> NULL)
+                # CRITICAL: listing_kit should NOT unlock property (expires_at remains unchanged)
                 prop = db.execute("SELECT expires_at FROM properties WHERE id=%s", (kit_data['prop_basic_id'],)).fetchone()
-                assert prop['expires_at'] is None
+                # expires_at should NOT be NULL - it should remain the test value
+                assert prop['expires_at'] is not None
                 
                 # Verify Kit Gen Triggered
                 mock_create.assert_called_with(kit_data['basic_id'], kit_data['prop_basic_id'])

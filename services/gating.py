@@ -55,12 +55,14 @@ def get_property_gating_status(property_id):
         is_paid = True
     else:
         # 2. Check for any PAID order associated with this property
-        # Check for listing_unlock OR sign order
+        # ONLY listing_unlock, sign, and smart_sign unlock property paid status
+        # EXPLICITLY EXCLUDE listing_kit - it enables kit generation but NOT property unlock
         placeholders = ','.join(['%s'] * len(PAID_STATUSES))
         query = f"""
             SELECT id, order_type FROM orders 
             WHERE property_id = %s 
             AND status IN ({placeholders})
+            AND order_type IN ('listing_unlock', 'sign', 'smart_sign')
             ORDER BY created_at DESC
             LIMIT 1
         """
@@ -70,13 +72,13 @@ def get_property_gating_status(property_id):
             is_paid = True
             order_type = row['order_type']
             paid_source_order_id = row['id']
-            # Map order_type to paid_via
+            # Map order_type to paid_via (NO listing_kit - it's excluded above)
             if order_type == 'listing_unlock':
                 paid_via = 'listing_unlock'
-            elif order_type == 'listing_kit':
-                paid_via = 'listing_kit'
             elif order_type == 'sign':
                 paid_via = 'sign_order'
+            elif order_type == 'smart_sign':
+                paid_via = 'sign_order'  # smart_sign is a variant of sign
             else:
                 paid_via = 'sign_order' # Default fallback for legacy orders
         else:
