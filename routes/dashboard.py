@@ -344,13 +344,13 @@ def create_smart_sign():
     from services.smart_signs import SmartSignsService
     
     try:
-        # Option B: Create as draft (activated_at NULL)
-        # Activation happens only via SmartSign purchase
+        # Phase 1: Pro users can create and immediately use assets
+        # Activation is granted immediately for Pro-created assets
         asset = SmartSignsService.create_asset(
             user_id=current_user.id,
-            activated=False  # Option B: Activation via purchase only
+            activated=True  # Pro users get immediate activation
         )
-        flash(f"SmartSign draft created! Code: {asset['code']}. Purchase a SmartSign to activate.", "info")
+        flash(f"SmartSign created! Code: {asset['code']}. Ready to assign to a property.", "success")
     except Exception as e:
         flash(f"Error creating SmartSign: {e}", "error")
         

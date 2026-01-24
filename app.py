@@ -175,6 +175,7 @@ def create_app(test_config=None):
     csrf.exempt(webhook_bp)
     csrf.exempt(leads_bp)
     csrf.exempt(printing_bp)
+    csrf.exempt(events_bp)  # Public pages post client events without CSRF token
 
     # Dev/Admin
     if not IS_PRODUCTION:
