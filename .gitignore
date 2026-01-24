@@ -98,6 +98,8 @@ test_inbox/
 # Logs
 *.log
 failures*.txt
+fail_*.txt
+*_log.txt
 
 # Misc local test transcripts
 test_final_check*.txt

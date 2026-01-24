@@ -18,6 +18,50 @@ from utils.qr_urls import property_scan_url
 logger = logging.getLogger(__name__)
 
 
+def _format_price(price_val):
+    """
+    Safely format any price value for display on listing signs.
+    Never throws - returns best-effort string.
+    
+    Examples:
+        500000 -> "$500,000"
+        "$1,250,000" -> "$1,250,000"
+        "$500k" -> "$500k"
+        "Call for price" -> "Call for price"
+        None -> ""
+    """
+    if not price_val:
+        return ""
+    
+    # Convert to string and strip whitespace
+    price_str = str(price_val).strip()
+    if not price_str:
+        return ""
+    
+    # Check if it contains alphabetic characters (e.g. "k", "M", "Call")
+    import re
+    has_letters = bool(re.search(r'[a-zA-Z]', price_str))
+    
+    if has_letters:
+        # Don't parse, just return cleaned string
+        # Don't add $ if it doesn't look like a number
+        return price_str
+    
+    # No letters - try to extract and format as number
+    try:
+        # Extract digits only (ignore $, commas, spaces)
+        digits_only = re.sub(r'[^\d]', '', price_str)
+        if digits_only:
+            numeric_val = int(digits_only)
+            return f"${numeric_val:,}"
+        else:
+            # No digits found, return original
+            return price_str
+    except (ValueError, OverflowError):
+        # Parsing failed, return original cleaned string
+        return price_str
+
+
 def generate_listing_sign_pdf(order, output_path=None):
     """
     Generate the high-res PDF for a Listing Sign.
@@ -96,7 +140,7 @@ def generate_listing_sign_pdf(order, output_path=None):
     sqft = get(prop_row, 'sqft', '')
     
     price_val = prop_row.get('price')
-    price = f"${int(price_val):,}" if price_val else ""
+    price = _format_price(price_val)
     
     # Sign config - use default color (custom_color doesn't exist in schema)
     sign_color = '#000000'

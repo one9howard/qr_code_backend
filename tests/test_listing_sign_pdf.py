@@ -196,3 +196,57 @@ class TestListingSignPDF:
         
         assert len(landscape_called) > 0, "Landscape layout should be called for 36x24"
         assert len(standard_called) == 0, "Standard layout should NOT be called for 36x24"
+
+    def test_price_string_500k_does_not_crash(self, app, db):
+        """
+        Regression test: PDF generation must not crash for price strings like "$500k".
+        The _format_price helper should safely handle non-numeric price values.
+        """
+        # Setup with price as "$500k" (string that would crash int())
+        db.execute("""
+            INSERT INTO users (email, password_hash, full_name, subscription_status) 
+            VALUES ('price500k@test.com', 'x', 'Price Test', 'active')
+        """)
+        user_id = db.execute("SELECT id FROM users WHERE email='price500k@test.com'").fetchone()[0]
+        
+        db.execute("""
+            INSERT INTO agents (user_id, name, brokerage, phone, email) 
+            VALUES (%s, 'Price Agent', 'Brokerage', '555-PRICE', 'price@agent.com')
+        """, (user_id,))
+        agent_id = db.execute("SELECT id FROM agents WHERE user_id=%s", (user_id,)).fetchone()[0]
+        
+        # Insert property with problematic price string
+        db.execute("""
+            INSERT INTO properties (agent_id, address, beds, baths, price, qr_code, slug) 
+            VALUES (%s, '500k Test St', '3', '2', '$500k', 'pricecode500k', '500k-test-st')
+        """, (agent_id,))
+        prop_id = db.execute("SELECT id FROM properties WHERE agent_id=%s", (agent_id,)).fetchone()[0]
+        
+        db.execute("""
+            INSERT INTO orders (user_id, property_id, order_type, status, print_size) 
+            VALUES (%s, %s, 'sign', 'pending', '18x24')
+        """, (user_id, prop_id))
+        order_id = db.execute("SELECT id FROM orders WHERE user_id=%s", (user_id,)).fetchone()[0]
+        db.commit()
+        
+        order_dict = {
+            'id': order_id,
+            'user_id': user_id,
+            'property_id': prop_id,
+            'print_size': '18x24'
+        }
+        
+        mock_storage = MagicMock()
+        mock_storage.put_file = MagicMock(return_value='pdfs/test.pdf')
+        
+        with app.app_context():
+            with patch('services.printing.listing_sign.get_storage', return_value=mock_storage):
+                from services.printing.listing_sign import generate_listing_sign_pdf
+                
+                # This should NOT raise ValueError for int("$500k")
+                result = generate_listing_sign_pdf(order_dict)
+                
+                assert result is not None
+                assert 'pdf' in result.lower()
+                assert mock_storage.put_file.called
+

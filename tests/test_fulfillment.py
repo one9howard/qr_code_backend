@@ -24,7 +24,7 @@ def test_fulfill_order_enqueues_one_print_job(db, app):
     
     property_id = db.execute(
         "INSERT INTO properties (agent_id, address, beds, baths, sqft, price, description, slug, qr_code) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s) RETURNING id",
-        (agent_id, "123 Test St", "3", "2", "1000", "100000", "desc", "slug", "qr1"),
+        (agent_id, "123 Test St", "3", "2", "1000", "$1,250,000", "desc", "slug", "qr1"),
     ).fetchone()[0]
 
     # Setup: source PDF in storage

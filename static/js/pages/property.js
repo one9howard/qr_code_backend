@@ -166,7 +166,7 @@
                     successEl.style.display = 'block';
                 }
                 form.reset();
-                sendEvent('lead_submitted', { request_type: formData.request_type });
+                // Note: lead_submitted event logged server-side in routes/leads.py
             } else {
                 if (errorEl) {
                     errorEl.textContent = data.message || data.error || 'An error occurred';
@@ -364,7 +364,7 @@
                     successEl.style.display = 'block';
                 }
                 form.reset();
-                sendEvent('lead_submitted', { request_type: formData.request_type });
+                // Note: lead_submitted event logged server-side in routes/leads.py
 
                 // Close modal after success
                 setTimeout(() => closeMobileLeadModal(), 2000);
