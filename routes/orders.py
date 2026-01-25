@@ -16,43 +16,31 @@ logger = logging.getLogger(__name__)
 def order_preview(order_id):
     """
     Serve the WebP preview for a specific order.
-    Uses deterministic preview key from storage (no preview_path column).
-    Supports both authenticated users and guest_token access.
+    Uses stored preview_key if available, otherwise falls back to deterministic logic (legacy).
     """
-    from io import BytesIO
+    from services.order_access import get_order_for_request
     from utils.storage import get_storage
     from utils.filenames import make_sign_asset_basename
     from constants import LAYOUT_VERSION, DEFAULT_SIGN_SIZE
+
+    # Centralized Auth Check (Guest Friendly)
+    order = get_order_for_request(order_id)
     
-    order = Order.get(order_id)
-    if not order:
-        abort(404)
+    storage = get_storage()
     
-    # Authorization check:
-    # 1. Authenticated user who owns the order OR is admin
-    # 2. Guest with valid guest_token
-    authorized = False
-    
-    if current_user.is_authenticated:
-        if current_user.id == order.user_id or getattr(current_user, 'is_admin', False):
-            authorized = True
-    
-    if not authorized:
-        # Check guest_token from query params
-        guest_token = request.args.get('guest_token')
-        if guest_token and order.guest_token and guest_token == order.guest_token:
-            authorized = True
-    
-    if not authorized:
-        abort(403)
-    
-    # Compute deterministic preview key
+    # 1. Try stored key (Stable)
+    if hasattr(order, 'preview_key') and order.preview_key:
+        try:
+            file_data = storage.get_file(order.preview_key)
+            return send_file(file_data, mimetype='image/webp')
+        except Exception:
+            pass # Fallback to deterministic
+            
+    # 2. Deterministic Fallback (Legacy)
     normalized_size = normalize_sign_size(order.sign_size or DEFAULT_SIGN_SIZE)
     basename = make_sign_asset_basename(order_id, normalized_size, LAYOUT_VERSION)
     preview_key = f"previews/order_{order_id}/{basename}.webp"
     
-    # Fetch from storage
-    storage = get_storage()
     try:
         file_data = storage.get_file(preview_key)
         return send_file(file_data, mimetype='image/webp')
@@ -69,11 +57,6 @@ def select_property_for_sign():
     """
     from database import get_db
     db = get_db()
-    
-    # Fetch user properties
-    # Cannot rely on current_user.properties based on simple User model
-    # Use raw SQL or property join.
-    # We need properties linked to agents owned by this user
     
     properties = db.execute("""
         SELECT p.* 
@@ -92,194 +75,112 @@ def select_property_for_sign():
 
 @orders_bp.route('/orders/<int:order_id>/download')
 def download_pdf(order_id):
-    """
-    Download the generated PDF for an order.
-    Disabled for MVP Phase 5/6 - Fulfillment handles printing directly.
-    """
-    # Disabled for MVP Phase 5/6 - Fulfillment handles printing directly.
-    # Legacy code removed.
-    abort(404) # Not exposed to users directly
+    abort(404)
 
 @orders_bp.route('/order/sign/start/<int:property_id>')
 @login_required
 def order_sign_start(property_id):
-    """
-    Entry point from dashboard to order a sign.
-    """
     prop = Property.get(property_id)
     if not prop:
         abort(404)
-        
-    # Verify ownership
     if prop.agent.user_id != current_user.id:
         abort(403)
-        
     return render_template('order_sign.html', property=prop)
 
-
 @orders_bp.route('/order-sign', methods=['POST'])
-@login_required
 def order_sign():
     """
     Create a Stripe Checkout Session for a Listing Sign.
-    Strictly enforce Phase 6 rules:
-    - Double-sided only
-    - Valid sizes/materials only
-    - Use Lookup Keys
+    Guest Supported.
     """
+    from services.order_access import get_order_for_request
     data = request.get_json()
     order_id = data.get('order_id')
     
-    # If starting fresh from order_sign_start, we might not have an order_id yet.
-    # In that case, we create one now.
-    
-    from database import get_db
-    db_conn = get_db()
-    
-    order = None
+    # 1. Resolve Order & Auth
     if order_id:
-        if current_user.is_authenticated:
-            order = Order.get_by(id=order_id, user_id=current_user.id)
-        else:
-            # Check guest token if implemented, else fail
-            # For now, require auth
-            guest_token = request.headers.get("X-Guest-Token")
-            if guest_token:
-                 # Basic guest lookup placeholder
-                 order = Order.get_by(
-                    id=order_id,
-                    guest_token=guest_token
-                )
-        if not order:
-            return jsonify({"success": False, "error": "Order record not found"}), 404
-            
+        # Use centralized helper (Supports Guest)
+        order = get_order_for_request(order_id)
     else:
-        # Create new order on the fly
+        # New Order Logic - MUST require Login for now to create NEW from property
+        # (Unless we add property guest access logic, but goal is flow repair for EXISTING flow)
+        if not current_user.is_authenticated:
+             return jsonify({"success": False, "error": "Login required to start new order"}), 401
+             
         property_id = data.get('property_id')
         if not property_id:
-            return jsonify({"success": False, "error": "Property ID required if no order ID"}), 400
+            return jsonify({"success": False, "error": "Property ID required"}), 400
             
-        # Verify property ownership
         prop = Property.get(property_id)
         if not prop or (prop.agent.user_id != current_user.id and not current_user.is_admin):
-             return jsonify({"success": False, "error": "Unauthorized property access"}), 403
+             return jsonify({"success": False, "error": "Unauthorized"}), 403
              
-        # Create Order
+        from database import get_db
+        db_conn = get_db()
         import secrets
         guest_token = secrets.token_urlsafe(32)
         
-        # We can insert size/color here directly if we want, but the unified update block below is cleaner
         row = db_conn.execute("""
             INSERT INTO orders (
                 user_id, property_id, status, 
                 order_type, guest_token, guest_token_created_at, created_at
             ) VALUES (%s, %s, %s, %s, %s, NOW(), NOW())
             RETURNING id
-        """, (
-            current_user.id, 
-            property_id, 
-            'pending_payment',
-            'listing_sign',
-            guest_token
-        )).fetchone()
+        """, (current_user.id, property_id, 'pending_payment', 'listing_sign', guest_token)).fetchone()
         
-        new_order_id = row['id']
         db_conn.commit()
-        
-        order = Order.get(new_order_id)
+        order = Order.get(row['id'])
 
-    if not order:
-        return jsonify({"success": False, "error": "Failed to load order"}), 500
-        
-    # === Update Order with Request Options ===
-    # The form sends 'size' and 'sign_color' (or 'color'). We apply them to the order.
-    # This ensures the checkout price matches the selection.
+    # 2. Apply Options (Guest Safe)
+    from database import get_db
+    db_conn = get_db()
     
     req_size = data.get('size') or data.get('sign_size')
     req_color = data.get('color') or data.get('sign_color')
     
     if req_size or req_color:
-        updates = []
+        updates = ["status = 'pending_payment'", "updated_at = NOW()"]
         params = []
         if req_size:
             updates.append("sign_size = %s")
             params.append(normalize_sign_size(req_size))
         if req_color:
-             updates.append("sign_color = %s")
-             params.append(req_color)
-        
-        # Force status to pending_payment on update (in case it was something else, though unlikely here)
-        updates.append("status = %s")
-        params.append('pending_payment')
-             
-        updates.append("updated_at = NOW()")
-
+            updates.append("sign_color = %s")
+            params.append(req_color)
+            
         params.append(order.id)
-        
-        sql = f"UPDATE orders SET {', '.join(updates)} WHERE id = %s"
-        db_conn.execute(sql, tuple(params))
+        db_conn.execute(f"UPDATE orders SET {', '.join(updates)} WHERE id = %s", tuple(params))
         db_conn.commit()
-        
-        # Reload order
+        # Reload
         order = Order.get(order.id)
-        
-    if not order.sign_pdf_path:
-        # We allow ordering even if PDF not fully generated? 
-        # Actually usually we want preview to exist.
-        # But for new "productized" flow, the PDF is generated AT FULFILLMENT.
-        # So we just need the metadata (design_payload) or legacy columns.
-        # Legacy: checks sign_pdf_path. Phase 5/6: We might relax this if we trust the payload.
-        # But currently the /submit flow generates a 'preview' and sets sign_pdf_path.
-        pass
 
-    # 3. Build checkout params
-    customer_email = current_user.email if current_user.is_authenticated else None
+    # 3. Checkout Setup
+    # Guest Email Handling
+    customer_email = None
+    if current_user.is_authenticated:
+        customer_email = current_user.email
+    elif data.get('email'):
+        customer_email = data.get('email')
         
     raw_sign_size = order.sign_size
     sign_size = normalize_sign_size(raw_sign_size)
-    
-    # Phase 6: Strict SKU & Pricing
-    # 1. Read Material from request, force Sides
     material = data.get('material', 'coroplast_4mm')
-    logger.info(f"[Order Sign] Received material request: {data.get('material')} -> Resolved: {material}")
-    sides = 'double' # Strictly forced
+    sides = 'double'
     
-    # 2. Validate SKU & Get Price
-    from services.print_catalog import validate_sku_strict, get_price_id
-    
-    # get_price_id calls validate_sku_strict internally
+    from services.print_catalog import get_price_id
     try:
         price_id = get_price_id('listing_sign', sign_size, material)
     except ValueError as e:
         return jsonify({"success": False, "error": str(e)}), 400
         
-    # 3. Update Order with SKU Spec
-    # Use direct SQL
-    
-    # Raw SQL Update
-    # Note: We already used db_conn above, so reuse it
     db_conn.execute("""
         UPDATE orders 
-        SET print_product = %s,
-            material = %s,
-            sides = %s,
-            print_size = %s,
-            layout_id = %s,
-            updated_at = NOW()
+        SET print_product = %s, material = %s, sides = %s, print_size = %s, layout_id = %s, updated_at = NOW()
         WHERE id = %s
-    """, (
-        'listing_sign',
-        material,
-        sides,
-        sign_size,
-        data.get('layout_id', order.layout_id or 'standard'),
-        order.id
-    ))
+    """, ('listing_sign', material, sides, sign_size, data.get('layout_id', order.layout_id or 'standard'), order.id))
     db_conn.commit()
     
-    # 4. Create Stripe Session
     try:
-        # Using Price ID
         curr_user_id = str(current_user.id) if current_user.is_authenticated else "guest"
         
         checkout_params = {
@@ -304,40 +205,34 @@ def order_sign():
             checkout_params['customer_email'] = customer_email
             
         checkout_session = stripe.checkout.Session.create(**checkout_params)
-        
         return jsonify({"success": True, "checkoutUrl": checkout_session.url})
         
     except Exception as e:
         logger.error(f"Stripe setup failed: {e}")
         return jsonify({"success": False, "error": str(e)}), 500
 
-
 @orders_bp.route('/order/success')
 def order_success():
-    """Render success page."""
     session_id = request.args.get('session_id')
     return render_template('order_success.html', session_id=session_id)
 
 @orders_bp.route('/order/cancel')
 def order_cancel():
-    """Render cancel page."""
     return render_template('order_cancel.html')
 
-
 @orders_bp.route('/api/orders/resize', methods=['POST'])
-@login_required
 def resize_order():
     """
-    Resize an existing order - regenerates BOTH PDF and preview.
-    Returns JSON: {success: true, size: "...", preview_url: "..."}
+    Resize an existing order.
+    Guest Supported.
     """
     from database import get_db, get_agent_data_for_order
-    from utils.storage import get_storage
     from utils.pdf_generator import generate_pdf_sign
     from utils.pdf_preview import render_pdf_to_web_preview
     from utils.qr_urls import property_scan_url
     from constants import SIGN_SIZES, DEFAULT_SIGN_COLOR
     from config import BASE_URL
+    from services.order_access import get_order_for_request
     
     data = request.get_json()
     order_id = data.get('order_id')
@@ -345,49 +240,37 @@ def resize_order():
     
     if not order_id or not new_size:
         return jsonify({'success': False, 'error': 'missing_params'}), 400
-    
-    # Validate size
+        
     normalized_size = normalize_sign_size(new_size)
     if normalized_size not in SIGN_SIZES:
         return jsonify({'success': False, 'error': 'invalid_size'}), 400
-    
-    db = get_db()
-    
-    # Load order - must be owned by current user
-    order = Order.get_by(id=order_id, user_id=current_user.id)
-    if not order:
+        
+    # Centralized Auth (Guest Friendly)
+    try:
+        order = get_order_for_request(order_id)
+    except Exception:
         return jsonify({'success': False, 'error': 'unauthorized'}), 403
-    
-    # Check if order is already paid (locked)
+        
     if order.status not in ('pending_payment', None):
         return jsonify({'success': False, 'error': 'order_locked_paid'}), 400
-    
+        
+    db = get_db()
     try:
-        # Load property
-        prop = db.execute(
-            "SELECT * FROM properties WHERE id = %s",
-            (order.property_id,)
-        ).fetchone()
+        prop = db.execute("SELECT * FROM properties WHERE id = %s", (order.property_id,)).fetchone()
+        if not prop: return jsonify({'success': False, 'error': 'property_not_found'}), 404
         
-        if not prop:
-            return jsonify({'success': False, 'error': 'property_not_found'}), 404
-        
-        # Load agent data (snapshot preferred)
         agent = get_agent_data_for_order(order_id)
-        if not agent:
-            return jsonify({'success': False, 'error': 'agent_not_found'}), 404
+        if not agent: return jsonify({'success': False, 'error': 'agent_not_found'}), 404
         
-        # Build QR URL from property.qr_code
         qr_code = prop.get('qr_code')
-        if not qr_code:
-            return jsonify({'success': False, 'error': 'missing_qr_code'}), 500
-        
+        if not qr_code: return jsonify({'success': False, 'error': 'missing_qr_code'}), 500
         qr_url = property_scan_url(BASE_URL, qr_code)
         
-        # Get sign customization from order (use persisted values!)
         sign_color = order.sign_color or DEFAULT_SIGN_COLOR
         
-        # Regenerate PDF with new size
+        # NOTE: If we persisted logo/headshot choice in order/agent snapshot, we'd pull it here.
+        # Currently assuming snapshot has correct keys.
+        
         pdf_key = generate_pdf_sign(
             address=prop.get('address', ''),
             beds=prop.get('beds', ''),
@@ -398,34 +281,55 @@ def resize_order():
             brokerage=agent.get('brokerage', ''),
             agent_email=agent.get('email', ''),
             agent_phone=agent.get('phone', ''),
-            qr_key=None,  # Using qr_value instead
+            qr_key=None,
             agent_photo_key=agent.get('photo_filename'),
             sign_color=sign_color,
             sign_size=normalized_size,
             order_id=order_id,
             qr_value=qr_url,
+            # Pass logo only if column exists in snapshot or we fetch from agent (Snapshot update needed for full fidelity)
+            logo_key=agent.get('logo_filename') if 'logo_filename' in agent else None
         )
         
-        # Regenerate preview
+        # Regenerate preview (Returns Key)
         preview_key = render_pdf_to_web_preview(
             pdf_key=pdf_key,
             order_id=order_id,
             sign_size=normalized_size,
         )
         
-        # Update DB atomically
-        db.execute("""
-            UPDATE orders 
-            SET sign_size = %s,
-                print_size = %s,
-                sign_pdf_path = %s,
-                updated_at = NOW()
-            WHERE id = %s
-        """, (normalized_size, normalized_size, pdf_key, order_id))
+        # Update DB (including preview_key)
+        # Check if preview_key column exists before writing (safety)
+        # Using Safe Update
+        try:
+             db.execute("""
+                UPDATE orders 
+                SET sign_size = %s,
+                    print_size = %s,
+                    sign_pdf_path = %s,
+                    preview_key = %s,
+                    updated_at = NOW()
+                WHERE id = %s
+            """, (normalized_size, normalized_size, pdf_key, preview_key, order_id))
+        except Exception as e:
+            # Fallback for schema lag
+             db.execute("""
+                UPDATE orders 
+                SET sign_size = %s,
+                    print_size = %s,
+                    sign_pdf_path = %s,
+                    updated_at = NOW()
+                WHERE id = %s
+            """, (normalized_size, normalized_size, pdf_key, order_id))
+            
         db.commit()
         
-        # Build preview URL for response
-        preview_url = url_for('orders.order_preview', order_id=order_id)
+        # Build preview URL with guest token if needed
+        preview_args = {'order_id': order_id}
+        if request.json.get('guest_token'):
+            preview_args['guest_token'] = request.json.get('guest_token')
+            
+        preview_url = url_for('orders.order_preview', **preview_args)
         
         return jsonify({
             'success': True,
@@ -434,7 +338,7 @@ def resize_order():
         })
         
     except Exception as e:
-        logger.error(f"Resize failed for order {order_id}: {e}")
+        logger.error(f"Resize failed: {e}")
         import traceback
         traceback.print_exc()
         return jsonify({'success': False, 'error': 'render_failed', 'message': str(e)}), 500

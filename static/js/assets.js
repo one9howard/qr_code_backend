@@ -58,6 +58,21 @@ function orderSign() {
         requestBody.guest_token = config.guestToken;
     }
 
+    // Include guest email if present (for unauthenticated users)
+    const emailInput = document.getElementById('guest-email');
+    if (emailInput && emailInput.value) {
+        requestBody.email = emailInput.value;
+    } else if (config.isGuest && !emailInput) {
+        // Fallback? DOM mismatch
+        console.warn("Guest user but no email input found");
+    } else if (config.isGuest && !emailInput.value) {
+        btn.innerText = originalText;
+        btn.style.opacity = "1";
+        btn.style.pointerEvents = "auto";
+        alert("Please enter your email address to proceed.");
+        return;
+    }
+
     fetch(config.orderUrl, {
         method: 'POST',
         headers: {
@@ -110,8 +125,9 @@ function resizeSign(newSize) {
     const statusEl = document.getElementById('resize-status');
     const previewImg = document.getElementById('preview-image');
 
-    if (!config || config.isLocked || config.isGuest) {
-        // Don't attempt resize for guest users - selector should be disabled anyway
+    if (!config || config.isLocked) {
+        // Only block if locked (paid) or invalid config
+        // Guests are allowed if token is present (validated by backend)
         return;
     }
 
