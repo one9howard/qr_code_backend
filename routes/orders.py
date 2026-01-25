@@ -4,7 +4,7 @@ import stripe
 import logging
 import os
 import time
-from models import Order, db
+from models import Order, Property, db
 from config import STRIPE_SIGN_SUCCESS_URL, STRIPE_SIGN_CANCEL_URL, PRIVATE_PDF_DIR, PRIVATE_PREVIEW_DIR
 from utils.sign_options import normalize_sign_size
 
@@ -75,13 +75,16 @@ def download_pdf(order_id):
 def order_sign_start(property_id):
     """
     Entry point from dashboard to order a sign.
-    Finds the most recent valid order for this property to use as a template/preview base.
     """
-    # Find active order or creating new context
-    # Implementation detail: For now, we redirect to submit/edit page or minimal logic
-    # But since we have /submit for new signs, this might be redundant or specific wrapper.
-    # Let's assume it redirects to edit/preview page or simply renders a "Choose Options" page.
-    return redirect(url_for('public.submit', property_id=property_id))
+    prop = Property.get(property_id)
+    if not prop:
+        abort(404)
+        
+    # Verify ownership
+    if prop.agent.user_id != current_user.id:
+        abort(403)
+        
+    return render_template('order_sign.html', property=prop)
 
 
 @orders_bp.route('/order-sign', methods=['POST'])
@@ -97,25 +100,98 @@ def order_sign():
     data = request.get_json()
     order_id = data.get('order_id')
     
-    if not order_id:
-        return jsonify({"success": False, "error": "Order ID required"}), 400
-
+    # If starting fresh from order_sign_start, we might not have an order_id yet.
+    # In that case, we create one now.
+    
+    from database import get_db
+    db_conn = get_db()
+    
     order = None
-    if current_user.is_authenticated:
-        order = Order.get_by(id=order_id, user_id=current_user.id)
+    if order_id:
+        if current_user.is_authenticated:
+            order = Order.get_by(id=order_id, user_id=current_user.id)
+        else:
+            # Check guest token if implemented, else fail
+            # For now, require auth
+            guest_token = request.headers.get("X-Guest-Token")
+            if guest_token:
+                 # Basic guest lookup placeholder
+                 order = Order.get_by(
+                    id=order_id,
+                    guest_token=guest_token
+                )
+        if not order:
+            return jsonify({"success": False, "error": "Order record not found"}), 404
+            
     else:
-        # Check guest token if implemented, else fail
-        # For now, require auth
-        guest_token = request.headers.get("X-Guest-Token")
-        if guest_token:
-             # Basic guest lookup placeholder
-             order = Order.get_by(
-                id=order_id,
-                guest_token=guest_token
-            )
+        # Create new order on the fly
+        property_id = data.get('property_id')
+        if not property_id:
+            return jsonify({"success": False, "error": "Property ID required if no order ID"}), 400
+            
+        # Verify property ownership
+        prop = Property.get(property_id)
+        if not prop or (prop.agent.user_id != current_user.id and not current_user.is_admin):
+             return jsonify({"success": False, "error": "Unauthorized property access"}), 403
+             
+        # Create Order
+        import secrets
+        guest_token = secrets.token_urlsafe(32)
         
+        # We can insert size/color here directly if we want, but the unified update block below is cleaner
+        row = db_conn.execute("""
+            INSERT INTO orders (
+                user_id, property_id, status, 
+                order_type, guest_token, guest_token_created_at, created_at
+            ) VALUES (%s, %s, %s, %s, %s, NOW(), NOW())
+            RETURNING id
+        """, (
+            current_user.id, 
+            property_id, 
+            'pending_payment',
+            'listing_sign',
+            guest_token
+        )).fetchone()
+        
+        new_order_id = row['id']
+        db_conn.commit()
+        
+        order = Order.get(new_order_id)
+
     if not order:
-        return jsonify({"success": False, "error": "Order record not found"}), 404
+        return jsonify({"success": False, "error": "Failed to load order"}), 500
+        
+    # === Update Order with Request Options ===
+    # The form sends 'size' and 'sign_color' (or 'color'). We apply them to the order.
+    # This ensures the checkout price matches the selection.
+    
+    req_size = data.get('size') or data.get('sign_size')
+    req_color = data.get('color') or data.get('sign_color')
+    
+    if req_size or req_color:
+        updates = []
+        params = []
+        if req_size:
+            updates.append("sign_size = %s")
+            params.append(normalize_sign_size(req_size))
+        if req_color:
+             updates.append("sign_color = %s")
+             params.append(req_color)
+        
+        # Force status to pending_payment on update (in case it was something else, though unlikely here)
+        updates.append("status = %s")
+        params.append('pending_payment')
+             
+        updates.append("updated_at = NOW()")
+
+        params.append(order.id)
+        
+        sql = f"UPDATE orders SET {', '.join(updates)} WHERE id = %%s"
+        db_conn.execute(sql, tuple(params))
+        db_conn.commit()
+        
+        # Reload order
+        order = Order.get(order.id)
         
     if not order.sign_pdf_path:
         # We allow ordering even if PDF not fully generated? 
@@ -147,16 +223,11 @@ def order_sign():
         return jsonify({"success": False, "error": str(e)}), 400
         
     # 3. Update Order with SKU Spec
-    # Use direct SQL or ORM. ORM is safer/cleaner.
-    # 3. Update Order with SKU Spec
     # Use direct SQL
-    from psycopg2.extras import Json
-    from database import get_db
-    
-    db = get_db()
     
     # Raw SQL Update
-    db.execute("""
+    # Note: We already used db_conn above, so reuse it
+    db_conn.execute("""
         UPDATE orders 
         SET print_product = %s,
             material = %s,
@@ -173,7 +244,7 @@ def order_sign():
         data.get('layout_id', order.layout_id or 'standard'),
         order.id
     ))
-    db.commit()
+    db_conn.commit()
     
     # 4. Create Stripe Session
     try:
