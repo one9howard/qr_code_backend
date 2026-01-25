@@ -185,10 +185,14 @@ def index():
     from services.smart_signs import SmartSignsService
     sign_assets = SmartSignsService.get_user_assets(current_user.id)
 
+    # Filter Listing Signs for the dedicated dashboard section
+    listing_signs = [p for p in properties_view if p['sign_type'] == 'Listing Sign']
+
     return render_template(
         "dashboard.html", 
         agent=agent,
         properties=properties_view, # Use View Model
+        listing_signs=listing_signs, # Explicitly passed for separate section
         total_listings=total_listings,
         total_views=total_views,
         leads=leads,

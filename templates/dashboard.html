@@ -482,14 +482,7 @@
                     </div>
 
                     <div class="table-container">
-                        {% set listing_signs_count = 0 %}
-                        {% for p in properties %}
-                        {% if p.sign_type == 'Listing Sign' %}
-                        {% set listing_signs_count = listing_signs_count + 1 %}
-                        {% endif %}
-                        {% endfor %}
-
-                        {% if listing_signs_count > 0 %}
+                        {% if listing_signs %}
                         <table class="saas-table">
                             <thead>
                                 <tr>
@@ -501,8 +494,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                {% for p in properties %}
-                                {% if p.sign_type == 'Listing Sign' %}
+                                {% for p in listing_signs %}
                                 <tr>
                                     <td>
                                         <div style="font-weight: 500;">{{ p.address }}</div>
@@ -538,6 +530,7 @@
                                         </div>
                                     </td>
                                 </tr>
+                                {% endfor %}
                                 {% endif %}
                                 {% endfor %}
                             </tbody>
