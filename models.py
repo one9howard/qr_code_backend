@@ -58,6 +58,39 @@ class User(UserMixin):
             username=dict(user).get('username')
         )
 
+class Agent:
+    def __init__(self, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)
+            
+    @classmethod
+    def get(cls, agent_id):
+        db = get_db()
+        row = db.execute("SELECT * FROM agents WHERE id = %s", (agent_id,)).fetchone()
+        if not row: return None
+        return cls(**dict(row))
+
+class Property:
+    def __init__(self, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)
+    
+    @classmethod
+    def get(cls, property_id):
+        db = get_db()
+        row = db.execute("SELECT * FROM properties WHERE id = %s", (property_id,)).fetchone()
+        if not row: return None
+        return cls(**dict(row))
+
+    @property
+    def agent(self):
+        if hasattr(self, '_agent') and self._agent:
+            return self._agent
+        if not hasattr(self, 'agent_id') or not self.agent_id:
+            return None
+        self._agent = Agent.get(self.agent_id)
+        return self._agent
+
 class Order:
     def __init__(self, **kwargs):
         for k, v in kwargs.items():
