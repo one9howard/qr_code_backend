@@ -30,25 +30,42 @@ def render_qr_png(data: str, *, size_px: int = 1024, min_px: int = 1024, logo_pn
     # Approx modules ~ 33 (V4) or higher. 
     # Logic: Let qrcode library compute version, we just want output image to be large.
     # We set box_size large enough so (modules * box_size) > min_px
-    # Default box_size 10 is too small for 1024px if modules are few (e.g. 21 * 10 = 210px).
-    # Heuristic: Set box_size to (min_px / 20) roughly.
-    target_box_size = max(10, min_px // 20)
-    
+    # Init with minimal box_size to determine version/modules matches
     qr = qrcode.QRCode(
         version=None, # Auto
         error_correction=ecc,
-        box_size=target_box_size, 
+        box_size=1, 
         border=4, # Quiet zone
     )
     qr.add_data(data)
     qr.make(fit=True)
+
+    # Calculate optimal integer box_size to fit within size_px
+    # This ensures every module is exactly N pixels (crisp edges)
+    # instead of fractional scaling which causes aliasing artifacts.
+    modules = qr.modules_count
+    # Ensure at least 1px per module
+    box_size = max(1, size_px // modules)
+    
+    # Update QR instance
+    qr.box_size = box_size
     
     # Render Base QR to PIL Image
     # fill_color="black", back_color="white"
     qr_img = qr.make_image(fill_color="black", back_color="white").convert('RGB')
     
-    # Resize to target size_px (High Quality)
-    qr_img = qr_img.resize((size_px, size_px), resample=Image.Resampling.LANCZOS)
+    # Pad to exact target size_px (Center the QR)
+    if qr_img.size != (size_px, size_px):
+        # Create white canvas
+        final_img = Image.new("RGB", (size_px, size_px), "white")
+        
+        # Calculate centering offset
+        actual_w, actual_h = qr_img.size
+        offset_x = (size_px - actual_w) // 2
+        offset_y = (size_px - actual_h) // 2
+        
+        final_img.paste(qr_img, (offset_x, offset_y))
+        qr_img = final_img
     
     # If no logo, we are done
     if not logo_png:

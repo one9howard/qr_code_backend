@@ -18,9 +18,15 @@ from dotenv import load_dotenv
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 load_dotenv(os.path.join(BASE_DIR, ".env"))
 
-stripe.api_key = os.getenv("STRIPE_SECRET_KEY")
-if not stripe.api_key:
-    raise SystemExit("ERROR: STRIPE_SECRET_KEY missing")
+from services.stripe_client import init_stripe
+
+class AppMock:
+    config = {
+        'STRIPE_SECRET_KEY': os.getenv('STRIPE_SECRET_KEY'),
+        'APP_STAGE': os.getenv('APP_STAGE', 'dev')
+    }
+    
+init_stripe(AppMock)
 
 from services.print_catalog import get_all_required_lookup_keys
 from services.stripe_price_resolver import warm_cache

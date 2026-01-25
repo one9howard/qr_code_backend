@@ -28,7 +28,7 @@ class PriceCache:
         
         # Fetch from Stripe
         try:
-            stripe.api_key = os.environ.get('STRIPE_SECRET_KEY')
+            # stripe.api_key handled by app.py init_stripe
             if not stripe.api_key:
                 return None
                 

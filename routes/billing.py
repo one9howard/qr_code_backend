@@ -17,7 +17,7 @@ from datetime import datetime
 from database import get_db
 
 billing_bp = Blueprint('billing', __name__)
-stripe.api_key = STRIPE_SECRET_KEY
+# stripe.api_key handled in app.py
 
 @billing_bp.route("/billing")
 @login_required

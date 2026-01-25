@@ -364,6 +364,8 @@ def checkout_smartsign():
             success_url=STRIPE_SIGN_SUCCESS_URL,
             cancel_url=STRIPE_SIGN_CANCEL_URL,
             client_reference_id=str(order_id),
+            shipping_address_collection={'allowed_countries': ['US']},
+            customer_email=current_user.email,
             metadata={
                 'order_type': 'smart_sign',
                 'order_id': order_id,

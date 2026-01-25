@@ -51,7 +51,18 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install pytest
-          python -m compileall -q .
+      - name: Check Release Cleanliness
+        run: python scripts/check_release_clean.py
+
+      - name: Enforce Centralized Stripe Init
+        run: |
+          # Use grep to ensure stripe.api_key is ONLY in services/stripe_client.py or app.py (if legacy)
+          # We expect 0 matches outside allowed files.
+          # Excluding services/stripe_client.py
+          if grep -r "stripe.api_key =" . --exclude-dir=services --exclude=app.py; then
+            echo "FAILURE: stripe.api_key assignment found outside services/stripe_client.py"
+            exit 1
+          fi
 
       - name: Run migrations
         run: python migrate.py

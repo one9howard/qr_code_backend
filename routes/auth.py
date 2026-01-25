@@ -93,12 +93,45 @@ def register():
             (user_id, full_name, email, brokerage, phone, headshot_key, logo_key)
         )
 
-        # Link Guest Orders
-        db.execute(
-            "UPDATE orders SET user_id = %s WHERE guest_email = %s AND user_id IS NULL",
-            (user_id, email)
-        )
+        # Link Guest Orders (Securely)
+        # Only link if email matches AND guest_token matches session (if present)
+        # Link Guest Orders (Securely)
+        # Only link if email matches AND guest_token matches session (if present)
+        from flask import session
+        
+        # Gather all valid tokens from session
+        tokens = set()
+        if session.get('guest_token'):
+            tokens.add(session.get('guest_token'))
+        if session.get('guest_tokens'):
+            tokens.update(set(session.get('guest_tokens')))
+            
+        # Remove empty/None
+        tokens = {t for t in tokens if t}
+        
+        if tokens:
+            # We must use list for IN clause
+            token_list = list(tokens)
+            # Use ANY for Postgres array or IN
+            placeholders = ','.join(['%s'] * len(token_list))
+            
+            # Update Orders
+            db.execute(
+                f"UPDATE orders SET user_id = %s WHERE guest_email = %s AND guest_token IN ({placeholders}) AND user_id IS NULL",
+                (user_id, email, *token_list)
+            )
+            
+            # Clear tokens after successful linking
+            session.pop('guest_token', None)
+            session.pop('guest_tokens', None)
+        else:
+            # OPTIONAL: If no guest_token, do we rely on email? 
+            pass
+
         # Link Guest Agents (if any created without user_id)
+        # Agents might not have guest_token column? Assuming email is safe for agents invited?
+        # Or should be same logic?
+        # The prompt specifically mentioned "Guest order linking".
         db.execute(
              "UPDATE agents SET user_id = %s WHERE email = %s AND user_id IS NULL",
              (user_id, email)
@@ -112,6 +145,10 @@ def register():
         # Auto-login the user (unverified)
         user_obj = User(id=user_id, email=email, is_verified=False)
         login_user(user_obj)
+        
+        if next_url and is_safe_url(next_url):
+            from flask import session
+            session['next_url'] = next_url
         
         flash("Registration successful! Please verify your email.", "info")
         return redirect(url_for("auth.verify_email"))
@@ -138,11 +175,32 @@ def login():
                 is_verified=bool(dict(user).get('is_verified', 0)),
                 subscription_status=dict(user).get('subscription_status', 'free')
             )
-            # Link any guest orders
-            db.execute(
-                "UPDATE orders SET user_id = %s WHERE guest_email = %s AND user_id IS NULL",
-                (user['id'], email)
-            )
+            # Link any guest orders (Securely)
+            from flask import session
+            
+            # Gather all valid tokens from session
+            tokens = set()
+            if session.get('guest_token'):
+                tokens.add(session.get('guest_token'))
+            if session.get('guest_tokens'):
+                tokens.update(set(session.get('guest_tokens')))
+            
+            # Remove empty/None
+            tokens = {t for t in tokens if t}
+            
+            if tokens:
+                token_list = list(tokens)
+                placeholders = ','.join(['%s'] * len(token_list))
+                
+                db.execute(
+                    f"UPDATE orders SET user_id = %s WHERE guest_email = %s AND guest_token IN ({placeholders}) AND user_id IS NULL",
+                    (user['id'], email, *token_list)
+                )
+                
+                # Clear tokens
+                session.pop('guest_token', None)
+                session.pop('guest_tokens', None)
+            
             db.execute(
                  "UPDATE agents SET user_id = %s WHERE email = %s AND user_id IS NULL",
                  (user['id'], email)
@@ -153,6 +211,10 @@ def login():
             
             # Check verification status
             if not user_obj.is_verified:
+                # Store next_url for post-verification redirect
+                if next_url and is_safe_url(next_url):
+                    from flask import session
+                    session['next_url'] = next_url
                 return redirect(url_for("auth.verify_email"))
             
             # Safe redirect to next_url if present
@@ -208,6 +270,13 @@ def verify_email():
         # Update session user
         current_user.is_verified = True
         flash("Email verified successfully!", "success")
+        
+        # Check for deferred redirect
+        from flask import session
+        next_url = session.pop('next_url', None)
+        if next_url:
+            return redirect(next_url)
+            
         return redirect(url_for("dashboard.index"))
         
     return render_template("verify_email.html")

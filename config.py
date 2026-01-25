@@ -78,7 +78,7 @@ STATIC_DIR = os.path.join(BASE_DIR, "static")
 PDF_PATH = os.path.join(STATIC_DIR, "pdf")
 
 # URLs
-BASE_URL = get_env_str("BASE_URL", default="http://192.168.1.186:5000")
+BASE_URL = get_env_str("BASE_URL", default="http://localhost:5000")
 
 # Security: SECRET_KEY
 SECRET_KEY = os.getenv("SECRET_KEY")

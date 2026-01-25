@@ -97,6 +97,8 @@ def get_profile_config(profile: str):
         "test_output.txt",
         "test_log.txt",
         "failures*.txt",
+        "pytest_debug*.txt",
+        "run_tests_debug.py",
         "landing.png",
         "design_reference.png",
 

@@ -274,6 +274,8 @@ def submit():
                 guest_tokens = session.get("guest_tokens", [])
                 guest_tokens.append(guest_token)
                 session["guest_tokens"] = guest_tokens[-10:]
+                # ALSO set singular token for easy access (most recent)
+                session["guest_token"] = guest_token
 
             session["pending_order_id"] = order_id
             db.commit()

@@ -143,8 +143,7 @@ def start_kit(property_id):
         attempt = create_checkout_attempt(current_user.id, "listing_kit", checkout_params, order_id)
         
         import stripe
-        from config import STRIPE_SECRET_KEY
-        stripe.api_key = STRIPE_SECRET_KEY
+        # stripe.api_key handled in app.py
         
         session = stripe.checkout.Session.create(**checkout_params)
         

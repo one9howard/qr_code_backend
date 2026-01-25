@@ -8,7 +8,6 @@ from config import STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET
 from utils.timestamps import utc_iso
 from database import get_db
 from models import User
-from services.fulfillment import fulfill_order
 from services.stripe_checkout import update_attempt_status
 from constants import (
     ORDER_STATUS_PAID, 
@@ -16,7 +15,7 @@ from constants import (
 )
 
 webhook_bp = Blueprint('webhook', __name__)
-stripe.api_key = STRIPE_SECRET_KEY
+# stripe.api_key handled in app.py
 
 @webhook_bp.route("/stripe/webhook", methods=["POST"])
 def stripe_webhook():
@@ -393,53 +392,27 @@ def handle_payment_checkout(db, session):
             else:
                 current_app.logger.info(f"[Webhook] Asset {asset_id} already activated. Skipping.")
 
-    # 5. Trigger Fulfillment (Idempotent)
+    # 5. Trigger Fulfillment (Async)
     if final_type in ('sign', 'smart_sign'):
-        # Check if print job already exists for this order
         existing_job = db.execute("SELECT job_id FROM print_jobs WHERE order_id = %s", (order_id,)).fetchone()
         
         if existing_job:
-            current_app.logger.info(f"[Webhook] Print job already exists for Order {order_id}. Skipping fulfillment.")
+            current_app.logger.info(f"[Webhook] Print job already exists for Order {order_id}. Skipping queue.")
         else:
-            current_app.logger.info(f"[Webhook] Attempting fulfillment for Sign Order {order_id}...")
-            try:
-                if not fulfill_order(order_id):
-                    # Fulfullment returned False (handled internal error)
-                    current_app.logger.warning(f"[Webhook] Fulfillment returned False for Order {order_id}. Marked as failed.")
-                else:
-                    current_app.logger.info(f"[Webhook] Order {order_id} fulfilled logic complete.")
-            except Exception as e:
-                # Catch unexpected errors in fulfillment to protect the payment record
-                current_app.logger.error(f"[Webhook] Fulfillment crashed for Order {order_id}: {e}")
-                try:
-                    # Ensure marked as failed
-                    from constants import ORDER_STATUS_PRINT_FAILED
-                    db.execute(
-                        "UPDATE orders SET status = %s, fulfillment_error = %s WHERE id = %s",
-                        (ORDER_STATUS_PRINT_FAILED, f"Webhook Fulfillment Crash: {str(e)}", order_id)
-                    )
-                    db.commit()
-                except:
-                    pass
+            current_app.logger.info(f"[Webhook] Enqueuing fulfillment for Sign Order {order_id}...")
+            from services.async_jobs import enqueue
+            job_id = enqueue('fulfill_order', {'order_id': order_id})
+            current_app.logger.info(f"[Webhook] Enqueued Job {job_id}")
+
     elif final_type == 'listing_kit':
-        # 6. Trigger Listing Kit Generation (Idempotent)
-        current_app.logger.info(f"[Webhook] Triggering Listing Kit generation for Order {order_id}...")
-        try:
-            from services.listing_kits import create_or_get_kit, generate_kit
-            # Create/Get kit record
-            # Use order user_id if possible, or resolve from somewhere?
-            # Order row doesn't store user_id explicitly in this scope, but 'orders' table has user_id.
-            order_row = db.execute("SELECT user_id, property_id FROM orders WHERE id = %s", (order_id,)).fetchone()
-            if order_row:
-                 kit = create_or_get_kit(order_row['user_id'], order_row['property_id'])
-                 generate_kit(kit['id'])
-                 current_app.logger.info(f"[Webhook] Kit {kit['id']} generated successfully.")
-        except Exception as e:
-            current_app.logger.error(f"[Webhook] Failed to generate kit for Order {order_id}: {e}")
-            # Do not rollback payment processing; kit gen failure is non-fatal to payment
-            pass
+        # 6. Trigger Listing Kit Generation (Async)
+        current_app.logger.info(f"[Webhook] Enqueuing Listing Kit generation for Order {order_id}...")
+        from services.async_jobs import enqueue
+        job_id = enqueue('generate_listing_kit', {'order_id': order_id})
+        current_app.logger.info(f"[Webhook] Enqueued Job {job_id}")
+            
     else:
-        current_app.logger.info(f"[Webhook] Order {order_id} is type '{final_type}'. Skipping physical fulfillment.")
+        current_app.logger.info(f"[Webhook] Order {order_id} is type '{final_type}'. No fulfillment needed.")
 
 def handle_invoice_paid(db, invoice):
     customer_id = invoice.get('customer')

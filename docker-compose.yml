@@ -1,25 +1,41 @@
+version: '3.8'
+
 services:
   db:
-    image: postgres:16
-    restart: always
+    image: postgres:15
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-postgres}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
-      POSTGRES_DB: ${POSTGRES_DB:-insite_signs}
-    ports:
-      - "5432:5432"
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: insite_signs
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
 
   web:
     build: .
-    command: python app.py
-    restart: always
     ports:
-      - "8000:5000"
+      - "5000:5000"
     environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-insite_signs}
-      FLASK_ENV: development
+      - FLASK_ENV=development
+      - DATABASE_URL=postgresql://user:password@db:5432/insite_signs
+      - STRIPE_SECRET_KEY=sk_test_placeholder
+      - STRIPE_PUBLISHABLE_KEY=pk_test_placeholder
+      - STRIPE_WEBHOOK_SECRET=whsec_placeholder
+      - APP_STAGE=dev
+    depends_on:
+      - db
+    volumes:
+      - .:/app
+
+  worker:
+    build: .
+    command: python scripts/async_worker.py
+    environment:
+      - FLASK_ENV=development
+      - DATABASE_URL=postgresql://user:password@db:5432/insite_signs
+      - STRIPE_SECRET_KEY=sk_test_placeholder
+      - APP_STAGE=dev
     depends_on:
       - db
     volumes:

@@ -222,10 +222,43 @@ def _build_shipping_data(db, order):
     """Build shipping metadata for print job."""
     user_id = order['user_id']
     
-    # Load user for shipping address
+    # Load user fallback
     user = db.execute(
         "SELECT * FROM users WHERE id = %s", (user_id,)
     ).fetchone()
+
+    # Parse proper shipping address from Stripe JSON
+    # order['shipping_address'] is just string/json field in DB (jsonb or text)
+    # psycopg2.extras.Json adapter handles serialization, but reading back? 
+    # It might be a dict or string depending on DB driver. 
+    # If using RealDictCursor, it handles JSON types usually.
+    
+    shipping_payload = order.get('shipping_address')
+    address_line = None
+    city = None
+    state = None
+    postal_code = None
+    recipient_name = None
+    
+    if shipping_payload:
+        if isinstance(shipping_payload, str):
+            import json
+            try:
+                shipping_payload = json.loads(shipping_payload)
+            except: pass
+            
+        if isinstance(shipping_payload, dict):
+            # Stripe format: { 'name': '...', 'address': { 'line1': ... } }
+            recipient_name = shipping_payload.get('name')
+            addr = shipping_payload.get('address') or {}
+            address_line = addr.get('line1')
+            if addr.get('line2'):
+                address_line += f", {addr.get('line2')}"
+            city = addr.get('city')
+            state = addr.get('state')
+            postal_code = addr.get('postal_code')
+
+    # If no shipping from order, maybe user profile? (Phase 1)
     
     return {
         'order_id': order['id'],
@@ -235,6 +268,11 @@ def _build_shipping_data(db, order):
         'print_size': order.get('print_size'),
         'material': order.get('material'),
         'quantity': order.get('quantity', 1),
+        'shipping_name': recipient_name or (user.get('full_name') if user else 'Valued Customer'),
+        'shipping_address': address_line,
+        'shipping_city': city,
+        'shipping_state': state,
+        'shipping_zip': postal_code
     }
 
 

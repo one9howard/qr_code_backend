@@ -25,11 +25,16 @@ from dotenv import load_dotenv
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 load_dotenv(os.path.join(BASE_DIR, ".env"))
 
-stripe.api_key = os.getenv("STRIPE_SECRET_KEY")
+# Centralized Init
+from services.stripe_client import init_stripe
 
-if not stripe.api_key or stripe.api_key.startswith("sk_test_placeholder"):
-    print("ERROR: STRIPE_SECRET_KEY is missing or is a placeholder in .env")
-    sys.exit(1)
+class AppMock:
+    config = {
+        'STRIPE_SECRET_KEY': os.getenv('STRIPE_SECRET_KEY'),
+        'APP_STAGE': os.getenv('APP_STAGE', 'dev')
+    }
+
+init_stripe(AppMock)
 
 print(f"Using Stripe key: {stripe.api_key[:12]}...")
 

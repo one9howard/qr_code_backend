@@ -74,43 +74,48 @@ def create_app(test_config=None):
     app.config['STRIPE_SECRET_KEY'] = STRIPE_SECRET_KEY
     app.config['APP_STAGE'] = APP_STAGE
 
-
-    # --- FAIL-FAST PRICING CHECK ---
-    # In production/staging, verifies Keys exist AND warms cache.
-    # If anything fails, CRASHES to prevent bad deployment.
+    # Centralized Stripe Init
+    from services.stripe_client import init_stripe
+    
+    # Initialize Stripe (Centralized)
     with app.app_context():
         try:
+            init_stripe(app)
+        except Exception as e:
+            print(f"[BOOT-FATAL] Stripe Init Failed: {e}")
             if app.config.get('APP_STAGE') in ('prod', 'staging'):
-                # 1. Check Secret Key
-                if not app.config.get('STRIPE_SECRET_KEY'):
-                    raise RuntimeError("Missing STRIPE_SECRET_KEY in production/staging.")
-                
-                # 2. Warm Cache (Strict)
-                print("[Startup] Warming Stripe Price Cache...")
-                from services.stripe_price_resolver import warm_cache
-                from services.print_catalog import get_all_required_lookup_keys
-                
-                keys = get_all_required_lookup_keys()
-                warm_cache(keys) # Will raise if keys invalid/inactive
-                
-            else:
-                # Dev Mode: Warn but allow boot
-                if not app.config.get('STRIPE_SECRET_KEY'):
-                    print("[Startup] WARNING: No Stripe keys found (Dev Mode). Skipping cache.")
+                raise e
+
+    # --- FAIL-FAST PRICING CHECK ---
+    with app.app_context():
+        try:
+            # Pragmatic Boot: Only Strict in Prod/Staging
+            is_strict = app.config.get('APP_STAGE') in ('prod', 'staging')
+            
+            if not app.config.get('STRIPE_SECRET_KEY'):
+                msg = "Missing STRIPE_SECRET_KEY."
+                if is_strict:
+                    raise RuntimeError(msg)
                 else:
-                    # Optional: attempt warm for dev convenience, but don't hard crash
-                    try:
-                         from services.stripe_price_resolver import warm_cache
-                         from services.print_catalog import get_all_required_lookup_keys
-                         warm_cache(get_all_required_lookup_keys())
-                    except Exception as e:
-                         print(f"[Startup] Dev Warning: Cache warm failed: {e}")
+                    print(f"[Startup] WARNING: {msg} (Dev Mode). Skipping cache.")
+            else:
+                # Attempt Cache Warm
+                try:
+                    print("[Startup] Warming Stripe Price Cache...")
+                    from services.stripe_price_resolver import warm_cache
+                    from services.print_catalog import get_all_required_lookup_keys
+                    warm_cache(get_all_required_lookup_keys())
+                except Exception as e:
+                    if is_strict:
+                        raise RuntimeError(f"Pricing Cache Failed: {e}")
+                    else:
+                        print(f"[Startup] Dev Warning: Cache warm failed: {e}")
 
         except Exception as e:
             # Fatal boot error
             if app.config.get('APP_STAGE') in ('prod', 'staging'):
-                print(f"[BOOT-FATAL] Pricing Configuration Error: {e}", flush=True)
-                raise RuntimeError(f"Pricing Configuration Error: {e}")
+                print(f"[BOOT-FATAL] Configuration Error: {e}", flush=True)
+                raise RuntimeError(f"Configuration Error: {e}")
             else:
                 print(f"[Startup] CRITICAL (Dev Ignored): {e}")
 
