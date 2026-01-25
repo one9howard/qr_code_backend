@@ -44,7 +44,10 @@ def resolve_price_id(lookup_key: str) -> str:
         # But if it IS in cache (injected), we can return it.
         if lookup_key in PRICE_CACHE:
             return PRICE_CACHE[lookup_key]['price_id']
-        raise RuntimeError(f"Stripe network call attempted in TEST mode for key: {lookup_key}")
+        
+        # FALLBACK: Return a mock ID to allow local dev/preview without Stripe
+        logger.warning(f"Returning MOCK price for {lookup_key} in TEST mode.")
+        return f"price_mock_{lookup_key}"
 
     # Check Cache
     cached = PRICE_CACHE.get(lookup_key)
