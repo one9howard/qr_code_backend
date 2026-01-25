@@ -106,7 +106,7 @@ def generate_pdf_sign(address, beds, baths, sqft, price, agent_name, brokerage, 
                       sign_color=None, sign_size=None, order_id=None, qr_value=None,
                       # Legacy parameters for backward compatibility with tests
                       qr_path=None, agent_photo_path=None, return_path=False,
-                      user_id=None):
+                      user_id=None, logo_key=None):
     """
     Generate a PDF sign with customizable color and size.
     Layout scales proportionally to the page dimensions.
@@ -128,6 +128,7 @@ def generate_pdf_sign(address, beds, baths, sqft, price, agent_name, brokerage, 
         order_id: Optional ID for tracking/filenames
         qr_value: The value to generate the QR code from (URL)
         user_id: The ID of the user (for logo preferences)
+        logo_key: Storage key for brokerage/agent logo
     """
     # Explicit legacy mode detection:
     # - order_id is None (local tooling like generate_sample_pdfs.py)
@@ -170,14 +171,14 @@ def generate_pdf_sign(address, beds, baths, sqft, price, agent_name, brokerage, 
                 c, layout, address, beds, baths, sqft, price,
                 agent_name, brokerage, agent_email, agent_phone,
                 qr_key, agent_photo_key, sign_color, qr_value=qr_value,
-                agent_photo_path=agent_photo_path, user_id=user_id
+                agent_photo_path=agent_photo_path, user_id=user_id, logo_key=logo_key
             )
         else:
             _draw_standard_layout(
                 c, layout, address, beds, baths, sqft, price,
                 agent_name, brokerage, agent_email, agent_phone,
                 qr_key, agent_photo_key, sign_color, qr_value=qr_value,
-                agent_photo_path=agent_photo_path, user_id=user_id
+                agent_photo_path=agent_photo_path, user_id=user_id, logo_key=logo_key
             )
         
         c.restoreState()
@@ -213,7 +214,7 @@ def generate_pdf_sign(address, beds, baths, sqft, price, agent_name, brokerage, 
 def _draw_standard_layout(c, layout, address, beds, baths, sqft, price,
                           agent_name, brokerage, agent_email, agent_phone,
                           qr_key, agent_photo_key, sign_color, qr_value=None,
-                          agent_photo_path=None, user_id=None):
+                          agent_photo_path=None, user_id=None, logo_key=None):
     """Standard centered layout for vertical/poster signs."""
     
     # Colors
@@ -404,20 +405,42 @@ def _draw_standard_layout(c, layout, address, beds, baths, sqft, price,
             
             c.setFont("Helvetica-Bold", name_font_size)
             c.drawString(text_x, text_center_y + (0.05 * layout.banner_height), agent_main)
-            c.setFont("Helvetica", sub_font_size)
-            c.drawString(text_x, text_center_y - (0.15 * layout.banner_height), agent_sub)
+            
+            # Handle Logo vs Brokerage Text
+            has_logo = False
+            if logo_key and storage.exists(logo_key):
+                try:
+                    logo_bytes = storage.get_file(logo_key)
+                    logo_img = ImageReader(logo_bytes)
+                    # Draw logo below name
+                    logo_h = layout.agent_sub_font * 1.5
+                    c.drawImage(logo_img, text_x, text_center_y - (0.15 * layout.banner_height) - logo_h/2, 
+                               height=logo_h, width=logo_h, preserveAspectRatio=True, mask='auto')
+                    has_logo = True
+                    
+                    # Contact info to right of logo
+                    c.setFont("Helvetica", sub_font_size)
+                    c.drawString(text_x + logo_h + 5, text_center_y - (0.15 * layout.banner_height), agent_sub)
+                    
+                except Exception as e:
+                    print(f"[PDF] Error drawing logo: {e}")
+            
+            if not has_logo:
+                c.setFont("Helvetica", sub_font_size)
+                c.drawString(text_x, text_center_y - (0.15 * layout.banner_height), agent_sub)
+                
         except Exception as e:
             print(f"[PDF] Error drawing agent photo: {e}")
             has_photo = False
     
     if not has_photo:
-        _draw_centered_agent_info(c, layout, agent_main, agent_sub)
+        _draw_centered_agent_info(c, layout, agent_main, agent_sub, logo_key)
 
 
 def _draw_landscape_split_layout(c, layout, address, beds, baths, sqft, price,
                                  agent_name, brokerage, agent_email, agent_phone,
                                  qr_key, agent_photo_key, sign_color, qr_value=None,
-                                 agent_photo_path=None, user_id=None):
+                                 agent_photo_path=None, user_id=None, logo_key=None):
     """
     Split 50/50 Layout for Landscape Signs (36x18).
     Left: Agent Photo + Property Info + Contact
@@ -578,7 +601,7 @@ def _draw_landscape_split_layout(c, layout, address, beds, baths, sqft, price,
     c.rect(0, 0, mid_x, bottom_border_height, fill=1, stroke=0)
 
 
-def _draw_centered_agent_info(c, layout, agent_main, agent_sub):
+def _draw_centered_agent_info(c, layout, agent_main, agent_sub, logo_key=None):
     """Helper to draw centered agent info when no photo."""
     text_center_y = layout.banner_height / 2
     c.setFont("Helvetica-Bold", layout.agent_name_font)

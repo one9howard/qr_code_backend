@@ -162,6 +162,12 @@ def order_sign():
     elif data.get('email'):
         customer_email = data.get('email')
         
+        # Persist guest email if new/changed
+        # Note: We only set this for unauthenticated orders
+        if order.guest_email != customer_email:
+             db_conn.execute("UPDATE orders SET guest_email = %s WHERE id = %s", (customer_email, order.id))
+             db_conn.commit()
+        
     raw_sign_size = order.sign_size
     sign_size = normalize_sign_size(raw_sign_size)
     material = data.get('material', 'coroplast_4mm')

@@ -114,12 +114,13 @@ def create_app(test_config=None):
             else:
                 print(f"[Startup] CRITICAL (Dev Ignored): {e}")
 
-    with app.app_context():
-        try:
-            from services.migration import ensure_agent_columns
-            ensure_agent_columns()
-        except Exception as e:
-            print(f"[Startup] Migration Failed: {e}")
+    # Runtime migration removed - use 'python migrate_v2.py' instead
+    # with app.app_context():
+    #     try:
+    #         from services.migration import ensure_agent_columns
+    #         ensure_agent_columns()
+    #     except Exception as e:
+    #         print(f"[Startup] Migration Failed: {e}")
 
     # Template Helpers
     from utils.template_helpers import get_storage_url

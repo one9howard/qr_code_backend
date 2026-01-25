@@ -262,17 +262,10 @@ def submit():
             )
 
             # Step 4: Update order with PDF key, print_size, and preview_key
-            try:
-                cursor.execute(
-                    "UPDATE orders SET sign_pdf_path = %s, print_size = %s, preview_key = %s WHERE id = %s",
-                    (pdf_key, sign_size, preview_key, order_id),
-                )
-            except Exception:
-                 # Fallback if preview_key column missing (migration lag)
-                 cursor.execute(
-                    "UPDATE orders SET sign_pdf_path = %s, print_size = %s WHERE id = %s",
-                    (pdf_key, sign_size, order_id),
-                )
+            cursor.execute(
+                "UPDATE orders SET sign_pdf_path = %s, print_size = %s, preview_key = %s WHERE id = %s",
+                (pdf_key, sign_size, preview_key, order_id),
+            )
 
             # Save guest token(s) to session
             if guest_token:
@@ -296,6 +289,7 @@ def submit():
                 "assets.html",
                 order_id=order_id,
                 guest_token=guest_token,
+                guest_email=guest_email,
                 property_id=property_id,
                 qr_file=qr_display_url, 
                 preview_url=preview_url,
