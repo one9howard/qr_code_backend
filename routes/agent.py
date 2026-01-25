@@ -289,8 +289,9 @@ def submit():
                 """
                 INSERT INTO orders (
                     user_id, guest_email, property_id, status, sign_pdf_path,
-                    guest_token, guest_token_created_at, sign_color, sign_size, print_size
-                ) VALUES (%s, %s, %s, %s, NULL, %s, %s, %s, %s, %s)
+                    guest_token, guest_token_created_at, sign_color, sign_size, print_size,
+                    order_type
+                ) VALUES (%s, %s, %s, %s, NULL, %s, %s, %s, %s, %s, 'listing_sign')
                 RETURNING id
                 """,
                 (
