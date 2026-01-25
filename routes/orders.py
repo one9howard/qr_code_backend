@@ -216,7 +216,7 @@ def order_sign():
 
         params.append(order.id)
         
-        sql = f"UPDATE orders SET {', '.join(updates)} WHERE id = %%s"
+        sql = f"UPDATE orders SET {', '.join(updates)} WHERE id = %s"
         db_conn.execute(sql, tuple(params))
         db_conn.commit()
         
