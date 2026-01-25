@@ -91,9 +91,9 @@ def index():
             
         # Determine sign type (MVP: Simple N+1 query)
         sign_type = None
-        # Valid orders: sign or smart_riser (NOT listing_kit - it's a different product)
+        # Valid orders: sign, listing_sign, or smart_riser
         has_listing_sign = db.execute(
-            "SELECT 1 FROM orders WHERE property_id=%s AND order_type IN ('sign', 'smart_riser') LIMIT 1", 
+            "SELECT 1 FROM orders WHERE property_id=%s AND order_type IN ('sign', 'listing_sign', 'smart_riser') LIMIT 1", 
             (p['id'],)
         ).fetchone()
         
