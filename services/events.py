@@ -22,7 +22,10 @@ SERVER_EVENTS = {
     "agent_action_failed",
     "upgrade_prompt_shown",
     "kit_checkout_started",
-    "smart_sign_scan"  # SmartSign scans (including unassigned/unactivated)
+    "smart_sign_scan",  # SmartSign scans (including unassigned/unactivated)
+    "qr_logo_uploaded",
+    "qr_logo_deleted",
+    "qr_logo_toggled"
 }
 
 CLIENT_EVENTS = {

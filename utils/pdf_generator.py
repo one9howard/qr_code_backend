@@ -3,6 +3,7 @@ PDF Sign Generator with Size-Aware Layout.
 Generates print-ready PDF signs that scale proportionally to any supported size.
 Vector QR codes for print-grade sharpness using ReportLab's QrCodeWidget.
 """
+import logging
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import inch
 from reportlab.lib.utils import ImageReader
@@ -13,60 +14,13 @@ from utils.qr_vector import draw_vector_qr
 from utils.storage import get_storage
 from config import BASE_URL
 
-class LayoutSpec:
-    """
-    Proportional layout specification derived from page dimensions.
-    All values are in points (1 inch = 72 points).
-    """
-    def __init__(self, width_in: float, height_in: float):
-        self.width = width_in * inch
-        self.height = height_in * inch
-        
-        # Base unit for proportional scaling
-        min_dim = min(self.width, self.height)
-        
-        # Bleed (standard 0.125")
-        self.bleed = 0.125 * inch
-        
-        # Margins (proportional to min dimension) - print-safe
-        self.margin = 0.07 * min_dim  # Increased for print-safe edges
-        
-        # Font sizes (proportional with clamps) - INCREASED for print legibility
-        # Scaling factors increased by ~20-25% from original values
-        self.address_font = max(24, min(72, 0.054 * self.width))
-        self.features_font = max(16, min(48, 0.036 * self.width))
-        self.price_font = max(34, min(96, 0.072 * self.width))
-        self.agent_name_font = max(18, min(48, 0.036 * self.width))
-        self.agent_sub_font = max(14, min(38, 0.029 * self.width))
-        
-        # QR Code base size (will be recomputed dynamically in _draw_standard_layout)
-        # This is a starting point, actual size computed with quiet zones
-        self.qr_size_base = min(0.5 * min_dim, 0.6 * self.height - self.margin * 6)
-        self.qr_size = self.qr_size_base  # Legacy compatibility
-        
-        # Banner height (proportional to height)
-        self.banner_height = 0.25 * self.height
-        
-        # Agent photo size (proportional to banner)
-        self.photo_size = 0.7 * self.banner_height
-        
-        # Vertical positions (from top, proportional)
-        self.address_y = self.height - (0.1 * self.height)
-        self.features_y = self.height - (0.17 * self.height)
-        
-        # QR positioned in center area (base, may be adjusted)
-        self.qr_y = self.height - (0.22 * self.height) - self.qr_size
-        
-        # Price just below QR
-        self.price_y = self.qr_y - (0.04 * self.height)
-
+# ... (LayoutSpec omitted, assuming it's between here)
 
 # =============================================================================
 # QR Drawing Helper (Switchable Vector/Raster)
 # =============================================================================
 from utils.qr_vector import draw_vector_qr
 from utils.qr_image import render_qr_png
-from services.branding import get_user_qr_logo_bytes
 from config import ENABLE_QR_LOGO
 from reportlab.lib.utils import ImageReader
 import io
@@ -87,19 +41,20 @@ def draw_qr(c, qr_value: str, x, y, size, *, user_id: int | None = None, **kwarg
     # 1. Try Logo Path
     if ENABLE_QR_LOGO and user_id:
         try:
+            # Lazy import to avoid circular dep / early DB access
+            from services.branding import get_user_qr_logo_bytes
+            
             logo_bytes = get_user_qr_logo_bytes(user_id)
             if logo_bytes:
-                # Render High-Res Raster
-                # Resolution: target at least 1024px, or 10x size in points if larger?
-                # 1024px is usually plenty for signs (300dpi @ 3 inches = 900px)
-                # Let's ensure at least 10 pixels per point density if size is huge?
-                # standard 1024 is safe default.
+                # Calculate resolution
+                # ReportLab size is in points (1/72 inch)
+                size_in = float(size) / 72.0
+                # Target 300 DPI, min 1024, max 2400
+                target_px = max(1024, min(2400, int(size_in * 300)))
                 
-                png_data = render_qr_png(qr_value, size_px=1024, logo_png=logo_bytes)
+                png_data = render_qr_png(qr_value, size_px=target_px, logo_png=logo_bytes)
                 
                 # ReportLab drawImage
-                # c.drawImage(image, x, y, width=None, height=None)
-                # Need ImageReader
                 img_reader = ImageReader(io.BytesIO(png_data))
                 c.drawImage(img_reader, x, y, width=size, height=size, mask='auto')
                 return

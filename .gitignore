@@ -34,8 +34,13 @@ static/uploads/
 static/generated/
 
 # Python
+
 __pycache__/
-*.py[cod]
+*.pyc
+failure_log.txt
+mig_log.txt
+schema_check.txt
+[cod]
 *$py.class
 *.so
 .Python

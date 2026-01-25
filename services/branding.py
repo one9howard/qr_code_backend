@@ -2,7 +2,7 @@
 import logging
 import io
 import uuid
-from PIL import Image
+from PIL import Image, ImageOps
 from flask import current_app
 from database import get_db
 from utils.storage import get_storage
@@ -11,39 +11,43 @@ import config
 
 logger = logging.getLogger(__name__)
 
-def validate_and_normalize_logo(file_bytes: bytes) -> bytes:
+MAX_LOGO_SIZE = 5 * 1024 * 1024  # 5 MB
+
+def validate_and_normalize_logo(file_bytes: bytes) -> tuple[bytes, bytes]:
     """
-    Validate and normalize a logo image for QR embedding.
+    Validate and normalize a logo image.
     
-    Rules:
-    - Must be a valid image (Pillow).
-    - Max resolution safety check (prevent bombs).
-    - Convert to RGBA.
-    - Resize to 512x512 (contain/pad or crop - implementation: contain with transparent padding).
-    - Strip metadata.
-    - Return serialized PNG bytes.
+    Returns:
+        tuple(original_png_bytes, normalized_512_bytes)
     """
+    if len(file_bytes) > MAX_LOGO_SIZE:
+        raise ValueError("Image too large (max 5MB)")
+
     try:
         # Load image from bytes
         img = Image.open(io.BytesIO(file_bytes))
         
-        # Security: Decompression bomb check
-        # Pillow default limit is ~89M pixels. reduce if needed, but default is usually safe for this context.
-        # We can implement a stricter check:
-        if img.width * img.height > 25_000_000: # 25MP limit
-            raise ValueError("Image too large (max 25MP)")
+        # Security: Decompression bomb check (max 25MP)
+        if img.width * img.height > 25_000_000:
+            raise ValueError("Image dimensions too large (max 25MP)")
 
-        # Convert to RGBA (handles transparency)
+        # Normalize EXIF orientation
+        img = ImageOps.exif_transpose(img)
+
+        # Convert to RGBA
         img = img.convert('RGBA')
         
-        # Normalize to 512x512
-        # Strategy: Aspect Fill (Contain) with transparent background
-        target_size = (512, 512)
+        # 1. Generate "Original" (Transposed, RGBA, PNG)
+        # We re-encode to PNG to scrub metadata and ensure safety
+        orig_buffer = io.BytesIO()
+        img.save(orig_buffer, format='PNG')
+        original_png = orig_buffer.getvalue()
         
-        # Create transparent canvas
+        # 2. Generate "Normalized" (512x512 contained)
+        target_size = (512, 512)
         canvas = Image.new('RGBA', target_size, (255, 255, 255, 0))
         
-        # Calculate resize
+        # Resize thumbnail
         img.thumbnail(target_size, Image.Resampling.LANCZOS)
         
         # Center image
@@ -52,26 +56,20 @@ def validate_and_normalize_logo(file_bytes: bytes) -> bytes:
         
         canvas.paste(img, (offset_x, offset_y))
         
-        # Output as PNG without metadata
-        out_buffer = io.BytesIO()
-        canvas.save(out_buffer, format='PNG')
-        return out_buffer.getvalue()
+        norm_buffer = io.BytesIO()
+        canvas.save(norm_buffer, format='PNG')
+        normalized_png = norm_buffer.getvalue()
+        
+        return original_png, normalized_png
         
     except Exception as e:
-        logger.warning(f"Logo validation failed: {e}")
-        raise ValueError(f"Invalid image file: {e}")
+        logger.warning(f"Logo validation failed: {str(e)}")
+        if "too large" in str(e):
+            raise e
+        raise ValueError("Invalid image file.")
 
 def save_qr_logo(user_id: int, file_storage) -> dict:
-    """
-    Save a new QR logo for a user.
-    
-    Args:
-        user_id: User ID
-        file_storage: Werkzeug FileStorage or bytes-like object
-        
-    Returns:
-        dict with keys 'original_key', 'normalized_key'
-    """
+    """Save a new QR logo for a user."""
     # 1. Read bytes
     if hasattr(file_storage, 'read'):
         file_storage.seek(0)
@@ -79,32 +77,18 @@ def save_qr_logo(user_id: int, file_storage) -> dict:
     else:
         file_bytes = file_storage
         
-    # 2. Normalize
-    normalized_bytes = validate_and_normalize_logo(file_bytes)
+    # 2. Validate & Normalize
+    original_png, normalized_png = validate_and_normalize_logo(file_bytes)
     
-    # 3. Generate Keys
-    storage = get_storage()
+    # 3. Generate Keys (using uuid for uniqueness)
     file_id = str(uuid.uuid4())
-    
     original_key = f"branding/qr_logo/original/{user_id}/{file_id}.png"
     normalized_key = f"branding/qr_logo/normalized/{user_id}/{file_id}.png"
     
     # 4. Store
-    # Store original (as PNG? or keep original format? Plan says re-encode to PNG?)
-    # Plan said "Re-encode to PNG and strip metadata".
-    # But storage keys imply we keep both?
-    # Spec B.2 says: "Store original and normalized". 
-    # Usually better to store original as-is for future re-processing if normalization changes.
-    # However, for safety, I'll store the RAW upload as original (but renamed .png? No, keep extension if possible or just force png)
-    # Let's force PNG for simplicity and safety (re-encoded original?).
-    # Actually, simpler to just store the raw bytes we received as original, but ensure it's safe?
-    # I'll re-encode the original too just to be safe (strip exif/scripts), but keep original resolution?
-    # For now, let's just write the raw bytes to original_key (assuming user wants their exact file back)
-    # But key ends in .png. If they uploaded jpg, that's confusing.
-    # I'll re-save the original bytes as provided.
-    
-    storage.put_file(file_bytes, original_key, content_type="image/png") # Assuming png/image
-    storage.put_file(normalized_bytes, normalized_key, content_type="image/png")
+    storage = get_storage()
+    storage.put_file(original_png, original_key, content_type="image/png")
+    storage.put_file(normalized_png, normalized_key, content_type="image/png")
     
     # 5. Update DB
     db = get_db()
@@ -123,15 +107,15 @@ def save_qr_logo(user_id: int, file_storage) -> dict:
     }
 
 def delete_qr_logo(user_id: int) -> None:
-    """Delete QR logo assets and clear DB fields."""
+    """Delete QR logo assets and clear DB fields (Idempotent)."""
     db = get_db()
     
-    # Get current keys
-    user = db.execute("SELECT qr_logo_original_key, qr_logo_normalized_key FROM users WHERE id = %s", (user_id,)).fetchone()
-    if not user:
+    # Get current keys to delete
+    row = db.execute("SELECT qr_logo_original_key, qr_logo_normalized_key FROM users WHERE id = %s", (user_id,)).fetchone()
+    if not row:
         return
         
-    keys_to_delete = [user['qr_logo_original_key'], user['qr_logo_normalized_key']]
+    keys = [row['qr_logo_original_key'], row['qr_logo_normalized_key']]
     
     # Clear DB first
     db.execute("""
@@ -144,14 +128,16 @@ def delete_qr_logo(user_id: int) -> None:
     """, (user_id,))
     db.commit()
     
-    # Delete from storage
+    # Delete from storage (Idempotent)
     storage = get_storage()
-    for key in keys_to_delete:
+    for key in keys:
         if key:
             try:
-                storage.delete(key)
+                if storage.exists(key):
+                    storage.delete(key)
             except Exception as e:
-                logger.warning(f"Failed to delete storage key {key}: {e}")
+                # Log but do not fail
+                logger.warning(f"Failed to delete logo key {key}: {e}")
 
 def set_use_qr_logo(user_id: int, enabled: bool) -> None:
     """Toggle usage of QR logo."""

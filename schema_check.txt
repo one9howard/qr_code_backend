@@ -1,4 +1,0 @@
-Non-nullable columns:
-id (Default: None)
-order_type (Default: 'sign'::character varying)
-design_version (Default: 1)

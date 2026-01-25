@@ -1,0 +1,137 @@
+﻿============================= test session starts =============================
+platform win32 -- Python 3.14.0, pytest-9.0.2, pluggy-1.6.0 -- C:\Python314\python.exe
+cachedir: .pytest_cache
+rootdir: C:\Users\player1\Desktop\InSite_signs
+configfile: pytest.ini
+collecting ... collected 2 items / 1 skipped
+
+tests/test_qr_logo_pro_gating.py::test_qr_logo_gating_free_user ERROR    [ 50%]
+tests/test_qr_logo_pro_gating.py::test_qr_logo_flow_pro_user ERROR       [100%]
+
+=================================== ERRORS ====================================
+_______________ ERROR at setup of test_qr_logo_gating_free_user _______________
+
+db = <database.PostgresDB object at 0x000001C9BB056900>
+
+    @pytest.fixture
+    def free_user(db):
+        email = f"free-{uuid.uuid4()}@example.com"
+        pwd = "password123"
+>       db.execute("""
+            INSERT INTO users (email, password_hash, subscription_status, is_verified, created_at, role)
+            VALUES (%s, %s, 'canceled', TRUE, NOW(), 'user')
+        """, (email, generate_password_hash(pwd)))
+
+tests\test_qr_logo_pro_gating.py:12: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+database.py:46: in execute
+    raise e
+database.py:40: in execute
+    cur.execute(sql, params)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <cursor object at 0x000001C9BAC1C050; closed: 0>
+query = "\n        INSERT INTO users (email, password_hash, subscription_status, is_verified, created_at, role)\n        VALUES (%s, %s, 'canceled', TRUE, NOW(), 'user')\n    "
+vars = ('free-abba6ea0-0712-4ee3-9cc9-97a59e79f486@example.com', 'scrypt:32768:8:1$7HMlhwxzolAdGg2p$7ef394e7be03497bb47fc673bebd8f6daecf33ee144f03855f1d430c45ba3d26c074ef642b1c56952728948ae5264aab50c0ef9af23f793c475b7bad4ee0aa11')
+
+    def execute(self, query, vars=None):
+        self.index = OrderedDict()
+        self._query_executed = True
+>       return super().execute(query, vars)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       psycopg2.errors.UndefinedColumn: column "role" of relation "users" does not exist
+E       LINE 2: ...rd_hash, subscription_status, is_verified, created_at, role)
+E                                                                         ^
+
+..\..\AppData\Roaming\Python\Python314\site-packages\psycopg2\extras.py:146: UndefinedColumn
+---------------------------- Captured stdout setup ----------------------------
+[Manage] Loaded .env file
+
+[Manage] Starting database migration...
+
+[Manage] DATABASE_URL format: postgresql://postgres:****@localhost:5432/insite_test
+
+[Manage] Detected DATABASE_URL, using Alembic for Postgres...
+
+[Manage] Alembic migration to 'head' successful.
+
+[Manage] Database migration completed successfully.
+
+[App] create_app() called
+[App] Flask app instance created
+{"timestamp": "2026-01-25T00:51:47.385800", "level": "INFO", "message": "Logger setup complete. JSON formatted logs enabled.", "logger": "app", "module": "logger", "lineno": 66}
+[Startup] Dev Warning: Cache warm failed: warm_cache called in TEST mode. Tests must mocked.
+[App] create_app() called
+[App] Flask app instance created
+{"timestamp": "2026-01-25T00:51:47.413640", "level": "INFO", "message": "Logger setup complete. JSON formatted logs enabled.", "logger": "app", "module": "logger", "lineno": 66}
+[Startup] Dev Warning: Cache warm failed: warm_cache called in TEST mode. Tests must mocked.
+[DB] Query Failed: column "role" of relation "users" does not exist
+LINE 2: ...rd_hash, subscription_status, is_verified, created_at, role)
+                                                                  ^
+
+[DB] SQL: 
+        INSERT INTO users (email, password_hash, subscription_status, is_verified, created_at, role)
+        VALUES (%s, %s, 'canceled', TRUE, NOW(), 'user')
+    
+---------------------------- Captured stderr setup ----------------------------
+INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.
+
+INFO  [alembic.runtime.migration] Will assume transactional DDL.
+
+----------------------------- Captured log setup ------------------------------
+INFO     app:logger.py:66 Logger setup complete. JSON formatted logs enabled.
+INFO     app:logger.py:66 Logger setup complete. JSON formatted logs enabled.
+________________ ERROR at setup of test_qr_logo_flow_pro_user _________________
+
+db = <database.PostgresDB object at 0x000001C9BB077610>
+
+    @pytest.fixture
+    def pro_user(db):
+        email = f"pro-{uuid.uuid4()}@example.com"
+        pwd = "password123"
+>       db.execute("""
+            INSERT INTO users (email, password_hash, subscription_status, is_verified, created_at, role)
+            VALUES (%s, %s, 'active', TRUE, NOW(), 'user')
+        """, (email, generate_password_hash(pwd)))
+
+tests\test_qr_logo_pro_gating.py:24: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+database.py:46: in execute
+    raise e
+database.py:40: in execute
+    cur.execute(sql, params)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <cursor object at 0x000001C9BA5BB890; closed: 0>
+query = "\n        INSERT INTO users (email, password_hash, subscription_status, is_verified, created_at, role)\n        VALUES (%s, %s, 'active', TRUE, NOW(), 'user')\n    "
+vars = ('pro-6aaf2aa1-29cb-4cba-bf62-02539093c24f@example.com', 'scrypt:32768:8:1$dH176PMMPVXZNRB7$7e3e25773c23f71f681d04cee72e34a73700b64cda81bdce915a942d3676ee0a1c7e6fb282970338b8f1bce1fa3d07e48941d435aaa1c36dfad22c67ad8910a7')
+
+    def execute(self, query, vars=None):
+        self.index = OrderedDict()
+        self._query_executed = True
+>       return super().execute(query, vars)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       psycopg2.errors.UndefinedColumn: column "role" of relation "users" does not exist
+E       LINE 2: ...rd_hash, subscription_status, is_verified, created_at, role)
+E                                                                         ^
+
+..\..\AppData\Roaming\Python\Python314\site-packages\psycopg2\extras.py:146: UndefinedColumn
+---------------------------- Captured stdout setup ----------------------------
+[App] create_app() called
+[App] Flask app instance created
+{"timestamp": "2026-01-25T00:51:47.934899", "level": "INFO", "message": "Logger setup complete. JSON formatted logs enabled.", "logger": "app", "module": "logger", "lineno": 66}
+[Startup] Dev Warning: Cache warm failed: warm_cache called in TEST mode. Tests must mocked.
+[DB] Query Failed: column "role" of relation "users" does not exist
+LINE 2: ...rd_hash, subscription_status, is_verified, created_at, role)
+                                                                  ^
+
+[DB] SQL: 
+        INSERT INTO users (email, password_hash, subscription_status, is_verified, created_at, role)
+        VALUES (%s, %s, 'active', TRUE, NOW(), 'user')
+    
+----------------------------- Captured log setup ------------------------------
+INFO     app:logger.py:66 Logger setup complete. JSON formatted logs enabled.
+=========================== short test summary info ===========================
+ERROR tests/test_qr_logo_pro_gating.py::test_qr_logo_gating_free_user - psyco...
+ERROR tests/test_qr_logo_pro_gating.py::test_qr_logo_flow_pro_user - psycopg2...
+======================== 1 skipped, 2 errors in 2.45s =========================

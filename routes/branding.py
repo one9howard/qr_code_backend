@@ -4,6 +4,8 @@ from flask_login import login_required, current_user
 from services.branding import save_qr_logo, set_use_qr_logo, delete_qr_logo
 from services.subscriptions import is_subscription_active
 
+from services.events import track_event
+
 branding_bp = Blueprint('branding', __name__)
 
 @branding_bp.route('/api/branding/qr-logo', methods=['POST'])
@@ -29,9 +31,8 @@ def upload_qr_logo():
         # 3. Save
         result = save_qr_logo(current_user.id, file)
         
-        # Auto-enable on successful upload? Plan doesn't rigidly specify, but nice UX.
-        # User requested: "Enabling ... is Pro-only". 
-        # Explicit toggle endpoint exists. Let's NOT auto-enable to be safe/consistent with "default OFF".
+        # Track
+        track_event("qr_logo_uploaded", user_id=current_user.id)
         
         return jsonify({"ok": True})
         
@@ -62,6 +63,9 @@ def toggle_qr_logo():
              return jsonify({"ok": False, "error": "pro_required"}), 403
     
     set_use_qr_logo(current_user.id, enabled)
+    
+    track_event("qr_logo_toggled", user_id=current_user.id, payload={"enabled": enabled})
+    
     return jsonify({"ok": True, "use_qr_logo": enabled})
 
 
@@ -73,4 +77,5 @@ def delete_qr_logo_route():
     ANYONE allowed (cleanup).
     """
     delete_qr_logo(current_user.id)
+    track_event("qr_logo_deleted", user_id=current_user.id)
     return jsonify({"ok": True})

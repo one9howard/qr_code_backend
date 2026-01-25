@@ -1,12 +1,13 @@
 import pytest
 from PIL import Image, ImageDraw
 import io
+
+# Robust check for dependencies
 try:
     from utils.qr_image import render_qr_png
     from pyzbar.pyzbar import decode
-    ZBAR_AVAILABLE = True
 except (ImportError, OSError):
-    ZBAR_AVAILABLE = False
+    pytest.skip("pyzbar or zbar DLL not found. Skipping QR rendering tests.", allow_module_level=True)
 
 def create_dummy_logo(width=512, height=512, color="red"):
     """Create a simple colored square logo."""
