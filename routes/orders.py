@@ -60,6 +60,34 @@ def order_preview(order_id):
         logger.warning(f"Preview not found for order {order_id}: {preview_key} - {e}")
         abort(404)
 
+@orders_bp.route('/orders/listing/select')
+@login_required
+def select_property_for_sign():
+    """
+    Select a property to order a listing sign for.
+    Redirects to Property Creation if no properties exist.
+    """
+    db = get_db()
+    
+    # Fetch user properties
+    # Cannot rely on current_user.properties based on simple User model
+    # Use raw SQL or property join.
+    # We need properties linked to agents owned by this user
+    
+    properties = db.execute("""
+        SELECT p.* 
+        FROM properties p
+        JOIN agents a ON p.agent_id = a.id
+        WHERE a.user_id = %s AND (p.expires_at IS NULL OR p.expires_at > NOW())
+        ORDER BY p.created_at DESC
+    """, (current_user.id,)).fetchall()
+    
+    if not properties:
+        flash("You need to add a property first.", "info")
+        return redirect(url_for('agent.submit'))
+        
+    return render_template('orders/select_property.html', properties=properties)
+
 @orders_bp.route('/orders/<int:order_id>/download')
 def download_pdf(order_id):
     """

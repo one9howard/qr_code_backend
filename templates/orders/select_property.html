@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+
+{% block title %}Select Property | InSite Signs{% endblock %}
+{% block body_class %}dashboard-saas-body{% endblock %}
+
+{% block content %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/pages/dashboard_saas.css') }}">
+
+<div class="app-layout">
+    <!-- Main Content (Full Width) -->
+    <main class="app-main" style="padding: 2rem; max-width: 1200px; margin: 0 auto;">
+
+        <div style="margin-bottom: 2rem;">
+            <a href="{{ url_for('dashboard.index') }}"
+                style="color: var(--text-muted); text-decoration: none; display: flex; align-items: center; gap: 8px;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M19 12H5M12 19l-7-7 7-7" />
+                </svg>
+                Back to Dashboard
+            </a>
+            <h1 style="font-size: 2rem; margin-top: 1rem;">Select Property</h1>
+            <p style="color: var(--text-muted);">Choose a property to order a listing sign for.</p>
+        </div>
+
+        <div class="card">
+            <div class="table-container">
+                <table class="saas-table">
+                    <thead>
+                        <tr>
+                            <th>Address</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for property in properties %}
+                        <tr>
+                            <td>
+                                <div style="font-weight: 500;">{{ property.address }}</div>
+                                <div style="font-size: 0.85rem; color: var(--text-muted);">
+                                    {{ property.beds }} Beds • {{ property.baths }} Baths
+                                    {% if property.sqft %} • {{ property.sqft }} SqFt{% endif %}
+                                </div>
+                            </td>
+                            <td>
+                                {% if not property.expires_at %}
+                                <span class="badge badge-green">Active (Pro)</span>
+                                {% elif property.expires_at > now %}
+                                <span class="badge badge-green">Active</span>
+                                {% else %}
+                                <span class="badge badge-orange">Expired</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{{ url_for('orders.order_sign_start', property_id=property.id) }}"
+                                    class="btn-create" style="font-size: 0.9rem; padding: 6px 12px; height: auto;">
+                                    Order Sign →
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div style="margin-top: 2rem; text-align: center;">
+            <p style="color: var(--text-muted);">Don't see your property?</p>
+            <a href="{{ url_for('agent.submit') }}" style="color: var(--primary);">Create a New Listing</a>
+        </div>
+
+    </main>
+</div>
+{% endblock %}
