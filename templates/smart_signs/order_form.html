@@ -1,89 +1,325 @@
 {% extends "base.html" %}
-{% block body_class %}submit bg-image-dark{% endblock %}
+{% block body_class %}bg-image-dark{% endblock %}
 {% block title %}Order SmartSign{% endblock %}
 
 {% block content %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/pages/submit.css') }}">
 
-<div class="submit-container" style="margin-top: 2rem; position: relative;">
-    <div class="form-container">
-        <h2 style="margin-bottom: 10px;">Order Your SmartSign</h2>
-        <p class="text-muted" style="margin-bottom: 2rem;">Complete the details below to customize your sign.</p>
+<div class="submit-container" style="max-width: 800px; margin: 40px auto; padding: 0 20px;">
 
+    <!-- Header -->
+    <div style="text-align: center; margin-bottom: 30px;">
+        <h1 class="section-header" style="margin-bottom: 8px;">Order SmartSign</h1>
+        <p class="section-subheader">Durable, reusable, and tech-enabled signage for the modern agent.</p>
+    </div>
+
+    <div class="card card--glass">
         <form method="POST" action="{{ url_for('smart_signs.checkout_smartsign') }}" enctype="multipart/form-data"
-            class="form">
+            class="form-grid">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             {% if asset_id %}
             <input type="hidden" name="asset_id" value="{{ asset_id }}">
+            <div
+                style="background: rgba(0, 119, 255, 0.1); border: 1px solid rgba(0, 119, 255, 0.3); border-radius: 8px; padding: 12px; margin-bottom: 24px;">
+                <p style="margin: 0; color: var(--accent-blue); font-size: 0.9rem;">
+                    <strong>Note:</strong> You are ordering a printed sign for existing asset <span
+                        style="font-family: monospace;">{{ asset_id }}</span>.
+                </p>
+            </div>
             {% endif %}
 
             <!-- Section 1: Sign Config -->
-            <h3 style="color: #2196f3; margin-bottom: 1rem;">1. Sign Configuration</h3>
+            <div style="margin-bottom: 32px;">
+                <h3
+                    style="color: var(--accent-cyan); margin-bottom: 16px; font-size: 1.1rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px;">
+                    1. Choose Layout
+                </h3>
 
-            <label style="color: #666; font-size: 0.9rem; margin-bottom: 5px; display: block;">Size</label>
-            <div class="sign-options-container" style="margin-bottom: 1.5rem;">
-                <select name="size" class="size-selector">
-                    <option value="18x24" selected>18" x 24" (Standard)</option>
-                    <option value="24x36">24" x 36" (Large)</option>
-                    <option value="36x24">36" x 24" (Large Wide)</option>
-                </select>
+                <div class="layout-grid"
+                    style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px;">
+                    <!-- Option 1 -->
+                    <label class="layout-card">
+                        <input type="radio" name="layout_id" value="smart_v1_photo_banner" checked>
+                        <div class="preview-box">
+                            <div class="mini-sign banner-style">
+                                <div class="mini-banner"></div>
+                                <div class="mini-content">
+                                    <div class="mini-photo"></div>
+                                    <div class="mini-details">
+                                        <div class="line"></div>
+                                        <div class="line short"></div>
+                                    </div>
+                                    <div class="mini-qr"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <span class="layout-name">Photo Banner</span>
+                        <span class="layout-desc">Sleek top banner with headshot.</span>
+                    </label>
+
+                    <!-- Option 2 -->
+                    <label class="layout-card">
+                        <input type="radio" name="layout_id" value="smart_v1_minimal">
+                        <div class="preview-box">
+                            <div class="mini-sign minimal-style">
+                                <div class="mini-content centered">
+                                    <div class="mini-qr large"></div>
+                                    <div class="line"></div>
+                                    <div class="line short"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <span class="layout-name">Modern Minimal</span>
+                        <span class="layout-desc">Clean white, focus on QR code.</span>
+                    </label>
+
+                    <!-- Option 3 -->
+                    <label class="layout-card">
+                        <input type="radio" name="layout_id" value="smart_v1_agent_brand">
+                        <div class="preview-box">
+                            <div class="mini-sign brand-style">
+                                <div class="mini-content centered">
+                                    <div class="mini-logo">LOGO</div>
+                                    <div class="mini-qr"></div>
+                                    <div class="line"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <span class="layout-name">Agent Brand</span>
+                        <span class="layout-desc">Logo-centric with dark footer.</span>
+                    </label>
+                </div>
+
+                <div class="input-group">
+                    <label class="input-label">Banner Color (Photo Banner Only)</label>
+                    <div class="color-palette-grid">
+                        {% for color in colors %}
+                        <label class="color-option-card">
+                            <input type="radio" name="banner_color_id" value="{{ color.id }}" {% if loop.first
+                                %}checked{% endif %}>
+                            <span class="swatch" style="background-color: {{ color.hex }};"></span>
+                            <span class="label">{{ color.name }}</span>
+                        </label>
+                        {% endfor %}
+                    </div>
+                </div>
             </div>
-
-            <label style="color: #666; font-size: 0.9rem; margin-bottom: 5px; display: block;">Layout Style</label>
-            <select name="layout_id"
-                style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; margin-bottom: 1.5rem;"
-                required>
-                <option value="smart_v1_photo_banner">Photo Banner (Agent Photo + Brand Color)</option>
-                <option value="smart_v1_minimal">Minimal (Clean, White Background)</option>
-                <option value="smart_v1_agent_brand">Agent Brand (Logo Focused)</option>
-            </select>
-
-            <label style="color: #666; font-size: 0.9rem; margin-bottom: 10px; display: block;">Banner Color (For Photo
-                Banner Layout)</label>
-            <div class="color-palette" style="justify-content: flex-start; margin-bottom: 1.5rem;">
-                {% for color in colors %}
-                <label class="color-option">
-                    <input type="radio" name="banner_color_id" value="{{ color.id }}" {% if loop.first %}checked{% endif
-                        %}>
-                    <div class="color-swatch" style="background-color: {{ color.hex }};"></div>
-                </label>
-                {% endfor %}
-            </div>
-
-            <hr style="margin: 1.5rem 0; opacity: 0.1;">
 
             <!-- Section 2: Agent Info -->
-            <h3 style="color: #2196f3; margin-bottom: 1rem;">2. Agent Details</h3>
+            <div style="margin-bottom: 32px;">
+                <h3
+                    style="color: var(--accent-blue); margin-bottom: 16px; font-size: 1.1rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px;">
+                    2. Agent Details
+                </h3>
 
-            <input type="text" name="agent_name" placeholder="Agent Name" value="{{ current_user.full_name }}" required>
-            <input type="text" name="brokerage_name" placeholder="Brokerage (e.g. Realty One)" required>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+                    <div class="input-group">
+                        <label class="input-label">Agent Name</label>
+                        <input type="text" name="agent_name" class="glass-input" placeholder="Full Name"
+                            value="{{ current_user.full_name }}" required>
+                    </div>
+                    <div class="input-group">
+                        <label class="input-label">Brokerage</label>
+                        <input type="text" name="brokerage_name" class="glass-input" placeholder="Brokerage Name"
+                            required>
+                    </div>
+                </div>
 
-            <div style="display: flex; gap: 10px;">
-                <input type="tel" name="agent_phone" placeholder="Phone" style="flex: 1;" required>
-                <input type="email" name="agent_email" placeholder="Email" value="{{ current_user.email }}"
-                    style="flex: 1;" required>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+                    <div class="input-group">
+                        <label class="input-label">Phone</label>
+                        <input type="tel" name="agent_phone" class="glass-input" placeholder="(555) 555-5555" required>
+                    </div>
+                    <div class="input-group">
+                        <label class="input-label">Email</label>
+                        <input type="email" name="agent_email" class="glass-input" placeholder="Email"
+                            value="{{ current_user.email }}" required>
+                    </div>
+                </div>
             </div>
 
-            <hr style="margin: 1.5rem 0; opacity: 0.1;">
-
             <!-- Section 3: Uploads -->
-            <h3 style="color: #2196f3; margin-bottom: 1rem;">3. Photos & Logos</h3>
+            <div style="margin-bottom: 32px;">
+                <h3
+                    style="color: var(--accent-orange); margin-bottom: 16px; font-size: 1.1rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px;">
+                    3. Photos & Logos
+                </h3>
 
-            <label style="color: #666; font-size: 0.9rem; margin-bottom: 5px; display: block;">Agent Headshot</label>
-            <input type="file" name="headshot_file" accept="image/*" style="padding: 10px; margin-bottom: 1rem;">
+                <div class="input-group" style="margin-bottom: 20px;">
+                    <label class="input-label">Agent Headshot</label>
+                    <input type="file" name="headshot_file" accept="image/*" class="glass-input-file">
+                </div>
 
-            <label style="color: #666; font-size: 0.9rem; margin-bottom: 5px; display: block;">Brokerage/Agent
-                Logo</label>
-            <input type="file" name="logo_file" accept="image/*" style="padding: 10px; margin-bottom: 1rem;">
+                <div class="input-group">
+                    <label class="input-label">Brokerage/Agent Logo</label>
+                    <input type="file" name="logo_file" accept="image/*" class="glass-input-file">
+                </div>
+            </div>
 
-            <button type="submit" class="glass-button accent generate-btn" style="width: 100%; margin-top: 1rem;">
-                Proceed to Checkout
-            </button>
-
-            <p style="text-align: center; margin-top: 1rem; font-size: 0.8rem; color: #666;">
-                <i class="icon-lock"></i> Secure Payment via Stripe
-            </p>
+            <!-- Actions -->
+            <div style="margin-top: 40px; text-align: right;">
+                <button type="submit" class="glass-button accent"
+                    style="width: 100%; justify-content: center; padding: 16px; font-size: 1.1rem;">
+                    Proceed to Checkout
+                </button>
+                <p style="text-align: center; margin-top: 16px; font-size: 0.85rem; color: var(--text-muted);">
+                    🔒 Secure Payment via Stripe
+                </p>
+            </div>
         </form>
     </div>
 </div>
+
+<style>
+    /* CSS for Layout Selection Cards */
+    .layout-card {
+        position: relative;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 12px;
+        padding: 16px;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .layout-card:hover {
+        background: rgba(255, 255, 255, 0.1);
+        transform: translateY(-2px);
+    }
+
+    .layout-card input {
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        accent-color: var(--accent-cyan);
+    }
+
+    .layout-card:has(input:checked) {
+        border-color: var(--accent-cyan);
+        background: rgba(6, 182, 212, 0.1);
+        box-shadow: 0 0 0 1px var(--accent-cyan);
+    }
+
+    .layout-name {
+        font-weight: 600;
+        color: white;
+    }
+
+    .layout-desc {
+        font-size: 0.8rem;
+        color: var(--text-muted);
+        text-align: center;
+    }
+
+    /* Mini CSS Sign Previews */
+    .preview-box {
+        width: 80px;
+        height: 100px;
+        background: white;
+        border-radius: 4px;
+        overflow: hidden;
+        position: relative;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    }
+
+    .mini-sign {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .mini-banner {
+        height: 20%;
+        background: #1F6FEB;
+        /* Default Blue */
+    }
+
+    /* Photo Banner Style */
+    .banner-style .mini-content {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        padding: 4px;
+        gap: 4px;
+        align-items: center;
+    }
+
+    .mini-photo {
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        background: #ccc;
+        position: relative;
+        top: -12px;
+        border: 2px solid white;
+    }
+
+    .mini-details {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        align-items: center;
+        width: 100%;
+        margin-top: -8px;
+    }
+
+    .line {
+        height: 2px;
+        width: 80%;
+        background: #eee;
+    }
+
+    .line.short {
+        width: 50%;
+    }
+
+    .mini-qr {
+        width: 24px;
+        height: 24px;
+        background: #000;
+        margin-top: auto;
+    }
+
+    /* Minimal Style */
+    .minimal-style .mini-content.centered {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        padding: 8px;
+    }
+
+    .mini-qr.large {
+        width: 40px;
+        height: 40px;
+        background: #000;
+    }
+
+    /* Brand Style */
+    .brand-style {
+        background: #f5f5f5;
+    }
+
+    .brand-style .mini-content.centered {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: space-between;
+        padding: 8px 0;
+    }
+
+    .mini-logo {
+        font-size: 6px;
+        font-weight: bold;
+        color: #333;
+    }
+</style>
 {% endblock %}

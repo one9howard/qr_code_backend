@@ -56,9 +56,41 @@ def register():
         )
         user_id = cursor.fetchone()['id']
 
+        # Import Upload Utilities
+        from utils.uploads import save_image_upload
+        from config import AGENT_PHOTOS_KEY_PREFIX
+        
+        # New Fields
+        brokerage = request.form.get("brokerage", "").strip()
+        phone = request.form.get("phone", "").strip()
+        
+        # Handle Files
+        headshot_key = None
+        logo_key = None
+        
+        if 'headshot_file' in request.files:
+            f = request.files['headshot_file']
+            if f and f.filename:
+                try:
+                    base = f"agent_{email.split('@')[0]}_head"
+                    headshot_key = save_image_upload(f, AGENT_PHOTOS_KEY_PREFIX, base, validate_image=True)
+                except Exception as e:
+                    print(f"Registration Headshot Error: {e}")
+
+        if 'logo_file' in request.files:
+            f = request.files['logo_file']
+            if f and f.filename:
+                try:
+                    # Storing logos in same bucket for now or use brands check
+                    # Using AGENT prefix for simplicity but ideally AGENT_LOGOS
+                    base = f"agent_{email.split('@')[0]}_logo"
+                    logo_key = save_image_upload(f, AGENT_PHOTOS_KEY_PREFIX, base, validate_image=True)
+                except Exception as e:
+                    print(f"Registration Logo Error: {e}")
+
         db.execute(
-            "INSERT INTO agents (user_id, name, email, brokerage) VALUES (%s, %s, %s, %s)",
-            (user_id, full_name, email, "")
+            "INSERT INTO agents (user_id, name, email, brokerage, phone, photo_filename, logo_filename) VALUES (%s, %s, %s, %s, %s, %s, %s)",
+            (user_id, full_name, email, brokerage, phone, headshot_key, logo_key)
         )
 
         # Link Guest Orders
