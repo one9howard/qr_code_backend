@@ -271,6 +271,10 @@ def should_exclude(path: str, exclude_patterns, include_overrides, is_dir: bool 
         # Prefix directory exclusion
         if path.startswith(pattern.rstrip("/") + "/"):
             return True
+    
+    # HARD EXCLUDE for safety (overrides includes)
+    if basename == "__pycache__" or path.endswith(".pyc"):
+        return True
 
     return False
 

@@ -224,11 +224,16 @@ def submit():
                 INSERT INTO orders (
                     user_id, guest_email, property_id, status, sign_pdf_path,
                     guest_token, guest_token_created_at, sign_color, sign_size, print_size,
-                    order_type
-                ) VALUES (%s, %s, %s, %s, NULL, %s, %s, %s, %s, %s, 'listing_sign')
+                    order_type,
+                    print_product, material, sides
+                ) VALUES (%s, %s, %s, %s, NULL, %s, %s, %s, %s, %s, 'sign', %s, 'coroplast', 'single')
                 RETURNING id
                 """,
-                (user_id, guest_email, property_id, ORDER_STATUS_PENDING_PAYMENT, guest_token, token_created_at, sign_color, sign_size, sign_size)
+                (
+                    user_id, guest_email, property_id, ORDER_STATUS_PENDING_PAYMENT, 
+                    guest_token, token_created_at, sign_color, sign_size, sign_size,
+                    f"listing_sign_coroplast_{sign_size}"  # Dynamic SKU mapping
+                )
             )
             order_id = cursor.fetchone()['id']
 

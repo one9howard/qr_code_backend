@@ -30,7 +30,7 @@ services:
 
   worker:
     build: .
-    command: python scripts/async_worker.py
+    command: sh -c "python scripts/wait_for_db.py && python scripts/async_worker.py"
     environment:
       - FLASK_ENV=development
       - DATABASE_URL=postgresql://user:password@db:5432/insite_signs

@@ -1,123 +1,128 @@
+#!/usr/bin/env python3
+"""
+Async Worker for InSite Signs.
+Polls `async_jobs` table and executes tasks.
 
-import time
+Job Types:
+- 'fulfill_order': Generates Stripe/Pdf/Shipping data and submits to print provider.
+- 'generate_listing_kit': Generates ZIP assets for download.
+"""
 import sys
-import argparse
-import traceback
+import time
 import logging
-
-# Bootstrap path
+import traceback
+import signal
 import os
+
+# Ensure project root is in path
 sys.path.append(os.getcwd())
 
 from app import create_app
 from services.async_jobs import claim_batch, mark_done, mark_failed
 from services.fulfillment import fulfill_order
-from services.listing_kits import generate_kit, create_or_get_kit
+from services.listing_kits import create_or_get_kit, generate_kit
+from models import Order
 
 # Configure Logging
 logging.basicConfig(
+    stream=sys.stdout,
     level=logging.INFO,
-    format='%(asctime)s [%(levelname)s] %(name)s: %(message)s'
+    format='[%(asctime)s] [Worker] %(levelname)s: %(message)s'
 )
 logger = logging.getLogger("worker")
+
+# Graceful Shutdown
+SHUTDOWN = False
+def handle_sigterm(signum, frame):
+    global SHUTDOWN
+    logger.info("Received SIGTERM. Finishing current batch...")
+    SHUTDOWN = True
+
+signal.signal(signal.SIGTERM, handle_sigterm)
+signal.signal(signal.SIGINT, handle_sigterm)
 
 def process_job(job):
     job_id = job['id']
     job_type = job['job_type']
     payload = job['payload']
     
-    # Normalized payload loading
-    if isinstance(payload, str):
-        import json
-        payload = json.loads(payload)
-        
     logger.info(f"Processing Job {job_id}: {job_type}")
     
     try:
         if job_type == 'fulfill_order':
             order_id = payload.get('order_id')
             if not order_id:
-                raise ValueError("Missing order_id")
-            
-            logger.info(f"Fulfilling order {order_id}...")
-            # Ideally fulfill_order should raise exception on failure, 
-            # but currently it returns bool.
-            # We assume it handles its own internal logging?
-            # Actually we want to know if it SUCCEEDED.
+                raise ValueError("Missing order_id in payload")
+                
             success = fulfill_order(order_id)
             if not success:
-                raise RuntimeError("Fulfillment service returned False")
+                # fulfill_order usually logs its own errors, but if it returns False, 
+                # check if we should retry or fail? 
+                # Current implementation: False = Error (logging handled inside)
+                raise RuntimeError("Fulfillment returned failure status")
                 
         elif job_type == 'generate_listing_kit':
-            kit_id = payload.get('kit_id')
-            if not kit_id:
-                 # Check for order_id/property_id fallback
-                 # If webhook passes order_id, we need to resolve kit first?
-                 # Webhook logic says: "if final_type == listing_kit -> enqueue ... payload:{order_id:<id>}"
-                 # So we need to handle order_id to kit_id resolution here if kit_id missing.
-                 order_id = payload.get('order_id')
-                 if order_id:
-                     from database import get_db
-                     db = get_db()
-                     # Resolve user/prop from order
-                     row = db.execute("SELECT user_id, property_id FROM orders WHERE id = %s", (order_id,)).fetchone()
-                     if not row:
-                         raise ValueError(f"Order {order_id} not found")
-                     kit = create_or_get_kit(row['user_id'], row['property_id'])
-                     kit_id = kit['id']
-                     logger.info(f"Resolved Kit {kit_id} from Order {order_id}")
+            order_id = payload.get('order_id')
+            if not order_id:
+                raise ValueError("Missing order_id in payload")
             
-            if not kit_id:
-                 raise ValueError("Missing kit_id or order_id")
-                 
-            logger.info(f"Generating Kit {kit_id}...")
-            generate_kit(kit_id)
-            # generate_kit captures its own errors in DB 'status', 
-            # but we should check if it "threw" or handled safely.
-            # Current generate_kit swallows excep and updates DB. 
-            # So job is technically "done" (attempt finished).
+            # Fetch user/property to ensure Kit exists
+            order = Order.get(order_id)
+            if not order:
+                raise ValueError(f"Order {order_id} not found")
+                
+            # Create/Get Kit Record
+            kit = create_or_get_kit(order.user_id, order.property_id)
+            
+            # Generate
+            generate_kit(kit['id'])
             
         else:
-            raise ValueError(f"Unknown job type: {job_type}")
+            raise ValueError(f"Unknown job_type: {job_type}")
             
         mark_done(job_id)
         
     except Exception as e:
         logger.error(f"Job {job_id} Failed: {e}")
         traceback.print_exc()
-        mark_failed(job_id, str(e))
+        # Mark failed with error
+        mark_failed(job_id, error=str(e), can_retry=True)
 
-def run_worker(once=False, batch_size=10, sleep_interval=5):
+def run_worker():
     app = create_app()
     
     with app.app_context():
-        logger.info("Worker started.")
-        while True:
+        logger.info("Worker Started. Polling for jobs...")
+        
+        while not SHUTDOWN:
             try:
-                jobs = claim_batch(limit=batch_size)
+                # Claim jobs
+                jobs = claim_batch(limit=10)
+                
                 if not jobs:
-                    if once:
-                        logger.info("No jobs found. Exiting (--once).")
-                        break
-                    time.sleep(sleep_interval)
+                    # Sleep if idle
+                    time.sleep(5)
                     continue
                 
                 for job in jobs:
+                    if SHUTDOWN: break
                     process_job(job)
                     
-            except KeyboardInterrupt:
-                logger.info("Worker stopped by user.")
-                break
             except Exception as e:
                 logger.error(f"Worker Loop Error: {e}")
-                traceback.print_exc()
-                if once: break
-                time.sleep(sleep_interval)
+                time.sleep(5) # Brief pause on crash loop
+                
+        logger.info("Worker Stopped.")
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--once", action="store_true", help="Run once and exit")
-    parser.add_argument("--batch", type=int, default=10, help="Batch size")
-    args = parser.parse_args()
+    # Robust DB Verification (Re-using wait_for_db logic or implementing retry)
+    # Since we run inside docker with explicit wait_for_db command, 
+    # we can trust the previous step, but adding a check here is safer.
     
-    run_worker(once=args.once, batch_size=args.batch)
+    # Simple check loop
+    from scripts.wait_for_db import main as wait_main
+    if wait_main() != 0:
+        logger.critical("DB Not Reachable. Worker exiting.")
+        sys.exit(1)
+        
+    run_worker()

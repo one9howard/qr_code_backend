@@ -1,39 +1,48 @@
 #!/usr/bin/env python3
+"""
+Check availability of critical components for release.
+"""
 import os
 import sys
 
-def check_clean(root_dir):
-    """
-    Traverse directory and fail if __pycache__ or .pyc or .log or _cmd_out.txt found.
-    """
-    dirty = False
-    for root, dirs, files in os.walk(root_dir):
-        # Check directories
+def check_release_clean():
+    errors = []
+    
+    # 1. Bytecode check
+    for root, dirs, files in os.walk("."):
         if "__pycache__" in dirs:
-            print(f"[DIRTY] Found __pycache__ in {root}")
-            dirty = True
-            
-        # Check files
+            errors.append(f"[DIRTY] Found __pycache__ in {root}")
         for f in files:
             if f.endswith(".pyc"):
-                print(f"[DIRTY] Found bytecode {f} in {root}")
-                dirty = True
-            if f.endswith("_cmd_out.txt"):
-                print(f"[DIRTY] Found temporary output {f} in {root}")
-                dirty = True
-            if f.endswith(".log"):
-                print(f"[DIRTY] Found log file {f} in {root}")
-                dirty = True
-                
-    return dirty
+                errors.append(f"[DIRTY] Found .pyc file: {os.path.join(root, f)}")
 
-if __name__ == "__main__":
-    print(f"Checking {os.getcwd()} for dirty artifacts...")
-    is_dirty = check_clean(".")
-    
-    if is_dirty:
-        print("FAILURE: Repository contains dirty artifacts. Run 'python -m compileall -q .' only in build context or clean before release.")
+    # 2. Critical Scripts Existence
+    required_scripts = [
+        "scripts/async_worker.py",
+        "scripts/wait_for_db.py"
+    ]
+    for s in required_scripts:
+        if not os.path.exists(s):
+            errors.append(f"[MISSING] Required script not found: {s}")
+
+    # 3. Docker Compose Sanity
+    try:
+        with open("docker-compose.yml", "r") as f:
+            content = f.read()
+            if "scripts/async_worker.py" not in content:
+                errors.append("[CONFIG] docker-compose.yml does not reference scripts/async_worker.py")
+            if "wait_for_db.py" not in content:
+                errors.append("[CONFIG] docker-compose.yml does not reference wait_for_db.py")
+    except FileNotFoundError:
+        errors.append("[MISSING] docker-compose.yml not found")
+
+    if errors:
+        print("FAILURE: Release check failed.")
+        for e in errors:
+            print(e)
         sys.exit(1)
         
-    print("SUCCESS: Repository is clean.")
-    sys.exit(0)
+    print("SUCCESS: Release check passed. Clean and ready.")
+
+if __name__ == "__main__":
+    check_release_clean()

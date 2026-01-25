@@ -120,13 +120,14 @@ def order_sign():
         import secrets
         guest_token = secrets.token_urlsafe(32)
         
+        # Canonical: order_type='sign', print_product set later
         row = db_conn.execute("""
             INSERT INTO orders (
                 user_id, property_id, status, 
                 order_type, guest_token, guest_token_created_at, created_at
             ) VALUES (%s, %s, %s, %s, %s, NOW(), NOW())
             RETURNING id
-        """, (current_user.id, property_id, 'pending_payment', 'listing_sign', guest_token)).fetchone()
+        """, (current_user.id, property_id, 'pending_payment', 'sign', guest_token)).fetchone()
         
         db_conn.commit()
         order = Order.get(row['id'])
@@ -200,7 +201,7 @@ def order_sign():
                 'order_id': str(order.id),
                 'property_id': str(order.property_id),
                 'user_id': curr_user_id,
-                'sign_type': 'listing_sign',
+                'sign_type': 'listing_sign', # Keep for analytics/reference? Or change to 'sign'? Leaving as descriptive 'listing_sign' is fine for metadata.
                 'material': material,
                 'sides': sides,
                 'size': sign_size

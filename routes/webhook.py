@@ -276,11 +276,16 @@ def handle_payment_checkout(db, session):
     elif purpose == 'smart_sign':
         target_type = 'smart_sign'
     else:
+        # Default to existing type or 'sign' if unknown context
         target_type = 'sign'
     
     final_type = current_type
+    # If currently 'listing_sign' (legacy race condition possible during migration deploy), 
+    # force it to 'sign'
+    if current_type == 'listing_sign':
+        final_type = 'sign'
     # Allow update if not yet a canonical final type
-    if current_type not in ('sign', 'listing_unlock', 'smart_sign'):
+    elif current_type not in ('sign', 'listing_unlock', 'smart_sign', 'listing_kit'):
         final_type = target_type
         
     # 2. Prevent Status Regression

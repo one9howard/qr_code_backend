@@ -90,12 +90,17 @@ def index():
             created_date = "N/A"
             
         # Determine sign type (MVP: Simple N+1 query)
-        sign_type = None
-        # Valid orders: sign, listing_sign, or smart_riser
-        has_listing_sign = db.execute(
-            "SELECT 1 FROM orders WHERE property_id=%s AND order_type IN ('sign', 'listing_sign', 'smart_riser') LIMIT 1", 
-            (p['id'],)
-        ).fetchone()
+        # Valid orders: sign (with listing_sign sku) or legacy listing_sign
+        has_listing_sign = db.execute("""
+            SELECT 1 FROM orders 
+            WHERE property_id=%s 
+            AND (
+                (order_type = 'sign' AND print_product LIKE 'listing_sign%%') OR 
+                order_type = 'listing_sign' OR
+                order_type = 'smart_riser'
+            )
+            LIMIT 1
+        """, (p['id'],)).fetchone()
         
         has_smart_sign = db.execute(
             "SELECT 1 FROM sign_assets WHERE active_property_id=%s LIMIT 1",
