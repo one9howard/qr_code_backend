@@ -87,7 +87,8 @@ def select_property_for_sign():
         flash("You need to add a property first.", "warning")
         return redirect(url_for('agent.submit'))
         
-    return render_template('orders/select_property.html', properties=properties)
+    from datetime import datetime
+    return render_template('orders/select_property.html', properties=properties, now=datetime.now())
 
 @orders_bp.route('/orders/<int:order_id>/download')
 def download_pdf(order_id):
