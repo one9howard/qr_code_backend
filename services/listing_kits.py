@@ -9,6 +9,7 @@ from PIL import Image, ImageDraw, ImageFont
 from database import get_db
 from utils.storage import get_storage
 from config import BASE_URL
+from utils.pdf_generator import generate_pdf_sign
 
 def create_or_get_kit(user_id, property_id):
     """
@@ -109,7 +110,7 @@ def generate_kit(kit_id):
         if not sign_pdf_buffer:
             # Generate deterministically
             try:
-                from utils.pdf_generator import generate_pdf_sign
+                # from utils.pdf_generator import generate_pdf_sign (Moved to top)
                 from config import BASE_URL
                 
                 # Gather args

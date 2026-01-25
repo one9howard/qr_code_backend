@@ -106,7 +106,7 @@ def generate_pdf_sign(address, beds, baths, sqft, price, agent_name, brokerage, 
                       sign_color=None, sign_size=None, order_id=None, qr_value=None,
                       # Legacy parameters for backward compatibility with tests
                       qr_path=None, agent_photo_path=None, return_path=False,
-                      user_id=None, logo_key=None):
+                      user_id=None, logo_key=None, output_key=None):
     """
     Generate a PDF sign with customizable color and size.
     Layout scales proportionally to the page dimensions.

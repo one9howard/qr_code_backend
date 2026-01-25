@@ -16,7 +16,7 @@ except (ImportError, OSError):
     ZBarSymbol = None
     # Log warning only once? Or relies on usage to log.
 
-def render_qr_png(data: str, *, size_px: int = 1024, logo_png: bytes | None = None) -> bytes:
+def render_qr_png(data: str, *, size_px: int = 1024, min_px: int = 1024, logo_png: bytes | None = None) -> bytes:
     """
     Render a high-res raster QR code, optionally with a logo overlay.
     """
@@ -25,12 +25,20 @@ def render_qr_png(data: str, *, size_px: int = 1024, logo_png: bytes | None = No
     # Use ECC H if logo, else M
     ecc = qrcode.constants.ERROR_CORRECT_H if logo_png else qrcode.constants.ERROR_CORRECT_M
     
-    # Create QR object
+    # Create QR object - Dynamic box_size to avoid fuzzy upscale
+    # Standard QR has 21 modules + 4*version. 
+    # Approx modules ~ 33 (V4) or higher. 
+    # Logic: Let qrcode library compute version, we just want output image to be large.
+    # We set box_size large enough so (modules * box_size) > min_px
+    # Default box_size 10 is too small for 1024px if modules are few (e.g. 21 * 10 = 210px).
+    # Heuristic: Set box_size to (min_px / 20) roughly.
+    target_box_size = max(10, min_px // 20)
+    
     qr = qrcode.QRCode(
         version=None, # Auto
         error_correction=ecc,
-        box_size=10, # arbitrary base, will resize
-        border=4, # Quiet zone (standard is 4 modules)
+        box_size=target_box_size, 
+        border=4, # Quiet zone
     )
     qr.add_data(data)
     qr.make(fit=True)
