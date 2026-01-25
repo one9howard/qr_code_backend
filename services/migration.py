@@ -1,3 +1,4 @@
+# DEPRECATED — Alembic migration 025 replaces this. Do not run in prod.
 from database import get_db
 
 def ensure_agent_columns():

@@ -61,17 +61,17 @@ class PostgresDB:
     # Intentionally omitted: total_changes (Use explicit commit)
 
 # Missing Helpers from Refactor Restoration
-def create_agent_snapshot(order_id, name, brokerage, email, phone, photo_filename):
+def create_agent_snapshot(order_id, name, brokerage, email, phone, photo_filename, logo_filename=None):
     """
     Creates an immutable snapshot of agent details at the time of order.
     """
     db = get_db()
     db.execute(
         """
-        INSERT INTO agent_snapshots (order_id, name, brokerage, email, phone, photo_filename)
-        VALUES (%s, %s, %s, %s, %s, %s)
+        INSERT INTO agent_snapshots (order_id, name, brokerage, email, phone, photo_filename, logo_filename)
+        VALUES (%s, %s, %s, %s, %s, %s, %s)
         """,
-        (order_id, name, brokerage, email, phone, photo_filename)
+        (order_id, name, brokerage, email, phone, photo_filename, logo_filename)
     )
 
 def get_agent_data_for_order(order_id):

@@ -243,6 +243,7 @@ def submit():
                 email=agent_email,
                 phone=agent_phone,
                 photo_filename=final_headshot_key,
+                logo_filename=final_logo_key, # NEW: Persist logo to snapshot (migration 026)
             )
 
             # Step 2: Generate PDF
@@ -251,7 +252,8 @@ def submit():
                 qr_key, 
                 final_headshot_key, # Respects toggle
                 sign_color, sign_size, order_id=order_id, qr_value=full_url,
-                logo_key=final_logo_key # NEW: Pass logo key (requires update to pdf_generator signature)
+                logo_key=final_logo_key, # NEW: Pass logo key (requires update to pdf_generator signature)
+                user_id=current_user.id if current_user.is_authenticated else None # NEW: For QR Logo rendering
             )
 
             # Step 3: Generate WebP preview (returns storage key)

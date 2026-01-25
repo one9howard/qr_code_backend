@@ -294,7 +294,8 @@ def resize_order():
             order_id=order_id,
             qr_value=qr_url,
             # Pass logo only if column exists in snapshot or we fetch from agent (Snapshot update needed for full fidelity)
-            logo_key=agent.get('logo_filename') if 'logo_filename' in agent else None
+            logo_key=agent.get('logo_filename') if 'logo_filename' in agent else None,
+            user_id=order.user_id # NEW: Pass owner ID for QR logo rendering
         )
         
         # Regenerate preview (Returns Key)
