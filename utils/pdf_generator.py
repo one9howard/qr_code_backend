@@ -14,7 +14,35 @@ from utils.qr_vector import draw_vector_qr
 from utils.storage import get_storage
 from config import BASE_URL
 
-# ... (LayoutSpec omitted, assuming it's between here)
+class LayoutSpec:
+    """
+    Calculates dynamic font sizes and positions based on physical dimensions.
+    """
+    def __init__(self, width_in, height_in):
+        self.width = width_in * inch
+        self.height = height_in * inch
+        self.bleed = 0.125 * inch
+        self.margin = 0.5 * inch
+        
+        # Grid System (Vertical Percentage approx)
+        self.address_y = self.height * 0.90
+        self.features_y = self.height * 0.84
+        self.price_y = self.height * 0.28  # Lowered to make room
+        self.qr_y = self.height * 0.58     # Vertically centered in upper block
+        
+        # Font Scaling Factor (Base 18x24)
+        scale = min(width_in, height_in) / 18.0
+        
+        self.address_font = 85 * scale
+        self.features_font = 42 * scale
+        self.price_font = 110 * scale
+        self.agent_name_font = 38 * scale
+        self.agent_sub_font = 26 * scale
+        
+        # Component Sizes
+        self.banner_height = self.height * 0.22
+        self.photo_size = self.banner_height * 0.85
+        self.qr_size_base = self.width * 0.55
 
 # =============================================================================
 # QR Drawing Helper (Switchable Vector/Raster)
@@ -185,7 +213,7 @@ def generate_pdf_sign(address, beds, baths, sqft, price, agent_name, brokerage, 
 def _draw_standard_layout(c, layout, address, beds, baths, sqft, price,
                           agent_name, brokerage, agent_email, agent_phone,
                           qr_key, agent_photo_key, sign_color, qr_value=None,
-                          agent_photo_path=None):
+                          agent_photo_path=None, user_id=None):
     """Standard centered layout for vertical/poster signs."""
     
     # Colors
