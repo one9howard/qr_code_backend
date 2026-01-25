@@ -129,13 +129,12 @@ def generate_pdf_sign(address, beds, baths, sqft, price, agent_name, brokerage, 
         qr_value: The value to generate the QR code from (URL)
         user_id: The ID of the user (for logo preferences)
         logo_key: Storage key for brokerage/agent logo
+        output_key: Explicit storage key to write to (overrides order_id logic)
     """
     # Explicit legacy mode detection:
-    # - order_id is None (local tooling like generate_sample_pdfs.py)
-    # - return_path=True explicitly set
-    # - qr_path provided (legacy test pattern)
-    # - agent_photo_path provided (legacy test pattern)
-    legacy_mode = (order_id is None) or return_path or (qr_path is not None) or (agent_photo_path is not None)
+    # - order_id is None AND output_key is None (local tooling)
+    # - returning path explicitly requested
+    legacy_mode = (order_id is None and output_key is None) or return_path or (qr_path is not None) or (agent_photo_path is not None)
     
     # Default values
     if not sign_color:
@@ -200,10 +199,13 @@ def generate_pdf_sign(address, beds, baths, sqft, price, agent_name, brokerage, 
     # Normal mode: Upload PDF to storage
     from utils.filenames import make_sign_asset_basename
     
-    # Use order_id if available, otherwise 'tmp'
-    folder = f"pdfs/order_{order_id}" if order_id else "pdfs/tmp"
-    basename = make_sign_asset_basename(order_id if order_id else 0, sign_size)
-    pdf_key = f"{folder}/{basename}.pdf"
+    if output_key:
+        pdf_key = output_key
+    else:
+        # Use order_id if available, otherwise 'tmp'
+        folder = f"pdfs/order_{order_id}" if order_id else "pdfs/tmp"
+        basename = make_sign_asset_basename(order_id if order_id else 0, sign_size)
+        pdf_key = f"{folder}/{basename}.pdf"
     
     storage = get_storage()
     storage.put_file(pdf_buffer, pdf_key, content_type="application/pdf")

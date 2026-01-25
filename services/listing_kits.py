@@ -115,8 +115,10 @@ def generate_kit(kit_id):
                 # Gather args
                 full_url = f"{BASE_URL}/r/{prop['qr_code']}" if prop['qr_code'] else f"{BASE_URL}/p/{prop['slug']}"
                 
-                # Generate to local temp path (order_id=None trigger)
-                temp_pdf_path = generate_pdf_sign(
+                # Generate using output_key (Non-Legacy Mode)
+                temp_pdf_key = f"{prefix}/temp_sign.pdf"
+                
+                generated_key = generate_pdf_sign(
                      address=prop['address'],
                      beds=prop['beds'],
                      baths=prop['baths'],
@@ -128,21 +130,22 @@ def generate_kit(kit_id):
                      agent_phone=prop['agent_phone'],
                      qr_key=None, 
                      agent_photo_key=prop.get('photo_filename'), 
-                     sign_color=None, # Default
-                     sign_size=None, # Default
-                     order_id=None, # LEGACY MODE -> Returns local path
+                     sign_color=None, 
+                     sign_size=None, 
+                     order_id=None, # output_key overrides this
                      qr_value=full_url,
                      user_id=prop['user_id'],
-                     logo_key=prop.get('logo_filename')
+                     logo_key=prop.get('logo_filename'),
+                     output_key=temp_pdf_key
                 )
                 
-                # Read into buffer
-                if temp_pdf_path and os.path.exists(temp_pdf_path):
-                    with open(temp_pdf_path, 'rb') as f:
-                        sign_pdf_buffer = io.BytesIO(f.read())
-                    try:
-                        os.remove(temp_pdf_path)
-                    except: pass
+                # key return is guaranteed if legacy_mode=False
+                sign_pdf_buffer = storage.get_file(generated_key)
+                
+                # Cleanup temp key from S3 to keep bucket clean
+                try:
+                    storage.delete(generated_key)
+                except: pass
                 
             except Exception as e:
                 print(f"Failed to generate sign PDF for kit: {e}")

@@ -186,7 +186,7 @@ def create_app(test_config=None):
     csrf.exempt(webhook_bp)
     csrf.exempt(leads_bp)
     csrf.exempt(printing_bp)
-    csrf.exempt(branding_bp)
+    # csrf.exempt(branding_bp)  # Enforce CSRF for branding
     csrf.exempt(events_bp)  # Public pages post client events without CSRF token
 
     # Dev/Admin
@@ -227,8 +227,16 @@ def create_app(test_config=None):
         # 1. Verification Check
         from flask_login import current_user
         if current_user.is_authenticated and not current_user.is_verified:
-            allowed_routes = ['auth.verify_email', 'auth.logout', 'auth.resend_verification']
-            if request.endpoint not in allowed_routes:
+            allowed_routes = [
+                'auth.verify_email', 'auth.logout', 'auth.resend_verification',
+                # Allow Checkout Flows
+                'billing.start_checkout', 'billing.checkout', 'billing.portal',
+                'orders.order_sign', 'orders.order_success', 'orders.order_cancel',
+                'listing_kits.start_kit', 'listing_kits.download_kit',
+                # Allow Webhooks (though usually auth exempt anyway)
+                'webhook.stripe_webhook'
+            ]
+            if request.endpoint and request.endpoint not in allowed_routes:
                 return redirect(url_for('auth.verify_email'))
     
     @app.before_request
