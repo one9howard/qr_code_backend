@@ -241,6 +241,7 @@ def order_sign():
     # Phase 6: Strict SKU & Pricing
     # 1. Read Material from request, force Sides
     material = data.get('material', 'coroplast_4mm')
+    logger.info(f"[Order Sign] Received material request: {data.get('material')} -> Resolved: {material}")
     sides = 'double' # Strictly forced
     
     # 2. Validate SKU & Get Price

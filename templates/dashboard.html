@@ -467,7 +467,8 @@
 
                 <!-- Listing Signs Card (New) -->
                 <div class="card col-span-12" id="listing-signs-section">
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                         <div>
                             <h3 style="margin: 0; font-size: 1.1rem; display: flex; align-items: center; gap: 8px;">
                                 🛑 Listing Signs
@@ -477,8 +478,75 @@
                             </p>
                         </div>
                         <a href="{{ url_for('orders.select_property_for_sign') }}" class="btn-create"
-                            style="font-size: 0.9rem;">Order Listing
-                            Sign</a>
+                            style="font-size: 0.9rem;">Order Listing Sign</a>
+                    </div>
+
+                    <div class="table-container">
+                        {% set listing_signs_count = 0 %}
+                        {% for p in properties %}
+                        {% if p.sign_type == 'Listing Sign' %}
+                        {% set listing_signs_count = listing_signs_count + 1 %}
+                        {% endif %}
+                        {% endfor %}
+
+                        {% if listing_signs_count > 0 %}
+                        <table class="saas-table">
+                            <thead>
+                                <tr>
+                                    <th>Address</th>
+                                    <th>Material</th>
+                                    <th>Scans</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for p in properties %}
+                                {% if p.sign_type == 'Listing Sign' %}
+                                <tr>
+                                    <td>
+                                        <div style="font-weight: 500;">{{ p.address }}</div>
+                                        <div style="font-size: 0.8rem; color: var(--text-muted);">{{ p.price if p.price
+                                            else 'Price not set' }}</div>
+                                    </td>
+                                    <td>
+                                        <!-- Material is not currently in view model, defaulting to standard display or fetching if needed. 
+                                             For now showing generic badge. -->
+                                        <span class="badge badge-gray">Coroplast / Aluminum</span>
+                                    </td>
+                                    <td>
+                                        <span class="badge badge-blue">{{ p.scan_count }}</span>
+                                    </td>
+                                    <td>
+                                        <span class="badge 
+                                        {% if p.status_color == 'active' %}badge-green
+                                        {% elif p.status_color == 'pro' %}badge-blue
+                                        {% elif p.status_color == 'paid_unlock' %}badge-purple
+                                        {% elif p.status_color == 'expired' %}badge-orange
+                                        {% else %}badge-gray{% endif %}">
+                                            {{ p.status_label }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div style="display: flex; gap: 12px; align-items: center;">
+                                            <a href="{{ url_for('properties.internal_agent_redirect', property_id=p.id) }}"
+                                                target="_blank"
+                                                style="color: var(--text-main); font-size: 0.9rem;">View</a>
+                                            <a href="{{ url_for('dashboard.edit_property', property_id=p.id) }}"
+                                                style="color: var(--text-main); font-size: 0.9rem;">Edit</a>
+                                            <!-- Additional actions specific to listing signs could go here -->
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endif %}
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                        {% else %}
+                        <div style="text-align: center; padding: 32px; color: var(--text-muted);">
+                            No listing signs created yet.
+                        </div>
+                        {% endif %}
                     </div>
                 </div>
 

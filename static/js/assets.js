@@ -46,7 +46,11 @@ function orderSign() {
     // Include material if selector exists
     const materialSelector = document.getElementById('material-selector');
     if (materialSelector) {
+        console.log("Found material selector:", materialSelector);
+        console.log("Selected material:", materialSelector.value);
         requestBody.material = materialSelector.value;
+    } else {
+        console.warn("Material selector not found in DOM");
     }
 
     // Include guest_token if present
