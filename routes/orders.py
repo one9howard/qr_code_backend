@@ -67,6 +67,7 @@ def select_property_for_sign():
     Select a property to order a listing sign for.
     Redirects to Property Creation if no properties exist.
     """
+    from database import get_db
     db = get_db()
     
     # Fetch user properties
