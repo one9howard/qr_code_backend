@@ -87,20 +87,86 @@ def generate_kit(kit_id):
         story_key = f"{prefix}/social_story.png"
         storage.put_file(story_buffer, story_key, "image/png")
         
-        # 4. Create ZIP
-        zip_buffer = io.BytesIO()
-        with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zf:
-            # Add generated assets
-            flyer_buffer.seek(0)
-            zf.writestr("flyer.pdf", flyer_buffer.read())
+            # 4. Include Sign PDF (From Order or Generate)
+            sign_pdf_buffer = None
             
-            square_buffer.seek(0)
-            zf.writestr("social_square.png", square_buffer.read())
+            # Try to find existing order
+            order = db.execute(
+                """
+                SELECT sign_pdf_path FROM orders 
+                WHERE property_id = %s AND order_type = 'listing_sign' AND sign_pdf_path IS NOT NULL
+                ORDER BY created_at DESC LIMIT 1
+                """,
+                (prop_id,)
+            ).fetchone()
             
-            story_buffer.seek(0)
-            zf.writestr("social_story.png", story_buffer.read())
-            
-            # TODO: Add preview image if exists? (MVP requirement C: optional)
+            if order and order['sign_pdf_path'] and storage.exists(order['sign_pdf_path']):
+                 try:
+                     sign_pdf_buffer = storage.get_file(order['sign_pdf_path'])
+                 except: pass
+
+            if not sign_pdf_buffer:
+                # Generate deterministically
+                try:
+                    from utils.pdf_generator import generate_pdf_sign
+                    from config import BASE_URL
+                    
+                    # Generate to temp path (legacy mode returns path)? No, update generate_pdf_sign to return key or bytes?
+                    # valid generate_pdf_sign returns a KEY. We can pass order_id=None (tmp).
+                    # But wait, generate_pdf_sign uploads to storage. 
+                    # We can use that, then read it back.
+                    
+                    # Or use a deterministic key
+                    temp_pdf_key = f"{prefix}/temp_sign.pdf"
+                    
+                    # We need to call generate_pdf_sign. It uploads to storage.
+                    # We can pass order_id=0 or None.
+                    # Issues: generate_pdf_sign signature expects args.
+                    
+                    # Gather args
+                    full_url = f"{BASE_URL}/r/{prop['qr_code']}" if prop['qr_code'] else f"{BASE_URL}/p/{prop['slug']}"
+                    
+                    generated_key = generate_pdf_sign(
+                         address=prop['address'],
+                         beds=prop['beds'],
+                         baths=prop['baths'],
+                         sqft=prop['sqft'],
+                         price=prop['price'],
+                         agent_name=prop['agent_name'],
+                         brokerage=prop['brokerage'],
+                         agent_email=prop['agent_email'],
+                         agent_phone=prop['agent_phone'],
+                         qr_key=None, 
+                         agent_photo_key=prop.get('photo_filename'), # From agent snapshot logic? prop query joins agent table.
+                         sign_color=None, # Default
+                         sign_size=None, # Default
+                         order_id=None,
+                         qr_value=full_url,
+                         user_id=prop['user_id'],
+                         logo_key=prop.get('logo_filename') # Agent table has logo_filename? Query in generate_kit selects a.* so yes.
+                    )
+                    
+                    sign_pdf_buffer = storage.get_file(generated_key)
+                    
+                except Exception as e:
+                    print(f"Failed to generate sign PDF for kit: {e}")
+
+            # 4. Create ZIP
+            zip_buffer = io.BytesIO()
+            with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zf:
+                # Add generated assets
+                flyer_buffer.seek(0)
+                zf.writestr("flyer.pdf", flyer_buffer.read())
+                
+                square_buffer.seek(0)
+                zf.writestr("social_square.png", square_buffer.read())
+                
+                story_buffer.seek(0)
+                zf.writestr("social_story.png", story_buffer.read())
+                
+                if sign_pdf_buffer:
+                    sign_pdf_buffer.seek(0)
+                    zf.writestr("sign.pdf", sign_pdf_buffer.read())
         
         zip_buffer.seek(0)
         zip_key = f"{prefix}/kit.zip"

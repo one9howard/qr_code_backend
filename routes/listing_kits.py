@@ -143,6 +143,9 @@ def start_kit(property_id):
         attempt = create_checkout_attempt(current_user.id, "listing_kit", checkout_params, order_id)
         
         import stripe
+        from config import STRIPE_SECRET_KEY
+        stripe.api_key = STRIPE_SECRET_KEY
+        
         session = stripe.checkout.Session.create(**checkout_params)
         
         # Update attempt
@@ -171,17 +174,17 @@ def download_kit(kit_id):
         
     storage = get_storage()
     # Stream file
-    # utils.storage abstraction usually has .get_file(key), returning bytes.
-    # To stream, we might need a different method or wrap bytes in IO.
-    # storage.py usually returns bytes.
+    # utils.storage abstraction usually has .get_file(key), returning BytesIO.
     
     file_bytes = storage.get_file(kit['kit_zip_path'])
     if not file_bytes:
         return jsonify({"error": "File missing"}), 404
-        
-    import io
+    
+    # Ensure pointer is at start
+    file_bytes.seek(0)
+    
     return send_file(
-        io.BytesIO(file_bytes),
+        file_bytes,
         download_name=f"listing_kit_{kit['property_id']}.zip",
         as_attachment=True,
         mimetype="application/zip"
