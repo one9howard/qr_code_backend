@@ -34,7 +34,8 @@ def get_order_for_request(order_id):
         
         # 2. Check JSON Body
         if not req_token and request.is_json:
-            req_token = request.json.get('guest_token')
+            data = request.get_json(silent=True) or {}
+            req_token = data.get('guest_token')
             
         # 3. Check Headers
         if not req_token:
