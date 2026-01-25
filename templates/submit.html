@@ -10,81 +10,11 @@
     <!-- Form Section -->
     <div class="form-container">
         {% with messages = get_flashed_messages(with_categories=true) %}
+
+        <!-- Standard Flash Messages -->
         {% if messages %}
         {% for category, message in messages %}
-        {% if 'upgrade' in message.lower() or 'pro' in message.lower() or 'add a property' in message.lower() %}
-        <div class="restriction-banner">
-            <!-- Background Graphic (CSS Pattern) -->
-            <div class="banner-bg"></div>
-
-            <div class="banner-content">
-                <div class="feature-badge">
-                    You need to add a property first
-                </div>
-                {% if 'upgrade' in message.lower() or 'pro' in message.lower() %}
-                <a href="{{ url_for('billing.index') }}" class="upgrade-link">Upgrade to Pro</a>
-                {% endif %}
-            </div>
-        </div>
-        <style>
-            .restriction-banner {
-                position: relative;
-                background: #1e1e24;
-                /* Fallback */
-                border-radius: 12px;
-                overflow: hidden;
-                padding: 2.5rem 1rem;
-                margin-bottom: 2rem;
-                text-align: center;
-                box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-            }
-
-            .banner-bg {
-                position: absolute;
-                inset: 0;
-                background: linear-gradient(135deg, rgba(103, 58, 183, 0.8), rgba(233, 30, 99, 0.8)),
-                    url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320"><path fill="%23ffffff" fill-opacity="0.1" d="M0,160L48,176C96,192,192,224,288,224C384,224,480,192,576,165.3C672,139,768,117,864,128C960,139,1056,181,1152,197.3C1248,213,1344,203,1392,197.3L1440,192V320H1392C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320H0Z"></path></svg>');
-                background-size: cover;
-                background-position: center;
-                filter: blur(0px);
-                /* Sharp background */
-            }
-
-            .banner-content {
-                position: relative;
-                z-index: 10;
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                gap: 12px;
-            }
-
-            .feature-badge {
-                background: #FFD700;
-                /* Gold/Yellow */
-                color: #000;
-                font-weight: 800;
-                padding: 6px 16px;
-                border-radius: 4px;
-                text-transform: uppercase;
-                letter-spacing: 0.05em;
-                font-size: 0.9rem;
-                box-shadow: 0 2px 10px rgba(255, 215, 0, 0.3);
-            }
-
-            .upgrade-link {
-                color: rgba(255, 255, 255, 0.9);
-                text-decoration: underline;
-                font-size: 0.85rem;
-                cursor: pointer;
-                transition: color 0.2s;
-            }
-
-            .upgrade-link:hover {
-                color: #fff;
-            }
-        </style>
-        {% else %}
+        {% if 'add a property' not in message.lower() %}
         <div class="flash-message {{ category }}" style="padding: 0.75rem; margin-bottom: 1rem; border-radius: 4px; 
             {% if category == 'error' %}
                 background: rgba(220, 38, 38, 0.1); color: #ef4444; border: 1px solid rgba(220, 38, 38, 0.2);
@@ -98,8 +28,39 @@
         {% endif %}
         {% endfor %}
         {% endif %}
+
+        <!-- Header with Optional Upgrade Link & Warning -->
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
+            <div>
+                <h2 style="margin: 0;">Property Details</h2>
+                {% if messages %}
+                {% for category, message in messages %}
+                {% if 'add a property' in message.lower() %}
+                <div
+                    style="color: #F59E0B; font-weight: 600; font-size: 0.9rem; margin-top: 6px; display: flex; align-items: center; gap: 6px;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                        <path
+                            d="M12 2L1 21h22L12 2zm0 3.516L20.297 19H3.703L12 5.516zM11 10v4h2v-4h-2zm0 6v2h2v-2h-2z" />
+                    </svg>
+                    {{ message }}
+                </div>
+                {% endif %}
+                {% endfor %}
+                {% endif %}
+            </div>
+
+            {% if messages %}
+            {% for category, message in messages %}
+            {% if 'add a property' in message.lower() %}
+            <a href="{{ url_for('billing.index') }}"
+                style="color: #2196f3; text-decoration: none; font-weight: 600; font-size: 0.9rem; padding-top: 4px;">
+                Upgrade to Pro
+            </a>
+            {% endif %}
+            {% endfor %}
+            {% endif %}
+        </div>
         {% endwith %}
-        <h2>Property Details</h2>
         <form method="POST" class="form" enctype="multipart/form-data">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <input name="agent_name" placeholder="Agent Name" value="{{ agent_data.name if agent_data else '' }}"

@@ -84,7 +84,7 @@ def select_property_for_sign():
     """, (current_user.id,)).fetchall()
     
     if not properties:
-        flash("You need to add a property first.", "info")
+        flash("You need to add a property first.", "warning")
         return redirect(url_for('agent.submit'))
         
     return render_template('orders/select_property.html', properties=properties)
