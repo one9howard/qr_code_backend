@@ -2,6 +2,9 @@
 {% block body_class %}auth-page{% endblock %}
 
 {% block content %}
+{% block nav_links %}{% endblock %}
+{% block nav_auth %}{% endblock %}
+{% block drawer_links %}{% endblock %}
 <div class="submit-container" style="margin-top: 2rem;">
     <div class="form-container">
         <h2>Create Your Account</h2>
@@ -62,7 +65,7 @@
             </div>
 
             <button type="submit" class="glass-button primary auth-btn" id="register-btn"
-                style="width: 100%; justify-content: center; margin-top: 24px; font-size: 1.1rem;">
+                style="width: 100%; justify-content: center; margin-top: 24px; font-size: 1.1rem; background: var(--accent-blue); border-color: var(--accent-blue);">
                 Create Account
             </button>
         </form>
