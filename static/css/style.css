@@ -293,13 +293,15 @@ body.bg-image-dark {
 }
 
 .form-container {
-    background: #000000;
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
     padding: 40px;
-    border-radius: 15px;
+    border-radius: 16px;
     width: 100%;
     max-width: 500px;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
-    border: 1px solid #333;
+    border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .form-container h2 {

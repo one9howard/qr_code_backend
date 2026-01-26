@@ -2,16 +2,16 @@
 
 {% block content %}
 <div class="max-w-xl mx-auto px-4 py-16">
-    <div class="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden">
+    <div class="card card--dark max-w-xl mx-auto shadow rounded-lg overflow-hidden">
         <div class="px-6 py-8">
-            <h1 class="text-2xl font-bold text-center text-gray-900 dark:text-white mb-2">Order SmartSign</h1>
-            <p class="text-center text-gray-500 dark:text-gray-400 mb-8">Get a professional, durable PVC sign shipped to
+            <h1 class="text-2xl font-bold text-center text-white mb-2">Order SmartSign</h1>
+            <p class="text-center text-gray-400 mb-8">Get a professional, durable PVC sign shipped to
                 you.</p>
 
-            <div class="border-t border-b border-gray-200 dark:border-gray-700 py-4 mb-6">
+            <div class="border-t border-b border-gray-700 py-4 mb-6">
                 <div class="flex justify-between items-center mb-2">
-                    <span class="text-gray-600 dark:text-gray-300">Sign Code</span>
-                    <span class="font-mono font-bold text-gray-900 dark:text-white">
+                    <span class="text-gray-300">Sign Code</span>
+                    <span class="font-mono font-bold text-white">
                         {% if asset %}
                         {{ asset.code }}
                         {% else %}
@@ -20,8 +20,8 @@
                     </span>
                 </div>
                 <div class="flex justify-between items-center mb-2">
-                    <span class="text-gray-600 dark:text-gray-300">Design Style</span>
-                    <span class="text-gray-900 dark:text-white">
+                    <span class="text-gray-300">Design Style</span>
+                    <span class="text-white">
                         {% if asset %}
                         {{ asset.background_style|replace('_', ' ')|title }}
                         {% else %}
@@ -30,8 +30,8 @@
                     </span>
                 </div>
                 <div class="flex justify-between items-center">
-                    <span class="text-gray-600 dark:text-gray-300">Price</span>
-                    <span class="font-bold text-green-600 text-lg">
+                    <span class="text-gray-300">Price</span>
+                    <span class="font-bold text-green-500 text-lg">
                         {% if price_type == 'cents' %}
                         ${{ "%.2f"|format(price/100) }}
                         {% else %}
@@ -47,18 +47,17 @@
                 {% if asset %}
                 <!-- Reordering Existing Asset -->
                 <input type="hidden" name="asset_id" value="{{ asset.id }}">
-                <div
-                    class="mb-4 bg-yellow-50 dark:bg-yellow-900 p-4 rounded text-sm text-yellow-800 dark:text-yellow-200">
+                <div class="mb-4 bg-yellow-900 p-4 rounded text-sm text-yellow-200">
                     Ordering a reprint for code <strong>{{ asset.code }}</strong>
                 </div>
                 {% else %}
                 <!-- Creating New Asset -->
                 <div class="mb-6">
-                    <label for="property_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    <label for="property_id" class="block text-sm font-medium text-gray-300 mb-2">
                         Assign to Property (Required)
                     </label>
                     <select name="property_id" id="property_id" required
-                        class="w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600">
+                        class="w-full rounded-md border-gray-600 shadow-sm focus:border-green-500 focus:ring-green-500 bg-gray-700 text-white">
                         <option value="" disabled selected>Select a property...</option>
                         {% for p in properties %}
                         <option value="{{ p.id }}">{{ p.address }}</option>
