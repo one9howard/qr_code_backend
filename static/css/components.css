@@ -65,6 +65,12 @@
 }
 
 /* New Product Cards */
+.card--dark:hover {
+    background: rgba(15, 23, 42, 0.6);
+    box-shadow: none;
+    transform: none;
+}
+
 .card-smart {
     background: linear-gradient(180deg, rgba(6, 182, 212, 0.1) 0%, rgba(15, 23, 42, 0.4) 100%);
     border: 1px solid rgba(6, 182, 212, 0.2);
