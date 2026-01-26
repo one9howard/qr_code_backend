@@ -115,8 +115,8 @@
 
     <!-- Main Content -->
     <main class="app-main">
-        <header class="app-header">
-            <div style="display: flex; align-items: center; gap: 16px;">
+        <header class="app-header" style="position: relative; justify-content: center;">
+            <div style="position: absolute; left: 32px; display: flex; align-items: center; gap: 16px;">
                 <button class="mobile-menu-trigger"
                     onclick="document.getElementById('sidebar').classList.toggle('active')"
                     style="background: none; border: none; cursor: pointer; color: white; display: flex; align-items: center;">
@@ -124,15 +124,9 @@
                         <path d="M3 12h18M3 6h18M3 18h18" />
                     </svg>
                 </button>
-                <h1 class="page-title">Dashboard</h1>
             </div>
 
-            <div class="header-actions">
-                <!-- Primary Action Button -->
-                <a href="{{ url_for('orders.select_property_for_sign') }}" class="glass-button primary">
-                    + New Order
-                </a>
-            </div>
+            <h1 class="page-title">Dashboard</h1>
         </header>
 
         <div class="content-wrapper">
