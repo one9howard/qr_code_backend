@@ -39,14 +39,21 @@ def resolve_price_id(lookup_key: str) -> str:
     - Product must be Active
     """
     # Test Guard: Ensure tests don't hit this without patching
-    if os.environ.get('APP_STAGE') == 'test' or os.environ.get('FLASK_ENV') == 'test':
+    # EXCEPTION: If we have a valid Stripe Key (not placeholder) and we are in staging/test,
+    # we might want to actually resolve against Stripe Test Mode.
+    is_test_env = os.environ.get('APP_STAGE') == 'test' or os.environ.get('FLASK_ENV') == 'test'
+    # Check for known dummy values often used in CI/Tests
+    invalid_key_markers = ['placeholder', 'dummy']
+    has_valid_stripe_key = stripe.api_key and not any(m in stripe.api_key for m in invalid_key_markers)
+
+    if is_test_env and not has_valid_stripe_key:
         # In tests, if not patched/cached, we MUST fail.
         # But if it IS in cache (injected), we can return it.
         if lookup_key in PRICE_CACHE:
             return PRICE_CACHE[lookup_key]['price_id']
         
         # FALLBACK: Return a mock ID to allow local dev/preview without Stripe
-        logger.warning(f"Returning MOCK price for {lookup_key} in TEST mode.")
+        logger.warning(f"Returning MOCK price for {lookup_key} in TEST mode (No valid Stripe Key).")
         return f"price_mock_{lookup_key}"
 
     # Check Cache
@@ -76,8 +83,13 @@ def warm_cache(required_keys: list[str]) -> None:
     Validate Active Price + Active Product.
     """
     # Test Guard
-    if os.environ.get('APP_STAGE') == 'test' or os.environ.get('FLASK_ENV') == 'test':
-        raise RuntimeError("warm_cache called in TEST mode. Tests must mocked.")
+    is_test_env = os.environ.get('APP_STAGE') == 'test' or os.environ.get('FLASK_ENV') == 'test'
+    # Check for known dummy values often used in CI/Tests
+    invalid_key_markers = ['placeholder', 'dummy']
+    has_valid_stripe_key = stripe.api_key and not any(m in stripe.api_key for m in invalid_key_markers)
+
+    if is_test_env and not has_valid_stripe_key:
+        raise RuntimeError("warm_cache called in TEST mode (No valid Stripe Key). Tests must mocked.")
 
     logger.info(f"Warming Stripe price cache for {len(required_keys)} keys...")
     

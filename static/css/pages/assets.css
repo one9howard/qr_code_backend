@@ -44,11 +44,16 @@
 
 .order-btn {
     display: inline-block;
-    padding: 1rem 2rem;
+    padding: 1rem 1.5rem;
     text-decoration: none;
     border-radius: 8px;
     width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
     text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .secondary-actions {
@@ -65,14 +70,22 @@
 .sign-meta {
     text-align: center;
     margin-top: 15px;
-    margin-bottom: 15px;
+    margin-bottom: 20px;
     color: #fff;
     font-weight: 500;
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
+    gap: 8px;
+}
+
+.sign-meta-row {
+    display: flex;
+    align-items: center;
     gap: 10px;
     flex-wrap: wrap;
+    justify-content: center;
 }
 
 .size-label {

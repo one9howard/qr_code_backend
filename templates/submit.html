@@ -14,7 +14,7 @@
     </div>
 
     <!-- Form Section -->
-    <div class="card card--glass">
+    <div class="card card--dark">
         {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
         <div style="margin-bottom: 24px;">
@@ -199,7 +199,7 @@
             <!-- Actions -->
             <div style="margin-top: 40px; text-align: right;">
                 <button type="submit" class="glass-button primary"
-                    style="width: 100%; justify-content: center; padding: 16px; font-size: 1.1rem;">
+                    style="width: 100%; justify-content: center; padding: 16px; font-size: 1.1rem; background: var(--accent-blue); border-color: var(--accent-blue);">
                     Generate Listing & Preview Sign →
                 </button>
                 <p style="text-align: center; margin-top: 16px; font-size: 0.85rem; color: var(--text-muted);">
