@@ -9,6 +9,6 @@
         "restartPolicyMaxRetries": 10,
         "healthcheckPath": "/ping",
         "healthcheckTimeout": 100,
-        "startCommand": null
+        "startCommand": "python print_worker.py"
     }
 }
