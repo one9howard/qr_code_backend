@@ -59,6 +59,9 @@ scripts/*
 # ...but include the Docker entrypoint referenced by the Dockerfile ENTRYPOINT:
 !scripts/docker-entrypoint.sh
 !scripts/wait_for_db.py
+!scripts/print_worker.py
+!scripts/async_worker.py
+!scripts/railway_start.sh
 
 # --- Editor / OS junk ---
 .DS_Store
