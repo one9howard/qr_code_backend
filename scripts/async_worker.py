@@ -56,9 +56,6 @@ def process_job(job):
                 
             success = fulfill_order(order_id)
             if not success:
-                # fulfill_order usually logs its own errors, but if it returns False, 
-                # check if we should retry or fail? 
-                # Current implementation: False = Error (logging handled inside)
                 raise RuntimeError("Fulfillment returned failure status")
                 
         elif job_type == 'generate_listing_kit':
@@ -85,7 +82,6 @@ def process_job(job):
     except Exception as e:
         logger.error(f"Job {job_id} Failed: {e}")
         traceback.print_exc()
-        # Mark failed with error
         mark_failed(job_id, error=str(e), can_retry=True)
 
 def run_worker():
@@ -116,10 +112,6 @@ def run_worker():
 
 if __name__ == "__main__":
     # Robust DB Verification (Re-using wait_for_db logic or implementing retry)
-    # Since we run inside docker with explicit wait_for_db command, 
-    # we can trust the previous step, but adding a check here is safer.
-    
-    # Simple check loop
     from scripts.wait_for_db import main as wait_main
     if wait_main() != 0:
         logger.critical("DB Not Reachable. Worker exiting.")

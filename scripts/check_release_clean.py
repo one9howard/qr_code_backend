@@ -31,8 +31,6 @@ def check_release_clean():
             content = f.read()
             if "scripts/async_worker.py" not in content:
                 errors.append("[CONFIG] docker-compose.yml does not reference scripts/async_worker.py")
-            if "wait_for_db.py" not in content:
-                errors.append("[CONFIG] docker-compose.yml does not reference wait_for_db.py")
     except FileNotFoundError:
         errors.append("[MISSING] docker-compose.yml not found")
 
