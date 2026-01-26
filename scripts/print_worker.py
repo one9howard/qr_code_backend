@@ -185,11 +185,7 @@ def parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
     p = argparse.ArgumentParser(description="InSite Signs print worker")
     p.add_argument("--base-url", default=os.environ.get("INSITE_BASE_URL", ""), help="Cloud app base URL")
     p.add_argument("--token", default=os.environ.get("PRINT_JOBS_TOKEN", ""), help="Bearer token")
-    default_inbox = os.environ.get(
-        "PRINT_WORKER_INBOX", 
-        str(Path(__file__).resolve().parent.parent / "print_inbox")
-    )
-    p.add_argument("--inbox-dir", default=default_inbox)
+    p.add_argument("--inbox-dir", default=os.environ.get("PRINT_WORKER_INBOX", "/opt/insite_print_worker/inbox"))
     p.add_argument("--poll-seconds", type=float, default=float(os.environ.get("PRINT_WORKER_POLL_SECONDS", "10")))
     p.add_argument("--limit", type=int, default=int(os.environ.get("PRINT_WORKER_LIMIT", "10")))
     p.add_argument("--timeout", type=int, default=int(os.environ.get("PRINT_WORKER_HTTP_TIMEOUT", "20")))
