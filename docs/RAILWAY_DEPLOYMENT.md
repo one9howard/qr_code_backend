@@ -4,12 +4,14 @@
 The InSite Signs platform requires TWO services to run in production:
 
 1.  **Web Service**
-    *   **Command**: (Default Dockerfile CMD) `gunicorn -w 4 -b 0.0.0.0:5000 "app:create_app()"`
+    *   **Command**: `bash scripts/railway_start.sh`
+    *   **Variables**: `SERVICE_ROLE=web` (Default)
     *   **Port**: 5000 (HTTP)
     *   **Purpose**: Handle user traffic, API requests, and Webhooks.
 
 2.  **Worker Service**
-    *   **Command**: `python scripts/async_worker.py`
+    *   **Command**: `bash scripts/railway_start.sh`
+    *   **Variables**: `SERVICE_ROLE=worker`
     *   **Port**: N/A (Background Process)
     *   **Purpose**: Process order fulfillment, generate listing kits, and handle async tasks.
     *   **CRITICAL**: Without this worker, paid orders accept payment but remain in 'submitted_to_printer' without ever being sent to the provider.

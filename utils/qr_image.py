@@ -44,8 +44,11 @@ def render_qr_png(data: str, *, size_px: int = 1024, min_px: int = 1024, logo_pn
     # This ensures every module is exactly N pixels (crisp edges)
     # instead of fractional scaling which causes aliasing artifacts.
     modules = qr.modules_count
-    # Ensure at least 1px per module
-    box_size = max(1, size_px // modules)
+    # Correct sizing to include border in division (Fix: Never crop quiet zone)
+    # Total width in modules = modules + (border * 2)
+    total_modules = modules + (qr.border * 2)
+    box_size = size_px // total_modules
+    if box_size < 1: box_size = 1
     
     # Update QR instance
     qr.box_size = box_size
@@ -55,6 +58,7 @@ def render_qr_png(data: str, *, size_px: int = 1024, min_px: int = 1024, logo_pn
     qr_img = qr.make_image(fill_color="black", back_color="white").convert('RGB')
     
     # Pad to exact target size_px (Center the QR)
+    # Since box_size is integer floor, qr_img will be <= size_px
     if qr_img.size != (size_px, size_px):
         # Create white canvas
         final_img = Image.new("RGB", (size_px, size_px), "white")

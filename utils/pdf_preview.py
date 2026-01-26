@@ -75,7 +75,20 @@ def render_pdf_to_web_preview(
     
     # Fetch PDF bytes
     try:
-        pdf_bytes = storage.get_file(pdf_key)
+        pdf_file = storage.get_file(pdf_key)
+        # Normalize to bytes (Fix P0)
+        if hasattr(pdf_file, 'read'):
+            pdf_bytes = pdf_file.read()
+            if hasattr(pdf_file, 'seek'):
+                pdf_file.seek(0) # Reset just in case shared
+        elif isinstance(pdf_file, bytes):
+            pdf_bytes = pdf_file
+        elif hasattr(pdf_file, 'getvalue'):
+            pdf_bytes = pdf_file.getvalue()
+        else:
+            # Fallback or error
+            raise ValueError(f"Unknown storage return type: {type(pdf_file)}")
+            
     except Exception as e:
         raise RuntimeError(f"Failed to fetch PDF from storage key {pdf_key}: {e}")
     

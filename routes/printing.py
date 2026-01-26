@@ -80,11 +80,18 @@ def claim_jobs():
         # 2. Lock rows with SKIP LOCKED
         # 3. Update status and retry time
         # 4. Return details
+        # Atomic Claim Query
+        # 1. Select candidates (queued OR claimed+expired)
+        # 2. Lock rows with SKIP LOCKED
+        # 3. Update status and retry time
         query = """
             WITH claimed AS (
                 SELECT job_id 
                 FROM print_jobs 
-                WHERE (status = 'queued' OR (status = 'claimed' AND next_retry_at <= CURRENT_TIMESTAMP))
+                WHERE (
+                    (status = 'queued' AND (next_retry_at IS NULL OR next_retry_at <= CURRENT_TIMESTAMP))
+                    OR (status = 'claimed' AND claimed_at < CURRENT_TIMESTAMP - INTERVAL '10 minutes')
+                )
                 ORDER BY created_at ASC 
                 LIMIT %s
                 FOR UPDATE SKIP LOCKED
