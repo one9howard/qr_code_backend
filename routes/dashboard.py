@@ -22,7 +22,7 @@ FREE_LEAD_LIMIT = 2
 
 @dashboard_bp.route("/")
 @login_required
-def dashboard():
+def index():
     """
     Main dashboard view.
     Shows properties, leads, and analytics (Integrated Phase 5).
