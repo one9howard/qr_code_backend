@@ -342,32 +342,6 @@ def edit_property(property_id):
 # SmartSigns Management (MVP)
 # =============================================================================
 
-@dashboard_bp.route("/smart-signs/create", methods=["POST"])
-@login_required
-def create_smart_sign():
-    """Manual creation for Pro users (Phase 1) - Creates UNACTIVATED draft asset."""
-    if not current_user.is_pro:
-        flash("SmartSigns are a Pro feature. Upgrade to create assets manually.", "error")
-        return redirect(url_for('dashboard.index'))
-    
-    from services.smart_signs import SmartSignsService
-    
-    try:
-        # Option B enforcement: Assets are ALWAYS created unactivated
-        # Activation requires a paid SmartSign order
-        asset = SmartSignsService.create_asset(
-            user_id=current_user.id
-            # No activated param - assets are always unactivated
-        )
-        flash(
-            f"SmartSign created! Code: {asset['code']}. "
-            f"Purchase a SmartSign to activate it.",
-            "info"
-        )
-    except Exception as e:
-        flash(f"Error creating SmartSign: {e}", "error")
-        
-    return redirect(url_for('dashboard.index', _anchor='smart-signs-section'))
 
 
 @dashboard_bp.route("/smart-signs/<int:asset_id>/assign", methods=["POST"])

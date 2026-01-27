@@ -44,8 +44,26 @@ signal.signal(signal.SIGINT, handle_sigterm)
 def process_job(job):
     job_id = job['id']
     job_type = job['job_type']
-    payload = job['payload']
+    raw_payload = job['payload']
     
+    # Robust Payload Normalization (Blocker 3)
+    import json
+    if raw_payload is None:
+        payload = {}
+    elif isinstance(raw_payload, str):
+        try:
+            payload = json.loads(raw_payload)
+        except json.JSONDecodeError as e:
+            logger.error(f"Job {job_id} Payload Decode Error: {e}")
+            mark_failed(job_id, error=f"Invalid JSON payload: {e}", can_retry=False)
+            return
+    elif isinstance(raw_payload, dict):
+        payload = raw_payload
+    else:
+        logger.error(f"Job {job_id} Invalid Payload Type: {type(raw_payload)}")
+        mark_failed(job_id, error=f"Invalid payload type: {type(raw_payload)}", can_retry=False)
+        return
+
     logger.info(f"Processing Job {job_id}: {job_type}")
     
     try:

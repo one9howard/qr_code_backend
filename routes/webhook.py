@@ -532,7 +532,7 @@ def _freeze_properties_for_customer(db, stripe_customer_id):
     from utils.timestamps import utc_iso
     now_iso = utc_iso()
     
-     cursor = db.execute('''
+    cursor = db.execute('''
         UPDATE properties 
         SET expires_at = %s 
         WHERE id IN (

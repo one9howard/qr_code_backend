@@ -30,7 +30,7 @@ def create_or_get_kit(user_id, property_id):
     cursor = db.execute(
         """
         INSERT INTO listing_kits (user_id, property_id, status)
-        VALUES (%s, %s, 'pending')
+        VALUES (%s, %s, 'queued')
         RETURNING id
         """,
         (user_id, property_id)
@@ -51,6 +51,10 @@ def generate_kit(kit_id):
     if not kit:
         return
         
+    # Transition to generating
+    db.execute("UPDATE listing_kits SET status='generating' WHERE id=%s", (kit_id,))
+    db.commit()
+    
     prop = db.execute(
         """
         SELECT p.*, a.name as agent_name, a.brokerage, a.email as agent_email, a.phone as agent_phone,

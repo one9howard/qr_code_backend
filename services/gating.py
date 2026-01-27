@@ -82,6 +82,14 @@ def property_is_paid(property_id, user_id=None):
     
     return bool(has_order)
 
+def get_property_gating_status(property_id):
+    """
+    Single source of truth for property paid/expiry status.
+    
+    Returns:
+        dict: {
+            "is_paid": bool,
+            "is_expired": bool,
             "expires_at": datetime | None,
             "days_remaining": int | None,
             "max_photos": int,
