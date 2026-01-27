@@ -151,7 +151,12 @@
     height: 20%;
     background: #1F6FEB;
     display: flex;
-    justify-content: center;
+    justify-content: flex-start;
+    /* Left align */
+    padding-left: 8px;
+    /* Offset from left edge */
+    align-items: center;
+    /* Vertically center in the banner strip */
     position: relative;
 }
 
@@ -172,7 +177,9 @@
     background: #ccc;
     position: relative;
     top: -9px;
+    /* This pulls it up to overlap */
     border: 1px solid white;
+    /* Removed margin-top auto since we are using flex positioning now */
 }
 
 .mini-details {
@@ -203,8 +210,9 @@
 
 /* Specific Override for Photo Banner */
 .banner-style .mini-qr {
-    width: 30px;
-    height: 30px;
+    width: 34px;
+    /* Increased to match user preference */
+    height: 34px;
     margin-top: 10px;
     margin-bottom: 5px;
 }
@@ -221,8 +229,8 @@
 }
 
 .mini-qr.large {
-    width: 33px;
-    height: 33px;
+    width: 34px;
+    height: 34px;
     background: #000;
     margin-bottom: 12px;
 }
@@ -249,8 +257,9 @@
 
 /* Specific Override for Agent Brand */
 .brand-style .mini-qr {
-    width: 30px;
-    height: 30px;
+    width: 34px;
+    /* Match Modern Minimal */
+    height: 34px;
     margin-top: 0;
     margin-bottom: 15px;
     /* Move it up */
