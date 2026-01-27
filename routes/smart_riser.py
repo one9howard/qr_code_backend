@@ -40,21 +40,9 @@ def checkout_smart_riser():
     except ValueError as e:
         return jsonify({'error': str(e)}), 400
         
-    # Create Asset (Option B) - use canonical uniqueness helper
-    db = get_db()
-    from utils.qr_codes import generate_unique_code
-    code = generate_unique_code(db, length=12)
-            
-    row = db.execute("""
-        INSERT INTO sign_assets (user_id, code, label, created_at, activated_at, is_frozen)
-        VALUES (%s, %s, %s, NOW(), NULL, FALSE)
-        RETURNING id
-    """, (current_user.id, code, f"SmartRiser {code}")).fetchone()
-    asset_id = row['id']
-    db.commit()
-
-    # Create Order via raw SQL
-    payload = {'sign_asset_id': asset_id}
+    # Create Order via raw SQL (Option B True Strict: No asset yet)
+    payload = {} # No sign_asset_id yet
+    asset_id = None
     
     order_row = db.execute("""
         INSERT INTO orders (
@@ -71,6 +59,14 @@ def checkout_smart_riser():
     
     # Stripe Session
     try:
+        metadata = {
+            'order_type': 'smart_sign',
+            'order_id': str(order_id),
+            'user_id': str(current_user.id)
+        }
+        if asset_id is not None:
+            metadata['sign_asset_id'] = str(asset_id)
+
         checkout_session = stripe.checkout.Session.create(
             payment_method_types=['card'],
             line_items=[{
@@ -81,12 +77,7 @@ def checkout_smart_riser():
             success_url=url_for('orders.order_success', _external=True) + '?session_id={CHECKOUT_SESSION_ID}',
             cancel_url=url_for('orders.order_cancel', _external=True),
             client_reference_id=str(order_id),
-            metadata={
-                'order_type': 'smart_sign',
-                'order_id': order_id,
-                'user_id': current_user.id,
-                'sign_asset_id': asset_id
-            }
+            metadata=metadata
         )
         return jsonify({'checkoutUrl': checkout_session.url})
     except Exception as e:

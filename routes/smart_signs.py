@@ -317,21 +317,13 @@ def checkout_smartsign():
              return redirect(url_for('smart_signs.order_start'))
         new_asset_id = asset_id
     else:
-        # New Asset - use canonical uniqueness helper
-        from utils.qr_codes import generate_unique_code
-        code = generate_unique_code(db, length=12)
+        # New Asset (Option B True Strict)
+        # Do NOT create asset row yet. Asset is created by Webhook on payment.
+        new_asset_id = None
         
-        # Insert Inactive Asset
-        row = db.execute("""
-            INSERT INTO sign_assets (user_id, code, label, created_at, activated_at, is_frozen)
-            VALUES (%s, %s, %s, NOW(), NULL, FALSE)
-            RETURNING id
-        """, (current_user.id, code, f"SmartSign {code}")).fetchone()
-        new_asset_id = row['id']
-        db.commit()
-
-    # Add asset ID to payload so the print generator knows what QR to generate
-    payload['sign_asset_id'] = new_asset_id
+    # Add asset ID to payload only if re-ordering
+    if new_asset_id:
+        payload['sign_asset_id'] = new_asset_id
     
     # Normalize payload keys (agent_*_key -> *_key)
     from services.printing.validation import normalize_payload_keys
@@ -354,6 +346,14 @@ def checkout_smartsign():
     
     # 8. Stripe Session
     try:
+        metadata = {
+            'order_type': 'smart_sign',
+            'order_id': str(order_id),
+            'user_id': str(current_user.id)
+        }
+        if new_asset_id is not None:
+            metadata['sign_asset_id'] = str(new_asset_id)
+
         checkout_session = stripe.checkout.Session.create(
             payment_method_types=['card'],
             line_items=[{
@@ -366,12 +366,7 @@ def checkout_smartsign():
             client_reference_id=str(order_id),
             shipping_address_collection={'allowed_countries': ['US']},
             customer_email=current_user.email,
-            metadata={
-                'order_type': 'smart_sign',
-                'order_id': order_id,
-                'user_id': current_user.id,
-                'sign_asset_id': new_asset_id  # Critical for Webhook Activation
-            }
+            metadata=metadata
         )
         
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':

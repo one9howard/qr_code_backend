@@ -74,6 +74,13 @@ def start_kit(property_id):
     
     if can_generate_freely:
         # Trigger Generation (Async)
+        # BLOCKER FIX: Persist queued state immediately
+        db.execute(
+            "UPDATE listing_kits SET status='queued', last_error=NULL, updated_at=NOW() WHERE id=%s",
+            (kit['id'],)
+        )
+        db.commit()
+
         current_app.logger.info(f"Enqueuing listing kit generation for kit {kit['id']} (Order validated)")
         from services.async_jobs import enqueue
         enqueue('generate_listing_kit', {'kit_id': kit['id'], 'user_id': current_user.id})

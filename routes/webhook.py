@@ -237,6 +237,20 @@ def handle_subscription_checkout(db, session):
     )
 
 
+def _parse_sign_asset_id(val):
+    """
+    Safely parse sign_asset_id from Stripe metadata.
+    Returns int if valid string digit, None otherwise (including 'None' string).
+    """
+    if not val:
+        return None
+    val_str = str(val).strip()
+    if val_str.lower() in ('none', 'null', ''):
+        return None
+    if val_str.isdigit():
+        return int(val_str)
+    return None
+
 def handle_payment_checkout(db, session):
     order_id = session.get('metadata', {}).get('order_id')
     
@@ -258,7 +272,7 @@ def handle_payment_checkout(db, session):
     paid_at = utc_iso()
     # Fetch current order state to determine updates
     # Use dict() safely with row objects
-    row = db.execute("SELECT status, order_type, property_id FROM orders WHERE id = %s", (order_id,)).fetchone()
+    row = db.execute("SELECT status, order_type, property_id, user_id FROM orders WHERE id = %s", (order_id,)).fetchone()
     if not row:
         current_app.logger.error(f"[Webhook] Order {order_id} not found during payment processing")
         raise ValueError(f"Order {order_id} not found")
@@ -380,10 +394,45 @@ def handle_payment_checkout(db, session):
 
     # 4. SmartSign Activation (Idempotent)
     if final_type == 'smart_sign':
-        asset_id = session.get('metadata', {}).get('sign_asset_id')
+        raw_asset_id = session.get('metadata', {}).get('sign_asset_id')
+        asset_id = _parse_sign_asset_id(raw_asset_id)
+        
+        # If no asset_id provided (Phase 2 True Strict), we must create one now
+        if not asset_id:
+            # Check for existing asset (Idempotency)
+            existing_asset = db.execute(
+                "SELECT id FROM sign_assets WHERE activation_order_id = %s", 
+                (order_id,)
+            ).fetchone()
+            
+            if existing_asset:
+                asset_id = existing_asset['id']
+                current_app.logger.info(f"[Webhook] Found existing asset {asset_id} for Order {order_id}")
+            else:
+                user_id = row['user_id'] # Get owner from order row logic (not session)
+                if not user_id:
+                     user_id = resolve_user_id(db, session)
+
+                from utils.qr_codes import generate_unique_code
+                code = generate_unique_code(db, length=12)
+                
+                # Create Activated Asset
+                res = db.execute("""
+                    INSERT INTO sign_assets (user_id, code, label, created_at, activated_at, is_frozen, activation_order_id)
+                    VALUES (%s, %s, %s, NOW(), NOW(), FALSE, %s)
+                    RETURNING id
+                """, (user_id, code, f"SmartSign {code}", order_id)).fetchone()
+                asset_id = res['id']
+                db.commit()
+                current_app.logger.info(f"[Webhook] Created NEW Asset {asset_id} ({code}) for Order {order_id}")
+                
+                # Link Asset to Order
+                db.execute("UPDATE orders SET sign_asset_id = %s WHERE id = %s", (asset_id, order_id))
+                db.commit()
+
+        # If we had an asset_id (legacy/re-order) or just created one
         if asset_id:
-            # Check if already activated to avoid overwriting original activation time
-            # or side-effects if we had them.
+            # Ensure it is marked activated (for re-orders or legacy path)
             existing = db.execute("SELECT activated_at FROM sign_assets WHERE id = %s", (asset_id,)).fetchone()
             if existing and existing['activated_at'] is None:
                 db.execute("""
@@ -532,7 +581,14 @@ def _freeze_properties_for_customer(db, stripe_customer_id):
     from utils.timestamps import utc_iso
     now_iso = utc_iso()
     
-    cursor = db.execute('''
+    from constants import PAID_STATUSES
+    
+    # Canonical Freeze Logic (Blocker Fix)
+    placeholders = ','.join(['%s'] * len(PAID_STATUSES))
+    
+    # Query must exclude properties that have a PAID order of valid types
+    
+    query = f'''
         UPDATE properties 
         SET expires_at = %s 
         WHERE id IN (
@@ -544,10 +600,15 @@ def _freeze_properties_for_customer(db, stripe_customer_id):
         )
         AND id NOT IN (
             SELECT property_id FROM orders 
-            WHERE status IN ('paid', 'submitted_to_printer', 'fulfilled') 
+            WHERE status IN ({placeholders}) 
             AND order_type IN ('sign', 'listing_unlock', 'smart_sign')
         )
-    ''', (now_iso, stripe_customer_id))
+    '''
+    
+    # Params: [expires_at_val, stripe_cust_id, *PAID_STATUSES]
+    params = [now_iso, stripe_customer_id] + list(PAID_STATUSES)
+    
+    cursor = db.execute(query, tuple(params))
     
     if cursor.rowcount > 0:
         db.commit()
