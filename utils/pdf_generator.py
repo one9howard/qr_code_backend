@@ -167,12 +167,29 @@ def generate_pdf_sign(address, beds, baths, sqft, price, agent_name, brokerage, 
         c.translate(layout.bleed, layout.bleed)
         
         if is_landscape:
-            _draw_landscape_split_layout(
-                c, layout, address, beds, baths, sqft, price,
-                agent_name, brokerage, agent_email, agent_phone,
-                qr_key, agent_photo_key, sign_color, qr_value=qr_value,
-                agent_photo_path=agent_photo_path, user_id=user_id, logo_key=logo_key
-            )
+            # Dispatch based on Layout ID for Landscape
+            if layout_id == 'smart_v1_minimal':
+                _draw_landscape_minimal(
+                    c, layout, address, beds, baths, sqft, price,
+                    agent_name, brokerage, agent_email, agent_phone,
+                    qr_key, agent_photo_key, sign_color, qr_value=qr_value,
+                    agent_photo_path=agent_photo_path, user_id=user_id, logo_key=logo_key
+                )
+            elif layout_id == 'smart_v1_agent_brand':
+                _draw_landscape_brand(
+                    c, layout, address, beds, baths, sqft, price,
+                    agent_name, brokerage, agent_email, agent_phone,
+                    qr_key, agent_photo_key, sign_color, qr_value=qr_value,
+                    agent_photo_path=agent_photo_path, user_id=user_id, logo_key=logo_key
+                )
+            else:
+                # Default / Photo Banner uses Split Layout
+                _draw_landscape_split_layout(
+                    c, layout, address, beds, baths, sqft, price,
+                    agent_name, brokerage, agent_email, agent_phone,
+                    qr_key, agent_photo_key, sign_color, qr_value=qr_value,
+                    agent_photo_path=agent_photo_path, user_id=user_id, logo_key=logo_key
+                )
         else:
             # Dispatch based on Layout ID
             if layout_id == 'smart_v1_minimal':
@@ -808,3 +825,188 @@ def _draw_brand_layout(c, layout, address, beds, baths, sqft, price,
     sub_y = footer_h * 0.35
     c.setFont("Helvetica", layout.agent_sub_font)
     c.drawCentredString(layout.width/2, sub_y, f"{agent_phone}  |  {agent_email.lower()}")
+
+
+def _draw_landscape_minimal(c, layout, address, beds, baths, sqft, price,
+                        agent_name, brokerage, agent_email, agent_phone,
+                        qr_key, agent_photo_key, sign_color, qr_value=None,
+                        agent_photo_path=None, user_id=None, logo_key=None):
+    """
+    Minimalist Layout (Landscape): White background, Large QR LEFT, Text RIGHT.
+    Split 40/60 roughly.
+    """
+    COLOR_TEXT = (0, 0, 0)
+    COLOR_SUBTEXT = (0.5, 0.5, 0.5)
+    
+    # 1. Background
+    c.setFillColorRGB(1, 1, 1)
+    c.rect(-layout.bleed, -layout.bleed, layout.width + 2*layout.bleed, layout.height + 2*layout.bleed, fill=1, stroke=0)
+    
+    # Grid
+    margin_x = layout.width * 0.05
+    margin_y = layout.height * 0.1
+    
+    # Left Block: QR Code (40% width)
+    left_w = layout.width * 0.4
+    qr_size = min(left_w, layout.height - 2*margin_y)
+    
+    qr_x = margin_x + (left_w - qr_size) / 2
+    qr_y = (layout.height - qr_size) / 2
+    
+    if qr_value: qr_url = qr_value
+    elif qr_key:
+        filename = os.path.basename(qr_key)
+        v = os.path.splitext(filename)[0]
+        qr_url = f"{BASE_URL.rstrip('/')}/r/{v}"
+    else: qr_url = "https://example.com"
+
+    try:
+        draw_qr(c, qr_url, qr_x, qr_y, qr_size, ecc_level="H", user_id=user_id)
+        # Scan me text
+        c.setFont("Helvetica-Bold", layout.features_font * 0.8)
+        c.setFillColorRGB(*COLOR_TEXT)
+        c.drawCentredString(qr_x + qr_size/2, qr_y - (layout.features_font * 1.5), "SCAN FOR PHOTOS")
+    except: pass
+    
+    # Right Block: Info (starts at 45%)
+    right_x = layout.width * 0.45
+    
+    # Vertically centered block in right side
+    # Address -> Price -> Features -> Divider -> Agent
+    
+    y_cursor = layout.height * 0.75
+    
+    # Address
+    c.setFont("Helvetica-Bold", layout.address_font * 1.2)
+    c.setFillColorRGB(*COLOR_TEXT)
+    c.drawString(right_x, y_cursor, address.upper())
+    y_cursor -= (layout.address_font * 1.6)
+    
+    # Price
+    if price:
+        c.setFont("Helvetica-Bold", layout.price_font * 1.2)
+        c.setFillColorRGB(*hex_to_rgb(sign_color))
+        c.drawString(right_x, y_cursor, price)
+        y_cursor -= (layout.price_font * 1.5)
+        
+    # Features
+    c.setFont("Helvetica", layout.features_font * 1.3)
+    c.setFillColorRGB(*COLOR_SUBTEXT)
+    line = f"{beds} BEDS  |  {baths} BATHS"
+    if sqft: line += f"  |  {sqft} SQ FT"
+    c.drawString(right_x, y_cursor, line)
+    
+    # Divider
+    y_cursor -= (layout.height * 0.15)
+    c.setStrokeColorRGB(0.9, 0.9, 0.9)
+    c.setLineWidth(2)
+    c.line(right_x, y_cursor, layout.width - margin_x, y_cursor)
+    
+    # Agent
+    y_cursor -= (layout.height * 0.1)
+    c.setFont("Helvetica-Bold", layout.agent_name_font)
+    c.setFillColorRGB(*COLOR_TEXT)
+    c.drawString(right_x, y_cursor, f"{agent_name.upper()} | {brokerage.upper()}")
+    
+    y_cursor -= (layout.agent_name_font * 1.3)
+    c.setFont("Helvetica", layout.agent_sub_font)
+    c.drawString(right_x, y_cursor, f"{agent_phone}  |  {agent_email.lower()}")
+
+
+def _draw_landscape_brand(c, layout, address, beds, baths, sqft, price,
+                        agent_name, brokerage, agent_email, agent_phone,
+                        qr_key, agent_photo_key, sign_color, qr_value=None,
+                        agent_photo_path=None, user_id=None, logo_key=None):
+    """
+    Brand Layout (Landscape):
+    Sidebar (Left 25%) with Logo/Brand color.
+    Content (Right 75%) with Clean info and QR.
+    """
+    COLOR_TEXT = (0.1, 0.1, 0.1)
+    COLOR_BG = (1, 1, 1) # White Content Area
+    COLOR_SIDEBAR = hex_to_rgb(sign_color) # Sidebar matches brand
+    
+    # 1. Background Content
+    c.setFillColorRGB(*COLOR_BG)
+    c.rect(-layout.bleed, -layout.bleed, layout.width + 2*layout.bleed, layout.height + 2*layout.bleed, fill=1, stroke=0)
+    
+    # 2. Sidebar (Left)
+    sidebar_w = layout.width * 0.28
+    c.setFillColorRGB(*COLOR_SIDEBAR)
+    c.rect(-layout.bleed, -layout.bleed, sidebar_w + layout.bleed, layout.height + 2*layout.bleed, fill=1, stroke=0)
+    
+    # 3. Sidebar Content (Logo + Agent)
+    storage = get_storage()
+    
+    # Logo (Top of Sidebar)
+    logo_y = layout.height * 0.75
+    logo_size = sidebar_w * 0.7
+    logo_x = (sidebar_w - logo_size) / 2
+    
+    has_logo = False
+    if logo_key and storage.exists(logo_key):
+        try:
+            logo_data = storage.get_file(logo_key)
+            img = ImageReader(logo_data)
+            c.drawImage(img, logo_x, logo_y, width=logo_size, height=logo_size, preserveAspectRatio=True, mask='auto', anchorAtXY=True)
+            has_logo = True
+        except: pass
+        
+    if not has_logo:
+        # Text fallback
+        c.setFillColorRGB(1, 1, 1)
+        c.setFont("Helvetica-Bold", layout.agent_name_font)
+        c.drawCentredString(sidebar_w/2, logo_y, "BRAND")
+        
+    # Agent Info Bottom Sidebar
+    c.setFillColorRGB(1, 1, 1)
+    c.setFont("Helvetica-Bold", layout.agent_name_font)
+    c.drawCentredString(sidebar_w/2, layout.height * 0.25, agent_name.upper())
+    
+    c.setFont("Helvetica", layout.agent_sub_font * 0.9)
+    c.drawCentredString(sidebar_w/2, layout.height * 0.18, brokerage.upper())
+    c.drawCentredString(sidebar_w/2, layout.height * 0.12, agent_phone)
+    
+    # 4. Main Content (Right)
+    # 3 cols: Info | Info | QR
+    content_x = sidebar_w + (layout.width * 0.05)
+    content_w = layout.width - content_x - (layout.width * 0.05)
+    
+    cursor_y = layout.height * 0.85
+    
+    # Address
+    c.setFillColorRGB(*COLOR_TEXT)
+    c.setFont("Helvetica-Bold", layout.address_font * 1.2)
+    c.drawString(content_x, cursor_y, address.upper())
+    
+    cursor_y -= (layout.address_font * 1.5)
+    
+    # Price
+    if price:
+        c.setFillColorRGB(*COLOR_SIDEBAR) # Use brand color
+        c.setFont("Helvetica-Bold", layout.price_font * 1.2)
+        c.drawString(content_x, cursor_y, price)
+        cursor_y -= (layout.price_font * 1.5)
+
+    # Features
+    c.setFillColorRGB(0.5, 0.5, 0.5)
+    c.setFont("Helvetica", layout.features_font * 1.3)
+    line = f"{beds} BEDS | {baths} BATHS"
+    if sqft: line += f" | {sqft} SQ FT"
+    c.drawString(content_x, cursor_y, line)
+    
+    # 5. QR Code (Bottom Right of Content Area)
+    qr_size = layout.height * 0.45
+    qr_x = layout.width - (layout.width * 0.05) - qr_size
+    qr_y = layout.height * 0.1
+    
+    if qr_value: qr_url = qr_value
+    else: qr_url = "https://example.com"
+    
+    try:
+        draw_qr(c, qr_url, qr_x, qr_y, qr_size, user_id=user_id)
+        # Scan CTA
+        c.setFillColorRGB(*COLOR_TEXT)
+        c.setFont("Helvetica-Bold", layout.features_font)
+        c.drawCentredString(qr_x + qr_size/2, qr_y - (layout.features_font * 1.2), "SCAN FOR PHOTOS")
+    except: pass
