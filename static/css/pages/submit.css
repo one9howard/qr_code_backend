@@ -229,15 +229,13 @@
 }
 
 .mini-photo {
-    width: 18px;
-    height: 18px;
-    border-radius: 50%;
+    width: 14px;
+    height: 14px;
+    border-radius: 2px;
+    /* Square with slight rounding */
     background: #ccc;
-    position: relative;
-    top: -9px;
-    /* This pulls it up to overlap */
     border: 1px solid white;
-    /* Removed margin-top auto since we are using flex positioning now */
+    /* Removed top offset to center in footer */
 }
 
 .mini-details {
@@ -262,8 +260,11 @@
 .mini-qr {
     width: 18px;
     height: 18px;
-    background: #000;
-    /* Removed global margin-top: auto to allow specific layouts to control positioning */
+    /* background: #000; Removed solid black */
+    background-image: url('../../img/generic_qr.png');
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-position: center;
 }
 
 /* Specific Override for Photo Banner */
@@ -289,7 +290,7 @@
 .mini-qr.large {
     width: 34px;
     height: 34px;
-    background: #000;
+    /* background: #000; Inherit image */
     margin-bottom: 12px;
 }
 

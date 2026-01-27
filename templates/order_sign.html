@@ -5,27 +5,25 @@
 <!-- Reuse Submit CSS for layout -->
 <link rel="stylesheet" href="{{ url_for('static', filename='css/pages/submit.css') }}">
 
-<div class="submit-container" style="margin-top: 2rem; position: relative;">
+<div class="submit-container" style="max-width: 800px; margin: 40px auto; padding: 0 20px;">
 
-    <div class="form-container">
-        <h2>Order Sign</h2>
-        <p style="color: #888; margin-bottom: 2rem;">Customize your sign for the property below.</p>
+    <!-- Header -->
+    <div style="text-align: center; margin-bottom: 30px;">
+        <h1 class="section-header" style="margin-bottom: 8px;">Order Sign</h1>
+        <p class="section-subheader">Customize your sign for the property below.</p>
+    </div>
 
+    <div class="card card--dark">
+        <!-- Property Summary -->
         <div class="property-summary"
-            style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 8px; margin-bottom: 2rem;">
-            <h3 style="margin: 0; color: #fff; font-size: 1.2rem;">{{ property.address }}</h3>
-            <div style="display: flex; gap: 15px; margin-top: 5px; color: #aaa; font-size: 0.9rem;">
-                <span>{{ property.beds }} Beds</span>
-                <span>•</span>
-                <span>{{ property.baths }} Baths</span>
-                {% if property.sqft %}
-                <span>•</span>
-                <span>{{ property.sqft }} SqFt</span>
-                {% endif %}
+            style="margin-bottom: 2rem; padding: 1.5rem; background: rgba(255,255,255,0.05); border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);">
+            <h3 style="margin: 0 0 0.5rem 0; color: white; font-size: 1.2rem;">{{ property.address }}</h3>
+            <div style="color: #aaa; font-size: 0.9rem;">
+                {{ property.beds }} Beds &bull; {{ property.baths }} Baths
             </div>
         </div>
 
-        <form id="orderSignForm" class="form">
+        <form id="orderSignForm" class="form-grid">
             <input type="hidden" name="property_id" value="{{ property.id }}">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
@@ -68,20 +66,199 @@
                     </label>
                 </div>
 
+                <!-- Product Type Selector -->
+                <div
+                    style="display: flex; gap: 10px; margin-bottom: 1.5rem; background: rgba(0,0,0,0.3); padding: 4px; border-radius: 8px;">
+                    <label style="flex: 1; cursor: pointer;">
+                        <input type="radio" name="product_type" value="listing_sign" checked style="display: none;">
+                        <div class="type-tab active"
+                            style="text-align: center; padding: 10px; border-radius: 6px; font-weight: 500; color: #aaa; transition: all 0.2s;">
+                            Main Sign
+                        </div>
+                    </label>
+                    <label style="flex: 1; cursor: pointer;">
+                        <input type="radio" name="product_type" value="smart_riser" style="display: none;">
+                        <div class="type-tab"
+                            style="text-align: center; padding: 10px; border-radius: 6px; font-weight: 500; color: #aaa; transition: all 0.2s;">
+                            Smart Rider
+                        </div>
+                    </label>
+                </div>
+
+                <style>
+                    input[name="product_type"]:checked+.type-tab {
+                        background: #0077ff;
+                        color: white;
+                        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+                    }
+
+                    .type-tab:hover {
+                        background: rgba(255, 255, 255, 0.05);
+                    }
+
+                    input[name="product_type"]:checked+.type-tab:hover {
+                        background: #0066d6;
+                    }
+                </style>
+
+                <!-- Layout Selection (Hidden for Riders) -->
+                <span id="layoutContainer">
+                    <label style="color: #666; font-size: 0.9rem; margin-bottom: 15px; display: block;">Sign
+                        Layout</label>
+
+                    <!-- Standardized Grid from SmartSigns -->
+                    <div class="layout-grid"
+                        style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 2rem;">
+                        <!-- Option 1: Photo Banner -->
+                        <label class="layout-card">
+                            <input type="radio" name="layout_id" value="smart_v1_photo_banner" checked>
+                            <div class="preview-box">
+                                <div class="mini-sign banner-style">
+                                    <div class="mini-content">
+                                        <div class="mini-details">
+                                            <div class="line"></div>
+                                            <div class="line short"></div>
+                                        </div>
+                                        <div class="mini-qr"></div>
+                                    </div>
+                                    <div class="mini-banner">
+                                        <div class="mini-photo"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <span class="layout-name">Photo Banner</span>
+                            <span class="layout-desc">Professional bottom banner with headshot.</span>
+                        </label>
+
+                        <!-- Option 2: Minimal -->
+                        <label class="layout-card">
+                            <input type="radio" name="layout_id" value="smart_v1_minimal">
+                            <div class="preview-box">
+                                <div class="mini-sign minimal-style">
+                                    <div class="mini-content centered">
+                                        <div class="mini-qr large"></div>
+                                        <div class="line"></div>
+                                        <div class="line short"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <span class="layout-name">Modern Minimal</span>
+                            <span class="layout-desc">Clean white, focus on QR code.</span>
+                        </label>
+
+                        <!-- Option 3: Agent Brand -->
+                        <label class="layout-card">
+                            <input type="radio" name="layout_id" value="smart_v1_agent_brand">
+                            <div class="preview-box">
+                                <div class="mini-sign brand-style">
+                                    <div class="mini-content centered">
+                                        <div class="mini-logo">LOGO</div>
+                                        <div class="mini-qr"></div>
+                                        <div class="line"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <span class="layout-name">Agent Brand</span>
+                            <span class="layout-desc">Logo-centric with dark footer.</span>
+                        </label>
+                    </div>
+                </span>
+
+                <!-- Material Selector -->
+                <div id="materialSection">
+                    <label style="color: #666; font-size: 0.9rem; margin-bottom: 5px; display: block;">Material</label>
+                    <select name="material" id="materialSelect" class="size-selector" style="margin-bottom: 1.5rem;">
+                        <option value="coroplast_4mm" selected>Coroplast (4mm) - Standard</option>
+                        <option value="aluminum_040">Aluminum (.040) - Premium (+$$)</option>
+                    </select>
+                </div>
+
                 <!-- Size Selector -->
-                <label
-                    style="color: #666; font-size: 0.9rem; margin-bottom: 5px; display: block; margin-top: 1.5rem;">Sign
-                    Size</label>
-                <select name="sign_size" class="size-selector">
-                    <option value="12x18">12" × 18" (Small)</option>
-                    <option value="18x24" selected>18" × 24" (Standard)</option>
-                    <option value="24x36">24" × 36" (Large)</option>
-                    <option value="36x18">36" × 18" (Wide)</option>
+                <label style="color: #666; font-size: 0.9rem; margin-bottom: 5px; display: block;">Size</label>
+                <select name="sign_size" id="sizeSelect" class="size-selector">
+                    <!-- Populated by JS -->
                 </select>
+
+                <script>
+                    const productTypes = document.querySelectorAll('input[name="product_type"]');
+                    const sizeSelect = document.getElementById('sizeSelect');
+                    const materialSelect = document.getElementById('materialSelect');
+                    const layoutContainer = document.getElementById('layoutContainer');
+                    const materialSection = document.getElementById('materialSection');
+                    const aluminumOption = materialSelect.querySelector('option[value="aluminum_040"]');
+
+                    const OPTIONS = {
+                        listing_sign: [
+                            { val: '12x18', txt: '12" × 18" (Small Yard Sign)' },
+                            { val: '18x24', txt: '18" × 24" (Standard)' },
+                            { val: '24x36', txt: '24" × 36" (Large)' },
+                            { val: '36x18', txt: '36" × 18" (Wide)' }
+                        ],
+                        smart_riser: [
+                            { val: '6x24', txt: '6" × 24" (Standard Rider)' },
+                            { val: '6x36', txt: '6" × 36" (Large Rider)' }
+                        ]
+                    };
+
+                    function updateFormState() {
+                        const type = document.querySelector('input[name="product_type"]:checked').value;
+
+                        // 1. Update Sizes
+                        sizeSelect.innerHTML = '';
+                        OPTIONS[type].forEach(opt => {
+                            const option = document.createElement('option');
+                            option.value = opt.val;
+                            option.textContent = opt.txt;
+                            if (opt.val === '18x24' || opt.val === '6x24') option.selected = true;
+                            sizeSelect.appendChild(option);
+                        });
+
+                        // 2. Toggle Sections and Constraints
+                        if (type === 'smart_riser') {
+                            layoutContainer.style.display = 'none';
+                            // Riders are Aluminum only per spec? Or Coro available?
+                            // User key "smart_riser_6x24" implies a specific product.
+                            // Print catalog says Risers are Aluminum only.
+                            materialSelect.value = 'aluminum_040';
+                            materialSelect.disabled = true; // Lock to Aluminum
+
+                            // Visual update for locked select (optional)
+                            materialSelect.style.opacity = '0.7';
+                        } else {
+                            layoutContainer.style.display = 'block';
+                            materialSelect.disabled = false;
+                            materialSelect.style.opacity = '1';
+
+                            // Re-apply 12x18 constraint
+                            checkMaterialConstraints();
+                        }
+                    }
+
+                    function checkMaterialConstraints() {
+                        const type = document.querySelector('input[name="product_type"]:checked').value;
+                        if (type !== 'listing_sign') return;
+
+                        if (sizeSelect.value === '12x18') {
+                            materialSelect.value = 'coroplast_4mm';
+                            aluminumOption.disabled = true;
+                            aluminumOption.textContent = 'Aluminum (Not available for 12x18)';
+                        } else {
+                            aluminumOption.disabled = false;
+                            aluminumOption.textContent = 'Aluminum (.040) - Premium (+$$)';
+                        }
+                    }
+
+                    productTypes.forEach(radio => radio.addEventListener('change', updateFormState));
+                    sizeSelect.addEventListener('change', checkMaterialConstraints);
+
+                    // Init
+                    updateFormState();
+                </script>
             </div>
 
             <button type="submit" class="glass-button accent generate-btn"
-                style="margin-top: 2rem; width: 100%;">Proceed to Payment</button>
+                style="margin-top: 2rem; width: 100%;">Proceed to
+                Payment</button>
         </form>
     </div>
 </div>
@@ -98,8 +275,11 @@
         const formData = new FormData(this);
         const data = {
             property_id: formData.get('property_id'),
+            print_product: formData.get('product_type'), // NEW: listing_sign or smart_riser
             color: formData.get('sign_color'),
-            size: formData.get('sign_size')
+            size: formData.get('sign_size'),
+            layout_id: formData.get('layout_id'),
+            material: formData.get('material')
         };
 
         try {
