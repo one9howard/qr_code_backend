@@ -42,10 +42,16 @@ def index():
     if agent_id:
         # Fetch properties with basic info
         properties = db.execute("""
-            SELECT id, address, slug, photo_filename, qr_code, created_at
-            FROM properties 
-            WHERE agent_id = %s
-            ORDER BY created_at DESC
+            SELECT 
+                p.id, 
+                p.address, 
+                p.slug, 
+                p.qr_code, 
+                p.created_at,
+                (SELECT filename FROM property_photos pp WHERE pp.property_id = p.id LIMIT 1) as photo_filename
+            FROM properties p
+            WHERE p.agent_id = %s
+            ORDER BY p.created_at DESC
         """, (agent_id['id'],)).fetchall()
         
         for p in properties:
