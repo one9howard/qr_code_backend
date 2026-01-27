@@ -173,7 +173,7 @@ body.saas-landing>.container {
     margin: 0 auto 0.25rem auto;
     position: relative;
     left: -10px;
-    top: 5px;
+    top: 10px;
 }
 
 .hero-text h1 {
@@ -191,7 +191,7 @@ body.saas-landing>.container {
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     position: relative;
-    top: -20px;
+    top: -30px;
 }
 
 .hero-text p {
@@ -205,6 +205,8 @@ body.saas-landing>.container {
     list-style: none;
     padding: 0;
     margin-bottom: 40px;
+    position: relative;
+    top: -10px;
 }
 
 .feature-bullets li {
@@ -227,6 +229,8 @@ body.saas-landing>.container {
 .hero-actions {
     display: flex;
     gap: 16px;
+    position: relative;
+    top: -10px;
 }
 
 /* --- Device Mockups (Content Images) --- */
