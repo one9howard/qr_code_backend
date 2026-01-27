@@ -295,8 +295,8 @@ def _draw_standard_layout(c, layout, address, beds, baths, sqft, price,
         qr_max_h = qr_top_limit - qr_bottom_limit
         qr_max_w = layout.width - 2 * (layout.margin + quiet)
         
-        # Target: 25% larger than base, but clamped to available space
-        qr_target = layout.qr_size_base * 1.25
+        # Target: 15% larger than base, clamped to available space (Reduced from 25% to fix overlap)
+        qr_target = layout.qr_size_base * 1.15
         qr_size = max(0.5 * inch, min(qr_target, qr_max_w, qr_max_h))
         
         # Position QR centered horizontally
@@ -668,10 +668,10 @@ def _draw_minimal_layout(c, layout, address, beds, baths, sqft, price,
            fill=1, stroke=0)
            
     # 2. QR Code (Upper Center, Large)
-    # Give it top 55% of space minus margins
-    qr_center_y = layout.height * 0.65
+    # Adjusted to prevent overlap with text
+    qr_center_y = layout.height * 0.68
     qr_max_w = layout.width * 0.7
-    qr_max_h = layout.height * 0.5
+    qr_max_h = layout.height * 0.45
     qr_size = min(qr_max_w, qr_max_h)
     
     qr_x = (layout.width - qr_size) / 2
@@ -699,7 +699,7 @@ def _draw_minimal_layout(c, layout, address, beds, baths, sqft, price,
         print(f"[PDF] Minimal QR Error: {e}")
 
     # 3. Property Info (Middle-Lower)
-    cursor_y = layout.height * 0.35
+    cursor_y = layout.height * 0.28  # Lowered from 0.35 to fix overlap
     
     # Address
     c.setFont("Helvetica-Bold", layout.address_font)
