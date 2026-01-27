@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block body_class %}submit bg-image-dark{% endblock %}
+{% block title %}Preview Your SmartSign{% endblock %}
+
+{% block content %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/pages/assets.css') }}">
+
+<div class="submit-container" style="justify-content: center; min-height: 80vh; margin-top: 2rem;">
+
+    <!-- Step Indicator -->
+    <div style="text-align: center; margin-bottom: 20px; color: var(--text-muted); font-size: 0.9rem;">
+        1. Details &ensp;→&ensp; <strong style="color: var(--accent-blue);">2. Preview</strong> &ensp;→&ensp; 3.
+        Checkout
+    </div>
+
+    <!-- Preview Presentation -->
+    <div class="preview-section" id="results">
+        <h2 class="preview-header">Your SmartSign Preview</h2>
+
+        <div class="assets-grid">
+            <!-- Sign Preview -->
+            {% if preview_url %}
+            <div class="sign-preview-card">
+                <img src="{{ preview_url }}?v={{ timestamp }}" class="preview-img" id="preview-image"
+                    alt="Sign Preview">
+
+                <div class="sign-meta">
+                    <p style="text-align: center; color: var(--text-muted); margin-bottom: 20px;">
+                        This creates a reusable <strong>SmartSign Asset</strong> and ships a printed sign to you.
+                    </p>
+
+                    <div style="margin-bottom: 12px;">
+                        <strong>Specs:</strong><br>
+                        Size: {{ sign_size }}<br>
+                        Material: Aluminum .040 (Premium)<br>
+                        Double Sided
+                    </div>
+                </div>
+
+                <div class="action-buttons">
+                    <form action="{{ url_for('smart_signs.start_payment', order_id=order_id) }}" method="POST"
+                        style="width: 100%;">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="glass-button secondary accent order-btn"
+                            style="width: 100%; justify-content: center;">
+                            Proceed to Payment
+                        </button>
+                    </form>
+                </div>
+            </div>
+            {% else %}
+            <div class="error-state">
+                <p>Preview generation failed.</p>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="secondary-actions">
+            <a href="{{ url_for('smart_signs.order_start', asset_id=asset_id if asset_id else None) }}"
+                class="glass-button secondary">
+                Edit Design
+            </a>
+        </div>
+
+    </div>
+</div>
+{% endblock %}

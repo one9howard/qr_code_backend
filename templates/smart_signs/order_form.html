@@ -14,7 +14,7 @@
     </div>
 
     <div class="card card--dark">
-        <form method="POST" action="{{ url_for('smart_signs.checkout_smartsign') }}" enctype="multipart/form-data"
+        <form method="POST" action="{{ url_for('smart_signs.create_smart_order') }}" enctype="multipart/form-data"
             class="form-grid">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             {% if asset_id %}

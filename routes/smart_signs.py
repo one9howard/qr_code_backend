@@ -19,6 +19,9 @@ smart_signs_bp = Blueprint('smart_signs', __name__, url_prefix='/smart-signs')
 # --- Test Patching Stubs ---
 # These are placeholder functions that tests may patch
 
+from utils.qr_codes import generate_unique_code
+from utils.pdf_preview import render_pdf_to_web_preview
+
 def create_checkout_attempt(*args, **kwargs):
     """Placeholder for test patching. Not used in production flow."""
     return {'attempt_token': None, 'idempotency_key': None}
@@ -217,23 +220,13 @@ def order_start():
 
 
 
-@smart_signs_bp.route('/checkout', methods=['POST'])
+@smart_signs_bp.route('/order/create', methods=['POST'])
 @login_required
-def checkout_smartsign():
+def create_smart_order():
     """
-    Handle SmartSign Checkout.
-    Strict Phase 6 Logic:
-    - Aluminum Only
-    - Double Sided Only
-    - Strict Size/Layout validation
-    - Lookup Key Pricing
+    Handle SmartSign Form Submission.
+    Creates Order & Asset (Pending), Generates Preview, Redirects to Preview Page.
     """
-    # Use request.form mostly since we handle file uploads here too?
-    # Or JS sends JSON + separate file upload?
-    # Assuming Form POST with files for this implementation based on previous code.
-    
-    # However, standard pattern is often JS FormData.
-    
     asset_id = request.form.get('asset_id') # Optional
     
     # 1. Extract and Validate Basic Info
@@ -252,9 +245,7 @@ def checkout_smartsign():
     # 2. Files & Storage
     storage = get_storage()
     
-    # Retrieve existing keys if asset_id provided (cloning/reordering)
-    # For now assume new or provided in form
-    headshot_key = request.form.get('agent_headshot_key') # Hidden input?
+    headshot_key = request.form.get('agent_headshot_key')
     logo_key = request.form.get('agent_logo_key')
     
     if request.files.get('headshot_file'):
@@ -289,25 +280,14 @@ def checkout_smartsign():
         for e in errors: flash(e, 'error')
         return redirect(url_for('smart_signs.order_start', asset_id=asset_id))
 
-    # 5. Pricing (Catalog)
-    from services.print_catalog import get_price_id
-    try:
-        price_id = get_price_id(print_product, size, material)
-    except ValueError as e:
-        flash(f"Configuration Error: {e}", "error")
-        return redirect(url_for('smart_signs.order_start'))
-
-    # 6. Asset Creation (Option B Strategy)
-    # Create the asset ROW now, but set activated_at=NULL.
-    # It activates only on successful webhook.
-    
     db = get_db()
     
+    # 5. Asset Creation / Retrieval
     new_asset_id = None
+    asset_code = None
     
     if asset_id:
         # Re-ordering implementation (Replacement)
-        # Verify ownership
         curr = db.execute("SELECT * FROM sign_assets WHERE id=%s AND user_id=%s", (asset_id, current_user.id)).fetchone()
         if not curr:
             flash("Asset not found.", "error")
@@ -316,20 +296,60 @@ def checkout_smartsign():
              flash("Cannot re-order frozen asset.", "error")
              return redirect(url_for('smart_signs.order_start'))
         new_asset_id = asset_id
+        asset_code = curr['code']
     else:
-        # New Asset (Option B True Strict)
-        # Do NOT create asset row yet. Asset is created by Webhook on payment.
-        new_asset_id = None
+        # New Asset - Create Row (Pending Activation) to get Code
+        # We need a code for the QR.
+        from utils.qr_codes import generate_unique_code
+        asset_code = generate_unique_code(db, length=8)
         
-    # Add asset ID to payload only if re-ordering
+        # Determine strict style from payload/layout if needed, or defaults
+        # Map layout_id/form fields to asset columns for consistency
+        # Assuming sign_assets has generic columns
+        
+        # For now, insert basic info. 
+        # Note: 'design_payload' in order serves as source of truth for THIS print, 
+        # but the asset should probably mirror it for the "Digital" twin.
+        
+        # Mapping for asset columns:
+        # brand_name -> agent_name or brokerage_name? Smart Signs usually Brand Name (Agent)
+        brand_val = payload.get('agent_name')
+        if payload.get('brokerage_name'):
+           brand_val = f"{brand_val} | {payload.get('brokerage_name')}"
+           
+        cur = db.cursor()
+        cur.execute("""
+            INSERT INTO sign_assets (
+                user_id, code, brand_name, phone, email, 
+                background_style, cta_key, 
+                include_logo, logo_key, 
+                include_headshot, headshot_key,
+                created_at, activated_at
+            ) VALUES (
+                %s, %s, %s, %s, %s,
+                %s, %s,
+                %s, %s,
+                %s, %s,
+                NOW(), NULL
+            ) RETURNING id
+        """, (
+            current_user.id, asset_code, 
+            payload.get('agent_name'), payload.get('agent_phone'), payload.get('agent_email'),
+            payload.get('banner_color_id', 'solid_blue'), 'scan_for_details', # Defaults
+            bool(logo_key), logo_key,
+            bool(headshot_key), headshot_key
+        ))
+        new_asset_id = cur.fetchone()['id']
+        db.commit()
+    
     if new_asset_id:
         payload['sign_asset_id'] = new_asset_id
-    
-    # Normalize payload keys (agent_*_key -> *_key)
+        
+    # Normalize payload keys
     from services.printing.validation import normalize_payload_keys
     payload = normalize_payload_keys(payload)
 
-    # 7. Create Order via raw SQL (no Order() model)
+    # 6. Create Order
     from psycopg2.extras import Json
     order_row = db.execute("""
         INSERT INTO orders (
@@ -343,16 +363,112 @@ def checkout_smartsign():
     )).fetchone()
     order_id = order_row['id']
     db.commit()
-    
-    # 8. Stripe Session
+
+    # 7. Generate PDF & Preview
     try:
+        # Construct asset-like dict for generator
+        # Generator expects: brand_name, phone, email, code, logo_key, etc.
+        # It uses _read which handles dicts.
+        
+        mock_asset = {
+            'code': asset_code,
+            'brand_name': payload.get('brand_name') or payload.get('agent_name'), # normalize
+            'phone': payload.get('phone') or payload.get('agent_phone'),
+            'email': payload.get('email') or payload.get('agent_email'),
+            'background_style': payload.get('background_style') or payload.get('banner_color_id'),
+            'cta_key': 'scan_for_details', # Default
+            'include_logo': bool(payload.get('logo_key') or payload.get('agent_logo_key')),
+            'logo_key': payload.get('logo_key') or payload.get('agent_logo_key'),
+            'include_headshot': bool(payload.get('headshot_key') or payload.get('agent_headshot_key')),
+            'headshot_key': payload.get('headshot_key') or payload.get('agent_headshot_key'),
+            
+            # Add layout_id for potential future generator support?
+            'layout_id': layout_id 
+        }
+        
+        # Generate generic smart sign PDF
+        # TODO: Update generate_smartsign_pdf to support layout_id if needed
+        pdf_key = generate_smartsign_pdf(mock_asset, order_id=order_id, user_id=current_user.id)
+        
+        # Generate Preview
+        preview_key = render_pdf_to_web_preview(pdf_key, order_id=order_id, sign_size=size)
+        
+        # Update Order
+        db.execute(
+            "UPDATE orders SET sign_pdf_path=%s, preview_key=%s WHERE id=%s",
+            (pdf_key, preview_key, order_id)
+        )
+        db.commit()
+        
+    except Exception as e:
+        current_app.logger.error(f"Error generating preview for SmartSign order {order_id}: {e}")
+        # flash("Warning: Preview generation failed, but order saved.", "warning")
+        # Proceed anyway? Or fail?
+        # Proceed.
+        import traceback
+        traceback.print_exc()
+
+    return redirect(url_for('smart_signs.order_preview', order_id=order_id))
+
+
+@smart_signs_bp.route('/order/<int:order_id>/preview')
+@login_required
+def order_preview(order_id):
+    """
+    Show SmartSign Preview Page.
+    """
+    db = get_db()
+    order = db.execute("SELECT * FROM orders WHERE id=%s AND user_id=%s", (order_id, current_user.id)).fetchone()
+    
+    if not order:
+        abort(404)
+        
+    # Build preview URL
+    # Reuse orders.order_preview route which serves the preview_key
+    preview_url = None
+    if order['preview_key']:
+        preview_url = url_for("orders.order_preview", order_id=order_id)
+
+    return render_template(
+        'smart_signs/preview.html',
+        order_id=order_id,
+        preview_url=preview_url,
+        sign_size=order['print_size'],
+        asset_id=order['sign_asset_id'],
+        timestamp=int(datetime.now().timestamp()),
+        order_status=order['status']
+    )
+
+
+@smart_signs_bp.route('/order/<int:order_id>/pay', methods=['POST'])
+@login_required
+def start_payment(order_id):
+    """
+    Start Stripe Checkout for existing SmartSign order.
+    """
+    db = get_db()
+    order = db.execute("SELECT * FROM orders WHERE id=%s AND user_id=%s", (order_id, current_user.id)).fetchone()
+    
+    if not order:
+        abort(404)
+        
+    if order['status'] != 'pending_payment':
+        flash("Order is not pending payment.", "info")
+        return redirect(url_for('dashboard.index')) # or wherever
+
+    try:
+        # 1. Re-calculate Price ID (Safety check)
+        # We stored product/size/material in order
+        from services.print_catalog import get_price_id
+        price_id = get_price_id(order['print_product'], order['print_size'], order['material'])
+        
+        # 2. Metadata
         metadata = {
             'order_type': 'smart_sign',
             'order_id': str(order_id),
-            'user_id': str(current_user.id)
+            'user_id': str(current_user.id),
+            'sign_asset_id': str(order['sign_asset_id']) if order['sign_asset_id'] else None
         }
-        if new_asset_id is not None:
-            metadata['sign_asset_id'] = str(new_asset_id)
 
         checkout_session = stripe.checkout.Session.create(
             payment_method_types=['card'],
@@ -369,11 +485,10 @@ def checkout_smartsign():
             metadata=metadata
         )
         
-        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-            return jsonify({'checkoutUrl': checkout_session.url})
         return redirect(checkout_session.url, code=303)
         
     except Exception as e:
-        current_app.logger.error(f"Stripe Error: {e}")
-        return redirect(url_for('smart_signs.order_start'))
+        current_app.logger.error(f"Stripe Error for Order {order_id}: {e}")
+        flash("Payment initialization failed.", "error")
+        return redirect(url_for('smart_signs.order_preview', order_id=order_id))
 
