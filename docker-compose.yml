@@ -19,10 +19,12 @@ services:
     environment:
       - FLASK_ENV=development
       - DATABASE_URL=postgresql://postgres:postgres@db:5432/qrapp
-      - STRIPE_SECRET_KEY=sk_test_placeholder
-      - STRIPE_PUBLISHABLE_KEY=pk_test_placeholder
-      - STRIPE_WEBHOOK_SECRET=whsec_placeholder
+      - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
+      - STRIPE_PUBLISHABLE_KEY=${STRIPE_PUBLISHABLE_KEY}
+      - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET}
       - APP_STAGE=dev
+    env_file:
+      - .env
     depends_on:
       - db
     volumes:
@@ -34,8 +36,10 @@ services:
     environment:
       - FLASK_ENV=development
       - DATABASE_URL=postgresql://postgres:postgres@db:5432/qrapp
-      - STRIPE_SECRET_KEY=sk_test_placeholder
+      - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
       - APP_STAGE=dev
+    env_file:
+      - .env
     depends_on:
       - db
     volumes:
