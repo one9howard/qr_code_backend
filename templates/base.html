@@ -32,9 +32,7 @@
             {% if current_user.is_authenticated %}
             <!-- Dashboard links removed -->
             {% else %}
-            <a href="{{ url_for('public.landing') }}" class="nav-link">Home</a>
-            <a href="{{ url_for('public.about') }}" class="nav-link">About</a>
-            <a href="#features" class="nav-link">Features</a>
+            <!-- Links removed by user request -->
             {% endif %}
             {% endblock %}
         </div>
@@ -45,11 +43,7 @@
             {% if current_user.is_authenticated %}
             <!-- User button removed -->
             {% else %}
-            <a href="{{ url_for('auth.login') }}" class="nav-link" style="margin-right: 8px;">Login</a>
-            <a href="{{ url_for('auth.register') }}" class="glass-button primary nav-btn"
-                style="padding: 8px 20px; font-size: 0.9rem;">
-                Get Started
-            </a>
+            <!-- Auth buttons removed by user request -->
             {% endif %}
             {% endblock %}
         </div>
