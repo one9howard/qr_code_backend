@@ -55,14 +55,7 @@ jobs:
         run: python scripts/check_release_clean.py
 
       - name: Enforce Centralized Stripe Init
-        run: |
-          # Use grep to ensure stripe.api_key is ONLY in services/stripe_client.py or app.py (if legacy)
-          # We expect 0 matches outside allowed files.
-          # services/stripe_client.py is the ONLY allowed place for new code.
-          if grep -r "stripe.api_key =" . | grep -v "services/stripe_client.py" | grep -v "app.py"; then
-            echo "FAILURE: stripe.api_key assignment found outside services/stripe_client.py"
-            exit 1
-          fi
+        run: python scripts/check_stripe_key_assignments.py
 
       - name: Run migrations
         run: python migrate.py

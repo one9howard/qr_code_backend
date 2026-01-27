@@ -282,6 +282,9 @@ def create_app(test_config=None):
             )
         return response
 
+    from routes.cron import cron_bp
+    app.register_blueprint(cron_bp)
+
     return app
 
 # WSGI Entry Point

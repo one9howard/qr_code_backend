@@ -60,7 +60,7 @@
             {% if current_user.is_authenticated %}
             <a href="{{ url_for('dashboard.index') }}" style="color: var(--text-muted);">Back to Dashboard</a>
             {% else %}
-            <a href="{{ url_for('public.index') }}" style="color: var(--text-muted);">Back to Home</a>
+            <a href="{{ url_for('public.landing') }}" style="color: var(--text-muted);">Back to Home</a>
             {% endif %}
         </div>
     </div>

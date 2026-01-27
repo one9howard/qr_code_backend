@@ -22,6 +22,25 @@ def check_auth():
         return False
     return secrets.compare_digest(token, expected)
 
+@printing_bp.route("", methods=["GET"])
+def list_jobs():
+    """
+    List queued print jobs. (Debug/Monitor support)
+    """
+    if not check_auth():
+        return jsonify({"error": "Unauthorized"}), 401
+        
+    limit = request.args.get('limit', 20, type=int)
+    db = get_db()
+    jobs = db.execute(
+        "SELECT job_id, order_id, status, created_at, attempts FROM print_jobs ORDER BY created_at DESC LIMIT %s",
+        (limit,)
+    ).fetchall()
+    
+    return jsonify({
+        "jobs": [dict(r) for r in jobs]
+    })
+
 @printing_bp.route("/<job_id>/pdf", methods=["GET"])
 def download_job_pdf(job_id):
     """

@@ -130,7 +130,7 @@ def cron_cleanup_expired():
         return jsonify({"error": "Invalid token"}), 401
         
     # Execute Cleanup
-    from services.cleanup_service import cleanup_expired_properties
+    from services.cleanup import cleanup_expired_properties
     try:
         deleted_count = cleanup_expired_properties()
         return jsonify({"success": True, "deleted": deleted_count})
