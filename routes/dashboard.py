@@ -20,184 +20,111 @@ dashboard_bp = Blueprint('dashboard', __name__, url_prefix='/dashboard')
 FREE_LEAD_LIMIT = 2
 
 
-    agent = db.execute(
-        "SELECT * FROM agents WHERE user_id = %s", 
-        (current_user.id,)
-    ).fetchone()
-
-    if not agent:
-        flash("Agent profile missing. Please contact support or re-register.", "error")
-        return redirect(url_for("auth.logout"))
-    
-    # 2. Fetch Properties & Build View Model (Task 3)
-    raw_properties = db.execute('''
-        SELECT 
-            p.*,
-            COUNT(s.id) as scan_count,
-            MAX(s.scanned_at) as last_scan
-        FROM properties p
-        LEFT JOIN qr_scans s ON p.id = s.property_id
-        WHERE p.agent_id IN (SELECT id FROM agents WHERE user_id = %s)
-        GROUP BY p.id
-        ORDER BY p.created_at DESC
-    ''', (current_user.id,)).fetchall()
-    
-    total_listings = len(raw_properties)
-    total_views = sum(p['scan_count'] for p in raw_properties)
-    
-    # Enrich properties with gating status (View Model)
-    from services.gating import get_property_gating_status
-    properties_view = []
-    
-    for p in raw_properties:
-        gating = get_property_gating_status(p['id'])
-        
-        # Determine status label
-        if gating['is_paid']:
-            if gating.get('paid_via') == 'subscription':
-                status_label = "Pro (Subscription)"
-                status_color = "pro"
-            elif gating.get('paid_via') in ('listing_unlock', 'sign_order'):
-                status_label = "Unlocked (Purchase)"
-                status_color = "paid_unlock"
-            else:
-                # Fallback for old data
-                status_label = "Paid"
-                status_color = "pro"
-        elif gating['is_expired']:
-            status_label = "Expired"
-            status_color = "expired"
-        else:
-            status_label = "Active (Free)"
-            status_color = "active"
-        
-        # Format created_date as YYYY-MM-DD
-        created_raw = p['created_at']
-        if created_raw:
-            # Handle string or datetime
-            created_date = str(created_raw)[:10]
-        else:
-            created_date = "N/A"
-            
-        # Determine sign type (MVP: Simple N+1 query)
-        # Valid orders: sign (with listing_sign sku) or legacy listing_sign
-        has_listing_sign = db.execute("""
-            SELECT 1 FROM orders 
-            WHERE property_id=%s 
-            AND (
-                (order_type = 'sign' AND print_product LIKE 'listing_sign%%') OR 
-                order_type = 'listing_sign' OR
-                order_type = 'smart_riser'
-            )
-            LIMIT 1
-        """, (p['id'],)).fetchone()
-        
-        has_smart_sign = db.execute(
-            "SELECT 1 FROM sign_assets WHERE active_property_id=%s LIMIT 1",
-            (p['id'],)
-        ).fetchone()
-        
-        if has_smart_sign:
-            sign_type = "Smart Sign"
-        elif has_listing_sign:
-            sign_type = "Listing Sign"
-            
-        properties_view.append({
-            "id": p['id'],
-            "address": p['address'],
-            "price": p['price'],
-            "created_date": created_date,  # Formatted date
-            "scan_count": p['scan_count'],
-            "status_label": status_label,
-            "status_color": status_color,
-            "sign_type": sign_type,
-            "days_remaining": gating['days_remaining'],
-            "locked_reason": gating['locked_reason']
-        })
-    
-    # 3. Fetch Leads (with tier-based limiting)
-    is_pro = current_user.is_pro
-    
-    total_lead_count = db.execute(
-        "SELECT COUNT(*) as cnt FROM leads WHERE agent_id IN (SELECT id FROM agents WHERE user_id = %s)",
-        (current_user.id,)
-    ).fetchone()['cnt']
-    
-    # Build leads query with optional limit
-    leads_query = """
-        SELECT l.*, p.address as property_address 
-        FROM leads l
-        JOIN properties p ON l.property_id = p.id
-        WHERE l.agent_id IN (SELECT id FROM agents WHERE user_id = %s)
-        ORDER BY l.created_at DESC
+@dashboard_bp.route("/")
+@login_required
+def dashboard():
     """
-    if not is_pro:
-        leads_query += f" LIMIT {FREE_LEAD_LIMIT}"
+    Main dashboard view.
+    Shows properties, leads, and analytics (Integrated Phase 5).
+    """
+    db = get_db()
     
-    leads = db.execute(leads_query, (current_user.id,)).fetchall()
+    # --- Phase 5: Analytics Service Integration ---
+    from services.analytics import per_agent_rollup, per_property_metrics
     
-    # 4. Fetch Pro Analytics (if Pro tier)
-    analytics = None
-    chart_data = None
+    # 1. Main Metrics Rollup
+    metrics = per_agent_rollup(current_user.id)
     
-    if is_pro:
-        from services.analytics import get_dashboard_analytics
-        from datetime import datetime, timedelta, timezone
-        
-        # Pass user_id instead of agent_id to aggregate properly
-        analytics = get_dashboard_analytics(user_id=current_user.id)
-        
-        # Prepare chart data: fill in missing dates with zeros
-        # Generate last 30 days as labels (using UTC for consistency with analytics)
-        today = datetime.now(timezone.utc).date()
-        labels = [(today - timedelta(days=i)).isoformat() for i in range(29, -1, -1)]
-        
-        # Map existing data by date
-        leads_by_date = {item['date']: item['count'] for item in (analytics.get('leads_over_time') or [])}
-        scans_by_date = {item['date']: item['count'] for item in (analytics.get('qr_scans_over_time') or [])}
-        
-        # Fill in data (zeros for missing dates)
-        leads_counts = [leads_by_date.get(date, 0) for date in labels]
-        scans_counts = [scans_by_date.get(date, 0) for date in labels]
-        
-        has_data = sum(leads_counts) > 0 or sum(scans_counts) > 0
-        
-        # Pass as dict (template will use tojson filter)
-        chart_data = {
-            'labels': labels,
-            'leads': leads_counts,
-            'scans': scans_counts,
-            'has_data': has_data
-        }
-    else:
-        chart_data = {'labels': [], 'leads': [], 'scans': [], 'has_data': False}
-
-    # Fetch dynamic prices for UI
-    from services.stripe_config import get_configured_prices
-    prices = get_configured_prices()
+    # 2. Fetch Properties & Build Listings Data
+    agent_id = db.execute("SELECT id FROM agents WHERE user_id = %s", (current_user.id,)).fetchone()
+    listings_data = []
     
-    # 5. Fetch SmartSigns (Phase 1)
+    if agent_id:
+        # Fetch properties with basic info
+        properties = db.execute("""
+            SELECT id, address, slug, photo_filename, qr_code, created_at
+            FROM properties 
+            WHERE agent_id = %s
+            ORDER BY created_at DESC
+        """, (agent_id['id'],)).fetchall()
+        
+        for p in properties:
+            # Get 7d metrics per property
+            pm = per_property_metrics(p['id'], range_days=7)
+            
+            listings_data.append({
+                "id": p['id'],
+                "address": p['address'],
+                "slug": p['slug'],
+                "thumbnail": p['photo_filename'],
+                "qr_code": p['qr_code'],
+                "scans_7d": pm['scans']['total'], # actually 7d count
+                "scans_trend": pm['scans']['delta'],
+                "views_7d": pm['views']['total'],
+                "views_trend": pm['views']['delta'],
+                "leads_7d": pm['leads']['total'],
+                "leads_trend": pm['leads']['delta'],
+                "cta_7d": pm['ctas']['total'], # cta count
+                "last_activity": pm['last_activity']['summary'],
+                "insights": pm['insights'] 
+            })
+            
+    # 3. Today's Focus Cards
+    today_cards = []
+    if agent_id:
+        for p in listings_data:
+            # 1. Zero Scans
+            if p['scans_7d'] == 0:
+                today_cards.append({
+                    'type': 'warning',
+                    'title': 'Zero Visibility',
+                    'message': f"{p['address']} has 0 scans in the last 7 days.",
+                    'action': 'Check Sign Placement',
+                    'link': url_for('properties.property_page', slug=p['slug'])
+                })
+                
+            # 2. Momentum
+            if p['scans_trend'] > 50 and p['scans_7d'] > 5:
+                today_cards.append({
+                    'type': 'success',
+                    'title': 'Gaining Momentum',
+                    'message': f"{p['address']} scans up {p['scans_trend']}% WoW!",
+                    'action': 'View Analytics',
+                    'link': url_for('dashboard.property_analytics', property_id=p['id'])
+                })
+                
+            # 3. High Intent (CTA > 0, Leads = 0)
+            if p['cta_7d'] > 0 and p['leads_7d'] == 0:
+                 today_cards.append({
+                    'type': 'info',
+                    'title': 'High Intent, No Leads',
+                    'message': f"{p['address']} has {p['cta_7d']} engagements but no leads.",
+                    'action': 'Review Pricing',
+                    'link': url_for('dashboard.edit_property', property_id=p['id'])
+                })
+    
+    # 4. SmartSigns (Legacy/MVP Compat)
     from services.smart_signs import SmartSignsService
     sign_assets = SmartSignsService.get_user_assets(current_user.id)
-
-    # Filter Listing Signs for the dedicated dashboard section
-    listing_signs = [p for p in properties_view if p['sign_type'] == 'Listing Sign']
+    
+    # 5. Leads (Recent)
+    leads = db.execute("""
+        SELECT l.*, p.address as property_address
+        FROM leads l
+        JOIN properties p ON l.property_id = p.id
+        WHERE p.agent_id = %s
+        ORDER BY l.created_at DESC
+        LIMIT 10
+    """, (agent_id['id'] if agent_id else -1,)).fetchall()
 
     return render_template(
         "dashboard.html", 
-        agent=agent,
-        properties=properties_view, # Use View Model
-        listing_signs=listing_signs, # Explicitly passed for separate section
-        total_listings=total_listings,
-        total_views=total_views,
+        metrics=metrics, 
+        listings=listings_data, 
+        today_cards=today_cards,
+        sign_assets=sign_assets,
         leads=leads,
-        total_lead_count=total_lead_count,
-        is_pro=is_pro,
-        free_lead_limit=FREE_LEAD_LIMIT,
-        analytics=analytics,
-        chart_data=chart_data,
-        prices=prices,
-        sign_assets=sign_assets
+        is_pro=current_user.is_pro
     )
 
 
