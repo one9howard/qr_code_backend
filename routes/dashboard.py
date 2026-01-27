@@ -20,16 +20,6 @@ dashboard_bp = Blueprint('dashboard', __name__, url_prefix='/dashboard')
 FREE_LEAD_LIMIT = 2
 
 
-@dashboard_bp.route("/")
-@login_required
-def index():
-    """
-    Main dashboard view.
-    Shows properties, leads, and analytics (Pro only).
-    """
-    db = get_db()
-    
-    # 1. Fetch Agent (User Profile) - Required for dashboard access
     agent = db.execute(
         "SELECT * FROM agents WHERE user_id = %s", 
         (current_user.id,)
@@ -328,7 +318,6 @@ def edit_property(property_id):
         db.commit()
         flash("Property updated successfully.", "success")
         return redirect(url_for('dashboard.index'))
-    
     # GET request - fetch photos for display
     photos = db.execute(
         "SELECT * FROM property_photos WHERE property_id = %s", 
@@ -336,6 +325,86 @@ def edit_property(property_id):
     ).fetchall()
         
     return render_template("edit_property.html", property=property_row, photos=photos)
+
+
+@dashboard_bp.route("/dashboard/properties/<int:property_id>/analytics")
+@login_required
+def property_analytics(property_id):
+    """
+    Detailed analytics page for a single property.
+    """
+    db = get_db()
+    from services.analytics import per_property_metrics
+    from flask import abort
+    
+    # Verify ownership
+    property_row = db.execute(
+        "SELECT * FROM properties WHERE id = %s AND agent_id IN (SELECT id FROM agents WHERE user_id = %s)",
+        (property_id, current_user.id)
+    ).fetchone()
+    
+    if not property_row:
+        return abort(404)
+        
+    metrics = per_property_metrics(property_id, range_days=7)
+    
+    return render_template("dashboard/property_analytics.html", property=property_row, analytics=metrics)
+
+@dashboard_bp.route("/dashboard/today")
+@login_required
+def today():
+    """
+    'Today' Action Feed.
+    Highlights actionable items:
+    - Zero Scans (7d)
+    - Momentum (>50% Scan Growth)
+    - High Intent (CTA but no Lead)
+    """
+    db = get_db()
+    from services.analytics import per_property_metrics
+    
+    agent_id = db.execute("SELECT id FROM agents WHERE user_id = %s", (current_user.id,)).fetchone()
+    if not agent_id:
+        return render_template("dashboard/today.html", cards=[])
+        
+    properties = db.execute("SELECT id, address, slug FROM properties WHERE agent_id = %s", (agent_id['id'],)).fetchall()
+    
+    cards = []
+    
+    for p in properties:
+        pm = per_property_metrics(p['id'], range_days=7)
+        
+        # 1. Zero Scans
+        if pm['scans']['total'] == 0:
+            cards.append({
+                'type': 'warning',
+                'title': 'Zero Visibility',
+                'message': f"{p['address']} has 0 scans in the last 7 days.",
+                'action': 'Check Sign Placement',
+                'link': url_for('properties.property_page', slug=p['slug'])
+            })
+            
+        # 2. Momentum
+        if pm['scans']['delta'] > 50 and pm['scans']['total'] > 5:
+            cards.append({
+                'type': 'success',
+                'title': 'Gaining Momentum',
+                'message': f"{p['address']} scans up {pm['scans']['delta']}% WoW!",
+                'action': 'View Analytics',
+                'link': url_for('dashboard.property_analytics', property_id=p['id'])
+            })
+            
+        # 3. High Intent (CTA > 0, Leads = 0)
+        if pm['ctas']['total'] > 0 and pm['leads']['total'] == 0:
+             cards.append({
+                'type': 'info',
+                'title': 'High Intent, No Leads',
+                'message': f"{p['address']} has {pm['ctas']['total']} engagements but no leads.",
+                'action': 'Review Pricing/Photos',
+                'link': url_for('dashboard.edit_property', property_id=p['id'])
+            })
+            
+    return render_template("dashboard/today.html", cards=cards)
 
 
 # =============================================================================

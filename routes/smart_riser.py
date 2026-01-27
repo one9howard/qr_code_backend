@@ -44,6 +44,8 @@ def checkout_smart_riser():
     payload = {} # No sign_asset_id yet
     asset_id = None
     
+    db = get_db()
+    
     order_row = db.execute("""
         INSERT INTO orders (
             user_id, order_type, status, print_product, material, sides,
@@ -51,7 +53,7 @@ def checkout_smart_riser():
         ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
         RETURNING id
     """, (
-        current_user.id, 'smart_sign', 'pending_payment', print_product,
+        current_user.id, 'sign', 'pending_payment', print_product,
         material, sides, size, 1, Json(payload)
     )).fetchone()
     order_id = order_row['id']
@@ -60,7 +62,7 @@ def checkout_smart_riser():
     # Stripe Session
     try:
         metadata = {
-            'order_type': 'smart_sign',
+            'order_type': 'sign',
             'order_id': str(order_id),
             'user_id': str(current_user.id)
         }

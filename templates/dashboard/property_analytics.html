@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container" style="max-width: 1200px; margin-top: 30px;">
+    <!-- Header -->
+    <div class="glass-panel mb-4"
+        style="padding: 1.5rem; display: flex; justify-content: space-between; align-items: center;">
+        <div>
+            <h5 style="color: #aaa; margin-bottom: 5px;">Analytics for</h5>
+            <h2 style="margin: 0;">{{ property.address }}</h2>
+        </div>
+        <div>
+            <a href="{{ url_for('properties.property_page', slug=property.slug) }}" target="_blank"
+                class="glass-button">View Live Page</a>
+            <a href="{{ url_for('dashboard.dashboard') }}" class="glass-button" style="margin-left: 10px;">Back to
+                Dashboard</a>
+        </div>
+    </div>
+
+    <!-- Insights Panel -->
+    {% if analytics.insights %}
+    <div class="glass-panel mb-4" style="padding: 1.5rem; border-left: 4px solid #4CAF50;">
+        <h4 style="margin-top: 0; color: #4CAF50;">💡 Activity Insights</h4>
+        <ul style="margin: 0; padding-left: 1.2rem; color: #eee;">
+            {% for insight in analytics.insights %}
+            <li>{{ insight }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
+    <!-- Funnel Visualization (7d) -->
+    <div class="glass-panel mb-4" style="padding: 2rem;">
+        <h3 class="mb-4">Conversion Funnel (Last 7 Days)</h3>
+        <div style="display: flex; justify-content: space-around; align-items: center; text-align: center;">
+
+            <!-- Step 1: Physical Scans -->
+            <div style="flex: 1; padding: 10px;">
+                <h1 style="font-size: 3rem; margin: 0; color: #2196f3;">{{ analytics.scans.total }}</h1>
+                <div style="color: #aaa; font-weight: bold;">QR Scans</div>
+                <div
+                    style="font-size: 0.8em; color: {% if analytics.scans.delta >= 0 %}#4CAF50{% else %}#f44336{% endif %};">
+                    {{ '%+d' % analytics.scans.delta }}% WoW
+                </div>
+            </div>
+
+            <div style="font-size: 2rem; color: #444;">&rarr;</div>
+
+            <!-- Step 2: Page Views -->
+            <div style="flex: 1; padding: 10px;">
+                <h1 style="font-size: 3rem; margin: 0; color: #9c27b0;">{{ analytics.views.total }}</h1>
+                <div style="color: #aaa; font-weight: bold;">Page Views</div>
+                <div
+                    style="font-size: 0.8em; color: {% if analytics.views.delta >= 0 %}#4CAF50{% else %}#f44336{% endif %};">
+                    {{ '%+d' % analytics.views.delta }}% WoW
+                </div>
+            </div>
+
+            <div style="font-size: 2rem; color: #444;">&rarr;</div>
+
+            <!-- Step 3: Intent -->
+            <div style="flex: 1; padding: 10px;">
+                <h1 style="font-size: 3rem; margin: 0; color: #ff9800;">{{ analytics.ctas.total }}</h1>
+                <div style="color: #aaa; font-weight: bold;">Engagements</div>
+                <div style="font-size: 0.8em; color: #666;">(Calls, Emails, Tours)</div>
+            </div>
+
+            <div style="font-size: 2rem; color: #444;">&rarr;</div>
+
+            <!-- Step 4: Leads -->
+            <div style="flex: 1; padding: 10px; background: rgba(76, 175, 80, 0.1); border-radius: 12px;">
+                <h1 style="font-size: 3rem; margin: 0; color: #4CAF50;">{{ analytics.leads.total }}</h1>
+                <div style="color: #4CAF50; font-weight: bold;">Leads</div>
+                <div
+                    style="font-size: 0.8em; color: {% if analytics.leads.delta >= 0 %}#4CAF50{% else %}#f44336{% endif %};">
+                    {{ '%+d' % analytics.leads.delta }}% WoW
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+</div>
+{% endblock %}

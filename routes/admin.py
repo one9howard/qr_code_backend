@@ -4,9 +4,10 @@ from database import get_db
 from services.fulfillment import fulfill_order
 from constants import (
     ORDER_STATUS_PAID, 
-    ORDER_STATUS_SUBMITTED_TO_PRINTER,
+        ORDER_STATUS_SUBMITTED_TO_PRINTER,
     ORDER_STATUS_PRINT_FAILED,
-    ORDER_STATUS_FULFILLED
+    ORDER_STATUS_FULFILLED,
+    PAID_STATUSES
 )
 
 admin_bp = Blueprint('admin', __name__)
@@ -31,7 +32,7 @@ def order_list():
         LEFT JOIN users u ON o.user_id = u.id 
         ORDER BY o.created_at DESC
     ''').fetchall()
-    return render_template("admin_orders.html", orders=orders)
+    return render_template("admin_orders.html", orders=orders, paid_statuses=PAID_STATUSES)
 
 @admin_bp.route("/admin/orders/<int:order_id>/retry", methods=["POST"])
 def retry_fulfillment(order_id):

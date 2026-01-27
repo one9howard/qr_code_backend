@@ -40,7 +40,7 @@
                         {{ order.fulfillment_error if order.fulfillment_error else '-' }}
                     </td>
                     <td style="padding: 10px;">
-                        {% if order.status == 'paid' and not order.submitted_at %}
+                        {% if order.status in paid_statuses and not order.submitted_at %}
                         <form action="{{ url_for('admin.retry_fulfillment', order_id=order.id) }}" method="POST"
                             style="display:inline;">
                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">

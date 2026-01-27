@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container" style="max-width: 800px; margin-top: 30px;">
+
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+        <h1 style="margin: 0;">Today's Focus</h1>
+        <a href="{{ url_for('dashboard.dashboard') }}" class="glass-button">Back to Dashboard</a>
+    </div>
+
+    {% if cards %}
+    {% for card in cards %}
+    <div class="glass-panel mb-4" style="padding: 1.5rem; border-left: 6px solid 
+            {% if card.type == 'warning' %}#f44336
+            {% elif card.type == 'success' %}#4CAF50
+            {% else %}#2196f3{% endif %};">
+
+        <h3 style="margin: 0 0 10px 0; color: white;">{{ card.title }}</h3>
+        <p style="color: #aaa; margin-bottom: 15px;">{{ card.message }}</p>
+
+        <a href="{{ card.link }}" class="glass-button secondary">{{ card.action }} &rarr;</a>
+    </div>
+    {% endfor %}
+    {% else %}
+    <div class="glass-panel" style="padding: 3rem; text-align: center; color: #aaa;">
+        <h3>All caught up!</h3>
+        <p>No urgent actions required today.</p>
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}

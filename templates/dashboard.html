@@ -131,40 +131,72 @@
 
         <div class="content-wrapper">
             <!-- Stats Row -->
-            <div class="card col-span-4 stat-card">
-                <div class="stat-label">Total Listings</div>
-                <div class="stat-value">{{ total_listings }}</div>
-                <div class="stat-trend trend-neutral">Active properties</div>
-            </div>
-
-            <div class="card col-span-4 stat-card">
+            <div class="card col-span-3 stat-card">
                 <div class="stat-label">Total Scans</div>
-                <div class="stat-value">{{ total_views }}</div>
-                <div class="stat-trend trend-up">Lifetime views</div>
+                <div class="stat-value">{{ metrics.scans.lifetime }}</div>
+                <div class="stat-trend {% if metrics.scans.delta >= 0 %}trend-up{% else %}trend-down{% endif %}">
+                    {{ '%+d' % metrics.scans.delta }}% (7d)
+                </div>
             </div>
 
-            <div class="card col-span-4 stat-card">
-                <div class="stat-label">Subscription</div>
-                <div class="stat-value" style="font-size: 1.5rem;">
-                    {% if current_user.is_pro %}
-                    <span class="badge badge-green">Pro (Active)</span>
-                    {% else %}
-                    <span class="badge badge-gray">FREE</span>
-                    <a href="{{ url_for('billing.index') }}"
-                        style="font-size: 0.8rem; margin-left: 8px; color: var(--accent-blue);">Upgrade</a>
-                    {% endif %}
+            <div class="card col-span-3 stat-card">
+                <div class="stat-label">Total Views</div>
+                <div class="stat-value">{{ metrics.views.lifetime }}</div>
+                <div class="stat-trend {% if metrics.views.delta >= 0 %}trend-up{% else %}trend-down{% endif %}">
+                    {{ '%+d' % metrics.views.delta }}% (7d)
+                </div>
+            </div>
+
+            <div class="card col-span-3 stat-card">
+                <div class="stat-label">Leads (30d)</div>
+                <div class="stat-value">{{ metrics.leads['30d'] }}</div>
+                <div class="stat-trend {% if metrics.leads.delta >= 0 %}trend-up{% else %}trend-down{% endif %}">
+                    {{ '%+d' % metrics.leads.delta }}% (7d)
+                </div>
+            </div>
+
+            <div class="card col-span-3 stat-card">
+                <div class="stat-label">Contact Intents (7d)</div>
+                <div class="stat-value">{{ metrics.ctas['7d'] }}</div>
+                <div class="stat-trend {% if metrics.ctas.delta >= 0 %}trend-up{% else %}trend-down{% endif %}">
+                    {{ '%+d' % metrics.ctas.delta }}% WoW
                 </div>
             </div>
 
             <!-- TABS NAVIGATION -->
             <div class="col-span-12 dashboard-tabs">
-                <button class="tab-btn active" onclick="switchTab('listings')">Active Listings</button>
+                <button class="tab-btn active" onclick="switchTab('today')">Today's Focus</button>
+                <button class="tab-btn" onclick="switchTab('listings')">Active Listings</button>
                 <button class="tab-btn" onclick="switchTab('smart')">Smart Assets</button>
                 <button class="tab-btn" onclick="switchTab('analytics')">Analytics</button>
             </div>
 
-            <!-- TAB 1: LISTINGS (Default) -->
-            <div id="tab-listings" class="grid-sections active col-span-12">
+            <!-- TAB 0: TODAY (Default now?) -->
+            <div id="tab-today" class="grid-sections active col-span-12">
+                {% if today_cards %}
+                {% for card in today_cards %}
+                <div class="card col-span-12" style="border-left: 4px solid 
+                        {% if card.type == 'warning' %}#f44336
+                        {% elif card.type == 'success' %}#4CAF50
+                        {% else %}#2196f3{% endif %};">
+
+                    <h3 style="margin: 0 0 5px 0; font-size: 1.1rem;">{{ card.title }}</h3>
+                    <p style="color: #aaa; margin-bottom: 10px; font-size: 0.9rem;">{{ card.message }}</p>
+
+                    <a href="{{ card.link }}" style="color: white; text-decoration: underline; font-size: 0.9rem;">{{
+                        card.action }} &rarr;</a>
+                </div>
+                {% endfor %}
+                {% else %}
+                <div class="card col-span-12" style="text-align: center; color: #999; padding: 40px;">
+                    <div style="font-size: 2rem; margin-bottom: 10px;">☕</div>
+                    <div>All caught up! No urgent actions created.</div>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- TAB 1: LISTINGS -->
+            <div id="tab-listings" class="grid-sections col-span-12">
                 <!-- Listing Signs Card -->
                 <div class="card card-listing col-span-12">
                     <div
@@ -233,46 +265,66 @@
                     </div>
                 </div>
 
-                <!-- Generic Properties Table -->
+                <!-- Analytics Listings Table -->
                 <div class="card col-span-12">
                     <div
                         style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                        <h3 style="margin: 0; font-size: 1.1rem;">All Properties</h3>
+                        <h3 style="margin: 0; font-size: 1.1rem;">Your Listings</h3>
                         <a href="{{ url_for('agent.submit') }}" class="glass-button secondary">+ Add Property</a>
                     </div>
-                    <!-- (Reuse existing properties table but simplified) -->
+
                     <div class="table-container">
-                        {% if properties %}
+                        {% if listings %}
                         <table class="saas-table">
                             <thead>
                                 <tr>
                                     <th>Address</th>
-                                    <th>Status</th>
+                                    <th>7d Scans</th>
+                                    <th>7d Views</th>
+                                    <th>7d Leads</th>
+                                    <th>7d Intent</th>
+                                    <th>Last Activity</th>
                                     <th>Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {% for property in properties %}
-                                <tr>
-                                    <td>{{ property.address }}</td>
+                                {% for p in listings %}
+                                <tr onclick="window.location='{{ url_for('dashboard.property_analytics', property_id=p.id) }}';"
+                                    style="cursor: pointer;">
                                     <td>
-                                        <span class="badge 
-                                        {% if property.status_color == 'active' %}badge-green
-                                        {% elif property.status_color == 'expired' %}badge-orange
-                                        {% else %}badge-gray{% endif %}">
-                                            {{ property.status_label }}
-                                        </span>
+                                        <div style="font-weight: 500;">{{ p.address }}</div>
+                                        <div style="font-size: 0.8rem; color: var(--text-muted);">{{ p.slug }}</div>
+                                        <!-- Tooltip for insights? -->
+                                        {% if p.insights %}
+                                        <div style="font-size: 0.75rem; color: #ff9800;">💡 {{ p.insights[0] }}</div>
+                                        {% endif %}
                                     </td>
                                     <td>
-                                        <a href="{{ url_for('dashboard.edit_property', property_id=property.id) }}"
-                                            style="color: var(--text-muted); font-size: 0.9rem;">Edit</a>
+                                        {{ p.scans_7d }}
+                                        {% if p.scans_trend != 0 %}
+                                        <span
+                                            style="font-size: 0.7em; color: {% if p.scans_trend > 0 %}#4CAF50{% else %}#f44336{% endif %};">
+                                            {{ '%+d' % p.scans_trend }}%
+                                        </span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ p.views_7d }}</td>
+                                    <td>{{ p.leads_7d }}</td>
+                                    <td>{{ p.cta_7d }}</td>
+                                    <td>{{ p.last_activity if p.last_activity else '-' }}</td>
+                                    <td onclick="event.stopPropagation();">
+                                        <a href="{{ url_for('dashboard.edit_property', property_id=p.id) }}"
+                                            style="color: var(--text-muted); margin-right: 10px;">Edit</a>
+                                        <a href="{{ url_for('properties.property_page', slug=p.slug) }}" target="_blank"
+                                            style="color: var(--accent-blue);">View</a>
                                     </td>
                                 </tr>
                                 {% endfor %}
                             </tbody>
                         </table>
                         {% else %}
-                        <div style="text-align: center; padding: 20px; color: var(--text-muted);">No properties found.
+                        <div style="text-align: center; padding: 20px; color: var(--text-muted);">
+                            No properties found. Add one to start tracking analytics.
                         </div>
                         {% endif %}
                     </div>
@@ -444,9 +496,10 @@
         // Actually, passed this into function? No, let's find the button by onclick attribute match
         // Simpler: just loop buttons and check onclick value
         const buttons = document.querySelectorAll('.tab-btn');
-        if (tabName === 'listings') buttons[0].classList.add('active');
-        if (tabName === 'smart') buttons[1].classList.add('active');
-        if (tabName === 'analytics') buttons[2].classList.add('active');
+        if (tabName === 'today') buttons[0].classList.add('active');
+        if (tabName === 'listings') buttons[1].classList.add('active');
+        if (tabName === 'smart') buttons[2].classList.add('active');
+        if (tabName === 'analytics') buttons[3].classList.add('active');
     }
 </script>
 
