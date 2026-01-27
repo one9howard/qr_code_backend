@@ -206,7 +206,7 @@ body.saas-landing>.container {
     padding: 0;
     margin-bottom: 40px;
     position: relative;
-    top: -10px;
+    top: -20px;
 }
 
 .feature-bullets li {
@@ -230,7 +230,7 @@ body.saas-landing>.container {
     display: flex;
     gap: 16px;
     position: relative;
-    top: -10px;
+    top: -20px;
 }
 
 /* --- Device Mockups (Content Images) --- */
