@@ -6,40 +6,58 @@
 {% block content %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/pages/dashboard_saas.css') }}">
 
-<div class="app-layout">
+<div class="app-layout" style="grid-template-columns: 1fr;">
     <!-- Main Content (Full Width) -->
-    <main class="app-main" style="padding: 2rem; max-width: 1200px; margin: 0 auto;">
+    <main class="app-main" style="padding: 2rem; max-width: 1000px; margin: 0 auto; min-height: 100vh;">
 
-        <div style="margin-bottom: 2rem;">
+        <div style="margin-bottom: 2rem; display: flex; flex-direction: column; gap: 8px;">
             <a href="{{ url_for('dashboard.index') }}"
-                style="color: var(--text-muted); text-decoration: none; display: flex; align-items: center; gap: 8px;">
+                style="color: var(--text-muted); text-decoration: none; display: flex; align-items: center; gap: 8px; font-weight: 500; transition: color 0.2s;">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M19 12H5M12 19l-7-7 7-7" />
                 </svg>
                 Back to Dashboard
             </a>
-            <h1 style="font-size: 2rem; margin-top: 1rem;">Select Property</h1>
-            <p style="color: var(--text-muted);">Choose a property to order a listing sign for.</p>
+            <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: 12px;">
+                <div>
+                    <h1
+                        style="font-size: 2.5rem; margin: 0; font-weight: 800; background: linear-gradient(to right, #fff, #94a3b8); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;">
+                        Select Property</h1>
+                    <p style="color: var(--text-muted); margin-top: 8px; font-size: 1.1rem;">Choose a property to order
+                        a listing sign for.</p>
+                </div>
+                <a href="{{ url_for('agent.submit') }}" class="btn-create"
+                    style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);">
+                    + New Listing
+                </a>
+            </div>
         </div>
 
-        <div class="card">
+        <div class="card" style="border: 1px solid var(--border-glass); box-shadow: 0 4px 20px rgba(0,0,0,0.2);">
             <div class="table-container">
                 <table class="saas-table">
                     <thead>
                         <tr>
-                            <th>Address</th>
-                            <th>Status</th>
-                            <th>Actions</th>
+                            <th style="width: 50%;">Address</th>
+                            <th style="width: 25%;">Status</th>
+                            <th style="width: 25%; text-align: right;">Action</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for property in properties %}
-                        <tr>
+                        <tr style="transition: background 0.2s;">
                             <td>
-                                <div style="font-weight: 500;">{{ property.address }}</div>
-                                <div style="font-size: 0.85rem; color: var(--text-muted);">
-                                    {{ property.beds }} Beds • {{ property.baths }} Baths
-                                    {% if property.sqft %} • {{ property.sqft }} SqFt{% endif %}
+                                <div style="font-weight: 600; font-size: 1.1rem; color: white; margin-bottom: 4px;">{{
+                                    property.address }}</div>
+                                <div
+                                    style="font-size: 0.9rem; color: var(--text-muted); display: flex; gap: 12px; align-items: center;">
+                                    <span>{{ property.beds }} Beds</span>
+                                    <span style="opacity: 0.3;">|</span>
+                                    <span>{{ property.baths }} Baths</span>
+                                    {% if property.sqft %}
+                                    <span style="opacity: 0.3;">|</span>
+                                    <span>{{ property.sqft }} SqFt</span>
+                                    {% endif %}
                                 </div>
                             </td>
                             <td>
@@ -50,13 +68,19 @@
                                 {% elif property.expires_at is none %}
                                 <span class="badge badge-green">Active (Pro)</span>
                                 {% else %}
-                                <span class="badge badge-green">Active (Trial)</span>
+                                <span class="badge badge-green"
+                                    style="background: rgba(16, 185, 129, 0.1); color: #34d399;">Active (Trial)</span>
                                 {% endif %}
                             </td>
-                            <td>
+                            <td style="text-align: right;">
                                 <a href="{{ url_for('orders.order_sign_start', property_id=property.id) }}"
-                                    class="btn-create" style="font-size: 0.9rem; padding: 6px 12px; height: auto;">
-                                    Order Sign →
+                                    class="btn-create"
+                                    style="display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px;">
+                                    <span>Order Sign</span>
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                        stroke-width="2">
+                                        <path d="M5 12h14M12 5l7 7-7 7" />
+                                    </svg>
                                 </a>
                             </td>
                         </tr>

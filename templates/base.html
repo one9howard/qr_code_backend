@@ -20,10 +20,7 @@
                     <path d="M3 12h18M3 6h18M3 18h18" />
                 </svg>
             </button>
-            <a href="{{ url_for('public.landing') }}"
-                style="display: flex; align-items: center; text-decoration: none;">
-                <img src="{{ url_for('static', filename='img/logo.png') }}" alt="InSite" style="height: 56px;">
-            </a>
+
         </div>
 
         <!-- Center: Desktop Links -->
@@ -71,11 +68,15 @@
             <a href="{{ url_for('orders.select_property_for_sign') }}" class="drawer-item">Order Listing Sign</a>
             <a href="{{ url_for('smart_signs.order_start') }}" class="drawer-item">Order SmartSign</a>
             <a href="{{ url_for('account.index') }}" class="drawer-item">Settings</a>
+            <a href="{{ url_for('public.privacy') }}" class="drawer-item">Privacy Policy</a>
+            <a href="{{ url_for('public.terms') }}" class="drawer-item">Terms of Service</a>
             <div class="drawer-divider"></div>
             <a href="{{ url_for('auth.logout') }}" class="drawer-item" style="color: var(--accent-red);">Logout</a>
             {% else %}
             <a href="{{ url_for('public.landing') }}" class="drawer-item">Home</a>
             <a href="{{ url_for('public.about') }}" class="drawer-item">About Us</a>
+            <a href="{{ url_for('public.privacy') }}" class="drawer-item">Privacy Policy</a>
+            <a href="{{ url_for('public.terms') }}" class="drawer-item">Terms of Service</a>
             <div class="drawer-divider"></div>
             <a href="{{ url_for('auth.login') }}" class="drawer-item">Login</a>
             <a href="{{ url_for('auth.register') }}" class="drawer-item highlight">Sign Up Free</a>
