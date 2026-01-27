@@ -198,7 +198,15 @@
     width: 18px;
     height: 18px;
     background: #000;
-    margin-top: auto;
+    /* Removed global margin-top: auto to allow specific layouts to control positioning */
+}
+
+/* Specific Override for Photo Banner */
+.banner-style .mini-qr {
+    width: 30px;
+    height: 30px;
+    margin-top: 10px;
+    margin-bottom: 5px;
 }
 
 /* Minimal Style */
@@ -213,9 +221,10 @@
 }
 
 .mini-qr.large {
-    width: 30px;
-    height: 30px;
+    width: 33px;
+    height: 33px;
     background: #000;
+    margin-bottom: 12px;
 }
 
 /* Brand Style */
@@ -236,4 +245,13 @@
     font-size: 5px;
     font-weight: bold;
     color: #333;
+}
+
+/* Specific Override for Agent Brand */
+.brand-style .mini-qr {
+    width: 30px;
+    height: 30px;
+    margin-top: 0;
+    margin-bottom: 15px;
+    /* Move it up */
 }
