@@ -14,11 +14,19 @@ WORKDIR /app
 # - libpq-dev: for psycopg2
 RUN apt-get update && apt-get install -y --no-install-recommends \
   curl build-essential gcc libpq-dev libzbar0 \
+  libxrender1 libxext6 fontconfig \
   && rm -rf /var/lib/apt/lists/*
 
 # Install Python dependencies
 COPY requirements.txt /app/requirements.txt
+# Copy test requirements but don't force install yet
+COPY requirements-test.txt /app/requirements-test.txt
+
+ARG INSTALL_DEV=false
 RUN pip install --no-cache-dir -r /app/requirements.txt
+
+# Use single line if/else to avoid potential EOL issues and keep it robust
+RUN if [ "$INSTALL_DEV" = "true" ]; then echo "Installing test dependencies..." && pip install --no-cache-dir -r /app/requirements-test.txt; else echo "Skipping test dependencies (INSTALL_DEV=$INSTALL_DEV)"; fi
 
 # Create non-root user
 RUN useradd -m qrapp

@@ -75,7 +75,9 @@ def migrate():
         command.upgrade(alembic_cfg, "head")
         print("[Manage] Alembic migration to 'head' successful.")
     except Exception as e:
-        print(f"[Manage] Alembic migration FAILED: {e}")
+        import traceback
+        traceback.print_exc()
+        print(f"[Manage] Alembic migration FAILED: {e!r}")
         sys.exit(1)
 
     print("[Manage] Database migration completed successfully.")

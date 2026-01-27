@@ -15,6 +15,18 @@ branch_labels = None
 depends_on = None
 
 def upgrade():
+    # 0. Add missing columns safely
+    conn = op.get_bind()
+    inspector = sa.inspect(conn)
+    existing_columns = [c['name'] for c in inspector.get_columns('orders')]
+
+    if 'print_product' not in existing_columns:
+        op.add_column('orders', sa.Column('print_product', sa.String(), nullable=True))
+    if 'material' not in existing_columns:
+        op.add_column('orders', sa.Column('material', sa.String(), nullable=True))
+    if 'sides' not in existing_columns:
+        op.add_column('orders', sa.Column('sides', sa.String(), nullable=True))
+    
     # 1. Update existing 'listing_sign' orders to 'sign'
     # and map them to a default print_product if missing
     op.execute("""

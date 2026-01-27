@@ -1,8 +1,8 @@
 #!/bin/bash
-set -e
+set -euo pipefail
 
 echo "1. Bytecode Compilation Check..."
-python -m compileall -q .
+python scripts/syntax_check.py
 
 echo "2. Release Cleanliness Check..."
 python scripts/check_release_clean.py
@@ -18,7 +18,7 @@ python -m pytest -q
 
 echo "6. Targeted Phase Tests..."
 # Running focused tests
-python -m pytest -q tests/test_print_jobs.py tests/test_smart_sign_pricing.py tests/test_smart_sign_checkout.py
+python -m pytest -q tests/test_print_jobs.py tests/test_smart_signs.py tests/test_smart_sign_activation.py
 
 
 echo "All checks passed!"

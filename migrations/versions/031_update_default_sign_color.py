@@ -11,7 +11,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision = '031_update_default_sign_color'
-down_revision = '030_print_jobs_claimed_at_retry'
+down_revision = '030_print_jobs_retry'
 branch_labels = None
 depends_on = None
 
