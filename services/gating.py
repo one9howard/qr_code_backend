@@ -110,30 +110,30 @@ def get_property_gating_status(property_id):
 
     # 4. Strict Gating Logic (Priority-based)
     if is_paid:
-        # Priority 1 & 2: Explicitly Paid (Subscription or Order)
+        # Priority 1: Explicitly Paid (Subscription or Order)
         is_expired = False
         locked_reason = None
-        # For subscription/paid properties, we don't show a countdown
         days_remaining = None 
             
+    elif expires_at is None:
+        # Priority 2: NULL means NO EXPIRY (Legacy/Pro/Unlocked behavior)
+        # "NULL means no expiry"
+        is_expired = False
+        locked_reason = None
+        days_remaining = None
+
     else:
-        # Priority 3: Free Tier (Expires)
-        if expires_at is None:
-            # CRITICAL: NULL expires_at means UNPAID/EXPIRED (not infinite)
+        # Priority 3: Has expiry date -> check it
+        now = datetime.now(timezone.utc)
+        if expires_at < now:
             is_expired = True
             days_remaining = 0
-            locked_reason = "unpaid"
+            locked_reason = "trial_expired"
         else:
-            now = datetime.now(timezone.utc)
-            if expires_at < now:
-                is_expired = True
-                days_remaining = 0
-                locked_reason = "trial_expired"
-            else:
-                is_expired = False
-                delta = expires_at - now
-                days_remaining = max(0, delta.days)
-                locked_reason = None
+            is_expired = False
+            delta = expires_at - now
+            days_remaining = max(0, delta.days)
+            locked_reason = None
     
     # 5. Calculate limits
     # Paid = Max capabilities

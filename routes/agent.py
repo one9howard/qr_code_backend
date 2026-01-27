@@ -166,6 +166,7 @@ def submit():
 
                 from datetime import timedelta
                 retention_days = int(os.environ.get("FREE_TIER_RETENTION_DAYS", "7"))
+                # Ensure timezone-aware usage
                 expiry_dt = datetime.now(timezone.utc) + timedelta(days=retention_days)
                 expires_at = expiry_dt.isoformat(sep=' ')
             

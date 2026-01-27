@@ -143,7 +143,7 @@ def generate_listing_sign_pdf(order, output_path=None):
     price = _format_price(price_val)
     
     # Sign config - use order's persisted color and size
-    sign_color = get_val(order, 'sign_color') or '#1F6FEB'  # DEFAULT_SIGN_COLOR fallback
+    sign_color = get_val(order, 'sign_color') or '#0077ff'  # DEFAULT_SIGN_COLOR fallback
     sign_size = get_val(order, 'print_size') or get_val(order, 'sign_size') or '18x24'
     
     # QR URL

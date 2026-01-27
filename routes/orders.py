@@ -62,16 +62,28 @@ def select_property_for_sign():
         SELECT p.* 
         FROM properties p
         JOIN agents a ON p.agent_id = a.id
-        WHERE a.user_id = %s AND (p.expires_at IS NULL OR p.expires_at > NOW())
+        WHERE a.user_id = %s
         ORDER BY p.created_at DESC
     """, (current_user.id,)).fetchall()
     
     if not properties:
         flash("You need to add a property first.", "warning")
         return redirect(url_for('agent.submit'))
+    
+    # Attach gating status for UI (expired/unpaid labels)
+    from services.gating import get_property_gating_status
+    enriched_properties = []
+    
+    # Convert Row objects to dicts to allow modification
+    # Or just wrap them. Since Row objects might be read-only or rigid, it's safer to create a wrapper list.
+    for prop in properties:
+        p_dict = dict(prop)
+        gating = get_property_gating_status(p_dict['id'])
+        p_dict['gating'] = gating
+        enriched_properties.append(p_dict)
         
     from datetime import datetime
-    return render_template('orders/select_property.html', properties=properties, now=datetime.now())
+    return render_template('orders/select_property.html', properties=enriched_properties, now=datetime.now())
 
 @orders_bp.route('/orders/<int:order_id>/download')
 def download_pdf(order_id):

@@ -43,12 +43,14 @@
                                 </div>
                             </td>
                             <td>
-                                {% if not property.expires_at %}
+                                {% if property.gating.is_expired %}
+                                <span class="badge badge-orange">EXPIRED / UNPAID</span>
+                                {% elif property.gating.is_paid %}
+                                <span class="badge badge-green">Paid Active</span>
+                                {% elif property.expires_at is none %}
                                 <span class="badge badge-green">Active (Pro)</span>
-                                {% elif property.expires_at > now %}
-                                <span class="badge badge-green">Active</span>
                                 {% else %}
-                                <span class="badge badge-orange">Expired</span>
+                                <span class="badge badge-green">Active (Trial)</span>
                                 {% endif %}
                             </td>
                             <td>

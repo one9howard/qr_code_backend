@@ -4,7 +4,7 @@ set -euo pipefail
 ROLE="${SERVICE_ROLE:-web}"
 
 if [[ "$ROLE" == "worker" ]]; then
-  echo "[railway] starting print worker"
+  echo "[railway] starting async worker"
   exec python scripts/async_worker.py
 else
   echo "[railway] starting web"

@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, redirect, url_for, flash, abort
+from flask import Blueprint, render_template, redirect, url_for, flash, abort, jsonify
 from flask_login import login_required, current_user
 from database import get_db
 from services.fulfillment import fulfill_order
@@ -109,3 +109,30 @@ def metrics():
     return render_template("admin_metrics.html", 
                          counts=counts, 
                          daily_breakdown=daily_breakdown)
+
+@admin_bp.route("/admin/cron/cleanup-expired", methods=["POST"])
+def cron_cleanup_expired():
+    """
+    Production hook for cleanup jobs.
+    Protected by X-CRON-TOKEN.
+    """
+    import os
+    from flask import request
+    
+    expected_token = os.environ.get("CRON_TOKEN")
+    if not expected_token:
+        # If env var not set, fail safe
+        return jsonify({"error": "CRON_TOKEN not configured"}), 500
+        
+    incoming_token = request.headers.get("X-CRON-TOKEN")
+    if incoming_token != expected_token:
+        # 401 Unauthorized
+        return jsonify({"error": "Invalid token"}), 401
+        
+    # Execute Cleanup
+    from services.cleanup_service import cleanup_expired_properties
+    try:
+        deleted_count = cleanup_expired_properties()
+        return jsonify({"success": True, "deleted": deleted_count})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500

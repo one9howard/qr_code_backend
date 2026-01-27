@@ -52,3 +52,16 @@ The application requires **TWO** distinct services sharing the same repo/image:
 2.  **Build**: Run `python scripts/build_release_zip.py --profile prod`.
     *   Output: `releases/insite_signs_release_prod_<date>.zip`
 3.  **Deploy**: Upload zip to hosting provider or push git tag.
+
+### Cleanup Cron
+To enable automatic cleanup of expired properties/previews:
+1. Set `CRON_TOKEN` in Railway variables (generate a secure random string).
+2. Configure a scheduled job (e.g. via GitHub Actions or an external cron service like EasyCron/Mergent) to POST to:
+   `https://<your-app-url>/admin/cron/cleanup-expired`
+   Header: `X-CRON-TOKEN: <your-token>`
+
+Example CURL:
+```bash
+curl -X POST https://insite-signs.up.railway.app/admin/cron/cleanup-expired \
+  -H "X-CRON-TOKEN: secret_value_here"
+```

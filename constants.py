@@ -26,7 +26,7 @@ DEFAULT_SIGN_SIZE = "18x24"
 
 # Sign Color Palette
 SIGN_COLORS = {
-    "blue": {"hex": "#1F6FEB", "name": "Ocean Blue"},      # Default
+    "blue": {"hex": "#0077ff", "name": "Ocean Blue"},      # Default (Updated to Brand Blue)
     "green": {"hex": "#2EA043", "name": "Forest Green"},
     "red": {"hex": "#CF222E", "name": "Ruby Red"},
     "purple": {"hex": "#8250DF", "name": "Royal Purple"},
@@ -34,7 +34,7 @@ SIGN_COLORS = {
     "teal": {"hex": "#0969DA", "name": "Sky Teal"},
 }
 
-DEFAULT_SIGN_COLOR = "#1F6FEB"
+DEFAULT_SIGN_COLOR = "#0077ff"
 
 # Layout Version - Bump this when PDF/preview layout changes significantly
 # Used for cache busting and filename versioning
