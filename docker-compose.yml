@@ -19,9 +19,6 @@ services:
     environment:
       - FLASK_ENV=development
       - DATABASE_URL=postgresql://postgres:postgres@db:5432/qrapp
-      - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
-      - STRIPE_PUBLISHABLE_KEY=${STRIPE_PUBLISHABLE_KEY}
-      - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET}
       - APP_STAGE=dev
     env_file:
       - .env
@@ -36,7 +33,6 @@ services:
     environment:
       - FLASK_ENV=development
       - DATABASE_URL=postgresql://postgres:postgres@db:5432/qrapp
-      - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
       - APP_STAGE=dev
     env_file:
       - .env
