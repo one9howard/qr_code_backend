@@ -36,13 +36,13 @@ def per_property_metrics(property_id: int, range_days: int = 7, compare_days: in
         return db.execute(query, (pid,)).fetchone()[0]
 
     # 1. Scans (Physical)
-    scans_curr = get_count('qr_scans', 'created_at', property_id, 0, range_days)
-    scans_prev = get_count('qr_scans', 'created_at', property_id, range_days, compare_days)
+    scans_curr = get_count('qr_scans', 'scanned_at', property_id, 0, range_days)
+    scans_prev = get_count('qr_scans', 'scanned_at', property_id, range_days, compare_days)
     
     # 2. Views (Digital)
     # Exclude internal views for purity? Usually yes, property_views has is_internal column
-    views_curr = get_count('property_views', 'created_at', property_id, 0, range_days, "AND is_internal = 0")
-    views_prev = get_count('property_views', 'created_at', property_id, range_days, compare_days, "AND is_internal = 0")
+    views_curr = get_count('property_views', 'viewed_at', property_id, 0, range_days, "AND is_internal = 0")
+    views_prev = get_count('property_views', 'viewed_at', property_id, range_days, compare_days, "AND is_internal = 0")
     
     # 3. Leads (Conversion)
     leads_curr = get_count('leads', 'created_at', property_id, 0, range_days)
@@ -60,8 +60,8 @@ def per_property_metrics(property_id: int, range_days: int = 7, compare_days: in
         return int(((curr - prev) / prev) * 100)
 
     # Last Activity timestamps
-    last_scan = db.execute("SELECT MAX(created_at) FROM qr_scans WHERE property_id = %s", (property_id,)).fetchone()[0]
-    last_view = db.execute("SELECT MAX(created_at) FROM property_views WHERE property_id = %s", (property_id,)).fetchone()[0]
+    last_scan = db.execute("SELECT MAX(scanned_at) FROM qr_scans WHERE property_id = %s", (property_id,)).fetchone()[0]
+    last_view = db.execute("SELECT MAX(viewed_at) FROM property_views WHERE property_id = %s", (property_id,)).fetchone()[0]
     last_lead = db.execute("SELECT MAX(created_at) FROM leads WHERE property_id = %s", (property_id,)).fetchone()[0]
     
     # Generate Insights
@@ -156,10 +156,10 @@ def per_agent_rollup(user_id: int, range_days: int = 7) -> dict:
         return db.execute(query, (agent_id,)).fetchone()[0]
 
     # 1. Total Scans (Lifetime)
-    scans_lifetime = get_agg('qr_scans', 'created_at')
+    scans_lifetime = get_agg('qr_scans', 'scanned_at')
     
     # 2. Total Views (Lifetime, Public)
-    views_lifetime = get_agg('property_views', 'created_at', extra_where="AND t.is_internal = 0")
+    views_lifetime = get_agg('property_views', 'viewed_at', extra_where="AND t.is_internal = 0")
     
     # 3. Leads (Lifetime & 30d)
     leads_lifetime = get_agg('leads', 'created_at')
@@ -170,11 +170,11 @@ def per_agent_rollup(user_id: int, range_days: int = 7) -> dict:
     ctas_prev_7d = get_agg_range('app_events', 'occurred_at', 7, 7, extra_where="AND t.event_type = 'cta_click'")
     
     # Scan/View 7d for Deltas (Optional for cards, users usually like WoW there too)
-    scans_7d = get_agg_range('qr_scans', 'created_at', 0, 7)
-    scans_prev_7d = get_agg_range('qr_scans', 'created_at', 7, 7)
+    scans_7d = get_agg_range('qr_scans', 'scanned_at', 0, 7)
+    scans_prev_7d = get_agg_range('qr_scans', 'scanned_at', 7, 7)
     
-    views_7d = get_agg_range('property_views', 'created_at', 0, 7, extra_where="AND t.is_internal = 0")
-    views_prev_7d = get_agg_range('property_views', 'created_at', 7, 7, extra_where="AND t.is_internal = 0")
+    views_7d = get_agg_range('property_views', 'viewed_at', 0, 7, extra_where="AND t.is_internal = 0")
+    views_prev_7d = get_agg_range('property_views', 'viewed_at', 7, 7, extra_where="AND t.is_internal = 0")
     
     leads_7d = get_agg_range('leads', 'created_at', 0, 7)
     leads_prev_7d = get_agg_range('leads', 'created_at', 7, 7)
