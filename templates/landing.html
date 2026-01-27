@@ -62,10 +62,10 @@
                 <div class="hero-actions">
                     {% if current_user.is_authenticated %}
                     <a href="{{ url_for('dashboard.index') }}" class="btn-secondary">Dashboard</a>
-                    <a href="{{ url_for('public.select_sign') }}" class="btn-primary">Get Your QR Sign</a>
+                    <a href="{{ url_for('public.select_sign') }}" class="btn-primary">QR Signs</a>
                     {% else %}
-                    <a href="{{ url_for('auth.login') }}" class="btn-secondary">Log in</a>
-                    <a href="{{ url_for('public.select_sign') }}" class="btn-primary">Get Your QR Sign</a>
+                    <a href="{{ url_for('auth.login') }}" class="btn-secondary">Log in/Register</a>
+                    <a href="{{ url_for('public.select_sign') }}" class="btn-primary">QR Signs</a>
                     {% endif %}
                 </div>
             </div>
