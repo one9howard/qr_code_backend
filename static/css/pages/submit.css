@@ -22,6 +22,64 @@
     display: none;
 }
 
+/* NEW: Matches order_form.html class names */
+.color-palette-grid {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 1.5rem;
+}
+
+.color-option-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    position: relative;
+    padding: 8px;
+    border-radius: 8px;
+    transition: background 0.2s;
+}
+
+.color-option-card:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.color-option-card input[type="radio"] {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.color-option-card .swatch {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    transition: transform 0.2s, border-color 0.2s;
+}
+
+.color-option-card input:checked+.swatch {
+    transform: scale(1.1);
+    border-color: white;
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.2);
+}
+
+.color-option-card .label {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.color-option-card input:checked~.label {
+    color: white;
+    font-weight: 500;
+}
+
+/* Existing legacy classes below... */
+
 .color-swatch {
     width: 60px;
     height: 60px;
