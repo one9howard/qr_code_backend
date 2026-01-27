@@ -150,6 +150,9 @@
 .mini-banner {
     height: 20%;
     background: #1F6FEB;
+    display: flex;
+    justify-content: center;
+    position: relative;
 }
 
 /* Photo Banner Style */
