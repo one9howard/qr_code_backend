@@ -106,7 +106,7 @@ def generate_pdf_sign(address, beds, baths, sqft, price, agent_name, brokerage, 
                       sign_color=None, sign_size=None, order_id=None, qr_value=None,
                       # Legacy parameters for backward compatibility with tests
                       qr_path=None, agent_photo_path=None, return_path=False,
-                      user_id=None, logo_key=None, output_key=None):
+                      user_id=None, logo_key=None, output_key=None, layout_id="smart_v1_photo_banner"):
     """
     Generate a PDF sign with customizable color and size.
     Layout scales proportionally to the page dimensions.
@@ -130,6 +130,7 @@ def generate_pdf_sign(address, beds, baths, sqft, price, agent_name, brokerage, 
         user_id: The ID of the user (for logo preferences)
         logo_key: Storage key for brokerage/agent logo
         output_key: Explicit storage key to write to (overrides order_id logic)
+        layout_id: Layout style identifier
     """
     # Explicit legacy mode detection:
     # - order_id is None AND output_key is None (local tooling)
@@ -173,12 +174,29 @@ def generate_pdf_sign(address, beds, baths, sqft, price, agent_name, brokerage, 
                 agent_photo_path=agent_photo_path, user_id=user_id, logo_key=logo_key
             )
         else:
-            _draw_standard_layout(
-                c, layout, address, beds, baths, sqft, price,
-                agent_name, brokerage, agent_email, agent_phone,
-                qr_key, agent_photo_key, sign_color, qr_value=qr_value,
-                agent_photo_path=agent_photo_path, user_id=user_id, logo_key=logo_key
-            )
+            # Dispatch based on Layout ID
+            if layout_id == 'smart_v1_minimal':
+                _draw_minimal_layout(
+                    c, layout, address, beds, baths, sqft, price,
+                    agent_name, brokerage, agent_email, agent_phone,
+                    qr_key, agent_photo_key, sign_color, qr_value=qr_value,
+                    agent_photo_path=agent_photo_path, user_id=user_id, logo_key=logo_key
+                )
+            elif layout_id == 'smart_v1_agent_brand':
+                _draw_brand_layout(
+                    c, layout, address, beds, baths, sqft, price,
+                    agent_name, brokerage, agent_email, agent_phone,
+                    qr_key, agent_photo_key, sign_color, qr_value=qr_value,
+                    agent_photo_path=agent_photo_path, user_id=user_id, logo_key=logo_key
+                )
+            else:
+                # Default / Photo Banner
+                _draw_standard_layout(
+                    c, layout, address, beds, baths, sqft, price,
+                    agent_name, brokerage, agent_email, agent_phone,
+                    qr_key, agent_photo_key, sign_color, qr_value=qr_value,
+                    agent_photo_path=agent_photo_path, user_id=user_id, logo_key=logo_key
+                )
         
         c.restoreState()
         c.showPage()
@@ -610,3 +628,183 @@ def _draw_centered_agent_info(c, layout, agent_main, agent_sub, logo_key=None):
     c.drawCentredString(layout.width / 2, text_center_y + (0.08 * layout.banner_height), agent_main)
     c.setFont("Helvetica", layout.agent_sub_font)
     c.drawCentredString(layout.width / 2, text_center_y - (0.12 * layout.banner_height), agent_sub)
+
+
+def _draw_minimal_layout(c, layout, address, beds, baths, sqft, price,
+                        agent_name, brokerage, agent_email, agent_phone,
+                        qr_key, agent_photo_key, sign_color, qr_value=None,
+                        agent_photo_path=None, user_id=None, logo_key=None):
+    """
+    Minimalist Layout: White background, Large QR, minimal styling.
+    Top: QR Code (large)
+    Middle: Address & Price
+    Bottom: Agent Info
+    """
+    COLOR_TEXT = (0, 0, 0)
+    COLOR_SUBTEXT = (0.5, 0.5, 0.5)
+    
+    # 1. Background (White)
+    c.setFillColorRGB(1, 1, 1)
+    c.rect(-layout.bleed, -layout.bleed, 
+           layout.width + 2 * layout.bleed, 
+           layout.height + 2 * layout.bleed, 
+           fill=1, stroke=0)
+           
+    # 2. QR Code (Upper Center, Large)
+    # Give it top 55% of space minus margins
+    qr_center_y = layout.height * 0.65
+    qr_max_w = layout.width * 0.7
+    qr_max_h = layout.height * 0.5
+    qr_size = min(qr_max_w, qr_max_h)
+    
+    qr_x = (layout.width - qr_size) / 2
+    qr_y = qr_center_y - (qr_size / 2)
+    
+    # Determine URL
+    if qr_value:
+        qr_url = qr_value
+    elif qr_key:
+        filename = os.path.basename(qr_key)
+        v = os.path.splitext(filename)[0]
+        qr_url = f"{BASE_URL.rstrip('/')}/r/{v}"
+    else:
+        qr_url = "https://example.com"
+
+    try:
+        draw_qr(c, qr_url, qr_x, qr_y, qr_size, ecc_level="H", user_id=user_id)
+        
+        # Scan me text
+        c.setFont("Helvetica-Bold", layout.features_font * 0.8)
+        c.setFillColorRGB(*COLOR_TEXT)
+        c.drawCentredString(layout.width/2, qr_y - (layout.features_font * 1.5), "SCAN FOR PHOTOS")
+        
+    except Exception as e:
+        print(f"[PDF] Minimal QR Error: {e}")
+
+    # 3. Property Info (Middle-Lower)
+    cursor_y = layout.height * 0.35
+    
+    # Address
+    c.setFont("Helvetica-Bold", layout.address_font)
+    c.setFillColorRGB(*COLOR_TEXT)
+    c.drawCentredString(layout.width/2, cursor_y, address.upper())
+    
+    cursor_y -= (layout.address_font * 1.5)
+    
+    # Price
+    if price:
+        c.setFont("Helvetica-Bold", layout.price_font)
+        c.setFillColorRGB(*hex_to_rgb(sign_color)) # Use accent color
+        c.drawCentredString(layout.width/2, cursor_y, price)
+        cursor_y -= (layout.price_font * 1.4)
+        
+    # Features
+    c.setFont("Helvetica", layout.features_font)
+    c.setFillColorRGB(*COLOR_SUBTEXT)
+    line = f"{beds} BEDS | {baths} BATHS"
+    if sqft: line += f" | {sqft} SQ FT"
+    c.drawCentredString(layout.width/2, cursor_y, line)
+    
+    # 4. Agent Info (Bottom Footer, minimal)
+    # Draw simple line separator
+    line_y = layout.height * 0.12
+    c.setStrokeColorRGB(0.9, 0.9, 0.9)
+    c.setLineWidth(2)
+    c.line(layout.margin, line_y, layout.width - layout.margin, line_y)
+    
+    # Agent Name & Phone
+    c.setFont("Helvetica-Bold", layout.agent_name_font * 0.8)
+    c.setFillColorRGB(*COLOR_TEXT)
+    footer_text = f"{agent_name.upper()}  |  {brokerage.upper()}  |  {agent_phone}"
+    c.drawCentredString(layout.width/2, line_y - (layout.agent_name_font * 1.5), footer_text)
+
+
+def _draw_brand_layout(c, layout, address, beds, baths, sqft, price,
+                        agent_name, brokerage, agent_email, agent_phone,
+                        qr_key, agent_photo_key, sign_color, qr_value=None,
+                        agent_photo_path=None, user_id=None, logo_key=None):
+    """
+    Brand Layout: Light gray top, Dark footer. Logo prominent.
+    Top: Logo (if avail) + Address
+    Middle: QR
+    Bottom: Dark Footer with Agent Info
+    """
+    COLOR_BG = (0.97, 0.97, 0.97) # Light Gray
+    COLOR_FOOTER = hex_to_rgb(sign_color) # Use selected color for footer background
+    COLOR_TEXT = (0.1, 0.1, 0.1)
+    
+    # 1. Background
+    c.setFillColorRGB(*COLOR_BG)
+    c.rect(-layout.bleed, -layout.bleed, layout.width + 2*layout.bleed, layout.height + 2*layout.bleed, fill=1, stroke=0)
+    
+    # 2. Footer (Bottom 20%)
+    footer_h = layout.height * 0.22
+    c.setFillColorRGB(*COLOR_FOOTER)
+    c.rect(-layout.bleed, -layout.bleed, layout.width + 2*layout.bleed, footer_h + layout.bleed, fill=1, stroke=0)
+    
+    # 3. Logo (Top Center)
+    storage = get_storage()
+    has_logo = False
+    cursor_y = layout.height * 0.92
+    
+    logo_size = layout.height * 0.15
+    if logo_key and storage.exists(logo_key):
+        try:
+            logo_data = storage.get_file(logo_key)
+            img = ImageReader(logo_data)
+            # Draw centered
+            logo_x = (layout.width - logo_size) / 2
+            logo_y = cursor_y - logo_size
+            c.drawImage(img, logo_x, logo_y, width=logo_size, height=logo_size, preserveAspectRatio=True, mask='auto', anchorAtXY=True)
+            cursor_y -= (logo_size + layout.margin * 0.5)
+            has_logo = True
+        except: pass
+        
+    if not has_logo:
+        # Fallback text
+        c.setFont("Helvetica-Bold", layout.agent_name_font)
+        c.setFillColorRGB(*COLOR_TEXT)
+        c.drawCentredString(layout.width/2, cursor_y, brokerage.upper())
+        cursor_y -= (layout.agent_name_font * 2)
+
+    # 4. Address & Price (Below Logo)
+    c.setFont("Helvetica-Bold", layout.address_font)
+    c.setFillColorRGB(*COLOR_TEXT)
+    c.drawCentredString(layout.width/2, cursor_y, address.upper())
+    cursor_y -= (layout.address_font * 1.5)
+    
+    if price:
+        c.setFont("Helvetica-Bold", layout.price_font)
+        c.setFillColorRGB(*hex_to_rgb(sign_color))
+        c.drawCentredString(layout.width/2, cursor_y, price)
+        cursor_y -= (layout.price_font * 1.2)
+
+    # 5. QR Code (Middle-Bottom, above footer)
+    # Available vertical space: cursor_y down to footer_h
+    qr_space_h = cursor_y - footer_h - layout.margin
+    qr_size = min(layout.width * 0.5, qr_space_h)
+    
+    qr_x = (layout.width - qr_size) / 2
+    qr_y = footer_h + (qr_space_h - qr_size) / 2
+    
+    if qr_value:
+        qr_url = qr_value
+    else:
+        qr_url = "https://example.com"
+        
+    try:
+        draw_qr(c, qr_url, qr_x, qr_y, qr_size, user_id=user_id)
+    except: pass
+
+    # 6. Agent Info (In Footer, White Text)
+    c.setFillColorRGB(1, 1, 1)
+    
+    # Agent Name
+    name_y = footer_h * 0.65
+    c.setFont("Helvetica-Bold", layout.agent_name_font)
+    c.drawCentredString(layout.width/2, name_y, agent_name.upper())
+
+    # Phone / Email
+    sub_y = footer_h * 0.35
+    c.setFont("Helvetica", layout.agent_sub_font)
+    c.drawCentredString(layout.width/2, sub_y, f"{agent_phone}  |  {agent_email.lower()}")

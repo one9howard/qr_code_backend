@@ -47,6 +47,7 @@ def submit():
 
             # Extract sign customization options
             sign_color = request.form.get("sign_color", DEFAULT_SIGN_COLOR)
+            layout_id = request.form.get("layout_id", "smart_v1_photo_banner")
             raw_sign_size = request.form.get("sign_size", DEFAULT_SIGN_SIZE)
 
             # Normalize sign size using canonical function
@@ -259,7 +260,8 @@ def submit():
                 final_headshot_key, # Respects toggle
                 sign_color, sign_size, order_id=order_id, qr_value=full_url,
                 logo_key=final_logo_key, # NEW: Pass logo key (requires update to pdf_generator signature)
-                user_id=current_user.id if current_user.is_authenticated else None # NEW: For QR Logo rendering
+                user_id=current_user.id if current_user.is_authenticated else None, # NEW: For QR Logo rendering
+                layout_id=layout_id
             )
 
             # Step 3: Generate WebP preview (returns storage key)

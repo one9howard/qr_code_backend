@@ -17,6 +17,7 @@
         <form method="POST" action="{{ url_for('smart_signs.checkout_smartsign') }}" enctype="multipart/form-data"
             class="form-grid">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="size" value="18x24">
             {% if asset_id %}
             <input type="hidden" name="asset_id" value="{{ asset_id }}">
             <div
