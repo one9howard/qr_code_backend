@@ -167,10 +167,10 @@ body.saas-landing>.container {
 }
 
 .hero-logo {
-    height: 70px;
+    height: 101px;
     width: auto;
     display: block;
-    margin: 0.75rem auto;
+    margin: 0 auto 0.25rem auto;
 }
 
 .hero-text h1 {
