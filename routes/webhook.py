@@ -532,7 +532,7 @@ def _freeze_properties_for_customer(db, stripe_customer_id):
     from utils.timestamps import utc_iso
     now_iso = utc_iso()
     
-    cursor = db.execute('''
+     cursor = db.execute('''
         UPDATE properties 
         SET expires_at = %s 
         WHERE id IN (
@@ -544,7 +544,8 @@ def _freeze_properties_for_customer(db, stripe_customer_id):
         )
         AND id NOT IN (
             SELECT property_id FROM orders 
-            WHERE status = 'paid' AND order_type IN ('sign', 'listing_unlock', 'smart_sign')
+            WHERE status IN ('paid', 'submitted_to_printer', 'fulfilled') 
+            AND order_type IN ('sign', 'listing_unlock', 'smart_sign')
         )
     ''', (now_iso, stripe_customer_id))
     

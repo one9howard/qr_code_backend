@@ -73,9 +73,12 @@ def start_kit(property_id):
     kit = create_or_get_kit(current_user.id, property_id)
     
     if can_generate_freely:
-        # Trigger Generation
-        generate_kit(kit['id'])
-        return jsonify({"status": "generating", "kit_id": kit['id']})
+        # Trigger Generation (Async)
+        current_app.logger.info(f"Enqueuing listing kit generation for kit {kit['id']} (Order validated)")
+        from services.async_jobs import enqueue
+        enqueue('generate_listing_kit', {'kit_id': kit['id'], 'user_id': current_user.id})
+        
+        return jsonify({"status": "queued", "kit_id": kit['id']})
     else:
         # Track upgrade prompt shown
         try:

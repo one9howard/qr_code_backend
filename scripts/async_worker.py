@@ -59,20 +59,25 @@ def process_job(job):
                 raise RuntimeError("Fulfillment returned failure status")
                 
         elif job_type == 'generate_listing_kit':
+            kit_id = payload.get('kit_id')
             order_id = payload.get('order_id')
-            if not order_id:
-                raise ValueError("Missing order_id in payload")
             
-            # Fetch user/property to ensure Kit exists
-            order = Order.get(order_id)
-            if not order:
-                raise ValueError(f"Order {order_id} not found")
+            if kit_id:
+                # Direct generation request (e.g. from Dashboard)
+                logger.info(f"Generating Kit {kit_id} (Direct)")
+                generate_kit(kit_id)
+            elif order_id:
+                # Webhook trigger
+                logger.info(f"Generating Kit for Order {order_id} (Webhook)")
+                order = Order.get(order_id)
+                if not order:
+                    raise ValueError(f"Order {order_id} not found")
                 
-            # Create/Get Kit Record
-            kit = create_or_get_kit(order.user_id, order.property_id)
-            
-            # Generate
-            generate_kit(kit['id'])
+                # Idempotent create/get
+                kit = create_or_get_kit(order.user_id, order.property_id)
+                generate_kit(kit['id'])
+            else:
+                 raise ValueError("Missing kit_id or order_id in payload")
             
         else:
             raise ValueError(f"Unknown job_type: {job_type}")

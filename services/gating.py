@@ -1,16 +1,87 @@
 from datetime import datetime, timezone
 from database import get_db
+# Import canonical constants
 from constants import PAID_STATUSES
 
-
-def get_property_gating_status(property_id):
+def is_paid_order(order_dict_or_row):
     """
-    Single source of truth for property paid/expiry status.
+    Canonical check for whether an order is considered paid/valid for entitlement.
+    """
+    if not order_dict_or_row:
+        return False
+    # Handle dict/row access safely
+    status = order_dict_or_row.get('status') if isinstance(order_dict_or_row, dict) else order_dict_or_row['status']
+    return status in PAID_STATUSES
+
+def property_is_paid(property_id, user_id=None):
+    """
+    Canonical check: Is this property 'unlocked' for the user?
     
-    Returns:
-        dict: {
-            "is_paid": bool,
-            "is_expired": bool,
+    A property is unlocked if:
+    1. Owner has active PRO subscription.
+    2. OR there is a PAID order of type 'listing_unlock', 'sign', or 'smart_sign'.
+       (Explicitly EXCLUDES 'listing_kit').
+    """
+    if property_id is None:
+        return False
+
+    db = get_db()
+    
+    # 1. Check Subscription (if user_id provided or derived from property owner)
+    # If user_id is NOT provided, we must look up the agent->user owning the property
+    if not user_id:
+        owner_row = db.execute("""
+            SELECT u.subscription_status, u.id as user_id
+            FROM properties p
+            JOIN agents a ON p.agent_id = a.id
+            JOIN users u ON a.user_id = u.id
+            WHERE p.id = %s
+        """, (property_id,)).fetchone()
+        
+        if owner_row:
+            user_id = owner_row['user_id']
+            from services.subscriptions import is_subscription_active
+            if is_subscription_active(owner_row['subscription_status']):
+                return True
+    else:
+        # If user_id provided, check that specific user's sub? 
+        # Usually we care about the PROPERTY OWNER's status.
+        # But let's assume if user_id is passed, we check their sub status if they own it.
+        # Ideally we stick to property owner lookup for robustness.
+        # Let's fallback to the query above which is safer.
+        pass
+
+    # Re-run owner lookup if we didn't enter the block above or if we need to be sure
+    # Actually, the logic in get_property_gating_status does the join.
+    # Let's reuse that exact query structure for consistency.
+    
+    owner_query = """
+        SELECT u.subscription_status
+        FROM properties p
+        JOIN agents a ON p.agent_id = a.id
+        JOIN users u ON a.user_id = u.id
+        WHERE p.id = %s
+    """
+    owner_row = db.execute(owner_query, (property_id,)).fetchone()
+    
+    from services.subscriptions import is_subscription_active
+    if owner_row and is_subscription_active(owner_row['subscription_status']):
+        return True
+
+    # 2. Check for Paid Order (Canonical Entitlement)
+    placeholders = ','.join(['%s'] * len(PAID_STATUSES))
+    # Note: listing_kit is explicitly EXCLUDED
+    query = f"""
+        SELECT 1 FROM orders 
+        WHERE property_id = %s 
+        AND status IN ({placeholders})
+        AND order_type IN ('listing_unlock', 'sign', 'smart_sign')
+        LIMIT 1
+    """
+    has_order = db.execute(query, (property_id, *PAID_STATUSES)).fetchone()
+    
+    return bool(has_order)
+
             "expires_at": datetime | None,
             "days_remaining": int | None,
             "max_photos": int,
@@ -31,58 +102,49 @@ def get_property_gating_status(property_id):
 
     db = get_db()
     
+    # Use Canonical Helper for 'is_paid' state
+    # This checks both Subscription and explicit Paid Orders
+    is_paid = property_is_paid(property_id)
     
-    # 1. Check for Subscription Status (HIGHEST PRIORITY)
-    # If owner has active subscription, property is PAID via subscription.
-    # We need to fetch the owner's subscription status.
+    # Determine 'paid_via' for UI/Logic if paid
     paid_via = None
     paid_source_order_id = None
     
-    # Fetch owner info with correct joins
-    owner_query = """
-        SELECT u.subscription_status
-        FROM properties p
-        JOIN agents a ON p.agent_id = a.id
-        JOIN users u ON a.user_id = u.id
-        WHERE p.id = %s
-    """
-    owner_row = db.execute(owner_query, (property_id,)).fetchone()
-    
-    from services.subscriptions import is_subscription_active
-    # Use robust check instead of just 'active'
-    if owner_row and is_subscription_active(owner_row['subscription_status']):
-        paid_via = 'subscription'
-        is_paid = True
-    else:
-        # 2. Check for any PAID order associated with this property
-        # ONLY listing_unlock, sign, and smart_sign unlock property paid status
-        # EXPLICITLY EXCLUDE listing_kit - it enables kit generation but NOT property unlock
-        placeholders = ','.join(['%s'] * len(PAID_STATUSES))
-        query = f"""
-            SELECT id, order_type FROM orders 
-            WHERE property_id = %s 
-            AND status IN ({placeholders})
-            AND order_type IN ('listing_unlock', 'sign', 'smart_sign')
-            ORDER BY created_at DESC
-            LIMIT 1
-        """
-        row = db.execute(query, (property_id, *PAID_STATUSES)).fetchone()
+    if is_paid:
+        # Re-derive source for granular UI details if needed
+        # (Optimized: we could have property_is_paid return metadata, but keeping it boolean is cleaner for other callers)
         
-        if row:
-            is_paid = True
-            order_type = row['order_type']
-            paid_source_order_id = row['id']
-            # Map order_type to paid_via (NO listing_kit - it's excluded above)
-            if order_type == 'listing_unlock':
-                paid_via = 'listing_unlock'
-            elif order_type == 'sign':
-                paid_via = 'sign_order'
-            elif order_type == 'smart_sign':
-                paid_via = 'sign_order'  # smart_sign is a variant of sign
-            else:
-                paid_via = 'sign_order' # Default fallback for legacy orders
+        # 1. Check Sub again (lightwieght)
+        owner_row = db.execute("""
+            SELECT u.subscription_status
+            FROM properties p
+            JOIN agents a ON p.agent_id = a.id
+            JOIN users u ON a.user_id = u.id
+            WHERE p.id = %s
+        """, (property_id,)).fetchone()
+        
+        from services.subscriptions import is_subscription_active
+        if owner_row and is_subscription_active(owner_row['subscription_status']):
+            paid_via = 'subscription'
         else:
-            is_paid = False
+            # 2. Must be an order
+            placeholders = ','.join(['%s'] * len(PAID_STATUSES))
+            query = f"""
+                SELECT id, order_type FROM orders 
+                WHERE property_id = %s 
+                AND status IN ({placeholders})
+                AND order_type IN ('listing_unlock', 'sign', 'smart_sign')
+                ORDER BY created_at DESC
+                LIMIT 1
+            """
+            row = db.execute(query, (property_id, *PAID_STATUSES)).fetchone()
+            if row:
+                paid_source_order_id = row['id']
+                if row['order_type'] == 'listing_unlock':
+                    paid_via = 'listing_unlock'
+                else:
+                    paid_via = 'sign_order'
+
 
     # 3. Get expiry info from property
     prop = db.execute(
