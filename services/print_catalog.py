@@ -19,8 +19,8 @@ SMART_RISER_MATERIALS = ('aluminum_040',)
 
 # Strict Size Constraints
 LISTING_SIGN_VALID_SIZES = {
-    'coroplast_4mm': ('12x18', '18x24', '24x36'),
-    'aluminum_040': ('18x24', '24x36', '36x24')  # Note: 36x24 logic for aluminum
+    'coroplast_4mm': ('12x18', '18x24', '24x36', '36x24'),
+    'aluminum_040': ('12x18', '18x24', '24x36', '36x24')
 }
 
 SMART_SIGN_VALID_SIZES = ('18x24', '24x36', '36x24')

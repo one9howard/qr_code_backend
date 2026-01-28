@@ -171,20 +171,27 @@ def run():
     print("=== SmartSign Layout Verification (Legacy Optimized) ===")
     storage = get_storage()
     
+    # OUTPUT FILE
+    out_f = open("verify_output.txt", "w", encoding="utf-8")
+    
     total_tests = len(SIZES) * len(LAYOUTS)
     passed = 0
     
     for size in SIZES:
         for layout in LAYOUTS:
-            print(f"Testing {size} / {layout} ... ", end="")
+            msg = f"Testing {size} / {layout} ... "
+            print(msg, end="")
+            out_f.write(msg)
             
             asset = WORST_CASE_ASSET.copy()
             asset['print_size'] = size
             asset['layout_id'] = layout
             
             try:
-                # 1. Generate PDF
-                pdf_key = generate_smartsign_pdf(asset, order_id=9999)
+                # 1. Generate PDF (Force New by Random ID)
+                import random
+                oid = random.randint(10000, 99999)
+                pdf_key = generate_smartsign_pdf(asset, order_id=oid)
                 pdf_bytes = storage.get_file(pdf_key).getvalue()
                 
                 # 2. Verify Content
@@ -198,14 +205,18 @@ def run():
                 
                 if not errors:
                     print("PASS")
+                    out_f.write("PASS\n")
                     passed += 1
                 else:
                     print("FAIL")
+                    out_f.write("FAIL\n")
                     for e in errors:
                         print(f"  - {e}")
+                        out_f.write(f"  - {e}\n")
                         
             except Exception as e:
                 print(f"CRASH: {e}")
+                out_f.write(f"CRASH: {e}\n")
                 import traceback
                 traceback.print_exc()
 

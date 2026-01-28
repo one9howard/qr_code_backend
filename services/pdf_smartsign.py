@@ -691,11 +691,12 @@ def _draw_agent_brand(c, l, asset, user_id):
         c.setFont("Helvetica-Bold", dia * 0.5)
         c.drawCentredString(circle_x, circle_y - (dia * 0.15), initials)
 
-    # 2. Name + Brokerage (Safe Vertical Stacking - Task 1 Strict)
+    # 2. Name + Brokerage (Safe Vertical Stacking)
     header_bottom = l.height - band_h
     header_safe_top = l.height - margin
     
-    content_top = header_safe_top - to_pt(0.15)
+    # Increase safety buffer from top (0.15 -> 0.25)
+    content_top = header_safe_top - to_pt(0.25)
     content_bot = header_bottom + to_pt(0.15)
     
     available_h = content_top - content_bot
@@ -711,92 +712,72 @@ def _draw_agent_brand(c, l, asset, user_id):
     name_fs = spec['fonts']['name']
     brok_fs = spec['fonts']['brokerage']
     
-    # 2.1 Draw Brokerage (Bottom Anchor)
-    brok_height_used = 0
+    # 2.1 Measure Brokerage (Bottom Anchor)
+    brok_res = {'height': 0, 'size': 0, 'lines': []}
+    
     if brokerage:
-        # Strict Single Line
-        final_size = fit_text_single_line(c, brokerage, "Helvetica", brok_fs[0], brok_fs[1], available_w)
-        
-        
-        # Let's approximate: draw at content_bot + (0.15*size) for decent baseline.
-        # This keeps descent roughly inside.
-        
-        brok_y = content_bot + (final_size * 0.2)
-        
-        c.setFillColorRGB(*hex_to_rgb(COLORS['base_text'])) # Or white?
-        # Agent Brand Header is Navy. So text is White.
-        c.setFillColorRGB(1, 1, 1) # White
-        # Brokerage often secondary?
-        # "Use slightly off-white"
-        c.setFillColorRGB(0.9, 0.9, 0.9)
-        
-        draw_fitted_text(c, brokerage, start_x + (available_w/2), brok_y, "Helvetica", final_size, brok_fs[1], available_w, align='center')
-        
-        brok_height_used = final_size * 1.5 # Reservation for safety (line height)
+        # Brokerage default 1 line, maybe 2 if needed? Spec says "max 2 lines".
+        # Let's assume 2 lines allowed for robustness, shrinking if needed.
+        # Increased leading to 1.60 for safety against overlaps
+        brok_res = calculate_fitted_multiline(c, brokerage, "Helvetica", brok_fs[0], brok_fs[1], available_w, max_lines=2, leading_factor=1.60)
+
+    # 2.2 Fit Name into Remaining Height
+    # Reserve space for brokerage
+    brok_height_used = brok_res.get('height', 0)
+    # Increase gap between blocks (0.40 -> 0.60)
+    remaining_h = available_h - brok_height_used - to_pt(0.60) 
+    if remaining_h < 0: remaining_h = 0
     
-    # 2.2 Draw Name (Top Anchor)
+    name_res = None
     if name:
-        # Must fit in remaining height?
-        # remaining = available_h - brok_height_used
-        # Anchor at content_top.
-        # draw_fitted_multiline draws DOWN from y_baseline_first.
-        # First line CAPS touches content_top?
-        # Baseline = content_top - (size * 0.75) typically.
-        
         c.setFillColorRGB(1, 1, 1)
+        curr_size = name_fs[0]
         
-        # We need to ensure we don't overlap brokerage.
-        # Let's limit the height?
-        # Real verification checks bounding boxes.
-        
-        # Let's position name as high as possible (content_top).
-        # And brokerage is low.
-        
-        # We use a leading factor.
-        
-        # Adjust Y for baseline
-        # Standard Helvetica Cap Height ~ 0.72.
-        # We want Top of Cap at content_top.
-        # So Baseline = content_top - (name_fs[0] * 0.75) roughly.
-        
-        # But name might shrink.
-        # Let's guess start size.
-        name_start = name_fs[0]
-        y_name = content_top - (name_start * 0.75)
-        
-        # Draw (Max 2 lines)
-        # We assume 1.2 leading.
-        draw_fitted_multiline(c, name.upper(), start_x + (available_w/2), y_name, "Helvetica-Bold", name_fs[0], name_fs[1], available_w, max_lines=2, align='center', leading_factor=1.2)
+        # Iterative shrinking for height fit
+        while curr_size >= name_fs[1]:
+            res = calculate_fitted_multiline(c, name.upper(), "Helvetica-Bold", curr_size, name_fs[1], available_w, max_lines=2, leading_factor=1.60)
+            if res['height'] <= remaining_h:
+                 name_res = res
+                 break
+            curr_size -= 2
+            
+        if not name_res:
+            # Fallback to min size
+            name_res = calculate_fitted_multiline(c, name.upper(), "Helvetica-Bold", name_fs[1], name_fs[1], available_w, max_lines=2, leading_factor=1.60)
 
+    # 3. DRAWING
+    # Draw Name (Top Anchor inside remaining space)
+    if name_res:
+         c.setFont("Helvetica-Bold", name_res['size'])
+         c.setFillColorRGB(1, 1, 1)
+         
+         # Safer baseline offset: size * 1.0 (pushes text down)
+         y_cursor = content_top - (name_res['size'] * 1.0)
+         for line in name_res['lines']:
+             c.drawCentredString(start_x + (available_w/2), y_cursor, line)
+             y_cursor -= name_res['line_height']
 
-    # 3. Scan Label (Below Header)
-    # Must be > header_bottom.
-    # Spec says "Scan Me" label sits below header band.
-    # Usually in QR area.
-    # "Scan Me" label: (44/34).
-    # Anchor: just below header?
-    
-    # header_bottom is the navy band edge.
-    # We want it in the white space? Or inside the band?
-    # "Center QR zone... Scan Me label" implies it is near QR.
-    # If it is inside the band, it would conflict with brokerage?
-    # Inspecting spec: "Scan Me" is listed...
-    # 24x36: Scan Me (56/42).
-    # Wait, where does it go?
-    # Usually "Scan Me" is separate from CTA ("Scan For Details").
-    # It might be Floating above QR?
-    # "Below header_bottom and cannot overlap brokerage".
-    # This implies it is OUTSIDE the header band (in the white).
-    
+    # Draw Brokerage (Bottom Anchor)
+    if brok_res and brok_res['lines']:
+         c.setFont("Helvetica", brok_res['size'])
+         c.setFillColorRGB(0.9, 0.9, 0.9)
+         
+         # Bottom of block is content_bot.
+         block_top = content_bot + brok_res['height']
+         # Safer baseline offset: size * 1.0
+         y_cursor = block_top - (brok_res['size'] * 1.0)
+         
+         for line in brok_res['lines']:
+             c.drawCentredString(start_x + (available_w/2), y_cursor, line)
+             y_cursor -= brok_res['line_height']
+            
+         
+    # 4. Scan Label (Correct Positioning)
     label_txt = "SCAN ME"
     label_fs = spec['fonts']['scan_label']
     
-    # Position: Center X. Y = header_bottom - gap?
-    # header_bottom is Y=Height-BandH.
-    # So Y < header_bottom.
-    # Let's put it ~0.5" below header band.
-    
-    label_y = header_bottom - to_pt(0.75) # Drop down into white
+    # Just below the header band
+    label_y = header_bottom - to_pt(0.65)
     
     c.setFillColorRGB(*hex_to_rgb(COLORS['base_text']))
     draw_fitted_text(c, label_txt, l.width/2, label_y, "Helvetica-Bold", label_fs[0], label_fs[1], l.width, align='center')
@@ -821,18 +802,6 @@ def _draw_agent_brand(c, l, asset, user_id):
     c.setFillColorRGB(1, 1, 1) # White Card
     c.roundRect((l.width - card_size)/2, qr_y_center - (card_size/2), card_size, card_size, radius, fill=1, stroke=1)
     
-    # Scan Me Label (Task C: Remove magic number)
-    # Position relative to QR
-    # Above QR by padding + half font approx?
-    # Logic: center between QR top and header bottom?
-    # Or strict offset. Using standard padding.
-    
-    fs_lbl = spec['fonts']['scan_label']
-    scan_y = qr_y_center + (qr_size/2) + pad + (fs_lbl[0] * 0.4) # Just above card
-    
-    c.setFillColorRGB(*hex_to_rgb(COLORS['base_text']))
-    c.setFont("Helvetica", fs_lbl[0])
-    c.drawCentredString(l.width/2, scan_y, "Scan Me")
 
     # QR
     code = _read(asset, 'code')

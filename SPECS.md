@@ -35,11 +35,10 @@
 
 ## 1) Supported sizes and orientation
 
-Sizes are expressed as WIDTH×HEIGHT (inches). Orientation is determined by the size:
-- `18x24` (portrait)
-- `24x36` (portrait)
-- `36x24` (landscape)
-- *(Deprecated: 12x18, 36x18)*
+Sizes are expressed as WIDTH×HEIGHT (inches). Orientation is- **Supported sizes and orientation**:
+  - 18x24 (Portrait)
+  - 24x36 (Portrait)
+  - 36x24 (Landscape)
 
 All measurements below are exact and must be converted using:
 - `1 inch = 72 points`
@@ -155,17 +154,7 @@ Header grid widths:
 - Header band height: **3.20"**
 - Footer band height: **2.80"**
 - QR size: **7.50"**
-- QR padding (quiet zone around QR inside card): **0.45"**
-
-Fonts (start/min):
-- Agent name: **54 / 38** (max 2 lines)
-- Phone: **72 / 52** (1 line)
-- Email: **24 / 18** (1 line; may omit if it can’t fit cleanly)
-- Brokerage: **40 / 28** (max 2 lines)
-- CTA: **54 / 40**
-- URL: **22 / 18**
-
-### 5.2 18x24
+### 5.1 18x24
 - Top accent bar: **0.55"**
 - Header band: **4.00"**
 - Footer band: **3.40"**
@@ -180,7 +169,7 @@ Fonts:
 - CTA: **72 / 54**
 - URL: **28 / 22**
 
-### 5.3 24x36
+### 5.2 24x36
 - Top bar: **0.70"**
 - Header band: **5.60"**
 - Footer band: **4.80"**
@@ -195,22 +184,7 @@ Fonts:
 - CTA: **96 / 72**
 - URL: **34 / 26**
 
-### 5.4 36x18 (landscape)
-- Top bar: **0.55"**
-- Header band: **3.20"**
-- Footer band: **3.20"**
-- QR size: **10.50"**
-- QR padding: **0.60"**
-
-Fonts:
-- Name: **72 / 50**
-- Phone: **96 / 68**
-- Email: **30 / 22**
-- Brokerage: **52 / 34**
-- CTA: **72 / 54**
-- URL: **28 / 22**
-
-### 5.5 36x24 (landscape)
+### 5.3 36x24 (landscape)
 - Top bar: **0.70"**
 - Header band: **4.20"**
 - Footer band: **4.00"**
@@ -242,22 +216,7 @@ Agent Brand structure:
     - Line 2: `DETAILS` (accent)
   - URL below CTA, centered
 
-### 6.1 12x18
-- Top band: **3.40"**
-- Footer band: **3.60"**
-- QR size: **7.50"**
-- QR padding: **0.45"**
-- Logo/monogram circle diameter: **1.40"**
-
-Fonts:
-- Agent name: **48 / 34** (max 2 lines)
-- Brokerage: **42 / 30** (max 2 lines)
-- “Scan Me” label: **36 / 28**
-- CTA line1 (“SCAN FOR”): **60 / 46**
-- CTA line2 (“DETAILS”): **72 / 54**
-- URL: **22 / 18**
-
-### 6.2 18x24
+### 6.1 18x24
 - Top band: **4.50"**
 - Footer band: **4.50"**
 - QR size: **11.00"**
@@ -272,7 +231,7 @@ Fonts:
 - CTA2: **96 / 72**
 - URL: **28 / 22**
 
-### 6.3 24x36
+### 6.2 24x36
 - Top band: **6.40"**
 - Footer band: **6.40"**
 - QR size: **15.00"**
@@ -287,22 +246,7 @@ Fonts:
 - CTA2: **132 / 96**
 - URL: **34 / 26**
 
-### 6.4 36x18 (landscape)
-- Top band: **3.60"**
-- Footer band: **3.80"**
-- QR size: **10.50"**
-- QR padding: **0.60"**
-- Logo diameter: **1.90"**
-
-Fonts:
-- Agent: **64 / 44**
-- Brokerage: **56 / 38**
-- “Scan Me”: **44 / 34**
-- CTA1: **80 / 60**
-- CTA2: **96 / 72**
-- URL: **28 / 22**
-
-### 6.5 36x24 (landscape)
+### 6.3 36x24 (landscape)
 - Top band: **5.00"**
 - Footer band: **5.00"**
 - QR size: **13.00"**
@@ -334,75 +278,41 @@ Fonts:
 
 **Note**: Since this layout shares "Banded" genetics with Agent Brand, we reuse similar band heights but adapt fonts for the denser header content.
 
-### 7.1 12x18
-- Top band: **3.40"**
-- Footer band: **3.60"**
-- QR size: **7.50"**
-- QR padding: **0.45"**
-- Headshot diameter: **1.40"**
-
-Fonts:
-- Name: **48 / 34**
-- Phone: **36 / 28**
-- Brokerage: **40 / 28**
-- CTA: **60 / 46**
-- URL: **22 / 18**
-
-### 7.2 18x24
+### 7.1 18x24
 - Top band: **4.50"**
 - Footer band: **4.50"**
-- QR size: **11.00"**
-- QR padding: **0.55"**
+- Safe Margin: **0.75"**
 - Headshot diameter: **1.90"**
+- Fonts:
+  - [Name]: **64 / 44** (Helvetica Bold, Left)
+  - [Phone]: **48 / 36** (Helvetica Bold, Left, below name)
+  - [Brokerage]: **56 / 38** (Helvetica Regular, Left, below phone)
+  - [CTA]: **80 / 60** (Helvetica Bold, Footer)
+  - [URL]: **28 / 22** (Helvetica Regular)
 
-Fonts:
-- Name: **64 / 44**
-- Phone: **48 / 36**
-- Brokerage: **56 / 38**
-- CTA: **80 / 60**
-- URL: **28 / 22**
-
-### 7.3 24x36
+### 7.2 24x36
 - Top band: **6.40"**
 - Footer band: **6.40"**
-- QR size: **15.00"**
-- QR padding: **0.75"**
+- Safe Margin: **1.00"**
 - Headshot diameter: **2.60"**
+- Fonts:
+  - [Name]: **86 / 60** (Helvetica Bold)
+  - [Phone]: **64 / 48** (Helvetica Bold)
+  - [Brokerage]: **76 / 54** (Helvetica Regular)
+  - [CTA]: **110 / 80** (Helvetica Bold)
+  - [URL]: **34 / 26** (Helvetica Regular)
 
-Fonts:
-- Name: **86 / 60**
-- Phone: **64 / 48**
-- Brokerage: **76 / 54**
-- CTA: **110 / 80**
-- URL: **34 / 26**
-
-### 7.4 36x18 (landscape)
-- Top band: **3.60"**
-- Footer band: **3.80"**
-- QR size: **10.50"**
-- QR padding: **0.60"**
-- Headshot diameter: **1.90"**
-
-Fonts:
-- Name: **64 / 44**
-- Phone: **48 / 36**
-- Brokerage: **56 / 38**
-- CTA: **80 / 60**
-- URL: **28 / 22**
-
-### 7.5 36x24 (landscape)
+### 7.3 36x24 (landscape)
 - Top band: **5.00"**
 - Footer band: **5.00"**
-- QR size: **13.00"**
-- QR padding: **0.70"**
+- Safe Margin: **1.00"**
 - Headshot diameter: **2.40"**
-
-Fonts:
-- Name: **86 / 60**
-- Phone: **64 / 48**
-- Brokerage: **76 / 54**
-- CTA: **110 / 80**
-- URL: **34 / 26**
+- Fonts:
+  - [Name]: **86 / 60** (Helvetica Bold)
+  - [Phone]: **64 / 48** (Helvetica Bold)
+  - [Brokerage]: **76 / 54** (Helvetica Regular)
+  - [CTA]: **110 / 80**
+  - [URL]: **34 / 26**
 
 
 ---
