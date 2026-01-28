@@ -108,3 +108,6 @@ fail_*.txt
 
 # Misc local test transcripts
 test_final_check*.txt
+
+# Ignore maintenance folder
+maintenance/

@@ -33,6 +33,7 @@ ENV/
 
 instance/
 releases/
+maintenance/
 
 # --- Tests / dev-only inputs ---
 tests/

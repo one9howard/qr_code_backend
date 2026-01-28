@@ -13,6 +13,7 @@ from utils.pdf_generator import draw_qr
 from utils.storage import get_storage
 from config import BASE_URL
 from services.print_catalog import BANNER_COLOR_PALETTE
+import urllib.parse
 
 # Preset CTA texts
 CTA_MAP = {
@@ -51,6 +52,17 @@ SPECS = {
                 'brokerage': (40, 28), 'cta': (54, 40), 'url': (22, 18)
             }
         },
+        'smart_v1_photo_banner': {
+            'top_band': to_pt(3.40),
+            'footer_band': to_pt(3.60),
+            'qr_size': to_pt(7.50),
+            'qr_padding': to_pt(0.45),
+            'headshot_diameter': to_pt(1.40),
+            'fonts': {
+                'name': (48, 34), 'phone': (36, 28), 'brokerage': (40, 28),
+                'cta': (60, 46), 'url': (22, 18)
+            }
+        },
         'smart_v1_agent_brand': {
             'top_band': to_pt(3.40),
             'footer_band': to_pt(3.60),
@@ -74,6 +86,17 @@ SPECS = {
             'fonts': {
                 'name': (72, 50), 'phone': (96, 68), 'email': (30, 22), 
                 'brokerage': (52, 34), 'cta': (72, 54), 'url': (28, 22)
+            }
+        },
+        'smart_v1_photo_banner': {
+            'top_band': to_pt(4.50),
+            'footer_band': to_pt(4.50),
+            'qr_size': to_pt(11.00),
+            'qr_padding': to_pt(0.55),
+            'headshot_diameter': to_pt(1.90),
+            'fonts': {
+                'name': (64, 44), 'phone': (48, 36), 'brokerage': (56, 38),
+                'cta': (80, 60), 'url': (28, 22)
             }
         },
         'smart_v1_agent_brand': {
@@ -101,6 +124,17 @@ SPECS = {
                 'brokerage': (72, 50), 'cta': (96, 72), 'url': (34, 26)
             }
         },
+        'smart_v1_photo_banner': {
+            'top_band': to_pt(6.40),
+            'footer_band': to_pt(6.40),
+            'qr_size': to_pt(15.00),
+            'qr_padding': to_pt(0.75),
+            'headshot_diameter': to_pt(2.60),
+            'fonts': {
+                'name': (86, 60), 'phone': (64, 48), 'brokerage': (76, 54),
+                'cta': (110, 80), 'url': (34, 26)
+            }
+        },
         'smart_v1_agent_brand': {
             'top_band': to_pt(6.40),
             'footer_band': to_pt(6.40),
@@ -126,6 +160,17 @@ SPECS = {
                 'brokerage': (52, 34), 'cta': (72, 54), 'url': (28, 22)
             }
         },
+        'smart_v1_photo_banner': {
+            'top_band': to_pt(3.60),
+            'footer_band': to_pt(3.80),
+            'qr_size': to_pt(10.50),
+            'qr_padding': to_pt(0.60),
+            'headshot_diameter': to_pt(1.90),
+            'fonts': {
+                'name': (64, 44), 'phone': (48, 36), 'brokerage': (56, 38),
+                'cta': (80, 60), 'url': (28, 22)
+            }
+        },
         'smart_v1_agent_brand': {
             'top_band': to_pt(3.60),
             'footer_band': to_pt(3.80),
@@ -149,6 +194,17 @@ SPECS = {
             'fonts': {
                 'name': (96, 66), 'phone': (120, 88), 'email': (36, 26), 
                 'brokerage': (72, 50), 'cta': (96, 72), 'url': (34, 26)
+            }
+        },
+        'smart_v1_photo_banner': {
+            'top_band': to_pt(5.00),
+            'footer_band': to_pt(5.00),
+            'qr_size': to_pt(13.00),
+            'qr_padding': to_pt(0.70),
+            'headshot_diameter': to_pt(2.40),
+            'fonts': {
+                'name': (86, 60), 'phone': (64, 48), 'brokerage': (76, 54),
+                'cta': (110, 80), 'url': (34, 26)
             }
         },
         'smart_v1_agent_brand': {
@@ -199,11 +255,7 @@ class SmartSignLayout:
         self.safe_margin = SPECS.get(self.size_key, SPECS['18x24'])['safe_margin']
         self.layout_spec = SPECS.get(self.size_key, SPECS['18x24']).get(layout_id)
         
-        # Legacy fallback sizing
-        self.legacy_margin = 0.08 * min(self.width, self.height)
-        self.legacy_header_font = max(24, min(72, 0.08 * self.width))
-        self.legacy_sub_font = max(18, min(48, 0.04 * self.width))
-        self.legacy_cta_font = max(32, min(96, 0.09 * self.width))
+        self.layout_spec = SPECS.get(self.size_key, SPECS['18x24']).get(layout_id)
 
 # --- Text Fitting Helpers ---
 
@@ -245,7 +297,7 @@ def draw_fitted_text(c, text, x, y, font_name, start_size, min_size, max_width, 
         
     return final_size, final_size # return height used (approx cap height? using font size is safer for spacing)
 
-def draw_fitted_multiline(c, text, x, y_baseline_first, font_name, start_size, min_size, max_width, max_lines=2, align='center', color=None, leading_factor=1.2):
+def draw_fitted_multiline(c, text, x, y_baseline_first, font_name, start_size, min_size, max_width, max_lines=2, align='center', color=None, leading_factor=1.8):
     """
     Fits text into max_lines.
     Returns: (font_size_used, lines_rendered_count, block_height_used)
@@ -337,6 +389,85 @@ def draw_fitted_multiline(c, text, x, y_baseline_first, font_name, start_size, m
     return best_size, len(final_lines), (len(final_lines) * line_height)
 
 
+    return best_size, len(final_lines), (len(final_lines) * line_height)
+
+
+def _draw_safe_footer_stack(c, l, center_x, cta_text, url_text, cta_font, url_font, max_w, text_color, url_color, cta_lines=1):
+    """
+    Draws Footer elements stacked BOTTOM-UP from the safe margin.
+    Ensures no overlap.
+    Stack: Safe Bottom -> URL -> Padding -> CTA
+    """
+    spec = l.layout_spec
+    safe_bottom_y = l.safe_margin
+    
+    # 1. Measure URL
+    # URL is always 1 line
+    url_fs = url_font[0]
+    
+    # URL Baseline: The bottom of the URL text should be at safe_bottom_y?
+    # No, typically baseline. Descenders go below baseline.
+    # To be strictly safe, we treat safe_bottom_y as the lowest descent.
+    # But usually safe margin is text boundary. Let's align descent to safe_bottom.
+    # Simply: baseline = safe_bottom + (size * 0.25) approx?
+    # ReportLab text draws at baseline.
+    # Let's place baseline at safe_bottom + descent buffer.
+    # Or just safe_bottom + 2pt.
+    # Actually, standard is baseline = safe_bottom. The margin covers descent.
+    
+    url_baseline = safe_bottom_y + (url_fs * 0.4) # ensured lift for descenders
+    
+    _, _, url_h_used = draw_fitted_multiline(
+        c, url_text, center_x, url_baseline, "Helvetica", 
+        url_font[0], url_font[1], max_w, max_lines=1, align='center', color=url_color
+    )
+    
+    # 2. CTA
+    # Padding between URL top and CTA bottom
+    padding = to_pt(0.25)
+    
+    # CTA Baseline = URL top + padding
+    # URL top approx = url_baseline + url_fs (roughly)
+    cta_bottom_limit = url_baseline + url_fs + padding
+    
+    # Draw CTA
+    # If 2 lines, draw_fitted_multiline draws first line at y, subsequent below.
+    # So we need to find the TOP y such that the BOTTOM line lands at cta_bottom_limit + line_height?
+    # Wait, draw_fitted_multiline takes y_baseline_first.
+    # If 2 lines, height = 2*lh. Bottom is y_first - lh.
+    # So y_first should be cta_bottom_limit + lh + (lines-1)*lh = cta_bottom_limit + (lines)*lh?
+    # Let's simplify: Determine height first.
+    
+    # Dry run measure?
+    # We can just draw it? No, need Y.
+    # Let's guess Y high, measure height, then shift? No, canvas text object can move.
+    # Or just calculate.
+    
+    cta_fs = cta_font[0]
+    # Assume it will use cta_fs.
+    line_height = cta_fs * 1.2
+    
+    # If we want the LOWEST line baseline to be > cta_bottom_limit.
+    # For 1 line: y = cta_bottom_limit.
+    # For 2 lines: Bottom line y = cta_bottom_limit. Top line y = cta_bottom_limit + line_height.
+    
+    # However, we don't know how many lines yet if we allow wrapping.
+    # Minimal: 1 line. Agent Brand: 2 lines FIXED?
+    # Spec says Agent Brand CTA is 2 lines. Minimal is 1.
+    
+    # Let's calculate y_start
+    y_start = cta_bottom_limit + ( (cta_lines - 1) * line_height )
+    
+    # Ensure this doesn't overlap the QR code?
+    # QR zone bottom is implicit. We should check but for now we follow bottom-up.
+    
+    cta_font_name = "Helvetica-Bold"
+    draw_fitted_multiline(
+        c, cta_text, center_x, y_start, cta_font_name, 
+        cta_font[0], cta_font[1], max_w, max_lines=cta_lines, align='center', color=text_color
+    )
+
+
 def generate_smartsign_pdf(asset, order_id=None, user_id=None):
     """
     Generate a branded SmartSign PDF.
@@ -372,7 +503,7 @@ def generate_smartsign_pdf(asset, order_id=None, user_id=None):
     
     # Dispatch
     if layout_id == 'smart_v1_photo_banner':
-        _draw_legacy(c, layout, asset, user_id)
+        _draw_photo_banner(c, layout, asset, user_id)
     elif layout_id == 'smart_v1_agent_brand':
         _draw_agent_brand(c, layout, asset, user_id)
     else:
@@ -567,23 +698,20 @@ def _draw_modern_minimal(c, l, asset, user_id):
     cta_text = CTA_MAP.get(_read(asset, 'cta_key'), 'SCAN FOR DETAILS')
     fs = spec['fonts']['cta']
     
-    # CTA - 60% up from bottom
-    cta_y = footer_h * 0.6
-    draw_fitted_text(c, cta_text, center_x, cta_y, "Helvetica-Bold", fs[0], fs[1], safe_w, align='center', color=COLORS['base_text'])
-    
     # URL
     import urllib.parse
     cleaned = urllib.parse.urlparse(BASE_URL).netloc
-    display_url = f"{cleaned}/r/{code}" # Fixed: /r/ added
-    
+    display_url = f"{cleaned}/r/{code}"
     fs_u = spec['fonts']['url']
-    # Ensure it fits above safe bottom
-    url_target_y = cta_y - fs[0]
-    safe_bottom = l.safe_margin
-    if url_target_y < safe_bottom + fs_u[0]:
-         url_target_y = safe_bottom + fs_u[0] # Clamp to safe bottom
     
-    draw_fitted_text(c, display_url, center_x, url_target_y, "Helvetica", fs_u[0], fs_u[1], safe_w, align='center', color=COLORS['secondary_text'])
+    _draw_safe_footer_stack(
+        c, l, center_x, 
+        cta_text, display_url, 
+        fs, fs_u, 
+        safe_w, 
+        COLORS['base_text'], COLORS['secondary_text'], 
+        cta_lines=1
+    )
 
 
 def _draw_agent_brand(c, l, asset, user_id):
@@ -648,21 +776,23 @@ def _draw_agent_brand(c, l, asset, user_id):
     right_w = content_w * 0.35
     right_start_x = l.width - margin - right_w
     
-    center_w = right_start_x - start_x - to_pt(0.2) # Gutter
+    center_w = right_start_x - start_x - to_pt(1.0)
     center_mid_x = start_x + (center_w / 2)
     
     name = _read(asset, 'brand_name') or _read(asset, 'agent_name')
     if name:
         fs = spec['fonts']['name']
-        draw_fitted_multiline(c, name.upper(), center_mid_x, band_y_center - (fs[0]*0.15), "Helvetica-Bold", fs[0], fs[1], center_w, align='center', color='#ffffff')
+        draw_fitted_multiline(c, name.upper(), center_mid_x, band_y_center - (fs[0]*0.15) - to_pt(0.1), "Helvetica-Bold", fs[0], fs[1], center_w, align='center', color='#ffffff', leading_factor=1.5)
 
     # 3. Right: Brokerage
     brokerage = _read(asset, 'brokerage_name')
+    right_w = content_w * 0.35
     right_align_x = l.width - margin
     
     if brokerage:
         fs = spec['fonts']['brokerage']
-        draw_fitted_multiline(c, brokerage, right_align_x, band_y_center - (fs[0]*0.15), "Helvetica", fs[0], fs[1], right_w, align='right', color='#ffffff')
+        # Use slightly off-white to force block separation
+        draw_fitted_multiline(c, brokerage, right_align_x, band_y_center - (fs[0]*0.15) + to_pt(0.1), "Helvetica", fs[0], fs[1], right_w, align='right', color='#fefefe', leading_factor=1.5)
 
     
     # --- QR Code ---
@@ -686,7 +816,7 @@ def _draw_agent_brand(c, l, asset, user_id):
     fs_lbl = spec['fonts']['scan_label']
     c.setFillColorRGB(*hex_to_rgb(COLORS['base_text']))
     c.setFont("Helvetica", fs_lbl[0])
-    c.drawCentredString(l.width/2, qr_y_center + (qr_size/2) + (pad/4), "Scan Me")
+    c.drawCentredString(l.width/2, qr_y_center + (qr_size/2) - 40, "Scan Me")
 
     # QR
     code = _read(asset, 'code')
@@ -699,127 +829,208 @@ def _draw_agent_brand(c, l, asset, user_id):
     c.setFillColorRGB(*hex_to_rgb(COLORS['bg_navy']))
     c.rect(-l.bleed, -l.bleed, l.width + 2*l.bleed, foot_h + l.bleed, fill=1, stroke=0)
     
-    # Text
-    cta1_y = foot_h * 0.65
-    cta2_y = foot_h * 0.35
-    
-    fs1 = spec['fonts']['cta1']
-    fs2 = spec['fonts']['cta2']
-    
-    # Draw "SCAN FOR"
-    c.setFont("Helvetica-Bold", fs1[0])
-    w_scan = c.stringWidth("SCAN ", "Helvetica-Bold", fs1[0])
-    w_for = c.stringWidth("FOR", "Helvetica-Bold", fs1[0])
-    total_w = w_scan + w_for
-    start_x = (l.width - total_w) / 2
-    
-    c.setFillColorRGB(1,1,1)
-    c.drawString(start_x, cta1_y, "SCAN ")
-    c.setFillColorRGB(*hex_to_rgb(accent_hex))
-    c.drawString(start_x + w_scan, cta1_y, "FOR")
-    
-    # Draw "DETAILS"
-    c.setFont("Helvetica-Bold", fs2[0])
-    c.drawCentredString(l.width/2, cta2_y, "DETAILS")
+    # CTA: "SCAN FOR" / "DETAILS"
+    # This is tricky because it's 2-line with mixed colors in Line 1.
+    # _draw_safe_footer_stack handles simple text.
+    # Since Agent Brand footer is unique (mixed color line), we manually implement safe stack here.
     
     # URL
     import urllib.parse
     cleaned = urllib.parse.urlparse(BASE_URL).netloc
-    display_url = f"{cleaned}/r/{code}" # Fixed: /r/ added
+    display_url = f"{cleaned}/r/{code}"
     
     fs_u = spec['fonts']['url']
-    c.setFillColorRGB(1,1,1) # White on navy
+    fs1 = spec['fonts']['cta1']
+    fs2 = spec['fonts']['cta2']
     
-    # Clamp y to safe margin
-    url_y = cta2_y - fs2[0] + 10 # heuristic start
-    safe_bot = l.safe_margin
-    if url_y < safe_bot + fs_u[0]:
-        url_y = safe_bot + fs_u[0]
-        
-    draw_fitted_text(c, display_url, l.width/2, url_y, "Helvetica", fs_u[0], fs_u[1], content_w, align='center', color='#ffffff')
+    safe_bottom = l.safe_margin
+    url_base = safe_bottom + (fs_u[0] * 0.4) # ensured lift for descenders
+    
+    # Draw URL
+    draw_fitted_text(c, display_url, l.width/2, url_base, "Helvetica", fs_u[0], fs_u[1], content_w, align='center', color='#ffffff')
+    
+    # Stack Up
+    pad = to_pt(0.25)
+    cta2_base = url_base + fs_u[0] + pad
+    
+    # Draw DETAILS (Line 2)
+    # We can use draw_fitted_text
+    draw_fitted_text(c, "DETAILS", l.width/2, cta2_base, "Helvetica-Bold", fs2[0], fs2[1], content_w, align='center', color=accent_hex)
+    
+    # Stack Up
+    cta1_base = cta2_base + fs2[0] + pad
+    
+    # Draw SCAN FOR (Line 1) - Mixed Color
+    # We must measure manual
+    c.setFont("Helvetica-Bold", fs1[0])
+    w_scan = c.stringWidth("SCAN ", "Helvetica-Bold", fs1[0])
+    w_for = c.stringWidth("FOR", "Helvetica-Bold", fs1[0])
+    total = w_scan + w_for
+    start_x = (l.width - total) / 2
+    
+    c.setFillColorRGB(1,1,1)
+    c.drawString(start_x, cta1_base, "SCAN ")
+    c.setFillColorRGB(*hex_to_rgb(accent_hex))
+    c.drawString(start_x + w_scan, cta1_base, "FOR")
 
 
-def _draw_legacy(c, l, asset, user_id):
-    """Legacy Photo Banner Implementation (Preserved)."""
-    # Re-implements original logic but using the 'layout' object context
-    # ORIGINAL LOGIC ADAPTED:
+def _draw_photo_banner(c, l, asset, user_id):
+    """Photo Banner Implementation (Strict Spec)."""
+    spec = l.layout_spec
+    margin = l.safe_margin
+    content_w = l.width - 2*margin
     
-    # 3. Background
-    # Legacy default was solid_blue if not specified
-    style_key = _read(asset, 'background_style', 'solid_blue')
-    style = STYLE_MAP.get(style_key, STYLE_MAP['solid_blue'])
-    
-    bg_rgb = hex_to_rgb(style['bg'])
-    c.setFillColorRGB(*bg_rgb)
+    # White Base
+    c.setFillColorRGB(1,1,1)
     c.rect(-l.bleed, -l.bleed, l.width + 2*l.bleed, l.height + 2*l.bleed, fill=1, stroke=0)
     
-    text_rgb = hex_to_rgb(style['text'])
+    # --- Top Band ---
+    band_h = spec['top_band']
     
-    # 5. Header (Brand Name)
-    brand_name = _read(asset, 'brand_name')
-    if brand_name:
-        c.setFont("Helvetica-Bold", l.legacy_header_font)
-        c.setFillColorRGB(*text_rgb)
-        c.drawCentredString(l.width/2, l.height - l.legacy_margin - l.legacy_header_font, str(brand_name).upper())
+    # Color
+    color_id = _read(asset, 'banner_color_id')
+    bg_color = BANNER_COLOR_PALETTE.get(color_id, BANNER_COLOR_PALETTE['navy'])
+    if color_id == 'white': bg_color = '#ffffff' # Explicit white
+    
+    # Draw Band
+    c.setFillColorRGB(*hex_to_rgb(bg_color))
+    c.rect(-l.bleed, l.height - band_h, l.width + 2*l.bleed, band_h + l.bleed, fill=1, stroke=0)
+    
+    # Text Colors - Contrast
+    is_dark = color_id in ['navy', 'black', 'red', 'green', 'blue', 'orange', 'gray', None]
+    text_color = '#ffffff' if is_dark else COLORS['base_text']
+    
+    band_y_center = (l.height - band_h) + (band_h / 2)
+    
+    # 1. Left: Headshot Circle
+    dia = spec['headshot_diameter']
+    circle_x = margin + (dia/2)
+    circle_y = band_y_center
+    
+    # Stroke
+    rule_color = COLORS['rules'] if not is_dark else '#ffffff'
+    c.setStrokeColorRGB(*hex_to_rgb(rule_color))
+    c.setLineWidth(3)
+    c.circle(circle_x, circle_y, dia/2, stroke=1, fill=1) # Fill white behind
+    
+    # Image
+    img_key = _read(asset, 'headshot_key') or _read(asset, 'agent_headshot_key')
+    if img_key and get_storage().exists(img_key):
+        p = c.beginPath()
+        p.circle(circle_x, circle_y, dia/2)
+        c.saveState()
+        c.clipPath(p, stroke=0)
+        try:
+             img_data = get_storage().get_file(img_key)
+             img = ImageReader(img_data)
+             c.drawImage(img, circle_x - dia/2, circle_y - dia/2, width=dia, height=dia)
+        except: pass
+        c.restoreState()
+    else:
+        # Fallback Monogram or Placeholder
+        initials_list = list(str(_read(asset, 'brand_name') or "A").upper())[:2]
+        initials = "".join(initials_list)
+        c.setFillColorRGB(0.5, 0.5, 0.5)
+        c.setFont("Helvetica-Bold", dia * 0.5)
+        c.drawCentredString(circle_x, circle_y - (dia * 0.15), initials)
+        
+    # 2. Right: Brokerage
+    brokerage = _read(asset, 'brokerage_name')
+    right_w = content_w * 0.40
+    right_align_x = l.width - margin
+    
+    if brokerage:
+        fs = spec['fonts']['brokerage']
+        # Offset UP to prevent PyMuPDF merging with Left block
+        draw_fitted_multiline(c, brokerage, right_align_x, band_y_center - (fs[0]*0.15) + to_pt(0.1), "Helvetica", fs[0], fs[1], right_w, align='right', color=text_color)
 
-    # 6. Contact Info
-    contact_y = l.height - l.legacy_margin - (l.legacy_header_font * 2.2)
-    contact_parts = []
-    phone = _read(asset, 'phone')
-    email = _read(asset, 'email')
-    if phone: contact_parts.append(phone)
-    if email: contact_parts.append(email)
+    # 3. Center/Left: Name + Phone
+    # Space between circle and right col
+    start_x = margin + dia + to_pt(0.25)
+    end_x = right_align_x - right_w - to_pt(1.0) # Gutter 1.0"
+    mid_block_w = end_x - start_x
     
-    if contact_parts:
-        c.setFont("Helvetica", l.legacy_sub_font)
-        c.setFillColorRGB(*text_rgb)
-        c.drawCentredString(l.width/2, contact_y, " | ".join(contact_parts))
+    name = _read(asset, 'brand_name') or _read(asset, 'agent_name')
+    phone = _read(asset, 'phone') or _read(asset, 'agent_phone')
+    
+    if name:
+        fs_n = spec['fonts']['name']
+        fs_p = spec['fonts']['phone']
+        
+        # Stack: Name then Phone
+        # Vertical align?
+        # Calculate strict height.
+        # Draw Name top-down from y_center + half_height
+        
+        # Rough approach: Center the stack on band_y_center
+        # We need height of Name + Phone.
+        # Assume 1 name 1 phone line -> height approx fs_n + fs_p + gap
+        # Or measured.
+        
+        # Let's align Name Bottom to center? No.
+        # Center the bounding box.
+        
+        # Draw fitted returns height.
+        # But we need to draw to know height.
+        # Estimate:
+        # name_h ~ fs_n*1.2
+        # phone_h ~ fs_p*1.2
+        # total ~ name_h + phone_h
+        
+        # start_y = band_y_center + (total/2)
+        
+        y_cursor = band_y_center + ((fs_n[0]*1.2 + fs_p[0]*1.2)/2) - (fs_n[0]) - to_pt(0.1) # Offset DOWN
+        
+        # Draw Name
+        size, lines, h = draw_fitted_multiline(c, name.upper(), start_x, y_cursor, "Helvetica-Bold", fs_n[0], fs_n[1], mid_block_w, align='left', color=text_color)
+        
+        y_cursor -= (h + to_pt(0.5))
+        
+        # Draw Phone
+        if phone:
+            draw_fitted_text(c, phone, start_x, y_cursor, "Helvetica-Bold", fs_p[0], fs_p[1], mid_block_w, align='left', color=text_color)
 
-    # 7. QR
-    qr_top = contact_y - (l.legacy_sub_font * 1.5)
-    qr_bottom = l.height * 0.25
-    qr_max_h = qr_top - qr_bottom
-    qr_max_w = l.width - (l.legacy_margin * 2)
-    qr_size = min(qr_max_h, qr_max_w, l.width * 0.6)
-    
-    qr_x = (l.width - qr_size) / 2
-    qr_y = qr_bottom + (qr_max_h - qr_size) / 2
-    
-    # Legacy White Pill
-    if style_key in ['solid_blue', 'dark']:
-        pad = qr_size * 0.05
-        c.setFillColorRGB(1, 1, 1)
-        c.roundRect(qr_x - pad, qr_y - pad, qr_size + 2*pad, qr_size + 2*pad, 10, fill=1, stroke=0)
 
+    # --- QR Code ---
+    qr_size = spec['qr_size']
+    pad = spec['qr_padding']
+    
+    top_of_footer = spec['footer_band']
+    bot_of_header = l.height - band_h
+    qr_y_center = top_of_footer + ((bot_of_header - top_of_footer) / 2)
+    
+    card_size = qr_size + (2 * pad)
+    radius = to_pt(0.25)
+    
+    # Card
+    c.setStrokeColorRGB(*hex_to_rgb(COLORS['rules']))
+    c.setLineWidth(2)
+    c.setFillColorRGB(1, 1, 1) # White Card
+    c.roundRect((l.width - card_size)/2, qr_y_center - (card_size/2), card_size, card_size, radius, fill=1, stroke=1)
+    
+    # Draw QR
     code = _read(asset, 'code')
     qr_url = f"{BASE_URL.rstrip('/')}/r/{code}"
-    draw_qr(c, qr_url, x=qr_x, y=qr_y, size=qr_size, user_id=user_id)
+    draw_qr(c, qr_url, x=(l.width - qr_size)/2, y=qr_y_center - (qr_size/2), size=qr_size, user_id=user_id)
 
-    # 8. CTA
-    cta_text = CTA_MAP.get(_read(asset, 'cta_key'), CTA_MAP['scan_for_details'])
-    c.setFont("Helvetica-Bold", l.legacy_cta_font)
-    c.setFillColorRGB(*text_rgb)
-    if style_key == 'light':
-        c.setFillColorRGB(*hex_to_rgb(style['accent']))
-    c.drawCentredString(l.width/2, l.height * 0.12, cta_text)
 
-    # 9. Corner Images
-    def draw_corner_image(key, x, y, size):
-        if key and get_storage().exists(key):
-            try:
-                img_data = get_storage().get_file(key)
-                img = ImageReader(img_data)
-                c.drawImage(img, x, y, width=size, height=size, mask='auto')
-            except: pass
-
-    include_logo = bool(_read(asset, 'include_logo'))
-    logo_key = _read(asset, 'agent_logo_key') or _read(asset, 'logo_key')
-    if include_logo and logo_key:
-        size = l.width * 0.15
-        draw_corner_image(logo_key, l.legacy_margin, l.height - l.legacy_margin - size, size)
-
-    include_headshot = bool(_read(asset, 'include_headshot'))
-    headshot_key = _read(asset, 'agent_headshot_key') or _read(asset, 'headshot_key')
-    if include_headshot and headshot_key:
-        size = l.width * 0.15
-        draw_corner_image(headshot_key, l.width - l.legacy_margin - size, l.height - l.legacy_margin - size, size)
+    # --- Footer Band ---
+    foot_h = spec['footer_band']
+    c.setFillColorRGB(*hex_to_rgb(bg_color))
+    c.rect(-l.bleed, -l.bleed, l.width + 2*l.bleed, foot_h + l.bleed, fill=1, stroke=0)
+    
+    cta_text = CTA_MAP.get(_read(asset, 'cta_key'), 'SCAN FOR DETAILS')
+    display_url = f"{urllib.parse.urlparse(BASE_URL).netloc}/r/{code}"
+    
+    fs_cta = spec['fonts']['cta']
+    fs_url = spec['fonts']['url']
+    
+    _draw_safe_footer_stack(
+        c, l, l.width/2,
+        cta_text, display_url,
+        fs_cta, fs_url,
+        content_w,
+        text_color, text_color, # Same color
+        cta_lines=1
+    )
+    # End of Photo Banner (Clean)

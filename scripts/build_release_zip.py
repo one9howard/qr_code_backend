@@ -105,6 +105,10 @@ def get_profile_config(profile: str):
         # Agent/workflow directories
         ".agent",
 
+        # Maintenance
+        "maintenance",
+        "maintenance/*",
+
         # Artifacts and temp files
         "artifacts",
         "docs/archive/*",
@@ -122,6 +126,12 @@ def get_profile_config(profile: str):
         ".env.local",
         ".env.production",
         ".env.staging",
+
+        ".env.staging",
+
+        # Maintenance (CRITICAL)
+        "maintenance",
+        "maintenance/*",
 
         # Obsolete infrastructure
         "copilot",

@@ -14,14 +14,14 @@ This repo is configured for "Safe Staging".
 
 ### Production Environment (`prod`)
 - **Stripe Keys**: Must start with `sk_live_` / `pk_live_`.
-- **Safety**: `APP_STAGE=prod` overrides the test default in `manifest.yml`.
+- **Safety**: `APP_STAGE=prod` must be set in Railway variables.
 
 ## 2. Secrets Management
-Each environment needs its own set of secrets stored in AWS SSM via Copilot.
+Each environment needs its own set of secrets stored in Railway Variables.
 
 **Required Secrets:**
 - `SECRET_KEY`: High-entropy string.
-- `DATABASE_URL`: Postgres connection string.
+- `DATABASE_URL`: Postgres connection string (Auto-injected by Railway if using a plugin).
 - `STRIPE_SECRET_KEY`: `sk_test_...` (for test) / `sk_live_...` (for prod).
 - `STRIPE_PUBLISHABLE_KEY`: `pk_test_...` (for test) / `pk_live_...` (for prod).
 - `STRIPE_WEBHOOK_SECRET`: Signing secret from Stripe Dashboard.
@@ -30,38 +30,33 @@ Each environment needs its own set of secrets stored in AWS SSM via Copilot.
 
 ## 3. Migration Workflow
 Migrations are **disabled on startup** (`RUN_MIGRATIONS_ON_STARTUP=false`) to prevent accidents.
-Run them manually as a one-off task after deployment (or set the var to `true` temporarily).
+Run them manually as a one-off task via the Railway CLI after deployment.
 
 **Run Migration Command:**
 ```bash
-copilot task run \
-  --app insite \
-  --env test \
-  --image <ECR_IMAGE_URI> \
-  --command "python3 migrate.py" \
-  --secrets DATABASE_URL=/copilot/insite/test/secrets/DATABASE_URL
+# Connect to your project environment first
+railway run python migrate.py
 ```
 
 ## 4. Updates After First Deploy
-After the first successful deploy, Copilot gives you a URL (e.g., `https://qrapp.test.insite.aws`).
+After the first successful deploy, Railway gives you a URL (e.g., `https://web-production-1234.up.railway.app`).
 
 1. **Update `BASE_URL`**:
-   In `copilot/qrapp/manifest.yml`, update:
-   ```yaml
-   variables:
-     BASE_URL: https://qrapp.test.insite.aws
+   In Railway Dashboard -> Variables, set:
    ```
-   Then run `copilot deploy --env test`.
+   BASE_URL=https://web-production-1234.up.railway.app
+   ```
+   This will trigger a redeploy.
 
 2. **Configure Stripe Webhooks**:
    - Go to Stripe Dashboard (Test Mode).
-   - Add endpoint: `https://qrapp.test.insite.aws/stripe/webhook`
+   - Add endpoint: `https://<YOUR_RAILWAY_URL>/stripe/webhook`
    - Copy the Signing Secret (`whsec_...`).
-   - Update secret:
-     ```bash
-     copilot secret init --name STRIPE_WEBHOOK_SECRET --values test="whsec_..." --overwrite
+   - Add variable in Railway:
      ```
-   - Redeploy.
+     STRIPE_WEBHOOK_SECRET=whsec_...
+     ```
+   - Redeploy happens automatically.
 
 ## 5. Property Page Mobile QA
 
@@ -80,7 +75,7 @@ After the first successful deploy, Copilot gives you a URL (e.g., `https://qrapp
 
 ### Test Lead Submission API Directly
 ```bash
-curl -X POST http://localhost:5000/api/leads/submit \
+curl -X POST <YOUR_RAILWAY_URL>/api/leads/submit \
   -H "Content-Type: application/json" \
   -d '{
     "property_id": 1,
@@ -91,7 +86,7 @@ curl -X POST http://localhost:5000/api/leads/submit \
 # Expected: {"success": true, ...}
 
 # Missing consent -> 400
-curl -X POST http://localhost:5000/api/leads/submit \
+curl -X POST <YOUR_RAILWAY_URL>/api/leads/submit \
   -H "Content-Type: application/json" \
   -d '{
     "property_id": 1,
@@ -106,7 +101,7 @@ curl -X POST http://localhost:5000/api/leads/submit \
 ### Verify Events Endpoint
 ```bash
 # Valid event
-curl -X POST http://localhost:5000/api/events \
+curl -X POST <YOUR_RAILWAY_URL>/api/events \
   -H "Content-Type: application/json" \
   -d '{
     "event_type": "cta_click",
@@ -116,7 +111,7 @@ curl -X POST http://localhost:5000/api/events \
 # Expected: {"success": true}
 
 # Using 'event' alias (backward compatibility)
-curl -X POST http://localhost:5000/api/events \
+curl -X POST <YOUR_RAILWAY_URL>/api/events \
   -H "Content-Type: application/json" \
   -d '{
     "event": "gated_content_attempt",
@@ -126,24 +121,22 @@ curl -X POST http://localhost:5000/api/events \
 # Expected: {"success": true} - tier auto-built into payload
 
 # Valid client events
-curl -X POST http://localhost:5000/api/events \
+curl -X POST <YOUR_RAILWAY_URL>/api/events \
   -H "Content-Type: application/json" \
   -d '{"event_type": "upsell_shown", "property_id": 1, "payload": {"trigger": "photos"}}'
 # Expected: {"success": true}
 
 # Invalid event type -> 400
-curl -X POST http://localhost:5000/api/events \
+curl -X POST <YOUR_RAILWAY_URL>/api/events \
   -H "Content-Type: application/json" \
   -d '{"event_type": "invalid_event", "property_id": 1}'
 # Expected: 400 error
 ```
 
 ### Verify Events in Database
-```sql
-SELECT event_type, property_id, payload, occurred_at 
-FROM app_events 
-WHERE event_type IN ('cta_click', 'gated_content_attempt', 'upsell_shown')
-ORDER BY occurred_at DESC LIMIT 10;
+```bash
+# Connect to remote DB
+railway run python -c "from database import get_db; from app import create_app; app=create_app(); ctx=app.app_context(); ctx.push(); db=get_db(); print(db.execute(\"SELECT event_type, property_id, payload, occurred_at FROM app_events WHERE event_type IN ('cta_click', 'gated_content_attempt', 'upsell_shown') ORDER BY occurred_at DESC LIMIT 10;\").fetchall())"
 ```
 
 ### Browser QA Checklist

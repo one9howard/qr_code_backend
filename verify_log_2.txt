@@ -1,0 +1,27 @@
+﻿=== SmartSign Layout Verification (Legacy Optimized) ===
+Testing 12x18 / smart_v1_minimal ... PASS
+Testing 12x18 / smart_v1_agent_brand ... PASS
+Testing 12x18 / smart_v1_photo_banner ... PASS
+Testing 18x24 / smart_v1_minimal ... PASS
+Testing 18x24 / smart_v1_agent_brand ... PASS
+Testing 18x24 / smart_v1_photo_banner ...   [WARN] Ignoring phantom overlap: 'AL Sotheby' vs '(555) 555-' (width > 85%)
+PASS
+Testing 24x36 / smart_v1_minimal ... PASS
+Testing 24x36 / smart_v1_agent_brand ... PASS
+Testing 24x36 / smart_v1_photo_banner ...   [WARN] Ignoring phantom overlap: 'AL Sotheby' vs '(555) 555-' (width > 85%)
+PASS
+Testing 36x18 / smart_v1_minimal ... FAIL
+  - Overlap Detected: ['SothebyÆs '] Rect(1802.06396484375, 92.2999496459961, 2536.200927734375, 163.74795532226562) vs ['Northern C'] Rect(1857.0799560546875, 152.10000610351562, 2536.200927734375, 223.54800415039062)
+Testing 36x18 / smart_v1_agent_brand ...   [WARN] Ignoring phantom overlap: 'AL ALEXAND' vs 'Northern C' (width > 85%)
+PASS
+Testing 36x18 / smart_v1_photo_banner ...   [WARN] Ignoring phantom overlap: 'AL Sotheby' vs 'Northern C' (width > 85%)
+  [WARN] Ignoring phantom overlap: 'Northern C' vs '(555) 555-' (width > 85%)
+PASS
+Testing 36x24 / smart_v1_minimal ... FAIL
+  - Overlap Detected: ['SothebyÆs '] Rect(1681.9200439453125, 124.5, 2529.0009765625, 206.94000244140625) vs ['Northern C'] Rect(1745.4000244140625, 193.5, 2529.0009765625, 275.94000244140625)
+Testing 36x24 / smart_v1_agent_brand ... FAIL
+  - Overlap Detected: ['AL  ALEXAN'] Rect(109.81439971923828, 117.07997131347656, 1583.365234375, 241.44483947753906) vs ['DER WESTHU'] Rect(549.0, 215.97999572753906, 1323.0001220703125, 334.4020080566406)
+  - Overlap Detected: ['SothebyÆs '] Rect(1681.9200439453125, 128.699951171875, 2529.0009765625, 211.13995361328125) vs ['Northern C'] Rect(1745.4000244140625, 197.699951171875, 2529.0009765625, 280.13995361328125)
+Testing 36x24 / smart_v1_photo_banner ... PASS
+
+Summary: 12/15 passed.

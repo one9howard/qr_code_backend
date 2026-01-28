@@ -1,0 +1,24 @@
+﻿=== SmartSign Layout Verification (Legacy Optimized) ===
+Testing 12x18 / smart_v1_minimal ... PASS
+Testing 12x18 / smart_v1_agent_brand ... PASS
+Testing 12x18 / smart_v1_photo_banner ... PASS
+Testing 18x24 / smart_v1_minimal ... PASS
+Testing 18x24 / smart_v1_agent_brand ... PASS
+Testing 18x24 / smart_v1_photo_banner ... PASS
+Testing 24x36 / smart_v1_minimal ... PASS
+Testing 24x36 / smart_v1_agent_brand ... PASS
+Testing 24x36 / smart_v1_photo_banner ... PASS
+Testing 36x18 / smart_v1_minimal ... PASS
+Testing 36x18 / smart_v1_agent_brand ...   [WARN] Ignoring phantom overlap: 'AL ALEXAND' vs 'Northern C' (width > 85%)
+PASS
+Testing 36x18 / smart_v1_photo_banner ...   [WARN] Ignoring phantom overlap: 'AL Sotheby' vs 'ALEXANDRIA' (width > 85%)
+PASS
+Testing 36x24 / smart_v1_minimal ... PASS
+Testing 36x24 / smart_v1_agent_brand ... FAIL
+  - Overlap Detected: ['AL  ALEXAN'] Rect(109.81439971923828, 117.07997131347656, 1583.365234375, 241.44483947753906) vs ['DER WESTHU'] Rect(549.0, 224.57997131347656, 1323.0001220703125, 343.0019836425781)
+  - Overlap Detected: ['SothebyÆs '] Rect(1681.9200439453125, 128.699951171875, 2529.0009765625, 211.13995361328125) vs ['Northern C'] Rect(1745.4000244140625, 203.699951171875, 2529.0009765625, 286.13995361328125)
+Testing 36x24 / smart_v1_photo_banner ...   [WARN] Ignoring phantom overlap: 'AL Sotheby' vs 'û Northern' (width > 85%)
+  [WARN] Ignoring phantom overlap: 'û Northern' vs 'VAN DER WE' (width > 85%)
+PASS
+
+Summary: 14/15 passed.

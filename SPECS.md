@@ -320,7 +320,95 @@ Fonts:
 
 ---
 
-## 7) Worst-case fixtures (required test inputs)
+## 7) Photo Banner (smart_v1_photo_banner) — per-size specs
+
+**Structure**:
+- White base background.
+- Top band (Accent/Navy) with:
+  - Left: agent headshot circle (or logo)
+  - Center-left: Agent Name (max 2 lines) + Phone (1 line) stack
+  - Right: Brokerage logo/text (max 2 lines)
+- Center QR zone with white QR card
+- Bottom footer band (Accent/Navy):
+  - CTA (1 line)
+  - URL (1 line) - Safe-bottom anchored
+
+**Note**: Since this layout shares "Banded" genetics with Agent Brand, we reuse similar band heights but adapt fonts for the denser header content.
+
+### 7.1 12x18
+- Top band: **3.40"**
+- Footer band: **3.60"**
+- QR size: **7.50"**
+- QR padding: **0.45"**
+- Headshot diameter: **1.40"**
+
+Fonts:
+- Name: **48 / 34**
+- Phone: **36 / 28**
+- Brokerage: **40 / 28**
+- CTA: **60 / 46**
+- URL: **22 / 18**
+
+### 7.2 18x24
+- Top band: **4.50"**
+- Footer band: **4.50"**
+- QR size: **11.00"**
+- QR padding: **0.55"**
+- Headshot diameter: **1.90"**
+
+Fonts:
+- Name: **64 / 44**
+- Phone: **48 / 36**
+- Brokerage: **56 / 38**
+- CTA: **80 / 60**
+- URL: **28 / 22**
+
+### 7.3 24x36
+- Top band: **6.40"**
+- Footer band: **6.40"**
+- QR size: **15.00"**
+- QR padding: **0.75"**
+- Headshot diameter: **2.60"**
+
+Fonts:
+- Name: **86 / 60**
+- Phone: **64 / 48**
+- Brokerage: **76 / 54**
+- CTA: **110 / 80**
+- URL: **34 / 26**
+
+### 7.4 36x18 (landscape)
+- Top band: **3.60"**
+- Footer band: **3.80"**
+- QR size: **10.50"**
+- QR padding: **0.60"**
+- Headshot diameter: **1.90"**
+
+Fonts:
+- Name: **64 / 44**
+- Phone: **48 / 36**
+- Brokerage: **56 / 38**
+- CTA: **80 / 60**
+- URL: **28 / 22**
+
+### 7.5 36x24 (landscape)
+- Top band: **5.00"**
+- Footer band: **5.00"**
+- QR size: **13.00"**
+- QR padding: **0.70"**
+- Headshot diameter: **2.40"**
+
+Fonts:
+- Name: **86 / 60**
+- Phone: **64 / 48**
+- Brokerage: **76 / 54**
+- CTA: **110 / 80**
+- URL: **34 / 26**
+
+
+---
+
+## 8) Worst-case fixtures (required test inputs)
 
 Use these strings in verification scripts:
 
@@ -339,7 +427,7 @@ Acceptance: no overlaps, no safe margin breaches, URL prints `/r/ABCD1234`.
 
 ---
 
-## 8) Verification requirements (must be automated)
+## 9) Verification requirements (must be automated)
 
 Create/maintain a script (recommended: `scripts/verify_smartsign_layouts.py`) that:
 
@@ -351,5 +439,6 @@ Create/maintain a script (recommended: `scripts/verify_smartsign_layouts.py`) th
 5) Prints a PASS/FAIL table and exits non-zero on any failure
 
 Manual check is allowed as a supplement, not a replacement.
+
 
 ---
