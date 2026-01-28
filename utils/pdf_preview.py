@@ -16,9 +16,13 @@ from utils.storage import get_storage
 from utils.filenames import make_sign_asset_basename
 
 # Web preview settings
-MAX_PREVIEW_DIMENSION = 1800  # Max width or height in pixels
+# Web preview settings
+# Web preview settings
+# Optimized for performance while maintaining QR clarity (Task A)
+MAX_PREVIEW_DIMENSION = 3000  # Target max dimension
 PREVIEW_QUALITY = 85  # WebP quality (0-100)
-RENDER_DPI = 150  # DPI for initial PDF render
+# RENDER_DPI is now dynamic, calculated per-page
+
 
 
 def _calculate_scaled_dimensions(
@@ -98,17 +102,42 @@ def render_pdf_to_web_preview(
     try:
         page = doc.load_page(0)
         
-        # Render at fixed DPI
-        zoom = RENDER_DPI / 72.0
+        # Task A: Dynamic DPI Calculation
+        # Compute page size in inches
+        page_rect = page.rect
+        w_in = page_rect.width / 72.0
+        h_in = page_rect.height / 72.0
+        
+        # Determine target DPI to hit MAX_PREVIEW_DIMENSION directly (or close to it)
+        # Avoid massive 300 DPI renders for 36x24 (which would be ~10800x7200)
+        # We want the larger dimension to differ little from MAX_PREVIEW_DIMENSION
+        
+        largest_dim_in = max(w_in, h_in)
+        if largest_dim_in > 0:
+            target_dpi = int(MAX_PREVIEW_DIMENSION / largest_dim_in)
+        else:
+            target_dpi = 150
+            
+        # Clamp DPI
+        # Min 96 (screen), Max 300 (print quality, usually overkill for web, but safe if small sign)
+        # Prefer slightly higher than screen for crispness on high-res displays
+        render_dpi = max(96, min(300, target_dpi))
+        
+        # Render
+        zoom = render_dpi / 72.0
         mat = fitz.Matrix(zoom, zoom)
         pix = page.get_pixmap(matrix=mat, alpha=False)
         
         img = Image.frombytes("RGB", (pix.width, pix.height), pix.samples)
         
-        # Crop bleed
-        bleed_px = int(round(bleed_in * RENDER_DPI))
+        # Crop bleed (Bleed is 0.125 inches)
+        bleed_px = int(round(bleed_in * render_dpi))
         if bleed_px > 0 and img.width > 2 * bleed_px and img.height > 2 * bleed_px:
             img = img.crop((bleed_px, bleed_px, img.width - bleed_px, img.height - bleed_px))
+            
+        # Log performance metrics (for verification)
+        # print(f"[Preview] Size: {sign_size}, Calc DPI: {render_dpi}, Rendered: {pix.width}x{pix.height}, Final Cropped: {img.width}x{img.height}")
+
         
         # Scale to max dimension while preserving aspect ratio
         new_width, new_height = _calculate_scaled_dimensions(
@@ -116,7 +145,8 @@ def render_pdf_to_web_preview(
         )
         
         if (new_width, new_height) != img.size:
-            img = img.resize((new_width, new_height), Image.Resampling.LANCZOS)
+            # Task A: Use BOX or NEAREST for crisp QR edges, avoiding Lanczos ringing
+            img = img.resize((new_width, new_height), Image.Resampling.BOX)
         
         # Save as WebP to buffer
         img_buffer = io.BytesIO()

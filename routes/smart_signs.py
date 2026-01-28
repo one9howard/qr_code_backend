@@ -298,51 +298,21 @@ def create_smart_order():
         new_asset_id = asset_id
         asset_code = curr['code']
     else:
-        # New Asset - Create Row (Pending Activation) to get Code
-        # We need a code for the QR.
+        asset_code = None
+        new_asset_id = None
+        
+        # New Asset - Create Order Pending (Option B Strict)
+        # We DO NOT create sign_assets row yet.
+        # We generate a code and store it in the order.
         from utils.qr_codes import generate_unique_code
         asset_code = generate_unique_code(db, length=8)
         
-        # Determine strict style from payload/layout if needed, or defaults
-        # Map layout_id/form fields to asset columns for consistency
-        # Assuming sign_assets has generic columns
-        
-        # For now, insert basic info. 
-        # Note: 'design_payload' in order serves as source of truth for THIS print, 
-        # but the asset should probably mirror it for the "Digital" twin.
-        
-        # Mapping for asset columns:
-        # brand_name -> agent_name or brokerage_name? Smart Signs usually Brand Name (Agent)
-        brand_val = payload.get('agent_name')
-        if payload.get('brokerage_name'):
-           brand_val = f"{brand_val} | {payload.get('brokerage_name')}"
-           
-        cur = db.cursor()
-        cur.execute("""
-            INSERT INTO sign_assets (
-                user_id, code, brand_name, phone, email, 
-                background_style, cta_key, 
-                include_logo, logo_key, 
-                include_headshot, headshot_key,
-                created_at, activated_at
-            ) VALUES (
-                %s, %s, %s, %s, %s,
-                %s, %s,
-                %s, %s,
-                %s, %s,
-                NOW(), NULL
-            ) RETURNING id
-        """, (
-            current_user.id, asset_code, 
-            payload.get('agent_name'), payload.get('agent_phone'), payload.get('agent_email'),
-            payload.get('banner_color_id', 'solid_blue'), 'scan_for_details', # Defaults
-            bool(logo_key), logo_key,
-            bool(headshot_key), headshot_key
-        ))
-        new_asset_id = cur.fetchone()['id']
-        db.commit()
+        # Store code in payload for preview generation & later activation
+        payload['code'] = asset_code
+        # payload['sign_asset_id'] = None # Explicitly None for now
     
     if new_asset_id:
+        # Re-order case
         payload['sign_asset_id'] = new_asset_id
         
     # Normalize payload keys
@@ -465,12 +435,18 @@ def start_payment(order_id):
         price_id = get_price_id(order['print_product'], order['print_size'], order['material'])
         
         # 2. Metadata
+        # Task C Strict Compliance: Do not include sign_asset_id if it's new (None).
+        # Only include if re-ordering/replacement.
+        aid = str(order['sign_asset_id']) if order['sign_asset_id'] else None
+        
         metadata = {
             'order_type': 'smart_sign',
             'order_id': str(order_id),
             'user_id': str(current_user.id),
-            'sign_asset_id': str(order['sign_asset_id']) if order['sign_asset_id'] else None
+            # 'sign_asset_id': aid # Don't send explicit None key if None? Or send None?
         }
+        if aid:
+            metadata['sign_asset_id'] = aid
 
         checkout_session = stripe.checkout.Session.create(
             payment_method_types=['card'],

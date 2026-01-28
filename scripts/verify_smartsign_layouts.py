@@ -7,7 +7,14 @@ from collections import namedtuple
 # Add project root to path
 sys.path.append(os.getcwd())
 
+# ENV BYPASS for Config (Must be before imports)
+os.environ.setdefault("DATABASE_URL", "postgresql://mock:5432/mock")
+os.environ.setdefault("SECRET_KEY", "mock-secret")
+os.environ.setdefault("PRINT_JOBS_TOKEN", "mock-token")
+os.environ.setdefault("FLASK_ENV", "development")
+
 from services.pdf_smartsign import generate_smartsign_pdf, SPECS, SIGN_SIZES, SmartSignLayout
+
 from utils.storage import get_storage
 from utils.pdf_preview import render_pdf_to_web_preview
 from reportlab.lib.units import inch

@@ -272,7 +272,7 @@ def handle_payment_checkout(db, session):
     paid_at = utc_iso()
     # Fetch current order state to determine updates
     # Use dict() safely with row objects
-    row = db.execute("SELECT status, order_type, property_id, user_id FROM orders WHERE id = %s", (order_id,)).fetchone()
+    row = db.execute("SELECT status, order_type, property_id, user_id, design_payload FROM orders WHERE id = %s", (order_id,)).fetchone()
     if not row:
         current_app.logger.error(f"[Webhook] Order {order_id} not found during payment processing")
         raise ValueError(f"Order {order_id} not found")
@@ -413,15 +413,48 @@ def handle_payment_checkout(db, session):
                 if not user_id:
                      user_id = resolve_user_id(db, session)
 
-                from utils.qr_codes import generate_unique_code
-                code = generate_unique_code(db, length=12)
+                # Fetch code from Order Payload (Option B Strict)
+                payload = row.get('design_payload') or {}
+                # Legacy fallback if not in payload (shouldn't happen for new flow)
+                code = payload.get('code')
+                
+                if not code:
+                     # Fallback gen if missing (safety)
+                     from utils.qr_codes import generate_unique_code
+                     code = generate_unique_code(db, length=12)
+                     current_app.logger.warning(f"[Webhook] Warning: Code missing in payload for Order {order_id}. Generated new {code}.")
+                
+                # Extract details for Asset
+                brand_name = payload.get('brand_name') or payload.get('agent_name')
+                phone = payload.get('phone') or payload.get('agent_phone')
+                email = payload.get('email') or payload.get('agent_email')
+                bg_style = payload.get('background_style') or payload.get('banner_color_id') or 'solid_blue'
+                
+                inc_logo = bool(payload.get('logo_key') or payload.get('agent_logo_key'))
+                logo_key = payload.get('logo_key') or payload.get('agent_logo_key')
+                inc_head = bool(payload.get('headshot_key') or payload.get('agent_headshot_key'))
+                headshot_key = payload.get('headshot_key') or payload.get('agent_headshot_key')
                 
                 # Create Activated Asset
+                # We map payload fields to asset columns
                 res = db.execute("""
-                    INSERT INTO sign_assets (user_id, code, label, created_at, activated_at, is_frozen, activation_order_id)
-                    VALUES (%s, %s, %s, NOW(), NOW(), FALSE, %s)
+                    INSERT INTO sign_assets (
+                        user_id, code, brand_name, phone, email,
+                        background_style, cta_key,
+                        include_logo, logo_key,
+                        include_headshot, headshot_key,
+                        created_at, activated_at, is_frozen, activation_order_id, label
+                    )
+                    VALUES (%s, %s, %s, %s, %s, %s, 'scan_for_details', %s, %s, %s, %s, NOW(), NOW(), FALSE, %s, %s)
                     RETURNING id
-                """, (user_id, code, f"SmartSign {code}", order_id)).fetchone()
+                """, (
+                    user_id, code, brand_name, phone, email,
+                    bg_style, 
+                    inc_logo, logo_key,
+                    inc_head, headshot_key,
+                    order_id, f"SmartSign {code}"
+                )).fetchone()
+                
                 asset_id = res['id']
                 db.commit()
                 current_app.logger.info(f"[Webhook] Created NEW Asset {asset_id} ({code}) for Order {order_id}")

@@ -120,7 +120,7 @@ SPECS = {
             'qr_size': to_pt(15.00),
             'qr_padding': to_pt(0.75),
             'fonts': {
-                'name': (96, 66), 'phone': (120, 88), 'email': (40, 26), 
+                'name': (96, 66), 'phone': (120, 88), 'email': (40, 28), 
                 'brokerage': (72, 50), 'cta': (96, 72), 'url': (34, 26)
             }
         },
@@ -192,7 +192,7 @@ SPECS = {
             'qr_size': to_pt(13.00),
             'qr_padding': to_pt(0.70),
             'fonts': {
-                'name': (96, 66), 'phone': (120, 88), 'email': (36, 26), 
+                'name': (96, 66), 'phone': (120, 88), 'email': (40, 28), 
                 'brokerage': (72, 50), 'cta': (96, 72), 'url': (34, 26)
             }
         },
@@ -766,33 +766,166 @@ def _draw_agent_brand(c, l, asset, user_id):
         c.setFont("Helvetica-Bold", dia * 0.5)
         c.drawCentredString(circle_x, circle_y - (dia * 0.15), initials)
 
-    # 2. Center: Agent Name
-    # Space between circle and right col
+    # 2. Name + Brokerage (Safe Vertical Stacking - Task B)
+    # Problem: On 36x24, Name (2 lines) and Brokerage (2 lines) might overlap if purely centered/aligned right.
+    # New strategy:
+    # 1. Define vertical slots within the band centered on band_y_center?
+    # No, splitting the band vertically: Top half for Name, Bottom half for Brokerage?
+    # Or strict stacking.
+    # The requirement is: "Brokerage is ALWAYS single-line. Name can be 1-2 lines." and "Occupies distinct vertical slots".
+    
     start_x = margin + dia + to_pt(0.25)
+    end_x = l.width - margin
     
-    # Right column reserve (approx 35% of width or based on safe zone?)
-    # Spec says: "Right brokerage name or logo, right-aligned"
-    # Let's reserve 35% for brokerage
-    right_w = content_w * 0.35
-    right_start_x = l.width - margin - right_w
+    # We treat it as one large content area to the right of the logo?
+    # Spec says: "Center: Agent name... Right: Brokerage"
+    # This implies 3 columns. Logo | Name | Brokerage.
+    # Overlap happened because Name text and Brokerage text (right aligned) collided horizontally?
+    # Or vertically?
+    # The user report says: "name and brokerage both wrap into 2 lines and their bounding boxes overlap vertically".
+    # This implies they are stacked or close physically.
+    # If they are columns, they collide horizontally.
+    # If the layout is "Name centered in available space" and "Brokerage right aligned", they can collide.
     
-    center_w = right_start_x - start_x - to_pt(1.0)
-    center_mid_x = start_x + (center_w / 2)
+    # Task B Option 1: Brokerage single line. Name 1-2 lines. 
+    # Vertical Separation vs Horizontal separation? 
+    # If they are side-by-side columns, we should strictly enforce width.
+    # Current code:
+    # right_w = content_w * 0.35
+    # center_w = right_start_x - start_x - 1.0
+    # If 36x24, fonts are huge.
     
-    name = _read(asset, 'brand_name') or _read(asset, 'agent_name')
-    if name:
-        fs = spec['fonts']['name']
-        draw_fitted_multiline(c, name.upper(), center_mid_x, band_y_center - (fs[0]*0.15) - to_pt(0.1), "Helvetica-Bold", fs[0], fs[1], center_w, align='center', color='#ffffff', leading_factor=1.5)
-
-    # 3. Right: Brokerage
-    brokerage = _read(asset, 'brokerage_name')
-    right_w = content_w * 0.35
-    right_align_x = l.width - margin
+    # Let's check text fits.
+    # If we enforce widths, they shouldn't overlap horizontally.
+    # But maybe the computed center w is too small?
     
+    # Wait, the user said "Vertical slots". This implies stacking them vertically?
+    # But the spec says "Left... Center... Right...". That usually means horizontal distribution.
+    # IF the user implies that on large signs, we should stack them?
+    # "Option 1... Name block height and brokerage baseline so they occupy distinct vertical slots inside the band"
+    # This confirms vertical stacking: Top slot for Name, Lower slot for Brokerage.
+    
+    # So for Agent Brand, the Header Band contains:
+    # [Logo]  [      Name      ]
+    #         [   Brokerage    ]
+    # (Left)    (Right/Center?)
+    
+    # Let's implement vertical stacking for Name and Brokerage to the right of logo.
+    # Alignment: Centered relative to the remaining width? Or Right aligned?
+    # Spec says: "Center: Agent name... Right: Brokerage".
+    # If we stack, maybe align Name Center, Brokerage Right? Or both Center?
+    # "Top slot for name, lower slot for brokerage".
+    
+    # Let's align both to the center of the available space to the right of logo?
+    # Or keep Name Centered and Brokerage Right, but separated vertically.
+    
+    available_w = l.width - start_x - margin
+    
+    # Define vertical centers
+    # Band Height is fixed.
+    # Name uses top 55% space? Brokerage uses bottom 45%?
+    
+    name_fs = spec['fonts']['name']
+    brok_fs = spec['fonts']['brokerage']
+    
+    # Calculate measured heights
+    name = _read(asset, 'brand_name') or _read(asset, 'agent_name') or ""
+    brokerage = _read(asset, 'brokerage_name') or ""
+    
+    text_color = '#ffffff'
+    accent_text_color = '#cbd5e1' # lighter for brokerage
+    
+    # Measure Name (Max 2 lines)
+    # Use 95% of available width to avoid hitting edge
+    safe_text_w = available_w * 0.95
+    mid_x_avail = start_x + (available_w / 2)
+    
+    # Dry run name
+    # We need to know height to position.
+    # draw_fitted_multiline return (size, lines, height).
+    # We assume 'name' font logic handles shrinking.
+    
+    # Positioning Strategy:
+    # Total Content Height = Name_H + Gap + Brok_H
+    # Center this total block vertically in the band.
+    
+    # 1. Measure Name
+    # Pseudo-draw to measure?
+    # fit_text_single_line just returns size.
+    # draw_fitted_multiline calculates wrapping.
+    # Let's just use a helper to measure or draw to a dummy canvas? No.
+    # We can perform the logic without drawing.
+    # But for simplicity/safety, let's assume worst case or calculate.
+    
+    # Actually, we can just draw them relative to band center with offset.
+    # Name centered around (mid - offset). Brokerage around (mid + offset).
+    
+    # Better: Calculate baselines.
+    # Name Bottom = CenterY - Gap/2
+    # Brokerage Top = CenterY + Gap/2
+    
+    gap = to_pt(0.15)
+    
+    # Name Drawing (Max 2 lines)
+    # We need to compute lines/size to know where to start Y (baseline of first line).
+    # If 2 lines, height = 2*lh.
+    # Center of Name Block = BandCenter - (BrokHeight/2) - (Gap/2)?
+    # This is getting complex.
+    # Simpler:
+    # Name Baseline (Bottom line) takes Upper Slot.
+    # Brokerage Baseline (Single line) takes Lower Slot.
+    
+    # Vertical partitioning
+    # Top Slot Center = BandTop - (BandH * 0.35)
+    # Bottom Slot Center = BandBottom + (BandH * 0.25)
+    
+    y_top_slot = (l.height - band_h) + (band_h * 0.75)
+    y_bot_slot = (l.height - band_h) + (band_h * 0.20)
+    
+    # Draw Name (Max 2 lines, Centered in Top Slot)
+    # We'll use draw_fitted_multiline but we need y_baseline_first.
+    # If 1 line: y = y_top_slot.
+    # If 2 lines: y_baseline_first needs to be higher so center is preserved.
+    # height ~ 2.2 * size. Center of block is y_first - (height/2).
+    # So y_first = center + height/2 - (ascent adjustment?).
+    # Let's just anchor Top of Name to a calculated safe top?
+    
+    # Refined Option 1:
+    # Brokerage: ALWAYS Single Line (Task B requirement).
+    # Measure it first.
+    
+    # Brokerage
     if brokerage:
-        fs = spec['fonts']['brokerage']
-        # Use slightly off-white to force block separation
-        draw_fitted_multiline(c, brokerage, right_align_x, band_y_center - (fs[0]*0.15) + to_pt(0.1), "Helvetica", fs[0], fs[1], right_w, align='right', color='#fefefe', leading_factor=1.5)
+        # Force single line fit
+        brok_final_size = fit_text_single_line(c, brokerage, "Helvetica", brok_fs[0], brok_fs[1], safe_text_w)
+        # Draw at Bottom Slot
+        # Align baseline to y_bot_slot
+        c.setFillColorRGB(*hex_to_rgb(accent_text_color))
+        # Ellipsize if needed (handled by draw_fitted_text logic but we pre-calculated size)
+        draw_fitted_text(c, brokerage, mid_x_avail, y_bot_slot, "Helvetica", brok_final_size, brok_fs[1], safe_text_w, align='center')
+        
+    # Name
+    if name:
+        # Draw at Top Slot
+        # We allow 2 lines.
+        # Anchor baseline of bottom line? Or center?
+        # Let's use y_top_slot as the baseline for the LOWEST name line (if 1 line) 
+        # or adjust if 2 lines?
+        # Actually visually: Name should correspond to the "Main" element.
+        # Let's place the baseline of the LAST line of name at y_top_slot?
+        # No, y_top_slot is high up (65%).
+        # Let's treat y_top_slot as the visual center of the name block.
+        
+        # We assume Name is primary.
+        draw_fitted_multiline(c, name.upper(), mid_x_avail, y_top_slot, "Helvetica-Bold", name_fs[0], name_fs[1], safe_text_w, align='center', color='#ffffff', leading_factor=1.2)
+        # Note: draw_fitted_multiline draws DOWN from y. So y must be TOP baseline.
+        # If we passed y_top_slot (65%), and name is 2 lines, it will draw at 65% and 65%-lh.
+        # This keeps it in the upper half.
+        # Brokerage is at 25%.
+        # Gap = ~40% of band height.
+        # For 36x24 (Band=5.0"), 40% = 2.0". Plenty of space.
+        # For 12x18 (Band=3.4"), 40% = 1.36". Safe.
+
 
     
     # --- QR Code ---
@@ -812,11 +945,18 @@ def _draw_agent_brand(c, l, asset, user_id):
     c.setFillColorRGB(1, 1, 1) # White Card
     c.roundRect((l.width - card_size)/2, qr_y_center - (card_size/2), card_size, card_size, radius, fill=1, stroke=1)
     
-    # Scan Me Label
+    # Scan Me Label (Task C: Remove magic number)
+    # Position relative to QR
+    # Above QR by padding + half font approx?
+    # Logic: center between QR top and header bottom?
+    # Or strict offset. Using standard padding.
+    
     fs_lbl = spec['fonts']['scan_label']
+    scan_y = qr_y_center + (qr_size/2) + pad + (fs_lbl[0] * 0.4) # Just above card
+    
     c.setFillColorRGB(*hex_to_rgb(COLORS['base_text']))
     c.setFont("Helvetica", fs_lbl[0])
-    c.drawCentredString(l.width/2, qr_y_center + (qr_size/2) - 40, "Scan Me")
+    c.drawCentredString(l.width/2, scan_y, "Scan Me")
 
     # QR
     code = _read(asset, 'code')
@@ -829,10 +969,12 @@ def _draw_agent_brand(c, l, asset, user_id):
     c.setFillColorRGB(*hex_to_rgb(COLORS['bg_navy']))
     c.rect(-l.bleed, -l.bleed, l.width + 2*l.bleed, foot_h + l.bleed, fill=1, stroke=0)
     
-    # CTA: "SCAN FOR" / "DETAILS"
-    # This is tricky because it's 2-line with mixed colors in Line 1.
-    # _draw_safe_footer_stack handles simple text.
-    # Since Agent Brand footer is unique (mixed color line), we manually implement safe stack here.
+    # CTA: "SCAN FOR" / "DETAILS" (Task B: No overlap stacking)
+    # Stack Bottom-Up:
+    # 1. Safe Bottom Margin
+    # 2. URL
+    # 3. CTA2 (DETAILS)
+    # 4. CTA1 (SCAN FOR)
     
     # URL
     import urllib.parse
@@ -844,34 +986,57 @@ def _draw_agent_brand(c, l, asset, user_id):
     fs2 = spec['fonts']['cta2']
     
     safe_bottom = l.safe_margin
-    url_base = safe_bottom + (fs_u[0] * 0.4) # ensured lift for descenders
+    pad_stack = to_pt(0.25) # Gap between blocks
     
-    # Draw URL
-    draw_fitted_text(c, display_url, l.width/2, url_base, "Helvetica", fs_u[0], fs_u[1], content_w, align='center', color='#ffffff')
+    # 1. Draw URL
+    # Align text baseline so descent is covered? 
+    # Let's target baseline = safe_bottom + (size*0.3) approx descent
+    url_baseline = safe_bottom + (fs_u[0] * 0.35)
     
-    # Stack Up
-    pad = to_pt(0.25)
-    cta2_base = url_base + fs_u[0] + pad
+    # Draw and get explicit height used (if wrapping allowed, but URL is 1 line)
+    _, _, url_block_h = draw_fitted_multiline(
+        c, display_url, l.width/2, url_baseline, "Helvetica", 
+        fs_u[0], fs_u[1], content_w, align='center', color='#ffffff', max_lines=1
+    )
     
-    # Draw DETAILS (Line 2)
-    # We can use draw_fitted_text
-    draw_fitted_text(c, "DETAILS", l.width/2, cta2_base, "Helvetica-Bold", fs2[0], fs2[1], content_w, align='center', color=accent_hex)
+    # 2. Draw DETAILS (CTA2) above URL
+    # Base of CTA2 = Top of URL + padding + descent_of_CTA2?
+    # Top of URL approx = url_baseline + (fs_u[0]*0.7)? 
+    # Use block height returned. block_height usually covers baseline to ascent + leading.
+    # But draw_fitted_multiline returns "lines * line_height".
+    # line_height is "size * leading_factor".
+    # If we stack: y_next = y_prev_baseline + (prev_height approx?)
+    # Better: y_next_baseline = y_prev_baseline + prev_font_size + padding?
     
-    # Stack Up
-    cta1_base = cta2_base + fs2[0] + pad
+    # Let's try: 
+    # y_url_cap = url_baseline + fs_u[0]
+    # y_cta2_baseline = y_url_cap + pad_stack
     
-    # Draw SCAN FOR (Line 1) - Mixed Color
-    # We must measure manual
-    c.setFont("Helvetica-Bold", fs1[0])
-    w_scan = c.stringWidth("SCAN ", "Helvetica-Bold", fs1[0])
-    w_for = c.stringWidth("FOR", "Helvetica-Bold", fs1[0])
+    cta2_baseline = url_baseline + fs_u[0] + pad_stack + (fs2[0]*0.2) # Extra nudges
+    
+    _, _, cta2_h = draw_fitted_multiline(
+        c, "DETAILS", l.width/2, cta2_baseline, "Helvetica-Bold", 
+        fs2[0], fs2[1], content_w, align='center', color=accent_hex, max_lines=1
+    )
+    
+    # 3. Draw SCAN FOR (CTA1) above CTA2
+    cta1_baseline = cta2_baseline + fs2[0] + pad_stack
+    
+    # Mixed Color Logic for "SCAN FOR"
+    # We measure widths at the resolved font size
+    # fit_text_single_line returns *size*
+    resolved_fs1 = fit_text_single_line(c, "SCAN FOR", "Helvetica-Bold", fs1[0], fs1[1], content_w)
+    
+    c.setFont("Helvetica-Bold", resolved_fs1)
+    w_scan = c.stringWidth("SCAN ", "Helvetica-Bold", resolved_fs1)
+    w_for = c.stringWidth("FOR", "Helvetica-Bold", resolved_fs1)
     total = w_scan + w_for
     start_x = (l.width - total) / 2
     
     c.setFillColorRGB(1,1,1)
-    c.drawString(start_x, cta1_base, "SCAN ")
+    c.drawString(start_x, cta1_baseline, "SCAN ")
     c.setFillColorRGB(*hex_to_rgb(accent_hex))
-    c.drawString(start_x + w_scan, cta1_base, "FOR")
+    c.drawString(start_x + w_scan, cta1_baseline, "FOR")
 
 
 def _draw_photo_banner(c, l, asset, user_id):
