@@ -1,353 +1,202 @@
-# SPECS.md — SmartSign Print Layout Specifications (Professional, Deterministic)
-**Last updated:** 2026-01-28  
-**Scope:** SmartSign PDF generation + previews + fulfillment outputs  
-**Applies to:** `services/pdf_smartsign.py` (source-of-truth generator), and any other generator must match.
+# SPECS.md — Print + Layout Specifications (Single Source of Truth)
+
+This document is the canonical specification for print products, layouts, sizing, bleed/safe zones,
+typography constraints, and preview rendering constraints. Code must either:
+1) Load these values directly, or
+2) Mirror them exactly and pass `scripts/check_specs_sync.py`.
 
 ---
 
-## 0) Non-negotiables
+# 1) Canonical Sizes
 
-1) **Preview must match print**
-- The same PDF generator used by fulfillment must be used for the web preview.
-- No separate “preview-only” layout logic.
+## 1.1 SmartSign (Purchasable Sizes — Reality A)
+SmartSign is purchasable in **3 sizes only**:
+- 18x24 (portrait)
+- 24x36 (portrait)
+- 36x24 (landscape)
 
-2) **Internal-only routing + printed fallback must be correct**
-- Printed fallback URL MUST be `insite.co/r/<CODE>` (or `{BASE_DOMAIN}/r/<CODE}`).
-- Never print `{BASE_DOMAIN}/<CODE>` (missing `/r/`).
+Any other SmartSign size must be rejected at:
+- UI (dropdown)
+- routes validation
+- print_catalog validation
+- PDF generator dispatch
 
-3) **QR scan reliability**
-- QR must be black on pure white.
-- QR must have a white quiet zone (padding) around it.
-- No gradients, glows, textures, or dark fills behind/near QR.
-- No decorations within the QR quiet zone.
-
-4) **Safe zone is sacred**
-- All text must be inside the safe rect (trim inset by safe margin).
-- If content doesn’t fit, it must shrink, wrap (max 2 lines where allowed), or ellipsize.
-- Never overflow beyond safe margins.
-
-5) **Deterministic, spec-driven**
-- No “5% of width” heuristics.
-- No string-length hacks (e.g., `len(name) > 20`).
-- Use measured text widths (`canvas.stringWidth`) and measured block heights.
+## 1.2 Listing Sign (Purchasable Sizes)
+Listing Sign supports **4 sizes**:
+- 12x18 (portrait)
+- 18x24 (portrait)
+- 24x36 (portrait)
+- 36x24 (landscape)
 
 ---
 
-## 1) Supported sizes and orientation
+# 2) Global Print Rules (All Products)
 
-Sizes are expressed as WIDTH×HEIGHT (inches). Orientation is- **Supported sizes and orientation**:
-  - 18x24 (Portrait)
-  - 24x36 (Portrait)
-  - 36x24 (Landscape)
+## 2.1 Units
+- 1 inch = 72 points (pt)
 
-All measurements below are exact and must be converted using:
-- `1 inch = 72 points`
-- Use `reportlab.lib.units.inch`
+## 2.2 Bleed
+- Bleed: 0.125" on all sides (unless explicitly overridden per product)
 
----
+## 2.3 Safe Margins (No critical content beyond)
+Safe margin is measured from trim edge inward.
 
-## 2) Layout IDs
+- 12x18: 0.50"
+- 18x24: 0.50"
+- 24x36: 0.50"
+- 36x24: 0.60"
 
-Layout selection is driven by `layout_id`:
+## 2.4 QR Code Rules (Scan Reliability)
+- QR must be placed on a solid, high-contrast background.
+- QR must have a quiet zone (padding) of at least **0.25"** on all sides.
+- If on a dark/colored background, QR must be placed on a **white card** with padding.
+- QR should be axis-aligned (no rotation).
 
-- `smart_v1_photo_banner` — existing legacy/photo banner layout (do not change here)
-- `smart_v1_minimal` — **Modern Minimal**
-- `smart_v1_agent_brand` — **Agent Brand**
+## 2.5 Text Fit Rules (No overlaps allowed)
+- No layout may allow overlap or clipping.
+- When a text block cannot fit:
+  1) shrink-to-fit down to min font size,
+  2) if still failing, truncate with ellipsis,
+  3) if still failing (rare), drop lowest-priority line (email, secondary text).
 
-Dispatch rule:
-- `smart_v1_photo_banner` → legacy renderer
-- `smart_v1_agent_brand` → Agent Brand renderer
-- otherwise → Modern Minimal renderer
-
----
-
-## 3) Global print geometry
-
-### 3.1 Bleed
-- Bleed on all sides: **0.125"** (9 pt)
-
-### 3.2 Safe margin (trim inset)
-Safe margin differs per size:
-
-| Size   | Safe margin (in) | Safe margin (pt) |
-|--------|------------------:|-----------------:|
-| 12x18  | 0.60"            | 43.2 pt          |
-| 18x24  | 0.75"            | 54.0 pt          |
-| 24x36  | 1.00"            | 72.0 pt          |
-| 36x18  | 0.90"            | 64.8 pt          |
-| 36x24  | 1.00"            | 72.0 pt          |
-
-**Safe rect definition**
-- Trim rect: `(0,0,width,height)` in points
-- Safe rect: trim rect inset by safe margin on all sides  
-  (NOT bleed inset — bleed is outside trim)
-
-### 3.3 QR card styling (backing behind QR)
-- Card fill: white `#ffffff`
-- Card stroke: `#e2e8f0`
-- Stroke width: **2 pt**
-- Corner radius: **0.25"** (18 pt)
-- **No shadows** (print-safe default)
-
-### 3.4 Colors
-- Primary text: `#0f172a`
-- Secondary text: `#475569`
-- Rule/border: `#e2e8f0`
-- Agent Brand band background: `#0f172a`
-- Accent: `banner_color_id` via `BANNER_COLOR_PALETTE`  
-  - If accent resolves to white, use `#cbd5e1` for rule lines.
+Priority: Agent Name > Phone > CTA > URL > Brokerage > Email.
 
 ---
 
-## 4) Text fitting rules (must implement)
+# 3) SmartSign Layout Specs
 
-All text must be measured and fit within a max width.
-
-### 4.1 Single-line fit
-Given `(text, font, start_size, min_size, max_width)`:
-- Try `start_size`, decrement (or binary search) until it fits max_width.
-- If still too wide at min_size: ellipsize to fit.
-- Never allow overflow beyond max_width.
-
-### 4.2 Two-line fit (for name/brokerage where allowed)
-Given `(text, font, start_size, min_size, max_width, max_lines=2)`:
-- Attempt one line first.
-- If overflow, wrap into 2 lines (word-aware).
-- Shrink to fit if needed.
-- If still overflow at min_size: ellipsize the last line.
-
-### 4.3 Block height must be returned
-Multiline fitter must return:
-- font size used
-- lines rendered
-- block height used (`line_count * size * leading_factor`)
-This is required to compute vertical stacking without overlaps.
-
-### 4.4 Allowed wrapping
-- Agent name: max 2 lines
-- Brokerage: max 2 lines
-- Phone: 1 line only (shrink/ellipsize if needed)
-- Email: 1 line only (shrink/omit if needed)
-- CTA: 1 line (Minimal) / fixed 2 lines (Agent Brand)
-- URL: 1 line only (shrink/ellipsize if needed)
+## 3.1 Supported Layout IDs
+- smart_v1_photo_banner (existing)
+- smart_v1_minimal (Agent-First Minimal) — default recommended
+- smart_v1_agent_brand (premium variant; secondary)
 
 ---
 
-## 5) Modern Minimal (smart_v1_minimal) — per-size specs
+## 3.2 smart_v1_minimal (Agent-First Minimal)
 
-Modern Minimal structure:
-- White background
-- Thin top accent bar (accent color)
-- Header band: 2-column grid:
-  - Left: agent name + phone + optional email (stacked)
-  - Right: brokerage (or logo), right-aligned
-- Center QR zone
-- Footer band: CTA line + URL line, centered
+### Visual Structure
+1. Header: headshot + name + phone (+ optional brokerage)
+2. Center: QR in white rounded card with border + padding
+3. Footer: CTA + URL
 
-Header grid widths:
-- Left column: 62%
-- Column gap: 3%
-- Right column: 35%
+### Global style
+- Background: white
+- Accent: optional thin rule only (no heavy color band)
+- Email: OFF by default (optional; must not degrade name/phone)
 
-### 5.1 12x18
-- Top accent bar: **0.45"**
-- Header band height: **3.20"**
-- Footer band height: **2.80"**
-- QR size: **7.50"**
-### 5.1 18x24
-- Top accent bar: **0.55"**
-- Header band: **4.00"**
-- Footer band: **3.40"**
-- QR size: **11.00"**
-- QR padding: **0.55"**
+### Size: 18x24 (Portrait)
+Trim: 18w × 24h  
+Header height: 3.40"  
+Footer height: 3.10"  
+Accent rule: 0.10" (optional)
 
-Fonts:
-- Agent name: **72 / 50**
-- Phone: **96 / 68**
-- Email: **30 / 22**
-- Brokerage: **52 / 34**
-- CTA: **72 / 54**
-- URL: **28 / 22**
+Header:
+- Headshot: 2.20"
+- Headshot inset: 0.25"
+- Gap headshot→text: 0.30"
+- Name: max 64pt / min 44pt, 2 lines max, leading 1.22
+- Phone: max 52pt / min 38pt, single-line
+- Brokerage (optional): max 38pt / min 28pt, single-line, right-aligned
 
-### 5.2 24x36
-- Top bar: **0.70"**
-- Header band: **5.60"**
-- Footer band: **4.80"**
-- QR size: **15.00"**
-- QR padding: **0.75"**
+QR card:
+- QR size: 7.20"
+- Card padding: 0.55"
+- Card outer: 8.30"
+- Radius: 0.35"
+- Border: 2pt, #E2E8F0
 
-Fonts:
-- Name: **96 / 66**
-- Phone: **120 / 88**
-- Email: **40 / 28**
-- Brokerage: **72 / 50**
-- CTA: **96 / 72**
-- URL: **34 / 26**
+Footer:
+- CTA: max 64pt / min 44pt (prefer 1 line; 2 lines allowed if >= min)
+- URL: max 34pt / min 26pt
+- Default CTA: “Price + Photos + 3D Tour”
+- URL format: insite.co/r/XXXX1234
 
-### 5.3 36x24 (landscape)
-- Top bar: **0.70"**
-- Header band: **4.20"**
-- Footer band: **4.00"**
-- QR size: **13.00"**
-- QR padding: **0.70"**
+### Size: 24x36 (Portrait)
+Trim: 24w × 36h  
+Header: 4.90"  
+Footer: 4.40"  
+Accent: 0.12"
 
-Fonts:
-- Name: **96 / 66**
-- Phone: **120 / 88**
-- Email: **36 / 26**
-- Brokerage: **72 / 50**
-- CTA: **96 / 72**
-- URL: **34 / 26**
+Header:
+- Headshot: 3.10"
+- Inset: 0.30"
+- Gap: 0.40"
+- Name: max 92pt / min 64pt, 2 lines max, leading 1.20
+- Phone: max 76pt / min 54pt
+- Brokerage: max 56pt / min 40pt, single-line
 
----
+QR card:
+- QR: 10.60"
+- Pad: 0.70"
+- Outer: 12.00"
+- Radius: 0.45"
+- Border: 3pt, #E2E8F0
 
-## 6) Agent Brand (smart_v1_agent_brand) — per-size specs
+Footer:
+- CTA: max 92pt / min 64pt
+- URL: max 46pt / min 34pt
 
-Agent Brand structure:
-- White base
-- Top brand band (navy) with accent rule
-  - Left: headshot/logo circle (or monogram)
-  - Center: agent name (max 2 lines)
-  - Right: brokerage text/logo (max 2 lines)
-- Center QR zone with white QR card
-- Bottom brand footer band (navy) with accent rule
-  - CTA in two lines:
-    - Line 1: `SCAN` (white) + `FOR` (accent)
-    - Line 2: `DETAILS` (accent)
-  - URL below CTA, centered
+### Size: 36x24 (Landscape)
+Trim: 36w × 24h  
+Header: 3.80"  
+Footer: 3.60"  
+Accent: 0.10"
 
-### 6.1 18x24
-- Top band: **4.50"**
-- Footer band: **4.50"**
-- QR size: **11.00"**
-- QR padding: **0.55"**
-- Logo/monogram diameter: **1.90"**
+Header:
+- Headshot: 2.60"
+- Inset: 0.30"
+- Gap: 0.35"
+- Name: max 72pt / min 50pt, 2 lines max, leading 1.22
+- Phone: max 62pt / min 44pt
+- Brokerage: max 48pt / min 34pt, single-line
 
-Fonts:
-- Agent: **64 / 44**
-- Brokerage: **56 / 38**
-- “Scan Me”: **44 / 34**
-- CTA1: **80 / 60**
-- CTA2: **96 / 72**
-- URL: **28 / 22**
+QR card:
+- QR: 8.80"
+- Pad: 0.65"
+- Outer: 10.10"
+- Radius: 0.40"
+- Border: 3pt, #E2E8F0
 
-### 6.2 24x36
-- Top band: **6.40"**
-- Footer band: **6.40"**
-- QR size: **15.00"**
-- QR padding: **0.75"**
-- Logo/monogram diameter: **2.60"**
-
-Fonts:
-- Agent: **86 / 60**
-- Brokerage: **76 / 54**
-- “Scan Me”: **56 / 42**
-- CTA1: **110 / 80**
-- CTA2: **132 / 96**
-- URL: **34 / 26**
-
-### 6.3 36x24 (landscape)
-- Top band: **5.00"**
-- Footer band: **5.00"**
-- QR size: **13.00"**
-- QR padding: **0.70"**
-- Logo diameter: **2.40"**
-
-Fonts:
-- Agent: **86 / 60** (allow shrink sooner if needed)
-- Brokerage: **76 / 54**
-- “Scan Me”: **56 / 42**
-- CTA1: **110 / 80**
-- CTA2: **132 / 96**
-- URL: **34 / 26**
+Footer:
+- CTA: max 72pt / min 50pt
+- URL: max 40pt / min 30pt
 
 ---
 
-## 7) Photo Banner (smart_v1_photo_banner) — per-size specs
+# 4) Listing Sign Specs (Product-Level)
 
-**Structure**:
-- White base background.
-- Top band (Accent/Navy) with:
-  - Left: agent headshot circle (or logo)
-  - Center-left: Agent Name (max 2 lines) + Phone (1 line) stack
-  - Right: Brokerage logo/text (max 2 lines)
-- Center QR zone with white QR card
-- Bottom footer band (Accent/Navy):
-  - CTA (1 line)
-  - URL (1 line) - Safe-bottom anchored
+Listing sign supports 4 sizes: 12x18, 18x24, 24x36, 36x24.
+(Define listing layouts separately in code; this section defines only product-level constraints.)
 
-**Note**: Since this layout shares "Banded" genetics with Agent Brand, we reuse similar band heights but adapt fonts for the denser header content.
+## 4.1 Listing Sign Content Hierarchy (Minimum)
+- Address (or listing title) must be most prominent
+- Price must be prominent if included
+- QR must obey QR rules (quiet zone + contrast)
+- Agent contact must never be smaller than URL text
 
-### 7.1 18x24
-- Top band: **4.50"**
-- Footer band: **4.50"**
-- Safe Margin: **0.75"**
-- Headshot diameter: **1.90"**
-- Fonts:
-  - [Name]: **64 / 44** (Helvetica Bold, Left)
-  - [Phone]: **48 / 36** (Helvetica Bold, Left, below name)
-  - [Brokerage]: **56 / 38** (Helvetica Regular, Left, below phone)
-  - [CTA]: **80 / 60** (Helvetica Bold, Footer)
-  - [URL]: **28 / 22** (Helvetica Regular)
-
-### 7.2 24x36
-- Top band: **6.40"**
-- Footer band: **6.40"**
-- Safe Margin: **1.00"**
-- Headshot diameter: **2.60"**
-- Fonts:
-  - [Name]: **86 / 60** (Helvetica Bold)
-  - [Phone]: **64 / 48** (Helvetica Bold)
-  - [Brokerage]: **76 / 54** (Helvetica Regular)
-  - [CTA]: **110 / 80** (Helvetica Bold)
-  - [URL]: **34 / 26** (Helvetica Regular)
-
-### 7.3 36x24 (landscape)
-- Top band: **5.00"**
-- Footer band: **5.00"**
-- Safe Margin: **1.00"**
-- Headshot diameter: **2.40"**
-- Fonts:
-  - [Name]: **86 / 60** (Helvetica Bold)
-  - [Phone]: **64 / 48** (Helvetica Bold)
-  - [Brokerage]: **76 / 54** (Helvetica Regular)
-  - [CTA]: **110 / 80**
-  - [URL]: **34 / 26**
-
+## 4.2 Listing Sign Safe Margins + Bleed
+Use Global rules unless specific print provider requires overrides.
 
 ---
 
-## 8) Worst-case fixtures (required test inputs)
+# 5) Web Preview Rendering Constraints
 
-Use these strings in verification scripts:
+The web preview must be:
+- Fast (no hangs on large PDFs)
+- Consistent enough to validate layout (no “preview mismatch” surprises)
 
-- Agent name:
-  - `Alexandria Catherine Van Der Westhuizen`
-- Brokerage:
-  - `Sotheby’s International Realty – Northern California Peninsula`
-- Email:
-  - `alexandria.vanderwesthuizen.longemailaddress@gmail.com`
-- Phone:
-  - `(555) 555-5555`
-- Code:
-  - `ABCD1234`
-
-Acceptance: no overlaps, no safe margin breaches, URL prints `/r/ABCD1234`.
+## 5.1 Preview Target
+- Target longest side: 1400–1800px (implementation may clamp)
+- DPI must be dynamically scaled by page size and clamped to avoid huge rasterization.
+- Preview must preserve aspect ratio; no cropping.
 
 ---
 
-## 9) Verification requirements (must be automated)
+# 6) Validation Matrix (Must Match print_catalog)
 
-Create/maintain a script (recommended: `scripts/verify_smartsign_layouts.py`) that:
+| Product      | Allowed Sizes                              |
+|-------------|---------------------------------------------|
+| SmartSign    | 18x24, 24x36, 36x24                        |
+| Listing Sign | 12x18, 18x24, 24x36, 36x24                 |
 
-1) Generates PDFs for:
-- all sizes × both layouts = 10 outputs
-2) Renders each PDF to preview (webp) using the real preview pipeline
-3) Extracts text block bounding boxes from the PDF (PyMuPDF recommended)
-4) Asserts all text blocks are within the safe rect (tolerance ≤ 1 pt)
-5) Prints a PASS/FAIL table and exits non-zero on any failure
-
-Manual check is allowed as a supplement, not a replacement.
-
-
----
+Any request outside matrix must be rejected.
