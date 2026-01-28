@@ -8,23 +8,27 @@ Single source of truth for:
 """
 import logging
 from services import stripe_price_resolver
+from services.specs import PRODUCT_SIZE_MATRIX, SMARTSIGN_SIZES, LISTING_SIGN_SIZES
 
 logger = logging.getLogger(__name__)
 
 # --- Product Constants ---
 
-LISTING_SIGN_MATERIALS = ('coroplast_4mm', 'aluminum_040')
-SMART_SIGN_MATERIALS = ('aluminum_040',)
+# Valid Materials per Product
+SMARTSIGN_MATERIALS = ('aluminum_040',)
 SMART_RISER_MATERIALS = ('aluminum_040',)
+LISTING_SIGN_MATERIALS = ('coroplast_4mm', 'aluminum_040')
 
-# Strict Size Constraints
+# SIZES (Sourced from Canonical Specs)
+SMART_SIGN_VALID_SIZES = tuple(SMARTSIGN_SIZES)
+SMART_RISER_VALID_SIZES = ('6x24', '6x36') # Riser specs not in canonical matrix yet? Or just use hardcoded for now.
+
 LISTING_SIGN_VALID_SIZES = {
-    'coroplast_4mm': ('12x18', '18x24', '24x36', '36x24'),
-    'aluminum_040': ('12x18', '18x24', '24x36', '36x24')
+    # Coroplast does not support 36x24
+    'coroplast_4mm': ('12x18', '18x24', '24x36'),
+    # Aluminum does not support 12x18
+    'aluminum_040': ('18x24', '24x36', '36x24')
 }
-
-SMART_SIGN_VALID_SIZES = ('18x24', '24x36', '36x24')
-SMART_RISER_VALID_SIZES = ('6x24', '6x36')
 
 SMART_SIGN_LAYOUTS = (
     'smart_v1_photo_banner',

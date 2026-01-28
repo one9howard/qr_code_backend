@@ -38,20 +38,13 @@ STYLE_MAP = {
 def to_pt(inches):
     return inches * 72
 
+from services.specs import SMARTSIGN_V1_MINIMAL_SPECS, GLOBAL_PRINT_RULES
+
+# Helper to build SPECS dynamically
+# We retain manual definitions for 'photo_banner' and 'agent_brand' until they are canonized.
 SPECS = {
     '18x24': {
-        'safe_margin': to_pt(0.75),
-        'smart_v1_minimal': {
-            'top_bar': to_pt(0.55),
-            'header_band': to_pt(4.00),
-            'footer_band': to_pt(3.40),
-            'qr_size': to_pt(11.00),
-            'qr_padding': to_pt(0.55),
-            'fonts': {
-                'name': (72, 50), 'phone': (96, 68), 'email': (30, 22), 
-                'brokerage': (52, 34), 'cta': (72, 54), 'url': (28, 22)
-            }
-        },
+        # Safe margin injected below
         'smart_v1_photo_banner': {
             'top_band': to_pt(4.50),
             'footer_band': to_pt(4.50),
@@ -76,18 +69,6 @@ SPECS = {
         }
     },
     '24x36': {
-        'safe_margin': to_pt(1.00),
-        'smart_v1_minimal': {
-            'top_bar': to_pt(0.70),
-            'header_band': to_pt(5.60),
-            'footer_band': to_pt(4.80),
-            'qr_size': to_pt(15.00),
-            'qr_padding': to_pt(0.75),
-            'fonts': {
-                'name': (96, 66), 'phone': (120, 88), 'email': (40, 28), 
-                'brokerage': (72, 50), 'cta': (96, 72), 'url': (34, 26)
-            }
-        },
         'smart_v1_photo_banner': {
             'top_band': to_pt(6.40),
             'footer_band': to_pt(6.40),
@@ -111,19 +92,7 @@ SPECS = {
             }
         }
     },
-    '36x24': { # Wide format
-        'safe_margin': to_pt(1.00),
-        'smart_v1_minimal': {
-            'top_bar': to_pt(0.70),
-            'header_band': to_pt(4.20),
-            'footer_band': to_pt(4.00),
-            'qr_size': to_pt(13.00),
-            'qr_padding': to_pt(0.70),
-            'fonts': {
-                'name': (96, 66), 'phone': (120, 88), 'email': (36, 26), 
-                'brokerage': (72, 50), 'cta': (96, 72), 'url': (34, 26)
-            }
-        },
+    '36x24': {
         'smart_v1_photo_banner': {
             'top_band': to_pt(5.00),
             'footer_band': to_pt(5.00),
@@ -141,13 +110,34 @@ SPECS = {
             'qr_size': to_pt(13.00),
             'qr_padding': to_pt(0.70),
             'logo_diameter': to_pt(2.40),
-            'fonts': { # Same as 24x36 Agent Brand
+            'fonts': {
                 'name': (86, 60), 'brokerage': (76, 54), 
                 'scan_label': (56, 42), 'cta1': (110, 80), 'cta2': (132, 96), 'url': (34, 26)
             }
         }
     }
 }
+
+# Dynamic Injection: Smart V1 Minimal (Canonical)
+_min_specs = SMARTSIGN_V1_MINIMAL_SPECS['sizes']
+_safe_margins = GLOBAL_PRINT_RULES['safe_margin_in']
+
+for size, s_data in _min_specs.items():
+    if size not in SPECS:
+         continue
+         
+    # 1. Global Safe Margin
+    SPECS[size]['safe_margin'] = to_pt(_safe_margins[size])
+    
+    # 2. Minimal Layout
+    SPECS[size]['smart_v1_minimal'] = {
+        'top_bar': to_pt(s_data['accent_rule_h_in']),
+        'header_band': to_pt(s_data['header_h_in']),
+        'footer_band': to_pt(s_data['footer_h_in']),
+        'qr_size': to_pt(s_data['qr']['qr_size_in']),
+        'qr_padding': to_pt(s_data['qr']['card_pad_in']),
+        'fonts': s_data['fonts']
+    }
 
 COLORS = {
     'base_text': '#0f172a',
@@ -542,7 +532,7 @@ def _draw_modern_minimal(c, l, asset, user_id):
         cursor_y -= (size_used * 0.3) # Padding
 
     # Email
-    if email:
+    if email and 'email' in spec['fonts']:
         fs = spec['fonts']['email']
         draw_fitted_text(c, email, cursor_x, cursor_y - fs[0], "Helvetica", fs[0], fs[1], left_w, align='left', color=COLORS['secondary_text'])
 

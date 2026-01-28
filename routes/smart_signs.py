@@ -233,14 +233,14 @@ def create_smart_order():
     size = request.form.get('size')
     layout_id = request.form.get('layout_id')
     
-    from services.print_catalog import SMART_SIGN_VALID_SIZES
+    from services.specs import SMARTSIGN_SIZES
     
     if not size or not layout_id:
         flash("Size and Layout are required.", "error")
         return redirect(url_for('smart_signs.order_start'))
         
-    if size not in SMART_SIGN_VALID_SIZES:
-        flash(f"Invalid size: {size}. Supported: {SMART_SIGN_VALID_SIZES}", "error")
+    if size not in SMARTSIGN_SIZES:
+        flash(f"Invalid size: {size}. Supported: {SMARTSIGN_SIZES}", "error")
         return redirect(url_for('smart_signs.order_start'))
 
     # Strict Product Rules

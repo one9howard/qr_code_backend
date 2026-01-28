@@ -14,7 +14,8 @@ os.environ.setdefault("SECRET_KEY", "mock-secret")
 os.environ.setdefault("PRINT_JOBS_TOKEN", "mock-token")
 os.environ.setdefault("FLASK_ENV", "development")
 
-from services.pdf_smartsign import generate_smartsign_pdf, SPECS, SIGN_SIZES, SmartSignLayout
+from services.pdf_smartsign import generate_smartsign_pdf, SPECS, SmartSignLayout
+from services.specs import SMARTSIGN_SIZES
 
 from utils.storage import get_storage
 from utils.pdf_preview import render_pdf_to_web_preview
@@ -35,7 +36,14 @@ WORST_CASE_ASSET = {
 
 LAYOUTS = ['smart_v1_minimal', 'smart_v1_agent_brand', 'smart_v1_photo_banner']
 # Option A: Strict Sizes
-SIZES = ['18x24', '24x36', '36x24']
+SIZES = SMARTSIGN_SIZES
+
+# Canonical Dimensions (Inches)
+SIGN_SIZES = {
+    '18x24': {'width_in': 18, 'height_in': 24},
+    '24x36': {'width_in': 24, 'height_in': 36},
+    '36x24': {'width_in': 36, 'height_in': 24},
+}
 
 def get_safe_rect(size_key):
     """Calculate safe rect in PDF points (0,0 at bottom-left of TRIM)."""

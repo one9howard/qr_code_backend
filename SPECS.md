@@ -1,202 +1,191 @@
 # SPECS.md — Print + Layout Specifications (Single Source of Truth)
 
-This document is the canonical specification for print products, layouts, sizing, bleed/safe zones,
-typography constraints, and preview rendering constraints. Code must either:
-1) Load these values directly, or
-2) Mirror them exactly and pass `scripts/check_specs_sync.py`.
+This file is **AUTO-GENERATED** from `services/specs.py`.
 
----
+Do not hand-edit the generated content. Instead:
+1) edit `services/specs.py`
+2) run:
+```bash
+python scripts/generate_specs_md.py
+commit the updated SPECS.md
 
-# 1) Canonical Sizes
+<!-- BEGIN AUTO-GENERATED SPECS (DO NOT EDIT) -->
 
-## 1.1 SmartSign (Purchasable Sizes — Reality A)
-SmartSign is purchasable in **3 sizes only**:
-- 18x24 (portrait)
-- 24x36 (portrait)
-- 36x24 (landscape)
+1) Validation Matrix (Must Match Code)
+| Product | Allowed Sizes |
+| --- | --- |
+| SmartSign | 18x24, 24x36, 36x24 |
+| Listing Sign | 12x18, 18x24, 24x36, 36x24 |
 
-Any other SmartSign size must be rejected at:
-- UI (dropdown)
-- routes validation
-- print_catalog validation
-- PDF generator dispatch
+2) Global Print Rules
+Units: 1 inch = 72 pt
 
-## 1.2 Listing Sign (Purchasable Sizes)
-Listing Sign supports **4 sizes**:
-- 12x18 (portrait)
-- 18x24 (portrait)
-- 24x36 (portrait)
-- 36x24 (landscape)
+Bleed (all sides): 0.125"
 
----
+Safe margins (from trim edge inward):
 
-# 2) Global Print Rules (All Products)
+| Size | Safe margin (in) |
+| --- | --- |
+| 12x18 | 0.5 |
+| 18x24 | 0.5 |
+| 24x36 | 0.5 |
+| 36x24 | 0.6 |
 
-## 2.1 Units
-- 1 inch = 72 points (pt)
+QR Rules (Scan Reliability)
+Minimum quiet zone: 0.25"
 
-## 2.2 Bleed
-- Bleed: 0.125" on all sides (unless explicitly overridden per product)
+White card required on dark backgrounds: True
 
-## 2.3 Safe Margins (No critical content beyond)
-Safe margin is measured from trim edge inward.
+QR rotation allowed: False (must be False)
 
-- 12x18: 0.50"
-- 18x24: 0.50"
-- 24x36: 0.50"
-- 36x24: 0.60"
+Text Fit Policy
+No overlaps allowed: True
 
-## 2.4 QR Code Rules (Scan Reliability)
-- QR must be placed on a solid, high-contrast background.
-- QR must have a quiet zone (padding) of at least **0.25"** on all sides.
-- If on a dark/colored background, QR must be placed on a **white card** with padding.
-- QR should be axis-aligned (no rotation).
+Priority (highest first): agent_name, phone, cta, url, brokerage, email
 
-## 2.5 Text Fit Rules (No overlaps allowed)
-- No layout may allow overlap or clipping.
-- When a text block cannot fit:
-  1) shrink-to-fit down to min font size,
-  2) if still failing, truncate with ellipsis,
-  3) if still failing (rare), drop lowest-priority line (email, secondary text).
+Overflow order: shrink_to_min, ellipsis, drop_lowest_priority
 
-Priority: Agent Name > Phone > CTA > URL > Brokerage > Email.
+3) SmartSign
+Supported Layout IDs
+- smart_v1_photo_banner
+- smart_v1_minimal
+- smart_v1_agent_brand
 
----
+smart_v1_minimal (Agent-First Minimal)
+Background: white
 
-# 3) SmartSign Layout Specs
+Email enabled by default: False
 
-## 3.1 Supported Layout IDs
-- smart_v1_photo_banner (existing)
-- smart_v1_minimal (Agent-First Minimal) — default recommended
-- smart_v1_agent_brand (premium variant; secondary)
+Accent rule default: #007AFF
 
----
+### Size: 18x24
+- Header height: **3.4"**
+- Footer height: **3.1"**
+- Accent rule height: **0.1"** (optional)
 
-## 3.2 smart_v1_minimal (Agent-First Minimal)
+**Header**
+- Headshot: **2.2"**
+- Headshot inset: **0.25"**
+- Gap headshot→text: **0.3"**
 
-### Visual Structure
-1. Header: headshot + name + phone (+ optional brokerage)
-2. Center: QR in white rounded card with border + padding
-3. Footer: CTA + URL
+**Fonts (start/min pt)**
+- Name: **64/44** (2 lines max)
+- Phone: **52/38** (single-line)
+- Brokerage: **38/28** (single-line, ellipsis)
+- CTA: **64/44**
+- URL: **34/26**
 
-### Global style
-- Background: white
-- Accent: optional thin rule only (no heavy color band)
-- Email: OFF by default (optional; must not degrade name/phone)
+**Leading**
+- Name: **1.22**
+- Phone: **1.15**
+- CTA: **1.18**
+- URL: **1.1**
 
-### Size: 18x24 (Portrait)
-Trim: 18w × 24h  
-Header height: 3.40"  
-Footer height: 3.10"  
-Accent rule: 0.10" (optional)
+**Gaps (inches)**
+- Name→Phone: **0.12"**
+- CTA→URL: **0.1"**
+- Header pad: **0.15"**
+- Footer pad: **0.15"**
+- Brokerage→Name gap: **0.25"**
 
-Header:
-- Headshot: 2.20"
-- Headshot inset: 0.25"
-- Gap headshot→text: 0.30"
-- Name: max 64pt / min 44pt, 2 lines max, leading 1.22
-- Phone: max 52pt / min 38pt, single-line
-- Brokerage (optional): max 38pt / min 28pt, single-line, right-aligned
+**QR card**
+- QR size: **7.2"**
+- Card padding: **0.55"**
+- Card radius: **0.35"**
+- Card border: **2pt**, `#E2E8F0`
 
-QR card:
-- QR size: 7.20"
-- Card padding: 0.55"
-- Card outer: 8.30"
-- Radius: 0.35"
-- Border: 2pt, #E2E8F0
+**Defaults**
+- CTA text: `Price + Photos + 3D Tour`
 
-Footer:
-- CTA: max 64pt / min 44pt (prefer 1 line; 2 lines allowed if >= min)
-- URL: max 34pt / min 26pt
-- Default CTA: “Price + Photos + 3D Tour”
-- URL format: insite.co/r/XXXX1234
+### Size: 24x36
+- Header height: **4.9"**
+- Footer height: **4.4"**
+- Accent rule height: **0.12"** (optional)
 
-### Size: 24x36 (Portrait)
-Trim: 24w × 36h  
-Header: 4.90"  
-Footer: 4.40"  
-Accent: 0.12"
+**Header**
+- Headshot: **3.1"**
+- Headshot inset: **0.3"**
+- Gap headshot→text: **0.4"**
 
-Header:
-- Headshot: 3.10"
-- Inset: 0.30"
-- Gap: 0.40"
-- Name: max 92pt / min 64pt, 2 lines max, leading 1.20
-- Phone: max 76pt / min 54pt
-- Brokerage: max 56pt / min 40pt, single-line
+**Fonts (start/min pt)**
+- Name: **92/64** (2 lines max)
+- Phone: **76/54** (single-line)
+- Brokerage: **56/40** (single-line, ellipsis)
+- CTA: **92/64**
+- URL: **46/34**
 
-QR card:
-- QR: 10.60"
-- Pad: 0.70"
-- Outer: 12.00"
-- Radius: 0.45"
-- Border: 3pt, #E2E8F0
+**Leading**
+- Name: **1.2**
+- Phone: **1.15**
+- CTA: **1.18**
+- URL: **1.1**
 
-Footer:
-- CTA: max 92pt / min 64pt
-- URL: max 46pt / min 34pt
+**Gaps (inches)**
+- Name→Phone: **0.14"**
+- CTA→URL: **0.12"**
+- Header pad: **0.18"**
+- Footer pad: **0.18"**
+- Brokerage→Name gap: **0.3"**
 
-### Size: 36x24 (Landscape)
-Trim: 36w × 24h  
-Header: 3.80"  
-Footer: 3.60"  
-Accent: 0.10"
+**QR card**
+- QR size: **10.6"**
+- Card padding: **0.7"**
+- Card radius: **0.45"**
+- Card border: **3pt**, `#E2E8F0`
 
-Header:
-- Headshot: 2.60"
-- Inset: 0.30"
-- Gap: 0.35"
-- Name: max 72pt / min 50pt, 2 lines max, leading 1.22
-- Phone: max 62pt / min 44pt
-- Brokerage: max 48pt / min 34pt, single-line
+**Defaults**
+- CTA text: `Price + Photos + 3D Tour`
 
-QR card:
-- QR: 8.80"
-- Pad: 0.65"
-- Outer: 10.10"
-- Radius: 0.40"
-- Border: 3pt, #E2E8F0
+### Size: 36x24
+- Header height: **3.8"**
+- Footer height: **3.6"**
+- Accent rule height: **0.1"** (optional)
 
-Footer:
-- CTA: max 72pt / min 50pt
-- URL: max 40pt / min 30pt
+**Header**
+- Headshot: **2.6"**
+- Headshot inset: **0.3"**
+- Gap headshot→text: **0.35"**
 
----
+**Fonts (start/min pt)**
+- Name: **72/50** (2 lines max)
+- Phone: **62/44** (single-line)
+- Brokerage: **48/34** (single-line, ellipsis)
+- CTA: **72/50**
+- URL: **40/30**
 
-# 4) Listing Sign Specs (Product-Level)
+**Leading**
+- Name: **1.22**
+- Phone: **1.15**
+- CTA: **1.18**
+- URL: **1.1**
 
-Listing sign supports 4 sizes: 12x18, 18x24, 24x36, 36x24.
-(Define listing layouts separately in code; this section defines only product-level constraints.)
+**Gaps (inches)**
+- Name→Phone: **0.12"**
+- CTA→URL: **0.1"**
+- Header pad: **0.16"**
+- Footer pad: **0.16"**
+- Brokerage→Name gap: **0.28"**
 
-## 4.1 Listing Sign Content Hierarchy (Minimum)
-- Address (or listing title) must be most prominent
-- Price must be prominent if included
-- QR must obey QR rules (quiet zone + contrast)
-- Agent contact must never be smaller than URL text
+**QR card**
+- QR size: **8.8"**
+- Card padding: **0.65"**
+- Card radius: **0.4"**
+- Card border: **3pt**, `#E2E8F0`
 
-## 4.2 Listing Sign Safe Margins + Bleed
-Use Global rules unless specific print provider requires overrides.
+**Defaults**
+- CTA text: `Price + Photos + 3D Tour`
 
----
 
-# 5) Web Preview Rendering Constraints
+4) Listing Sign (Product Constraints)
+Supported sizes: 12x18, 18x24, 24x36, 36x24
 
-The web preview must be:
-- Fast (no hangs on large PDFs)
-- Consistent enough to validate layout (no “preview mismatch” surprises)
+Content hierarchy: address_or_title, price_if_present, qr, agent_contact
 
-## 5.1 Preview Target
-- Target longest side: 1400–1800px (implementation may clamp)
-- DPI must be dynamically scaled by page size and clamped to avoid huge rasterization.
-- Preview must preserve aspect ratio; no cropping.
+Rule: Agent contact must not be smaller than URL text.
 
----
-
-# 6) Validation Matrix (Must Match print_catalog)
-
-| Product      | Allowed Sizes                              |
-|-------------|---------------------------------------------|
-| SmartSign    | 18x24, 24x36, 36x24                        |
-| Listing Sign | 12x18, 18x24, 24x36, 36x24                 |
-
-Any request outside matrix must be rejected.
+Appendix: Machine-Readable Signature (DO NOT EDIT BY HAND)
+{
+  "source": "services/specs.py:SPECS_SIGNATURE",
+  "specs_signature_version": 1
+}
+<!-- END AUTO-GENERATED SPECS (DO NOT EDIT) -->
