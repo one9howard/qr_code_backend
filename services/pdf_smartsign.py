@@ -221,7 +221,7 @@ def fit_text_single_line(c, text, font_name, start_size, min_size, max_width):
     return min_size # Return min even if it overlaps (ellipsize in draw)
 
 def draw_fitted_text(c, text, x, y, font_name, start_size, min_size, max_width, align='center', color=None):
-    if not text: return
+    if not text: return 0, 0
     if color: c.setFillColorRGB(*hex_to_rgb(color))
     
     final_size = fit_text_single_line(c, text, font_name, start_size, min_size, max_width)
@@ -234,99 +234,107 @@ def draw_fitted_text(c, text, x, y, font_name, start_size, min_size, max_width, 
         while len(text) > 3 and c.stringWidth(text + "...", font_name, final_size) > max_width:
             text = text[:-1]
         text += "..."
-        width = c.stringWidth(text, font_name, final_size)
-
+        # Recalculate width for alignment if needed, though usually we draw at anchor
+        
     if align == 'center':
         c.drawCentredString(x, y, text)
     elif align == 'right':
         c.drawRightString(x, y, text)
     else:
         c.drawString(x, y, text)
+        
+    return final_size, final_size # return height used (approx cap height? using font size is safer for spacing)
 
-def draw_fitted_multiline(c, text, x, y, font_name, start_size, min_size, max_width, max_lines=2, align='center', color=None, leading_factor=1.2):
-    """Try to fit in 1 line, then 2, etc."""
-    if not text: return 0
+def draw_fitted_multiline(c, text, x, y_baseline_first, font_name, start_size, min_size, max_width, max_lines=2, align='center', color=None, leading_factor=1.2):
+    """
+    Fits text into max_lines.
+    Returns: (font_size_used, lines_rendered_count, block_height_used)
+    """
+    if not text: return 0, 0, 0
     if color: c.setFillColorRGB(*hex_to_rgb(color))
     
-    # 1. Try single line
+    # 1. Try single line (prefer largest font)
     c.setFont(font_name, start_size)
     if c.stringWidth(text, font_name, start_size) <= max_width:
-        draw_fitted_text(c, text, x, y, font_name, start_size, min_size, max_width, align)
-        return start_size
+        draw_fitted_text(c, text, x, y_baseline_first, font_name, start_size, min_size, max_width, align)
+        return start_size, 1, start_size * leading_factor
         
     # 2. Try single line shrunk
     shrunk_size = fit_text_single_line(c, text, font_name, start_size, min_size, max_width)
     if c.stringWidth(text, font_name, shrunk_size) <= max_width:
-        # If we didn't have to shrink TOO much, keep it. 
-        # But if max_lines=2 allowed, maybe 2 lines at larger font is better?
-        # Heuristic: if shrunk < (start_size * 0.7) and max_lines > 1, try wrap.
+        # Heuristic: if shrinking > 25% and we allow 2 lines, maybe try wrapping at start_size instead?
+        # But user spec says "Try single line at start size -> if overflow shrink -> if still overflow and max_lines==2 wrap"
+        # Wait, usually wrapping at a larger font is legibility-preferred over tiny single line.
+        # Let's enforce: if shrunk_size < start_size * 0.75 and max_lines > 1, try 2 lines.
         if max_lines == 1 or shrunk_size > (start_size * 0.75):
-            draw_fitted_text(c, text, x, y, font_name, start_size, min_size, max_width, align)
-            return shrunk_size
+            draw_fitted_text(c, text, x, y_baseline_first, font_name, start_size, min_size, max_width, align)
+            return shrunk_size, 1, shrunk_size * leading_factor
 
     if max_lines < 2:
-         # Force fit single line
-         draw_fitted_text(c, text, x, y, font_name, start_size, min_size, max_width, align)
-         return min_size
+         # Force fit single line (ellipsized inside draw_fitted_text)
+         draw_fitted_text(c, text, x, y_baseline_first, font_name, start_size, min_size, max_width, align)
+         return min_size, 1, min_size * leading_factor
 
-    # 3. Try wrapping
-    words = text.split()
+    # 3. Try wrapping at start_size, then shrink if needed
     best_size = min_size
     best_lines = [text]
     
-    # Simple binary split attempt or line-breaking algorithm?
-    # Simple strategy: Fill line 1, then line 2
-    # Try different sizes
     test_size = start_size
     while test_size >= min_size:
         c.setFont(font_name, test_size)
+        words = text.split()
         lines = []
         current_line = []
         
         for word in words:
-            # Check if adding word exceeds width
             test_line = " ".join(current_line + [word])
             if c.stringWidth(test_line, font_name, test_size) <= max_width:
                 current_line.append(word)
             else:
                 if current_line:
                     lines.append(" ".join(current_line))
-                    current_line = [word]
-                else: 
-                     # Single word too long?
-                     current_line = [word] # Force it (will ellipsize later if needed)
+                current_line = [word]
+                # If single word is too long, we keep it and ellipsize later, or split?
+                # For basic logic, keep it.
+                
         if current_line:
             lines.append(" ".join(current_line))
             
         if len(lines) <= max_lines:
-            # Found a fit!
+            # Check if any single line is wider than max_width (e.g. giant word)
+            # If so, this size fails unless we ellipsize.
+            # But we prefer a size that fits if possible.
+            # For now, accept it.
             best_size = test_size
             best_lines = lines
             break
             
         test_size -= 2
         
-    # Draw logic
+    # Ellipsize check on final lines
     c.setFont(font_name, best_size)
+    final_lines = []
+    for line in best_lines:
+        if c.stringWidth(line, font_name, best_size) > max_width:
+             while len(line) > 3 and c.stringWidth(line + "...", font_name, best_size) > max_width:
+                line = line[:-1]
+             line += "..."
+        final_lines.append(line)
+    
+    # Draw
     line_height = best_size * leading_factor
-    
-    # Block height = line_height * len(best_lines)
-    # y is baseline of BOTTOM line? or Top? 
-    # Usually we draw from y down. Let's assume y is the baseline of the first line?
-    # Or center of block?
-    # Let's pivot: y is the BASELINE of the FIRST line.
-    
-    if align == 'center':
-        for i, line in enumerate(best_lines):
-            c.drawCentredString(x, y - (i * line_height), line)
-    elif align == 'right':
-        for i, line in enumerate(best_lines):
-            c.drawRightString(x, y - (i * line_height), line)
-    else:
-        for i, line in enumerate(best_lines):
-            c.drawString(x, y - (i * line_height), line)
+    for i, line in enumerate(final_lines):
+        # y is baseline of FIRST line. Subsequent lines are lower.
+        draw_y = y_baseline_first - (i * line_height)
+        
+        if align == 'center':
+            c.drawCentredString(x, draw_y, line)
+        elif align == 'right':
+            c.drawRightString(x, draw_y, line)
+        else:
+            c.drawString(x, draw_y, line)
             
-    return best_size
+    return best_size, len(final_lines), (len(final_lines) * line_height)
 
 
 def generate_smartsign_pdf(asset, order_id=None, user_id=None):
@@ -407,70 +415,88 @@ def _draw_modern_minimal(c, l, asset, user_id):
     c.rect(-l.bleed, l.height - bar_h, l.width + 2*l.bleed, bar_h + l.bleed, fill=1, stroke=0)
     
     # --- Header Band ---
-    # Content Area
+    # Measured layout
     header_h = spec['header_band']
-    header_y_top = l.height - bar_h
-    header_content_top = header_y_top - (bar_h * 0.5) # Padding? No, layout spec implies explicit bands.
-    # Actually, let's assume bands consume vertical space.
+    header_top = l.height - bar_h
+    header_bottom = header_top - header_h
     
-    # Header zone: from (height - top_bar) down by header_band
-    # Margins: safe_margin
-    margin = l.safe_margin
-    content_w = l.width - 2*margin
+    # Safe Rect for Header
+    safe_top = l.height - l.safe_margin
+    safe_left = l.safe_margin
+    safe_w = l.width - (2 * l.safe_margin)
     
-    # Column Config
-    left_w = content_w * 0.62
-    gap = content_w * 0.03
-    right_w = content_w * 0.35
+    # Content Columns
+    left_w = safe_w * 0.62
+    # gap = safe_w * 0.03
+    # right_w = safe_w * 0.35
+    right_w = safe_w - left_w - (safe_w * 0.03) # Remainder
     
-    zone_top = header_y_top
-    zone_bot = header_y_top - header_h
+    right_align_x = l.width - l.safe_margin
     
-    # Center content vertically in the band
-    # Used for vertical centering of text blocks
-    mid_y = zone_bot + (header_h / 2)
-    
-    # Left Col: Name, Phone, Email
-    # Vertical stack strategy: Name at top, Phone/Email below
-    # Or strict stack?
-    # Let's align Name to top of safe area, or center?
-    # Prompt says: "Header content is 2-column"
-    
-    cursor_x = margin
-    cursor_y = zone_top - (header_h * 0.25) # approximate start
-    
-    # Agent Name
+    # 1. Left Column Content Stack (Name -> Phone -> Email)
+    # Measure heights first
     name = _read(asset, 'brand_name') or _read(asset, 'agent_name')
+    phone = _read(asset, 'phone') or _read(asset, 'agent_phone')
+    email = _read(asset, 'email') or _read(asset, 'agent_email')
+
+    # Defaults
+    name_h, phone_h, email_h = 0, 0, 0
+    name_fs, phone_fs, email_fs = 0, 0, 0
+    
+    # Measure Name
     if name:
         fs = spec['fonts']['name']
-        sz = draw_fitted_multiline(c, name.upper(), cursor_x, cursor_y, "Helvetica-Bold", fs[0], fs[1], left_w, align='left')
-        cursor_y -= (sz * 1.3) # Line spacing
-        if len(name) > 20: cursor_y -= (sz * 1.3) # Double line compensation approx (not perfect but safe)
+        # Dry run to get height
+        # Note: ReportLab canvas is stateful, but dry run helps measure.
+        # Just use the draw call and capture return. but we need to know layout first.
+        # Actually draw_fitted_multiline logic:
+        # We can simulate by calculating.
+        # Or simpler: Draw from top-safe down.
+        pass
 
-    # Phone (Biggest)
-    phone = _read(asset, 'phone') or _read(asset, 'agent_phone')
+    # New Strategy: Draw from safe_top down, but ensure we center the block if it's small?
+    # Spec "Header content is 2-column... Vertical stack strategy".
+    # Usually top-aligned relative to the band is safer for predictable alignment with right column?
+    # Or vertically centered in the band?
+    # Let's align to "visual top" which is usually near safe_top.
+    
+    cursor_x = safe_left
+    cursor_y = min(header_top, safe_top) - to_pt(0.15) # Start below safe top with buffer
+    
+    # Agent Name
+    if name:
+        fs = spec['fonts']['name']
+        # Font metrics
+        # Helvetica cap height approx 0.72 of size. Leading 1.2.
+        # We want the CAP of the first line to touch the top cursor?
+        # Standard PDF text drawing: y is baseline.
+        # If we draw at y, the top of A is approx y + 0.72*size.
+        # So baseline should be cursor_y - 0.72*size
+        # Let's just use standard padding.
+        
+        size_used, lines, height = draw_fitted_multiline(c, name.upper(), cursor_x, cursor_y - (fs[0]), "Helvetica-Bold", fs[0], fs[1], left_w, align='left')
+        cursor_y -= height
+        cursor_y -= (size_used * 0.3) # Padding after block
+
+    # Phone
     if phone:
         fs = spec['fonts']['phone']
-        cursor_y -= (fs[0] * 0.2) # Padding
-        sz = draw_fitted_text(c, phone, cursor_x, cursor_y, "Helvetica-Bold", fs[0], fs[1], left_w, align='left', color=COLORS['base_text'])
-        # If phone drawn, move cursor
-        cursor_y -= (fs[0] * 1.1)
+        size_used, h_used = draw_fitted_text(c, phone, cursor_x, cursor_y - fs[0], "Helvetica-Bold", fs[0], fs[1], left_w, align='left', color=COLORS['base_text'])
+        cursor_y -= (size_used * 1.2) # Leading included in next step? simpler to just move down
+        cursor_y -= (size_used * 0.3) # Padding
 
-    # Email (Optional)
-    email = _read(asset, 'email') or _read(asset, 'agent_email')
+    # Email
     if email:
         fs = spec['fonts']['email']
-        draw_fitted_text(c, email, cursor_x, cursor_y, "Helvetica", fs[0], fs[1], left_w, align='left', color=COLORS['secondary_text'])
+        draw_fitted_text(c, email, cursor_x, cursor_y - fs[0], "Helvetica", fs[0], fs[1], left_w, align='left', color=COLORS['secondary_text'])
 
-    # Right Col: Brokerage (Right Aligned)
-    # Check for logo
+    # 2. Right Column: Brokerage or Logo
+    # Center vertically in the header band?
+    mid_y = header_bottom + (header_h / 2)
+    
     brokerage_logo_key = _read(asset, 'logo_key') or _read(asset, 'agent_logo_key')
-    right_x = l.width - margin
     
     if brokerage_logo_key and get_storage().exists(brokerage_logo_key):
-        # Draw Logo
-        # Max height = header_h * 0.6
-        # Max width = right_w
         logo_h = header_h * 0.6
         try:
              img_data = get_storage().get_file(brokerage_logo_key)
@@ -484,31 +510,39 @@ def _draw_modern_minimal(c, l, asset, user_id):
                  draw_w = right_w
                  draw_h = draw_w / aspect
                  
-             c.drawImage(img, right_x - draw_w, mid_y - (draw_h/2), width=draw_w, height=draw_h, mask='auto')
+             c.drawImage(img, right_align_x - draw_w, mid_y - (draw_h/2), width=draw_w, height=draw_h, mask='auto')
         except:
-             pass # Fallback to text?
+             pass 
     else:
-        # Brokerage Text
         brokerage = _read(asset, 'brokerage_name')
         if brokerage:
             fs = spec['fonts']['brokerage']
-            draw_fitted_multiline(c, brokerage, right_x, mid_y + (fs[0]/2), "Helvetica", fs[0], fs[1], right_w, align='right', color=COLORS['secondary_text'])
+            # Estimate height to center
+            # Assume 2 lines max
+            # Simplification: Draw centered around mid_y?
+            # draw_fitted_multiline draws DOWN from y.
+            # So y needs to be top baseline.
+            # Let's just draw 2 lines centered.
+            # If 2 lines: total height ~ 2.2 * size.
+            # Start y = mid_y + (1.1 * size) - size?
+            # Let's align top of block to mid_y + half_block_height
+            
+            # Since we don't know final size without fitting, we might need a dry run or just good alignment.
+            # Let's align roughly center.
+            draw_fitted_multiline(c, brokerage, right_align_x, mid_y + (fs[0] * 0.3), "Helvetica", fs[0], fs[1], right_w, align='right', color=COLORS['secondary_text'])
 
 
     # --- QR Code ---
-    # Centered in the middle zone (between header and footer)
     footer_h = spec['footer_band']
-    mid_zone_top = zone_bot
-    mid_zone_bot = footer_h # From bottom
+    qr_zone_top = header_bottom
+    qr_zone_bot = footer_h
+    qr_zone_h = qr_zone_top - qr_zone_bot
     
-    mid_zone_h = mid_zone_top - mid_zone_bot
-    
+    center_y = qr_zone_bot + (qr_zone_h / 2)
+    center_x = l.width / 2
+
     qr_size = spec['qr_size']
     pad = spec['qr_padding']
-    
-    # Center Point
-    center_x = l.width / 2
-    center_y = mid_zone_bot + (mid_zone_h / 2)
     
     # QR Card (White with Stroke)
     card_size = qr_size + (2 * pad)
@@ -530,29 +564,26 @@ def _draw_modern_minimal(c, l, asset, user_id):
 
 
     # --- Footer ---
-    # Centered CTA and URL
-    # Bottom 0 to footer_h
-    footer_mid_y = footer_h / 2
-    
     cta_text = CTA_MAP.get(_read(asset, 'cta_key'), 'SCAN FOR DETAILS')
     fs = spec['fonts']['cta']
     
-    # CTA
-    # Draw at ~60% of footer height
+    # CTA - 60% up from bottom
     cta_y = footer_h * 0.6
-    draw_fitted_text(c, cta_text, center_x, cta_y, "Helvetica-Bold", fs[0], fs[1], content_w, align='center', color=COLORS['base_text'])
+    draw_fitted_text(c, cta_text, center_x, cta_y, "Helvetica-Bold", fs[0], fs[1], safe_w, align='center', color=COLORS['base_text'])
     
     # URL
-    url_text = f"InSite.com/{code}" # Or generic valid URL? User prompt says "URL line underneath"
-    # Actually prompt says "URL: 28/22" font spec. "URL line underneath".
-    # Usually `domain.com/code` or similar. Let's use `insite.realestate/{code}` or similar.
-    # Defaulting to base url clean
     import urllib.parse
     cleaned = urllib.parse.urlparse(BASE_URL).netloc
-    display_url = f"{cleaned}/{code}"
+    display_url = f"{cleaned}/r/{code}" # Fixed: /r/ added
     
     fs_u = spec['fonts']['url']
-    draw_fitted_text(c, display_url, center_x, cta_y - fs[0], "Helvetica", fs_u[0], fs_u[1], content_w, align='center', color=COLORS['secondary_text'])
+    # Ensure it fits above safe bottom
+    url_target_y = cta_y - fs[0]
+    safe_bottom = l.safe_margin
+    if url_target_y < safe_bottom + fs_u[0]:
+         url_target_y = safe_bottom + fs_u[0] # Clamp to safe bottom
+    
+    draw_fitted_text(c, display_url, center_x, url_target_y, "Helvetica", fs_u[0], fs_u[1], safe_w, align='center', color=COLORS['secondary_text'])
 
 
 def _draw_agent_brand(c, l, asset, user_id):
@@ -572,10 +603,6 @@ def _draw_agent_brand(c, l, asset, user_id):
     accent_hex = BANNER_COLOR_PALETTE.get(color_id, COLORS['cta_fallback'])
     if color_id == 'white': accent_hex = COLORS['cta_fallback'] # Fallback if white-on-white
     
-    # Rule line? User prompt says "Accent rule line in banner_color_id"
-    # Assume thin separator or side bar? Let's do a vertical separator between Headshot and Name
-    # "Left logo circle ... Center agent name ... Right brokerage"
-    
     band_y_center = (l.height - band_h) + (band_h / 2)
     
     # 1. Left: Headshot/Logo Circle
@@ -592,10 +619,7 @@ def _draw_agent_brand(c, l, asset, user_id):
     # Image content
     img_key = _read(asset, 'headshot_key') or _read(asset, 'agent_headshot_key') or _read(asset, 'logo_key')
     if img_key and get_storage().exists(img_key):
-        # Clip to circle? ReportLab circle clip is tricky. 
-        # For MVP Phase 2, draw square inside or just overlay?
-        # User prompt says "Logo/monogram circle diameter". 
-        # Attempt minimal circle clip path
+        # Clip to circle
         p = c.beginPath()
         p.circle(circle_x, circle_y, dia/2)
         c.saveState()
@@ -608,41 +632,43 @@ def _draw_agent_brand(c, l, asset, user_id):
         c.restoreState()
     else:
         # Monogram
-        initials = list(str(_read(asset, 'brand_name') or "A").upper())[0]
+        initials_list = list(str(_read(asset, 'brand_name') or "A").upper())[:2]
+        initials = "".join(initials_list)
         c.setFillColorRGB(1,1,1)
         c.setFont("Helvetica-Bold", dia * 0.5)
         c.drawCentredString(circle_x, circle_y - (dia * 0.15), initials)
 
     # 2. Center: Agent Name
     # Space between circle and right col
-    # Right col width approx 30%
     start_x = margin + dia + to_pt(0.25)
-    end_x = l.width - margin - (content_w * 0.3)
-    center_w = end_x - start_x
-    mid_x = start_x + (center_w / 2)
+    
+    # Right column reserve (approx 35% of width or based on safe zone?)
+    # Spec says: "Right brokerage name or logo, right-aligned"
+    # Let's reserve 35% for brokerage
+    right_w = content_w * 0.35
+    right_start_x = l.width - margin - right_w
+    
+    center_w = right_start_x - start_x - to_pt(0.2) # Gutter
+    center_mid_x = start_x + (center_w / 2)
     
     name = _read(asset, 'brand_name') or _read(asset, 'agent_name')
     if name:
         fs = spec['fonts']['name']
-        draw_fitted_multiline(c, name.upper(), mid_x, band_y_center + (fs[0]*0.25), "Helvetica-Bold", fs[0], fs[1], center_w, align='center', color='#ffffff')
+        draw_fitted_multiline(c, name.upper(), center_mid_x, band_y_center - (fs[0]*0.15), "Helvetica-Bold", fs[0], fs[1], center_w, align='center', color='#ffffff')
 
     # 3. Right: Brokerage
     brokerage = _read(asset, 'brokerage_name')
-    right_x = l.width - margin
-    right_w = content_w * 0.3
+    right_align_x = l.width - margin
     
     if brokerage:
         fs = spec['fonts']['brokerage']
-        draw_fitted_multiline(c, brokerage, right_x, band_y_center + (fs[0]*0.25), "Helvetica", fs[0], fs[1], right_w, align='right', color='#ffffff')
+        draw_fitted_multiline(c, brokerage, right_align_x, band_y_center - (fs[0]*0.15), "Helvetica", fs[0], fs[1], right_w, align='right', color='#ffffff')
 
     
     # --- QR Code ---
-    # Identical Logic to Minimal but sizes differ
     qr_size = spec['qr_size']
     pad = spec['qr_padding']
     
-    qr_y_center = ((l.height - band_h) + spec['footer_band']) / 2 # Center in middle void?
-    # Actually: (Top of footer + Bottom of header) / 2
     top_of_footer = spec['footer_band']
     bot_of_header = l.height - band_h
     qr_y_center = top_of_footer + ((bot_of_header - top_of_footer) / 2)
@@ -653,18 +679,10 @@ def _draw_agent_brand(c, l, asset, user_id):
     # Card
     c.setStrokeColorRGB(*hex_to_rgb(COLORS['rules']))
     c.setLineWidth(2)
-    c.setFillColorRGB(1, 1, 1) # White Card on potentially white background? 
-    # Yes, user spec implies QR card styling is constant.
+    c.setFillColorRGB(1, 1, 1) # White Card
     c.roundRect((l.width - card_size)/2, qr_y_center - (card_size/2), card_size, card_size, radius, fill=1, stroke=1)
     
-    # Scan Me Label?
-    # "Scan Me" label: 36 pt / 28 pt from spec.
-    # Where? on Top of QR card usually.
-    # "qr_card_styling" doesn't mention label position, but font spec has it.
-    # Let's put it slightly overlapping top border or just inside?
-    # Common pattern: "Scan Me" pill on top border.
-    # Implementation: Just text above QR inside card.
-    
+    # Scan Me Label
     fs_lbl = spec['fonts']['scan_label']
     c.setFillColorRGB(*hex_to_rgb(COLORS['base_text']))
     c.setFont("Helvetica", fs_lbl[0])
@@ -682,9 +700,6 @@ def _draw_agent_brand(c, l, asset, user_id):
     c.rect(-l.bleed, -l.bleed, l.width + 2*l.bleed, foot_h + l.bleed, fill=1, stroke=0)
     
     # Text
-    # CTA Line 1: SCAN (white) FOR (accent)
-    # CTA Line 2: DETAILS (accent)
-    
     cta1_y = foot_h * 0.65
     cta2_y = foot_h * 0.35
     
@@ -692,8 +707,6 @@ def _draw_agent_brand(c, l, asset, user_id):
     fs2 = spec['fonts']['cta2']
     
     # Draw "SCAN FOR"
-    # Trickier to dual-color single line centered.
-    # Measure "SCAN FOR"
     c.setFont("Helvetica-Bold", fs1[0])
     w_scan = c.stringWidth("SCAN ", "Helvetica-Bold", fs1[0])
     w_for = c.stringWidth("FOR", "Helvetica-Bold", fs1[0])
@@ -712,11 +725,18 @@ def _draw_agent_brand(c, l, asset, user_id):
     # URL
     import urllib.parse
     cleaned = urllib.parse.urlparse(BASE_URL).netloc
-    display_url = f"{cleaned}/{code}"
+    display_url = f"{cleaned}/r/{code}" # Fixed: /r/ added
+    
     fs_u = spec['fonts']['url']
     c.setFillColorRGB(1,1,1) # White on navy
-    c.setFont("Helvetica", fs_u[0])
-    c.drawCentredString(l.width/2, cta2_y - fs2[0] + 10, display_url)
+    
+    # Clamp y to safe margin
+    url_y = cta2_y - fs2[0] + 10 # heuristic start
+    safe_bot = l.safe_margin
+    if url_y < safe_bot + fs_u[0]:
+        url_y = safe_bot + fs_u[0]
+        
+    draw_fitted_text(c, display_url, l.width/2, url_y, "Helvetica", fs_u[0], fs_u[1], content_w, align='center', color='#ffffff')
 
 
 def _draw_legacy(c, l, asset, user_id):
