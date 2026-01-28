@@ -18,7 +18,6 @@ SIGN_SIZES = {
     "12x18": {"width_in": 12, "height_in": 18, "dpi": 300},
     "18x24": {"width_in": 18, "height_in": 24, "dpi": 300},  # Default
     "24x36": {"width_in": 24, "height_in": 36, "dpi": 300},
-    "36x18": {"width_in": 36, "height_in": 18, "dpi": 300},
     "36x24": {"width_in": 36, "height_in": 24, "dpi": 300},
 }
 

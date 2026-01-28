@@ -132,10 +132,15 @@ def validate_order_print_spec(order):
     if not get("print_product"):
         return ["Missing print_product"]
 
-    # Validate SKU
-    ok, reason = validate_sku(get("print_product"), get("material"), get("sides"))
+    # Validate SKU (print_product + size + material)
+    ok, reason = validate_sku(get("print_product"), get("print_size"), get("material"))
     if not ok:
         errors.append(f"Invalid SKU: {reason}")
+
+    # Validate sides (single|double) when present
+    sides = get("sides")
+    if sides and sides not in ("single", "double"):
+        errors.append(f"Invalid sides: {sides}")
         
     # Validate Layout
     ok, reason = validate_layout(get("print_product"), get("layout_id"))

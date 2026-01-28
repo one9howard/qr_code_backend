@@ -61,7 +61,7 @@ def render_pdf_to_web_preview(
     Args:
         pdf_key: Storage key for the PDF file
         order_id: Order ID for per-order directory structure
-        sign_size: Sign size string (e.g., "18x24", "36x18")
+        sign_size: Sign size string (e.g., "18x24", "36x24")
         max_dimension: Maximum width or height for the preview
         layout_version: Layout version for filename (defaults to LAYOUT_VERSION)
         bleed_in: Bleed in inches to crop from edges

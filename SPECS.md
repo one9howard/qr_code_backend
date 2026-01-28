@@ -7,6 +7,7 @@ Do not hand-edit the generated content. Instead:
 2) run:
 ```bash
 python scripts/generate_specs_md.py
+```
 commit the updated SPECS.md
 
 <!-- BEGIN AUTO-GENERATED SPECS (DO NOT EDIT) -->

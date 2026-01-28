@@ -24,6 +24,40 @@ function getConfig() {
     };
 }
 
+
+function getAllowedSizesForMaterial(material) {
+    // Listing sign matrix
+    if (material === 'aluminum_040') {
+        return ['18x24', '24x36', '36x24'];
+    }
+    // Default: coroplast_4mm
+    return ['12x18', '18x24', '24x36'];
+}
+
+function applyMaterialConstraints(material) {
+    const sizeSelector = document.getElementById('size-selector');
+    if (!sizeSelector) return;
+
+    const allowed = new Set(getAllowedSizesForMaterial(material));
+
+    // Enable/disable options
+    Array.from(sizeSelector.options).forEach(opt => {
+        opt.disabled = !allowed.has(opt.value);
+        // If current selection becomes disabled, clear it so we can pick a valid one
+        if (opt.disabled && opt.selected) opt.selected = false;
+    });
+
+    // Auto-correct invalid selection
+    if (!allowed.has(sizeSelector.value)) {
+        const firstValid = Array.from(sizeSelector.options).find(o => !o.disabled);
+        if (firstValid) {
+            sizeSelector.value = firstValid.value;
+            // Keep preview in sync
+            resizeSign(firstValid.value);
+        }
+    }
+}
+
 function orderSign() {
     const btn = document.getElementById('order-btn');
     const originalText = btn.innerText;
@@ -42,6 +76,12 @@ function orderSign() {
     const requestBody = {
         order_id: config.orderId
     };
+
+    // Include current selected size (prevents material/size drift)
+    const sizeSelector = document.getElementById('size-selector');
+    if (sizeSelector && sizeSelector.value) {
+        requestBody.size = sizeSelector.value;
+    }
 
     // Include material if selector exists
     const materialSelector = document.getElementById('material-selector');
@@ -136,6 +176,13 @@ function resizeSign(newSize) {
     statusEl.className = 'resize-status loading';
     sizeSelector.disabled = true;
 
+    // Prevent checkout while resize is in progress
+    const orderBtn = document.getElementById('order-btn');
+    if (orderBtn) {
+        orderBtn.style.pointerEvents = 'none';
+        orderBtn.style.opacity = '0.6';
+    }
+
     const requestBody = {
         order_id: config.orderId,
         size: newSize
@@ -193,6 +240,11 @@ function resizeSign(newSize) {
             statusEl.textContent = '';
             statusEl.className = 'resize-status';
             sizeSelector.disabled = false;
+            const orderBtn2 = document.getElementById('order-btn');
+            if (orderBtn2) {
+                orderBtn2.style.pointerEvents = 'auto';
+                orderBtn2.style.opacity = '1';
+            }
         })
         .catch(error => {
             console.error('Resize error:', error);
@@ -207,6 +259,11 @@ function resizeSign(newSize) {
             }
 
             sizeSelector.disabled = false;
+            const orderBtn2 = document.getElementById('order-btn');
+            if (orderBtn2) {
+                orderBtn2.style.pointerEvents = 'auto';
+                orderBtn2.style.opacity = '1';
+            }
 
             // Clear error after 5 seconds
             setTimeout(() => {
@@ -235,6 +292,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
         sizeSelector.addEventListener('change', (e) => {
             resizeSign(e.target.value);
+        });
+    }
+
+
+    const materialSelector = document.getElementById('material-selector');
+    if (materialSelector && sizeSelector) {
+        // Apply constraints on load and on material changes
+        applyMaterialConstraints(materialSelector.value);
+        // Ensure originalSize tracks the effective selection
+        originalSize = sizeSelector.value;
+
+        materialSelector.addEventListener('change', (e) => {
+            applyMaterialConstraints(e.target.value);
         });
     }
 });

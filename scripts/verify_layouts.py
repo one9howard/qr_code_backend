@@ -49,7 +49,7 @@ def verify_layouts():
     # Normalize paths for PDF generator
     # pdf_generator expects absolute paths or paths relative to CWD
     
-    sizes_to_test = ["18x24", "24x36", "36x18"]
+    sizes_to_test = ["12x18", "18x24", "24x36", "36x24"]
     
     for size in sizes_to_test:
         print(f"\nTesting size: {size}")

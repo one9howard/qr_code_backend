@@ -171,51 +171,10 @@ def test_assignment_rules(client, app, db, auth):
     with pytest.raises(ValueError, match="is frozen"):
         SmartSignsService.assign_asset(asset_id, None, user.id) # Unassign attempt
 
-def test_smart_sign_checkout_flow(client, app, db, auth, monkeypatch):
-    """Verify Option B: Checkout requires property_id and saves it."""
-    monkeypatch.setenv("SMARTSIGN_PRICE_CENTS", "5000")
+def test_smart_sign_checkout_endpoint_disabled(client, app, db, auth):
+    'Legacy /orders/smart-sign/checkout is intentionally disabled; canonical flow lives under /smart-signs.'
     user = auth.login_pro()
     client.post('/login', data={'email': user.email, 'password': 'password'}, follow_redirects=True)
-    
-    # 1. Create Asset (Unactivated)
-    # 1. Create Property
-    prop_id = db.execute("INSERT INTO properties (agent_id, address, beds, baths) VALUES ((SELECT id FROM agents WHERE user_id=%s), 'Checkout St', '3', '2') RETURNING id", (user.id,)).fetchone()['id']
-    db.commit()
 
-    # 2. Create Asset (Unactivated)
-    asset_row = SmartSignsService.create_asset_for_purchase(user.id, property_id=prop_id, label="Checkout Test")
-    asset_id = asset_row['id']
-    db.commit()
-    
-    # 3. Post to Checkout
-    # Mocking stripe_checkout.create_checkout_attempt and stripe.checkout.Session.create would be ideal
-    # but we can check if it fails or succeeds up to a point. 
-    # Or just check DB side effects if we mock the service.
-    
-    with patch('routes.smart_signs.create_checkout_attempt', return_value={'attempt_token': 'tok', 'idempotency_key': 'key'}), \
-         patch('routes.smart_signs.update_attempt_status'), \
-         patch('stripe.checkout.Session.create') as mock_session_create:
-        
-        mock_session_create.return_value.id = "sess_123"
-        mock_session_create.return_value.url = "http://stripe.url"
-        
-        resp = client.post("/orders/smart-sign/checkout", data={
-            "asset_id": asset_id,
-            "property_id": prop_id
-        })
-        
-        assert resp.status_code == 303 # Redirect to Stripe
-        
-        # Verify Order Created correctly
-        order = db.execute("SELECT * FROM orders WHERE sign_asset_id=%s", (asset_id,)).fetchone()
-        assert order is not None
-        assert order['property_id'] == prop_id # The Critical Option B Check
-        assert order['order_type'] == 'smart_sign'
-        assert order['stripe_checkout_session_id'] == "sess_123"
-        
-        # Verify Metadata in Stripe Call
-        args, kwargs = mock_session_create.call_args
-        metadata = kwargs['metadata']
-        assert metadata['property_id'] == str(prop_id)
-        assert metadata['purpose'] == 'smart_sign'
-
+    resp = client.post('/orders/smart-sign/checkout', data={'asset_id': 1, 'property_id': 1})
+    assert resp.status_code == 404

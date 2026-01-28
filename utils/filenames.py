@@ -58,7 +58,7 @@ def make_sign_asset_basename(
     
     Args:
         order_id: The order ID
-        size: Sign size (e.g., "18x24", "36x18")
+        size: Sign size (e.g., "18x24", "36x24")
         layout_version: Layout version number (defaults to LAYOUT_VERSION constant)
         
     Returns:

@@ -183,7 +183,7 @@ Add `scripts/verify_smartsign_layouts.py` that:
 
 1) Generates PDFs for all 10 combinations:
 - layouts: minimal, agent_brand
-- sizes: 12x18, 18x24, 24x36, 36x18, 36x24
+- sizes: 12x18, 18x24, 24x36, 36x24
 2) Renders previews via `utils/pdf_preview.render_pdf_to_web_preview` for each PDF.
 3) Uses PyMuPDF to extract text blocks and asserts each block is within safe rect:
 - safe rect must be computed exactly as above.

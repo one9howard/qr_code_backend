@@ -479,7 +479,7 @@ def _draw_landscape_split_layout(c, layout, address, beds, baths, sqft, price,
                                  qr_key, agent_photo_key, sign_color, qr_value=None,
                                  agent_photo_path=None, user_id=None, logo_key=None):
     """
-    Split 50/50 Layout for Landscape Signs (36x18).
+    Split 50/50 Layout for Landscape Signs (36x24).
     Left: Agent Photo + Property Info + Contact
     Right: Massive QR Code
     """

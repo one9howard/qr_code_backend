@@ -262,18 +262,58 @@
                         const type = document.querySelector('input[name="product_type"]:checked').value;
                         if (type !== 'listing_sign') return;
 
-                        if (sizeSelect.value === '12x18') {
+                        const size = sizeSelect.value;
+                        const coroOpt = materialSelect.querySelector('option[value="coroplast_4mm"]');
+
+                        // Reset option states/text
+                        aluminumOption.disabled = false;
+                        aluminumOption.textContent = 'Aluminum (.040) - Premium (+$$)';
+                        coroOpt.disabled = false;
+                        coroOpt.textContent = 'Coroplast (4mm) - Standard';
+
+                        // Matrix enforcement:
+                        // - 12x18: coroplast only
+                        if (size === '12x18') {
                             materialSelect.value = 'coroplast_4mm';
                             aluminumOption.disabled = true;
                             aluminumOption.textContent = 'Aluminum (Not available for 12x18)';
-                        } else {
-                            aluminumOption.disabled = false;
-                            aluminumOption.textContent = 'Aluminum (.040) - Premium (+$$)';
+                            return;
+                        }
+
+                        // - 36x24: aluminum only
+                        if (size === '36x24') {
+                            materialSelect.value = 'aluminum_040';
+                            coroOpt.disabled = true;
+                            coroOpt.textContent = 'Coroplast (Not available for 36x24)';
+                            return;
                         }
                     }
 
+                    function coerceSizeForMaterial() {
+                        const type = document.querySelector('input[name="product_type"]:checked').value;
+                        if (type !== 'listing_sign') return;
+
+                        const mat = materialSelect.value;
+                        const size = sizeSelect.value;
+
+                        if (mat === 'aluminum_040' && size === '12x18') {
+                            sizeSelect.value = '18x24';
+                        }
+                        if (mat === 'coroplast_4mm' && size === '36x24') {
+                            sizeSelect.value = '18x24';
+                        }
+
+                        // Re-apply constraints to update option disable states
+                        checkMaterialConstraints();
+                    }
+
                     productTypes.forEach(radio => radio.addEventListener('change', updateFormState));
-                    sizeSelect.addEventListener('change', checkMaterialConstraints);
+                    sizeSelect.addEventListener('change', () => {
+                        checkMaterialConstraints();
+                    });
+                    materialSelect.addEventListener('change', () => {
+                        coerceSizeForMaterial();
+                    });
 
                     // Init
                     updateFormState();
@@ -307,18 +347,21 @@
         };
 
         try {
-            const response = await fetch('/order-sign', {
+            const endpoint = (data.print_product === 'smart_riser') ? '/smart-riser/checkout' : '/order-sign';
+            const payload = (data.print_product === 'smart_riser') ? { size: data.size } : data;
+
+            const response = await fetch(endpoint, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'X-CSRFToken': formData.get('csrf_token')
                 },
-                body: JSON.stringify(data)
+                body: JSON.stringify(payload)
             });
 
             const result = await response.json();
 
-            if (result.success && result.checkoutUrl) {
+            if (result.checkoutUrl) {
                 window.location.href = result.checkoutUrl;
             } else {
                 alert(result.error || 'Failed to create order. Please try again.');
