@@ -1,3 +1,4 @@
+
 import sys
 import os
 import fitz  # PyMuPDF
@@ -33,7 +34,8 @@ WORST_CASE_ASSET = {
 }
 
 LAYOUTS = ['smart_v1_minimal', 'smart_v1_agent_brand', 'smart_v1_photo_banner']
-SIZES = ['12x18', '18x24', '24x36', '36x18', '36x24']
+# Option A: Strict Sizes
+SIZES = ['18x24', '24x36', '36x24']
 
 def get_safe_rect(size_key):
     """Calculate safe rect in PDF points (0,0 at bottom-left of TRIM)."""

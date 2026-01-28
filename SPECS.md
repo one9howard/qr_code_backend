@@ -36,11 +36,10 @@
 ## 1) Supported sizes and orientation
 
 Sizes are expressed as WIDTH×HEIGHT (inches). Orientation is determined by the size:
-- `12x18` (portrait)
 - `18x24` (portrait)
 - `24x36` (portrait)
-- `36x18` (landscape)
 - `36x24` (landscape)
+- *(Deprecated: 12x18, 36x18)*
 
 All measurements below are exact and must be converted using:
 - `1 inch = 72 points`

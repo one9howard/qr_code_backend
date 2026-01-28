@@ -39,42 +39,6 @@ def to_pt(inches):
     return inches * 72
 
 SPECS = {
-    '12x18': {
-        'safe_margin': to_pt(0.60),
-        'smart_v1_minimal': {
-            'top_bar': to_pt(0.45),
-            'header_band': to_pt(3.20),
-            'footer_band': to_pt(2.80),
-            'qr_size': to_pt(7.50),
-            'qr_padding': to_pt(0.45),
-            'fonts': {
-                'name': (54, 38), 'phone': (72, 52), 'email': (24, 18), 
-                'brokerage': (40, 28), 'cta': (54, 40), 'url': (22, 18)
-            }
-        },
-        'smart_v1_photo_banner': {
-            'top_band': to_pt(3.40),
-            'footer_band': to_pt(3.60),
-            'qr_size': to_pt(7.50),
-            'qr_padding': to_pt(0.45),
-            'headshot_diameter': to_pt(1.40),
-            'fonts': {
-                'name': (48, 34), 'phone': (36, 28), 'brokerage': (40, 28),
-                'cta': (60, 46), 'url': (22, 18)
-            }
-        },
-        'smart_v1_agent_brand': {
-            'top_band': to_pt(3.40),
-            'footer_band': to_pt(3.60),
-            'qr_size': to_pt(7.50),
-            'qr_padding': to_pt(0.45),
-            'logo_diameter': to_pt(1.40),
-            'fonts': {
-                'name': (48, 34), 'brokerage': (42, 30), 
-                'scan_label': (36, 28), 'cta1': (60, 46), 'cta2': (72, 54), 'url': (22, 18)
-            }
-        }
-    },
     '18x24': {
         'safe_margin': to_pt(0.75),
         'smart_v1_minimal': {
@@ -147,42 +111,6 @@ SPECS = {
             }
         }
     },
-    '36x18': {
-        'safe_margin': to_pt(0.90),
-        'smart_v1_minimal': {
-            'top_bar': to_pt(0.55),
-            'header_band': to_pt(3.20),
-            'footer_band': to_pt(3.20),
-            'qr_size': to_pt(10.50),
-            'qr_padding': to_pt(0.60),
-            'fonts': {
-                'name': (72, 50), 'phone': (96, 68), 'email': (30, 22), 
-                'brokerage': (52, 34), 'cta': (72, 54), 'url': (28, 22)
-            }
-        },
-        'smart_v1_photo_banner': {
-            'top_band': to_pt(3.60),
-            'footer_band': to_pt(3.80),
-            'qr_size': to_pt(10.50),
-            'qr_padding': to_pt(0.60),
-            'headshot_diameter': to_pt(1.90),
-            'fonts': {
-                'name': (64, 44), 'phone': (48, 36), 'brokerage': (56, 38),
-                'cta': (80, 60), 'url': (28, 22)
-            }
-        },
-        'smart_v1_agent_brand': {
-            'top_band': to_pt(3.60),
-            'footer_band': to_pt(3.80),
-            'qr_size': to_pt(10.50),
-            'qr_padding': to_pt(0.60),
-            'logo_diameter': to_pt(1.90),
-            'fonts': {  # Same as 18x24 Agent Brand
-                'name': (64, 44), 'brokerage': (56, 38), 
-                'scan_label': (44, 34), 'cta1': (80, 60), 'cta2': (96, 72), 'url': (28, 22)
-            }
-        }
-    },
     '36x24': { # Wide format
         'safe_margin': to_pt(1.00),
         'smart_v1_minimal': {
@@ -192,7 +120,7 @@ SPECS = {
             'qr_size': to_pt(13.00),
             'qr_padding': to_pt(0.70),
             'fonts': {
-                'name': (96, 66), 'phone': (120, 88), 'email': (40, 28), 
+                'name': (96, 66), 'phone': (120, 88), 'email': (36, 26), 
                 'brokerage': (72, 50), 'cta': (96, 72), 'url': (34, 26)
             }
         },
@@ -297,35 +225,44 @@ def draw_fitted_text(c, text, x, y, font_name, start_size, min_size, max_width, 
         
     return final_size, final_size # return height used (approx cap height? using font size is safer for spacing)
 
-def draw_fitted_multiline(c, text, x, y_baseline_first, font_name, start_size, min_size, max_width, max_lines=2, align='center', color=None, leading_factor=1.8):
+def calculate_fitted_multiline(c, text, font_name, start_size, min_size, max_width, max_lines=2, leading_factor=1.6):
     """
-    Fits text into max_lines.
-    Returns: (font_size_used, lines_rendered_count, block_height_used)
+    Calculates best fit for multiline text.
+    Returns dict: {'size': int, 'lines': list, 'height': float, 'line_height': float}
     """
-    if not text: return 0, 0, 0
-    if color: c.setFillColorRGB(*hex_to_rgb(color))
+    if not text: return {'size': start_size, 'lines': [], 'height': 0, 'line_height': 0}
     
     # 1. Try single line (prefer largest font)
     c.setFont(font_name, start_size)
     if c.stringWidth(text, font_name, start_size) <= max_width:
-        draw_fitted_text(c, text, x, y_baseline_first, font_name, start_size, min_size, max_width, align)
-        return start_size, 1, start_size * leading_factor
+        return {
+            'size': start_size, 
+            'lines': [text], 
+            'line_height': start_size * leading_factor,
+            'height': start_size * leading_factor
+        }
         
     # 2. Try single line shrunk
     shrunk_size = fit_text_single_line(c, text, font_name, start_size, min_size, max_width)
     if c.stringWidth(text, font_name, shrunk_size) <= max_width:
-        # Heuristic: if shrinking > 25% and we allow 2 lines, maybe try wrapping at start_size instead?
-        # But user spec says "Try single line at start size -> if overflow shrink -> if still overflow and max_lines==2 wrap"
-        # Wait, usually wrapping at a larger font is legibility-preferred over tiny single line.
-        # Let's enforce: if shrunk_size < start_size * 0.75 and max_lines > 1, try 2 lines.
         if max_lines == 1 or shrunk_size > (start_size * 0.75):
-            draw_fitted_text(c, text, x, y_baseline_first, font_name, start_size, min_size, max_width, align)
-            return shrunk_size, 1, shrunk_size * leading_factor
+            return {
+                'size': shrunk_size, 
+                'lines': [text], 
+                'line_height': shrunk_size * leading_factor,
+                'height': shrunk_size * leading_factor
+            }
 
     if max_lines < 2:
-         # Force fit single line (ellipsized inside draw_fitted_text)
-         draw_fitted_text(c, text, x, y_baseline_first, font_name, start_size, min_size, max_width, align)
-         return min_size, 1, min_size * leading_factor
+         return {
+            'size': min_size, 
+            'lines': [text], # Will be trimmed by draw or caller? draw_fitted_multiline trimmed it.
+                             # But calculation usually shouldn't mutate content destructively?
+                             # For now, return full text, caller or draw handles ellipsis if width check fails?
+                             # No, consistency. Let's return the text.
+            'line_height': min_size * leading_factor,
+            'height': min_size * leading_factor
+         }
 
     # 3. Try wrapping at start_size, then shrink if needed
     best_size = min_size
@@ -346,24 +283,20 @@ def draw_fitted_multiline(c, text, x, y_baseline_first, font_name, start_size, m
                 if current_line:
                     lines.append(" ".join(current_line))
                 current_line = [word]
-                # If single word is too long, we keep it and ellipsize later, or split?
-                # For basic logic, keep it.
                 
         if current_line:
             lines.append(" ".join(current_line))
             
         if len(lines) <= max_lines:
-            # Check if any single line is wider than max_width (e.g. giant word)
-            # If so, this size fails unless we ellipsize.
-            # But we prefer a size that fits if possible.
-            # For now, accept it.
+            # Check for width overflow of single words?
+            # Accepted for now.
             best_size = test_size
             best_lines = lines
             break
             
         test_size -= 2
         
-    # Ellipsize check on final lines
+    # Ellipsize check
     c.setFont(font_name, best_size)
     final_lines = []
     for line in best_lines:
@@ -372,12 +305,30 @@ def draw_fitted_multiline(c, text, x, y_baseline_first, font_name, start_size, m
                 line = line[:-1]
              line += "..."
         final_lines.append(line)
+        
+    lh = best_size * leading_factor
+    return {
+        'size': best_size, 
+        'lines': final_lines, 
+        'line_height': lh,
+        'height': len(final_lines) * lh
+    }
+
+def draw_fitted_multiline(c, text, x, y_baseline_first, font_name, start_size, min_size, max_width, max_lines=2, align='center', color=None, leading_factor=1.6):
+    """
+    Fits and draws text.
+    """
+    if not text: return 0, 0, 0
+    
+    # Calculate
+    res = calculate_fitted_multiline(c, text, font_name, start_size, min_size, max_width, max_lines, leading_factor)
     
     # Draw
-    line_height = best_size * leading_factor
-    for i, line in enumerate(final_lines):
-        # y is baseline of FIRST line. Subsequent lines are lower.
-        draw_y = y_baseline_first - (i * line_height)
+    if color: c.setFillColorRGB(*hex_to_rgb(color))
+    c.setFont(font_name, res['size'])
+    
+    for i, line in enumerate(res['lines']):
+        draw_y = y_baseline_first - (i * res['line_height'])
         
         if align == 'center':
             c.drawCentredString(x, draw_y, line)
@@ -386,10 +337,7 @@ def draw_fitted_multiline(c, text, x, y_baseline_first, font_name, start_size, m
         else:
             c.drawString(x, draw_y, line)
             
-    return best_size, len(final_lines), (len(final_lines) * line_height)
-
-
-    return best_size, len(final_lines), (len(final_lines) * line_height)
+    return res['size'], len(res['lines']), res['height']
 
 
 def _draw_safe_footer_stack(c, l, center_x, cta_text, url_text, cta_font, url_font, max_w, text_color, url_color, cta_lines=1):
@@ -402,18 +350,7 @@ def _draw_safe_footer_stack(c, l, center_x, cta_text, url_text, cta_font, url_fo
     safe_bottom_y = l.safe_margin
     
     # 1. Measure URL
-    # URL is always 1 line
     url_fs = url_font[0]
-    
-    # URL Baseline: The bottom of the URL text should be at safe_bottom_y?
-    # No, typically baseline. Descenders go below baseline.
-    # To be strictly safe, we treat safe_bottom_y as the lowest descent.
-    # But usually safe margin is text boundary. Let's align descent to safe_bottom.
-    # Simply: baseline = safe_bottom + (size * 0.25) approx?
-    # ReportLab text draws at baseline.
-    # Let's place baseline at safe_bottom + descent buffer.
-    # Or just safe_bottom + 2pt.
-    # Actually, standard is baseline = safe_bottom. The margin covers descent.
     
     url_baseline = safe_bottom_y + (url_fs * 0.4) # ensured lift for descenders
     
@@ -423,49 +360,37 @@ def _draw_safe_footer_stack(c, l, center_x, cta_text, url_text, cta_font, url_fo
     )
     
     # 2. CTA
-    # Padding between URL top and CTA bottom
     padding = to_pt(0.25)
-    
-    # CTA Baseline = URL top + padding
-    # URL top approx = url_baseline + url_fs (roughly)
     cta_bottom_limit = url_baseline + url_fs + padding
     
-    # Draw CTA
-    # If 2 lines, draw_fitted_multiline draws first line at y, subsequent below.
-    # So we need to find the TOP y such that the BOTTOM line lands at cta_bottom_limit + line_height?
-    # Wait, draw_fitted_multiline takes y_baseline_first.
-    # If 2 lines, height = 2*lh. Bottom is y_first - lh.
-    # So y_first should be cta_bottom_limit + lh + (lines-1)*lh = cta_bottom_limit + (lines)*lh?
-    # Let's simplify: Determine height first.
-    
-    # Dry run measure?
-    # We can just draw it? No, need Y.
-    # Let's guess Y high, measure height, then shift? No, canvas text object can move.
-    # Or just calculate.
-    
     cta_fs = cta_font[0]
-    # Assume it will use cta_fs.
     line_height = cta_fs * 1.2
     
-    # If we want the LOWEST line baseline to be > cta_bottom_limit.
-    # For 1 line: y = cta_bottom_limit.
-    # For 2 lines: Bottom line y = cta_bottom_limit. Top line y = cta_bottom_limit + line_height.
-    
-    # However, we don't know how many lines yet if we allow wrapping.
-    # Minimal: 1 line. Agent Brand: 2 lines FIXED?
-    # Spec says Agent Brand CTA is 2 lines. Minimal is 1.
-    
-    # Let's calculate y_start
-    y_start = cta_bottom_limit + ( (cta_lines - 1) * line_height )
-    
-    # Ensure this doesn't overlap the QR code?
-    # QR zone bottom is implicit. We should check but for now we follow bottom-up.
-    
-    cta_font_name = "Helvetica-Bold"
-    draw_fitted_multiline(
-        c, cta_text, center_x, y_start, cta_font_name, 
-        cta_font[0], cta_font[1], max_w, max_lines=cta_lines, align='center', color=text_color
+    # If wrapped, we need to know how many lines to adjust start Y.
+    # We use y_baseline_first.
+    # calculate first
+    res = calculate_fitted_multiline(
+        c, cta_text, "Helvetica-Bold", cta_font[0], cta_font[1], max_w, max_lines=cta_lines
     )
+    
+    # Height used = res['height']
+    # Bottom line baseline is at y_baseline_first - (lines-1)*lh
+    # We want Bottom line baseline >= cta_bottom_limit.
+    # So y_baseline_first >= cta_bottom_limit + (lines-1)*lh
+    
+    y_start = cta_bottom_limit + ( (len(res['lines']) - 1) * res['line_height'] )
+    
+    # Draw
+    cta_font_name = "Helvetica-Bold"
+    c.setFillColorRGB(*hex_to_rgb(text_color))
+    c.setFont(cta_font_name, res['size'])
+    
+    for i, line in enumerate(res['lines']):
+        draw_y = y_start - (i * res['line_height'])
+        if i == 0: y_actual_start = draw_y # Debug check
+        c.drawCentredString(center_x, draw_y, line)
+        
+    return 
 
 
 def generate_smartsign_pdf(asset, order_id=None, user_id=None):
@@ -557,10 +482,10 @@ def _draw_modern_minimal(c, l, asset, user_id):
     safe_w = l.width - (2 * l.safe_margin)
     
     # Content Columns
-    left_w = safe_w * 0.62
-    # gap = safe_w * 0.03
+    left_w = safe_w * 0.60
+    # gap = safe_w * 0.05
     # right_w = safe_w * 0.35
-    right_w = safe_w - left_w - (safe_w * 0.03) # Remainder
+    right_w = safe_w - left_w - (safe_w * 0.05) # Remainder ensures gap
     
     right_align_x = l.width - l.safe_margin
     
@@ -766,165 +691,116 @@ def _draw_agent_brand(c, l, asset, user_id):
         c.setFont("Helvetica-Bold", dia * 0.5)
         c.drawCentredString(circle_x, circle_y - (dia * 0.15), initials)
 
-    # 2. Name + Brokerage (Safe Vertical Stacking - Task B)
-    # Problem: On 36x24, Name (2 lines) and Brokerage (2 lines) might overlap if purely centered/aligned right.
-    # New strategy:
-    # 1. Define vertical slots within the band centered on band_y_center?
-    # No, splitting the band vertically: Top half for Name, Bottom half for Brokerage?
-    # Or strict stacking.
-    # The requirement is: "Brokerage is ALWAYS single-line. Name can be 1-2 lines." and "Occupies distinct vertical slots".
+    # 2. Name + Brokerage (Safe Vertical Stacking - Task 1 Strict)
+    header_bottom = l.height - band_h
+    header_safe_top = l.height - margin
+    
+    content_top = header_safe_top - to_pt(0.15)
+    content_bot = header_bottom + to_pt(0.15)
+    
+    available_h = content_top - content_bot
+    if available_h < 0: available_h = 0
     
     start_x = margin + dia + to_pt(0.25)
-    end_x = l.width - margin
-    
-    # We treat it as one large content area to the right of the logo?
-    # Spec says: "Center: Agent name... Right: Brokerage"
-    # This implies 3 columns. Logo | Name | Brokerage.
-    # Overlap happened because Name text and Brokerage text (right aligned) collided horizontally?
-    # Or vertically?
-    # The user report says: "name and brokerage both wrap into 2 lines and their bounding boxes overlap vertically".
-    # This implies they are stacked or close physically.
-    # If they are columns, they collide horizontally.
-    # If the layout is "Name centered in available space" and "Brokerage right aligned", they can collide.
-    
-    # Task B Option 1: Brokerage single line. Name 1-2 lines. 
-    # Vertical Separation vs Horizontal separation? 
-    # If they are side-by-side columns, we should strictly enforce width.
-    # Current code:
-    # right_w = content_w * 0.35
-    # center_w = right_start_x - start_x - 1.0
-    # If 36x24, fonts are huge.
-    
-    # Let's check text fits.
-    # If we enforce widths, they shouldn't overlap horizontally.
-    # But maybe the computed center w is too small?
-    
-    # Wait, the user said "Vertical slots". This implies stacking them vertically?
-    # But the spec says "Left... Center... Right...". That usually means horizontal distribution.
-    # IF the user implies that on large signs, we should stack them?
-    # "Option 1... Name block height and brokerage baseline so they occupy distinct vertical slots inside the band"
-    # This confirms vertical stacking: Top slot for Name, Lower slot for Brokerage.
-    
-    # So for Agent Brand, the Header Band contains:
-    # [Logo]  [      Name      ]
-    #         [   Brokerage    ]
-    # (Left)    (Right/Center?)
-    
-    # Let's implement vertical stacking for Name and Brokerage to the right of logo.
-    # Alignment: Centered relative to the remaining width? Or Right aligned?
-    # Spec says: "Center: Agent name... Right: Brokerage".
-    # If we stack, maybe align Name Center, Brokerage Right? Or both Center?
-    # "Top slot for name, lower slot for brokerage".
-    
-    # Let's align both to the center of the available space to the right of logo?
-    # Or keep Name Centered and Brokerage Right, but separated vertically.
-    
     available_w = l.width - start_x - margin
     
-    # Define vertical centers
-    # Band Height is fixed.
-    # Name uses top 55% space? Brokerage uses bottom 45%?
+    # Measurements
+    name = _read(asset, 'brand_name') or _read(asset, 'agent_name')
+    brokerage = _read(asset, 'brokerage_name')
     
     name_fs = spec['fonts']['name']
     brok_fs = spec['fonts']['brokerage']
     
-    # Calculate measured heights
-    name = _read(asset, 'brand_name') or _read(asset, 'agent_name') or ""
-    brokerage = _read(asset, 'brokerage_name') or ""
-    
-    text_color = '#ffffff'
-    accent_text_color = '#cbd5e1' # lighter for brokerage
-    
-    # Measure Name (Max 2 lines)
-    # Use 95% of available width to avoid hitting edge
-    safe_text_w = available_w * 0.95
-    mid_x_avail = start_x + (available_w / 2)
-    
-    # Dry run name
-    # We need to know height to position.
-    # draw_fitted_multiline return (size, lines, height).
-    # We assume 'name' font logic handles shrinking.
-    
-    # Positioning Strategy:
-    # Total Content Height = Name_H + Gap + Brok_H
-    # Center this total block vertically in the band.
-    
-    # 1. Measure Name
-    # Pseudo-draw to measure?
-    # fit_text_single_line just returns size.
-    # draw_fitted_multiline calculates wrapping.
-    # Let's just use a helper to measure or draw to a dummy canvas? No.
-    # We can perform the logic without drawing.
-    # But for simplicity/safety, let's assume worst case or calculate.
-    
-    # Actually, we can just draw them relative to band center with offset.
-    # Name centered around (mid - offset). Brokerage around (mid + offset).
-    
-    # Better: Calculate baselines.
-    # Name Bottom = CenterY - Gap/2
-    # Brokerage Top = CenterY + Gap/2
-    
-    gap = to_pt(0.15)
-    
-    # Name Drawing (Max 2 lines)
-    # We need to compute lines/size to know where to start Y (baseline of first line).
-    # If 2 lines, height = 2*lh.
-    # Center of Name Block = BandCenter - (BrokHeight/2) - (Gap/2)?
-    # This is getting complex.
-    # Simpler:
-    # Name Baseline (Bottom line) takes Upper Slot.
-    # Brokerage Baseline (Single line) takes Lower Slot.
-    
-    # Vertical partitioning
-    # Top Slot Center = BandTop - (BandH * 0.35)
-    # Bottom Slot Center = BandBottom + (BandH * 0.25)
-    
-    y_top_slot = (l.height - band_h) + (band_h * 0.75)
-    y_bot_slot = (l.height - band_h) + (band_h * 0.20)
-    
-    # Draw Name (Max 2 lines, Centered in Top Slot)
-    # We'll use draw_fitted_multiline but we need y_baseline_first.
-    # If 1 line: y = y_top_slot.
-    # If 2 lines: y_baseline_first needs to be higher so center is preserved.
-    # height ~ 2.2 * size. Center of block is y_first - (height/2).
-    # So y_first = center + height/2 - (ascent adjustment?).
-    # Let's just anchor Top of Name to a calculated safe top?
-    
-    # Refined Option 1:
-    # Brokerage: ALWAYS Single Line (Task B requirement).
-    # Measure it first.
-    
-    # Brokerage
+    # 2.1 Draw Brokerage (Bottom Anchor)
+    brok_height_used = 0
     if brokerage:
-        # Force single line fit
-        brok_final_size = fit_text_single_line(c, brokerage, "Helvetica", brok_fs[0], brok_fs[1], safe_text_w)
-        # Draw at Bottom Slot
-        # Align baseline to y_bot_slot
-        c.setFillColorRGB(*hex_to_rgb(accent_text_color))
-        # Ellipsize if needed (handled by draw_fitted_text logic but we pre-calculated size)
-        draw_fitted_text(c, brokerage, mid_x_avail, y_bot_slot, "Helvetica", brok_final_size, brok_fs[1], safe_text_w, align='center')
+        # Strict Single Line
+        final_size = fit_text_single_line(c, brokerage, "Helvetica", brok_fs[0], brok_fs[1], available_w)
         
-    # Name
+        
+        # Let's approximate: draw at content_bot + (0.15*size) for decent baseline.
+        # This keeps descent roughly inside.
+        
+        brok_y = content_bot + (final_size * 0.2)
+        
+        c.setFillColorRGB(*hex_to_rgb(COLORS['base_text'])) # Or white?
+        # Agent Brand Header is Navy. So text is White.
+        c.setFillColorRGB(1, 1, 1) # White
+        # Brokerage often secondary?
+        # "Use slightly off-white"
+        c.setFillColorRGB(0.9, 0.9, 0.9)
+        
+        draw_fitted_text(c, brokerage, start_x + (available_w/2), brok_y, "Helvetica", final_size, brok_fs[1], available_w, align='center')
+        
+        brok_height_used = final_size * 1.5 # Reservation for safety (line height)
+    
+    # 2.2 Draw Name (Top Anchor)
     if name:
-        # Draw at Top Slot
-        # We allow 2 lines.
-        # Anchor baseline of bottom line? Or center?
-        # Let's use y_top_slot as the baseline for the LOWEST name line (if 1 line) 
-        # or adjust if 2 lines?
-        # Actually visually: Name should correspond to the "Main" element.
-        # Let's place the baseline of the LAST line of name at y_top_slot?
-        # No, y_top_slot is high up (65%).
-        # Let's treat y_top_slot as the visual center of the name block.
+        # Must fit in remaining height?
+        # remaining = available_h - brok_height_used
+        # Anchor at content_top.
+        # draw_fitted_multiline draws DOWN from y_baseline_first.
+        # First line CAPS touches content_top?
+        # Baseline = content_top - (size * 0.75) typically.
         
-        # We assume Name is primary.
-        draw_fitted_multiline(c, name.upper(), mid_x_avail, y_top_slot, "Helvetica-Bold", name_fs[0], name_fs[1], safe_text_w, align='center', color='#ffffff', leading_factor=1.2)
-        # Note: draw_fitted_multiline draws DOWN from y. So y must be TOP baseline.
-        # If we passed y_top_slot (65%), and name is 2 lines, it will draw at 65% and 65%-lh.
-        # This keeps it in the upper half.
-        # Brokerage is at 25%.
-        # Gap = ~40% of band height.
-        # For 36x24 (Band=5.0"), 40% = 2.0". Plenty of space.
-        # For 12x18 (Band=3.4"), 40% = 1.36". Safe.
+        c.setFillColorRGB(1, 1, 1)
+        
+        # We need to ensure we don't overlap brokerage.
+        # Let's limit the height?
+        # Real verification checks bounding boxes.
+        
+        # Let's position name as high as possible (content_top).
+        # And brokerage is low.
+        
+        # We use a leading factor.
+        
+        # Adjust Y for baseline
+        # Standard Helvetica Cap Height ~ 0.72.
+        # We want Top of Cap at content_top.
+        # So Baseline = content_top - (name_fs[0] * 0.75) roughly.
+        
+        # But name might shrink.
+        # Let's guess start size.
+        name_start = name_fs[0]
+        y_name = content_top - (name_start * 0.75)
+        
+        # Draw (Max 2 lines)
+        # We assume 1.2 leading.
+        draw_fitted_multiline(c, name.upper(), start_x + (available_w/2), y_name, "Helvetica-Bold", name_fs[0], name_fs[1], available_w, max_lines=2, align='center', leading_factor=1.2)
+
+
+    # 3. Scan Label (Below Header)
+    # Must be > header_bottom.
+    # Spec says "Scan Me" label sits below header band.
+    # Usually in QR area.
+    # "Scan Me" label: (44/34).
+    # Anchor: just below header?
+    
+    # header_bottom is the navy band edge.
+    # We want it in the white space? Or inside the band?
+    # "Center QR zone... Scan Me label" implies it is near QR.
+    # If it is inside the band, it would conflict with brokerage?
+    # Inspecting spec: "Scan Me" is listed...
+    # 24x36: Scan Me (56/42).
+    # Wait, where does it go?
+    # Usually "Scan Me" is separate from CTA ("Scan For Details").
+    # It might be Floating above QR?
+    # "Below header_bottom and cannot overlap brokerage".
+    # This implies it is OUTSIDE the header band (in the white).
+    
+    label_txt = "SCAN ME"
+    label_fs = spec['fonts']['scan_label']
+    
+    # Position: Center X. Y = header_bottom - gap?
+    # header_bottom is Y=Height-BandH.
+    # So Y < header_bottom.
+    # Let's put it ~0.5" below header band.
+    
+    label_y = header_bottom - to_pt(0.75) # Drop down into white
+    
+    c.setFillColorRGB(*hex_to_rgb(COLORS['base_text']))
+    draw_fitted_text(c, label_txt, l.width/2, label_y, "Helvetica-Bold", label_fs[0], label_fs[1], l.width, align='center')
+
 
 
     
