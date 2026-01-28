@@ -382,8 +382,10 @@ def create_smart_order():
             'include_headshot': bool(payload.get('headshot_key') or payload.get('agent_headshot_key')),
             'headshot_key': payload.get('headshot_key') or payload.get('agent_headshot_key'),
             
-            # Add layout_id for potential future generator support?
-            'layout_id': layout_id 
+            # Context for New PDF Generator (Phase 2)
+            'layout_id': layout_id,
+            'print_size': size,
+            'banner_color_id': payload.get('banner_color_id')
         }
         
         # Generate generic smart sign PDF

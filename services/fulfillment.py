@@ -193,6 +193,14 @@ def _generate_smartsign_pdf(db, order, storage):
         logger.error(f"[Fulfillment] No sign_asset found for SmartSign order {order_id}")
         return None
     
+    # Inject Order Context (Print Size, Layout) into Asset for Generator
+    # Convert Row to dict if needed
+    if not isinstance(asset, dict):
+        asset = dict(asset)
+        
+    asset['print_size'] = order.get('print_size')
+    asset['layout_id'] = order.get('layout_id')
+    
     # generate_smartsign_pdf returns storage key
     try:
         pdf_key = generate_smartsign_pdf(asset, order_id)
