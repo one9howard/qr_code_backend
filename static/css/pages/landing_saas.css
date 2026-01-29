@@ -191,7 +191,7 @@ body.saas-landing>.container {
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     position: relative;
-    top: -40px;
+    top: -35px;
 }
 
 .hero-text p {
