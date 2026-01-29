@@ -609,8 +609,8 @@ textarea.form-input {
 .consent-label span {
     flex: 1;
     white-space: normal;
-    word-break: break-word;
-    /* Prevent overflow if no spaces */
+    color: var(--property-muted);
+    /* Ensure text wraps normally without aggressive breaking */
 }
 
 .consent-label input {
