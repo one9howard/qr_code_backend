@@ -30,6 +30,7 @@
         initMobileLeadModal();
         initKeyboardNav();
         initScrollToCTA();
+        initHeroGallery();
     }
 
     // ============================================================
