@@ -545,6 +545,38 @@
         }
     }
 
+    function initScrollToCTA() {
+        const scrollBtn = document.getElementById('scroll-to-form-btn');
+        const requestTourBtn = document.getElementById('request-tour');
+
+        if (scrollBtn) {
+            scrollBtn.addEventListener('click', () => {
+                const form = document.getElementById('lead-form');
+                if (form) {
+                    form.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    // Focus name input
+                    const nameInput = document.getElementById('buyer_name');
+                    if (nameInput) setTimeout(() => nameInput.focus({ preventScroll: true }), 500);
+                }
+            });
+        }
+
+        if (requestTourBtn) {
+            requestTourBtn.addEventListener('click', () => {
+                const form = document.getElementById('lead-form');
+                if (form) {
+                    const requestType = document.getElementById('request_type');
+                    if (requestType) requestType.value = 'tour';
+
+                    form.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+                    const nameInput = document.getElementById('buyer_name');
+                    if (nameInput) setTimeout(() => nameInput.focus({ preventScroll: true }), 500);
+                }
+            });
+        }
+    }
+
     // ============================================================
     // EVENT TRACKING (Best-effort, no-throw)
     // ============================================================
