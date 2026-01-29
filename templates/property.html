@@ -425,7 +425,7 @@
                 photos: [],
                 photoCount: 0,
                 agentName: "{{ property.agent_name|e }}"
-            };
+            
 
             {% if gating.is_paid and photos %}
             // Inject photos one by one to avoid syntax errors
@@ -435,14 +435,14 @@
 
             window.PROPERTY_DATA.photoCount = window.PROPERTY_DATA.photos.length;
             {% else %}
-            window.PROPERTY_DATA.photoCount = {{ photos | length }
-        };
+            window.PROPERTY_DATA.photoCount = {{ photos|length }
+        
         {% endif %}
 
         } catch (e) {
             console.error('Data Injection Error [Fixed]', e);
             // Fallback for safety
-            if (!window.PROPERTY_DATA) window.PROPERTY_DATA = { photos: [] };
+            if (!window.PROPERTY_DATA) window.PROPERTY_DATA = { photos: [] 
         }
     </script>
     <script src="{{ url_for('static', filename='js/pages/property.js') }}" defer></script>
