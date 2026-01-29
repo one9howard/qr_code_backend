@@ -418,18 +418,25 @@
     {# ============ SCRIPTS ============ #}
     {# Pass minimal server data to JS - NO PHOTO URLS for FREE/EXPIRED #}
     <script>
-        window.PROPERTY_DATA = {
-            id: {{ property.id }},
-        tier: "{{ 'paid' if gating.is_paid else ('expired' if gating.is_expired else 'free') }}",
-            {% if gating.is_paid and photos %}
-        photos: [{% for p in photos %}"{{ get_storage_url(p) }}"{% if not loop.last %}, {% endif %} {% endfor %}],
+        try {
+            window.PROPERTY_DATA = {
+                id: "{{ property.id }}",
+                tier: "{{ 'paid' if gating.is_paid else ('expired' if gating.is_expired else 'free') }}",
+                {% if gating.is_paid and photos %}
+            photos: [{% for p in photos %}"{{ get_storage_url(p) }}"{% if not loop.last %}, {% endif %} {% endfor %}],
         photoCount: { { photos | length } },
         {% else %}
         photos: [],
             photoCount: { { photos | length if photos else 0 } },
         {% endif %}
         agentName: "{{ property.agent_name|e }}"
-        };
+            };
+        // Debugging log (optional)
+        console.log('PROPERTY_DATA loaded', window.PROPERTY_DATA);
+        } catch (e) {
+            alert('CRITICAL DATA ERROR: ' + e.message);
+            console.error('CRITICAL DATA ERROR', e);
+        }
     </script>
     <script src="{{ url_for('static', filename='js/pages/property.js') }}" defer></script>
 
