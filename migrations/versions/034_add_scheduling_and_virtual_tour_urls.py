@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = '034_add_scheduling_and_virtual_tour_urls'
+revision = '034_scheduling_tour_urls'
 down_revision = '033_fix_ls_print'
 branch_labels = None
 depends_on = None
