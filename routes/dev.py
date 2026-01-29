@@ -29,6 +29,38 @@ def debug_photos():
     
     return jsonify({
         "property_photos": [dict(p) for p in photos],
-        "agents": [dict(a) for a in agents]
+    })
+
+@dev_bp.route("/dev/validate-photos")
+def validate_photos():
+    import os
+    from flask import current_app, request
+    from database import get_db
+    
+    db = get_db()
+    instance_dir = current_app.instance_path
+    
+    # Check Property Photos
+    photos = db.execute("SELECT id, property_id, filename FROM property_photos").fetchall()
+    missing = []
+    
+    for p in photos:
+        file_path = os.path.join(instance_dir, p['filename'])
+        if not os.path.exists(file_path):
+            missing.append({"id": p['id'], "property_id": p['property_id'], "filename": p['filename'], "path_checked": file_path})
+
+    if request.args.get('delete') == 'true':
+        if missing:
+            ids = tuple(m['id'] for m in missing)
+            db.execute(f"DELETE FROM property_photos WHERE id IN {ids}")
+            db.commit()
+            return jsonify({"status": "deleted", "count": len(missing), "deleted_ids": ids})
+        return jsonify({"status": "no_missing_found"})
+            
+    return jsonify({
+        "total_photos": len(photos),
+        "missing_count": len(missing),
+        "missing_files": missing,
+        "instruction": "Add ?delete=true to URL to remove these records."
     })
 
