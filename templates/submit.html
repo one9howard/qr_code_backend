@@ -71,6 +71,13 @@
                 </div>
 
                 <div class="input-group">
+                    <label class="input-label">Tour Scheduling Link (Optional)</label>
+                    <input type="url" name="scheduling_url" class="glass-input"
+                        placeholder="https://calendly.com/yourname/showings"
+                        value="{{ agent_data.scheduling_url if agent_data and agent_data.scheduling_url else '' }}">
+                </div>
+
+                <div class="input-group">
                     <div
                         style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
                         <label class="input-label" style="margin: 0;">Agent Headshot</label>
@@ -145,6 +152,12 @@
                     <input type="file" name="property_photos" accept="image/*" multiple class="glass-input-file">
                     <p style="margin-top: 6px; font-size: 0.8rem; color: var(--text-muted);">Used for feature sheets and
                         listing pages.</p>
+                </div>
+
+                <div class="input-group" style="margin-bottom: 20px;">
+                    <label class="input-label">Virtual Tour Link (Optional)</label>
+                    <input type="url" name="virtual_tour_url" class="glass-input"
+                        placeholder="https://my.matterport.com/show/...">
                 </div>
             </div>
 

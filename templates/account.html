@@ -53,6 +53,16 @@
                         value="{{ agent['brokerage'] if agent else '' }}" placeholder="Realty One Group">
                 </div>
 
+                <div class="form-group">
+                    <label class="form-label">Tour Scheduling Link (Calendly/Cal.com)</label>
+                    <input type="url" name="scheduling_url" class="glass-input"
+                        value="{{ agent['scheduling_url'] if agent and agent['scheduling_url'] else '' }}"
+                        placeholder="https://calendly.com/yourname/showings">
+                    <p style="font-size: 0.8rem; color: rgba(255,255,255,0.6); margin-top: 4px;">
+                        This link will make the "Schedule a Tour" button open your calendar directly.
+                    </p>
+                </div>
+
                 <div style="display: flex; gap: 1rem;">
                     <button type="submit" class="glass-button accent" style="flex: 1;">Save Profile</button>
                     <a href="{{ url_for('auth.logout') }}" class="glass-button accent"

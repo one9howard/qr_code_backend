@@ -250,7 +250,8 @@ def property_page(slug):
     # Find by canonical slug
     property_row = db.execute(
         "SELECT p.*, a.name as agent_name, a.brokerage, a.email as agent_email, "
-        "a.phone as agent_phone, a.photo_filename as agent_photo, a.user_id as agent_user_id "
+        "a.phone as agent_phone, a.photo_filename as agent_photo, a.user_id as agent_user_id, "
+        "a.scheduling_url as agent_scheduling_url "
         "FROM properties p "
         "JOIN agents a ON p.agent_id = a.id "
         "WHERE p.slug = %s",
@@ -263,7 +264,8 @@ def property_page(slug):
             property_id = int(slug.split('-')[0])
             property_row = db.execute(
                 "SELECT p.*, a.name as agent_name, a.brokerage, a.email as agent_email, "
-                "a.phone as agent_phone, a.photo_filename as agent_photo, a.user_id as agent_user_id "
+                "a.phone as agent_phone, a.photo_filename as agent_photo, a.user_id as agent_user_id, "
+                "a.scheduling_url as agent_scheduling_url "
                 "FROM properties p "
                 "JOIN agents a ON p.agent_id = a.id "
                 "WHERE p.id = %s",

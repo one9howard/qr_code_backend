@@ -190,11 +190,21 @@ def edit_property(property_id):
         description = request.form.get("description", "")
         
         # Update property
+        from utils.urls import normalize_https_url
+        raw_tour = request.form.get("virtual_tour_url", "")
+        virtual_tour_url = normalize_https_url(raw_tour)
+        
+        if raw_tour and not virtual_tour_url:
+             flash("Invalid Virtual Tour URL. Must be HTTPS.", "error")
+             # Do not save invalid URL, keep old one? Or just nullify? 
+             # Safe default: redirect back to fix
+             return redirect(url_for('dashboard.edit_property', property_id=property_id))
+
         db.execute('''
             UPDATE properties 
-            SET address = %s, beds = %s, baths = %s, sqft = %s, price = %s, description = %s
+            SET address = %s, beds = %s, baths = %s, sqft = %s, price = %s, description = %s, virtual_tour_url = %s
             WHERE id = %s
-        ''', (address, beds, baths, sqft, price, description, property_id))
+        ''', (address, beds, baths, sqft, price, description, virtual_tour_url, property_id))
 
         # Handle Photo Deletions
         storage = get_storage()

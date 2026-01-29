@@ -45,6 +45,14 @@ def submit():
             agent_email = request.form["email"]
             agent_phone = request.form["phone"]
 
+            # URL Inputs & Validation
+            from utils.urls import normalize_https_url
+            raw_scheduling_url = request.form.get("scheduling_url", "")
+            raw_virtual_tour_url = request.form.get("virtual_tour_url", "")
+            
+            scheduling_url = normalize_https_url(raw_scheduling_url)
+            virtual_tour_url = normalize_https_url(raw_virtual_tour_url)
+
             # Extract sign customization options
             sign_color = request.form.get("sign_color", DEFAULT_SIGN_COLOR)
             layout_id = request.form.get("layout_id", "smart_v1_photo_banner")
@@ -126,6 +134,11 @@ def submit():
                         updates.append("logo_filename=%s")
                         params.append(logo_key)
                     
+                    # Update scheduling link only if provided and valid (owner can always update)
+                    if scheduling_url:
+                        updates.append("scheduling_url=%s")
+                        params.append(scheduling_url)
+                    
                     params.append(agent_id)
                     cursor.execute(f"UPDATE agents SET {', '.join(updates)} WHERE id=%s", tuple(params))
             else:
@@ -133,11 +146,11 @@ def submit():
                 user_id = current_user.id if current_user.is_authenticated else None
                 cursor.execute(
                     """
-                    INSERT INTO agents (user_id, name, brokerage, email, phone, photo_filename, logo_filename)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s)
+                    INSERT INTO agents (user_id, name, brokerage, email, phone, photo_filename, logo_filename, scheduling_url)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
                     RETURNING id
                     """,
-                    (user_id, agent_name, brokerage, agent_email, agent_phone, agent_photo_key, logo_key),
+                    (user_id, agent_name, brokerage, agent_email, agent_phone, agent_photo_key, logo_key, scheduling_url),
                 )
                 agent_id = cursor.fetchone()['id']
                 snapshot_photo_key = agent_photo_key
@@ -173,11 +186,11 @@ def submit():
             
             cursor.execute(
                 """
-                INSERT INTO properties (agent_id, address, beds, baths, sqft, price, description, created_at, expires_at)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                INSERT INTO properties (agent_id, address, beds, baths, sqft, price, description, created_at, expires_at, virtual_tour_url)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 RETURNING id
                 """,
-                (agent_id, address, beds, baths, sqft, price, description, current_time, expires_at),
+                (agent_id, address, beds, baths, sqft, price, description, current_time, expires_at, virtual_tour_url),
             )
             property_id = cursor.fetchone()['id']
 

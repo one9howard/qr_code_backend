@@ -34,13 +34,22 @@ def index():
 
     return render_template("account.html", agent=agent)
 
+from utils.urls import normalize_https_url
+
 def _handle_profile_update(db, agent):
     name = request.form.get("name", "").strip()
     phone = request.form.get("phone", "").strip()
     brokerage = request.form.get("brokerage", "").strip()
+    raw_scheduling_url = request.form.get("scheduling_url", "")
     
     if not name:
         flash("Name is required.", "error")
+        return redirect(url_for("account.index"))
+
+    # Validate Scheduling URL
+    scheduling_url = normalize_https_url(raw_scheduling_url)
+    if raw_scheduling_url and not scheduling_url:
+        flash("Invalid scheduling link. Must be a valid HTTPS URL (e.g. https://calendly.com/...)", "error")
         return redirect(url_for("account.index"))
 
     # Handle Photo Upload
@@ -68,19 +77,19 @@ def _handle_profile_update(db, agent):
             db.execute(
                 """
                 UPDATE agents 
-                SET name = %s, phone = %s, brokerage = %s, photo_filename = %s
+                SET name = %s, phone = %s, brokerage = %s, photo_filename = %s, scheduling_url = %s
                 WHERE id = %s
                 """,
-                (name, phone, brokerage, photo_key, agent['id'])
+                (name, phone, brokerage, photo_key, scheduling_url, agent['id'])
             )
         else:
             # Create new agent record if none exists for this user
             db.execute(
                 """
-                INSERT INTO agents (user_id, email, name, phone, brokerage, photo_filename)
-                VALUES (%s, %s, %s, %s, %s, %s)
+                INSERT INTO agents (user_id, email, name, phone, brokerage, photo_filename, scheduling_url)
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
                 """,
-                (current_user.id, current_user.email, name, phone, brokerage, photo_key)
+                (current_user.id, current_user.email, name, phone, brokerage, photo_key, scheduling_url)
             )
         
         db.commit()

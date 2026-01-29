@@ -255,6 +255,16 @@
         const tourBtn = document.getElementById('request-tour');
         if (tourBtn) {
             tourBtn.addEventListener('click', () => {
+                const url = (tourBtn.dataset.schedulingUrl || '').trim();
+
+                if (url) {
+                    // External link flow
+                    sendEvent('cta_click', { type: 'tour', mode: 'external_link' });
+                    window.open(url, '_blank', 'noopener,noreferrer');
+                    return;
+                }
+
+                // Default Lead Form Flow
                 // Set request type
                 const requestType = document.getElementById('request_type');
                 if (requestType) requestType.value = 'tour';
@@ -268,7 +278,7 @@
                         if (firstInput) firstInput.focus();
                     }, 500);
                 }
-                sendEvent('cta_click', { type: 'request_tour' });
+                sendEvent('cta_click', { type: 'tour', mode: 'lead_form' });
             });
         }
     }

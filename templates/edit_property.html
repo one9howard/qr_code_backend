@@ -29,6 +29,12 @@
             <textarea name="description" placeholder="Property Description"
                 rows="4">{{ property.description or '' }}</textarea>
 
+            <div style="margin-top: 10px;">
+                <input type="url" name="virtual_tour_url" class="glass-input"
+                    placeholder="Virtual Tour Link (e.g. Matterport)" value="{{ property.virtual_tour_url or '' }}"
+                    style="background: rgba(0,0,0,0.2); border: 1px solid #444; color: white; width: 100%; padding: 10px; border-radius: 4px;">
+            </div>
+
             <!-- Image Management -->
             <div style="margin-top: 1.5rem; text-align: left;">
                 <h3 style="color: white; font-size: 1.1rem; margin-bottom: 1rem;">Property Images</h3>
