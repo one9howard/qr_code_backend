@@ -607,10 +607,15 @@ textarea.form-input {
 }
 
 .consent-label span {
-    flex: 1;
+    flex: 1 1 auto;
+    /* Fix for 0-width collapse */
+    width: 0;
+    /* Allow shrinking but start from 0 if needed, wait no, let's use auto */
+    width: auto;
     white-space: normal;
+    word-break: normal;
+    overflow-wrap: normal;
     color: var(--property-muted);
-    /* Ensure text wraps normally without aggressive breaking */
 }
 
 .consent-label input {
