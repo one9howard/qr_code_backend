@@ -40,7 +40,7 @@
         const heroImg = document.getElementById('hero-image');
 
         // DEBUG: Alert to confirm initialization
-        // alert('Gallery Init: ' + (heroImg ? 'Found Img' : 'No Img') + ', Photos: ' + (DATA.photos ? DATA.photos.length : 'None'));
+        alert('Gallery Init: ' + (heroImg ? 'Found Img' : 'No Img') + ', Photos: ' + (DATA.photos ? DATA.photos.length : 'None'));
 
         if (!heroImg || !DATA.photos) return;
 
@@ -49,13 +49,13 @@
                 const idx = parseInt(btn.dataset.index, 10);
 
                 // DEBUG: Alert on click
-                // alert('Clicked thumb: ' + idx);
+                alert('Clicked thumb: ' + idx);
 
                 if (isNaN(idx)) return;
 
                 // Update hero image - Direct swap (no transition for debugging)
                 if (DATA.photos[idx]) {
-                    // alert('Swapping to: ' + DATA.photos[idx]);
+                    alert('Swapping to: ' + DATA.photos[idx]);
                     heroImg.src = DATA.photos[idx];
                 }
 
