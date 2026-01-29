@@ -456,7 +456,6 @@
             {% for p in photos %}
             window.PROPERTY_DATA.photos.push("{{ get_storage_url(p)|safe }}");
             {% endfor %}
-
             window.PROPERTY_DATA.photoCount = window.PROPERTY_DATA.photos.length;
             {% else %}
             // Free/expired tiers: do not leak photo URLs, but allow UI to show the count
@@ -465,7 +464,7 @@
         {% endif %}
 
         } catch (e) {
-            console.error('Data Injection Error [Fixed]', e);
+            console.error('Data Injection Error', e);
             // Fallback for safety
             if (!window.PROPERTY_DATA) window.PROPERTY_DATA = { photos: [] };
         }
