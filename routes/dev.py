@@ -19,6 +19,7 @@ def user_status():
             "stripe_customer_id": current_user.stripe_customer_id
         },
         "db_user": dict(user_row) if user_row else None
+    })
 
 @dev_bp.route("/dev/photos")
 def debug_photos():
