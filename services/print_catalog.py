@@ -95,7 +95,7 @@ def validate_sku_strict(print_product, print_size, material):
     
     # 1. Product Rules
     if print_product == 'smart_sign':
-        if material not in SMART_SIGN_MATERIALS:
+        if material not in SMARTSIGN_MATERIALS:
              return False, "invalid_material"
         if print_size not in SMART_SIGN_VALID_SIZES:
              return False, "invalid_size"
