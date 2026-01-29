@@ -33,6 +33,34 @@
     }
 
     // ============================================================
+    // HERO GALLERY (Thumbnail Swap)
+    // ============================================================
+    function initHeroGallery() {
+        const heroImg = document.getElementById('hero-image');
+        if (!heroImg || !DATA.photos) return;
+
+        document.querySelectorAll('.thumb-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const idx = parseInt(btn.dataset.index, 10);
+                if (isNaN(idx)) return;
+
+                // Update hero image
+                if (DATA.photos[idx]) {
+                    heroImg.style.opacity = '0.5';
+                    setTimeout(() => {
+                        heroImg.src = DATA.photos[idx];
+                        heroImg.style.opacity = '1';
+                    }, 50);
+                }
+
+                // Update active state
+                document.querySelectorAll('.thumb-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+            });
+        });
+    }
+
+    // ============================================================
     // CLOSE BUTTON LOGIC
     // ============================================================
     function initCloseButton() {
