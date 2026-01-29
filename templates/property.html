@@ -25,8 +25,8 @@
     <meta property="og:url" content="{{ request.url }}">
     <meta name="twitter:card" content="summary_large_image">
 
-    {% if gating.is_paid and photos %}
-    <meta property="og:image" content="{{ get_storage_url(photos[0]) }}">
+    {% if gating.is_paid and photo_urls %}
+    <meta property="og:image" content="{{ photo_urls[0] }}">
     {% endif %}
     {# NO og:image for FREE/EXPIRED - intentionally omitted to prevent photo leakage #}
 </head>
@@ -48,7 +48,7 @@
     Photo COUNT as plain text is allowed (e.g., "28 photos").
 
     Any code that renders photos MUST be wrapped in:
-    {% if gating.is_paid and photos %}...{% endif %}
+    {% if gating.is_paid and photo_urls %}...{% endif %}
     ============================================================ #}
 
     {# ============ TOPBAR ============ #}
@@ -63,28 +63,28 @@
 
     {# ============ HERO SECTION ============ #}
     <section class="hero">
-        {% if gating.is_paid and photos %}
+        {% if gating.is_paid and photo_urls %}
         {# PAID: Photo hero with thumbnails #}
         <div class="hero-main" id="hero-main">
-            <img src="{{ get_storage_url(photos[0]) }}" alt="{{ property.address }}" class="hero-image" id="hero-image">
+            <img src="{{ photo_urls[0] }}" alt="{{ property.address }}" class="hero-image" id="hero-image">
             <button type="button" class="hero-photo-count" id="open-lightbox">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
                     <path
                         d="M4 4h7V2H4c-1.1 0-2 .9-2 2v7h2V4zm6 9l-4 5h12l-3-4-2.03 2.71L10 13zm7-4.5c0-.83-.67-1.5-1.5-1.5S14 7.67 14 8.5s.67 1.5 1.5 1.5S17 9.33 17 8.5zM20 2h-7v2h7v7h2V4c0-1.1-.9-2-2-2zm0 18h-7v2h7c1.1 0 2-.9 2-2v-7h-2v7zM4 13H2v7c0 1.1.9 2 2 2h7v-2H4v-7z" />
                 </svg>
-                {{ photos|length }} Photos
+                {{ photo_count_total }} Photos
             </button>
         </div>
-        {% if photos|length > 1 %}
+        {% if photo_urls|length > 1 %}
         <div class="hero-thumbnails">
-            {% for photo in photos[:5] %}
+            {% for url in photo_urls[:5] %}
             <button type="button" class="thumb-btn" data-index="{{ loop.index0 }}">
-                <img src="{{ get_storage_url(photo) }}" alt="Photo {{ loop.index }}" loading="lazy">
+                <img src="{{ url }}" alt="Photo {{ loop.index }}" loading="lazy">
             </button>
             {% endfor %}
-            {% if photos|length > 5 %}
+            {% if photo_urls|length > 5 %}
             <button type="button" class="thumb-btn thumb-more" id="open-lightbox-more">
-                +{{ photos|length - 5 }}
+                +{{ photo_count_total - 5 }}
             </button>
             {% endif %}
         </div>
@@ -98,8 +98,8 @@
             <p class="hero-lock-text">Listing Expired</p>
             {% else %}
             <p class="hero-lock-text">Listing Preview Locked</p>
-            {% if photos %}
-            <p class="hero-lock-count">{{ photos|length }} photos available</p>
+            {% if photo_count_total > 0 %}
+            <p class="hero-lock-count">{{ photo_count_total }} photos available</p>
             {% endif %}
             {% endif %}
         </div>
@@ -219,18 +219,18 @@
                 {# Gallery Section #}
                 <section class="content-section" id="gallery-section">
                     <h2 class="section-title">Photos</h2>
-                    {% if gating.is_paid and photos %}
+                    {% if gating.is_paid and photo_urls %}
                     {# PAID: Render gallery grid #}
                     <div class="gallery-grid">
-                        {% for photo in photos[:12] %}
+                        {% for url in photo_urls[:12] %}
                         <button type="button" class="gallery-item" data-index="{{ loop.index0 }}">
-                            <img src="{{ get_storage_url(photo) }}" alt="Photo {{ loop.index }}" loading="lazy">
+                            <img src="{{ url }}" alt="Photo {{ loop.index }}" loading="lazy">
                         </button>
                         {% endfor %}
                     </div>
-                    {% if photos|length > 12 %}
+                    {% if photo_count_total > 12 %}
                     <button type="button" class="btn-outline view-all-photos" id="view-all-photos">
-                        View all {{ photos|length }} photos
+                        View all {{ photo_count_total }} photos
                     </button>
                     {% endif %}
 
@@ -239,9 +239,8 @@
                     <div class="gallery-locked" data-trigger="click_gallery">
                         <div class="lock-icon">🔒</div>
                         <p class="lock-title">Photos locked</p>
-                        <p class="lock-title">Photos locked</p>
-                        {% if photos %}
-                        <p class="lock-count">{{ photos|length }} photos available with full listing</p>
+                        {% if photo_count_total > 0 %}
+                        <p class="lock-count">{{ photo_count_total }} photos available with full listing</p>
                         {% endif %}
                         <button type="button" class="btn-unlock" data-trigger="click_gallery">
                             Unlock photos
@@ -440,33 +439,15 @@
     </div>
 
     {# ============ SCRIPTS ============ #}
-    {# Pass minimal server data to JS - Safe Injection #}
+    {# Safe JSON injection: no Jinja inside executable JS #}
+    <script id="property-data" type="application/json">{{ property_data|tojson }}</script>
     <script>
-        try {
-            window.PROPERTY_DATA = {
-                id: "{{ property.id }}",
-                tier: "{{ 'paid' if gating.is_paid else ('expired' if gating.is_expired else 'free') }}",
-                photos: [],
-                photoCount: 0,
-                agentName: "{{ property.agent_name|e }}"
-            };
-
-            {% if gating.is_paid and photos %}
-            // Inject photos one by one to avoid syntax errors
-            {% for p in photos %}
-            window.PROPERTY_DATA.photos.push("{{ get_storage_url(p)|safe }}");
-            {% endfor %}
-            window.PROPERTY_DATA.photoCount = window.PROPERTY_DATA.photos.length;
-            {% else %}
-            // Free/expired tiers: do not leak photo URLs, but allow UI to show the count
-            window.PROPERTY_DATA.photoCount = {{ (photos|default([]))|length }};
-        {% endif %}
-
-        } catch (e) {
-            console.error('Data Injection Error', e);
-            // Fallback for safety
-            if (!window.PROPERTY_DATA) window.PROPERTY_DATA = { photos: [] };
-        }
+      try {
+        const el = document.getElementById('property-data');
+        window.PROPERTY_DATA = el ? JSON.parse(el.textContent) : {};
+      } catch (e) {
+        window.PROPERTY_DATA = {};
+      }
     </script>
     <script src="{{ url_for('static', filename='js/pages/property.js') }}" defer></script>
 

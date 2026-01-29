@@ -23,64 +23,69 @@ FREE_LEAD_LIMIT = 2
 @dashboard_bp.route("/")
 @login_required
 def index():
-    """
-    Main dashboard view.
+    """    Main dashboard view.
     Shows properties, leads, and analytics (Integrated Phase 5).
     """
     db = get_db()
-    
+
     # --- Phase 5: Analytics Service Integration ---
     from services.analytics import per_agent_rollup, per_property_metrics
-    
+
     # 1. Main Metrics Rollup
     metrics = per_agent_rollup(current_user.id)
-    
-    # 2. Fetch Properties & Build Listings Data
-    agent_id = db.execute("SELECT id FROM agents WHERE user_id = %s", (current_user.id,)).fetchone()
+
+    # 2. Determine all agent IDs linked to this user (supports multiple agent rows)
+    agent_rows = db.execute(
+        "SELECT id FROM agents WHERE user_id = %s",
+        (current_user.id,)
+    ).fetchall()
+    agent_ids = [r['id'] for r in agent_rows] if agent_rows else []
+    agent_ids_param = agent_ids if agent_ids else [-1]  # Safe sentinel
+
+    # 3. Fetch Properties & Build Listings Data
     listings_data = []
-    
     properties = []
-    if agent_id:
-        # Fetch properties with basic info
-        properties = db.execute("""
-            SELECT 
-                p.id, 
-                p.address, 
-                p.slug, 
-                p.qr_code, 
+
+    if agent_ids:
+        properties = db.execute(
+            """
+            SELECT
+                p.id,
+                p.address,
+                p.slug,
+                p.qr_code,
                 p.created_at,
-                (SELECT filename FROM property_photos pp WHERE pp.property_id = p.id LIMIT 1) as photo_filename
+                (SELECT filename FROM property_photos pp WHERE pp.property_id = p.id LIMIT 1) AS photo_filename
             FROM properties p
-            WHERE p.agent_id IN (SELECT id FROM agents WHERE user_id = %s)
+            WHERE p.agent_id = ANY(%s)
             ORDER BY p.created_at DESC
-        """, (agent_id['id'],)).fetchall()
-        
+            """,
+            (agent_ids_param,)
+        ).fetchall()
+
         for p in properties:
-            # Get 7d metrics per property
             pm = per_property_metrics(p['id'], range_days=7)
-            
             listings_data.append({
                 "id": p['id'],
                 "address": p['address'],
                 "slug": p['slug'],
                 "thumbnail": p['photo_filename'],
                 "qr_code": p['qr_code'],
-                "scans_7d": pm['scans']['total'], # actually 7d count
+                "scans_7d": pm['scans']['total'],
                 "scans_trend": pm['scans']['delta'],
                 "views_7d": pm['views']['total'],
                 "views_trend": pm['views']['delta'],
                 "leads_7d": pm['leads']['total'],
                 "leads_trend": pm['leads']['delta'],
-                "cta_7d": pm['ctas']['total'], # cta count
+                "cta_7d": pm['ctas']['total'],
                 "last_activity": pm['last_activity']['summary'],
-                "insights": pm['insights'] 
+                "insights": pm['insights'],
             })
-            
-    # 3. Today's Focus Cards
+
+    # 4. Today's Focus Cards
     today_cards = []
-    if agent_id:
+    if agent_ids:
         for p in listings_data:
-            # 1. Zero Scans
             if p['scans_7d'] == 0:
                 today_cards.append({
                     'type': 'warning',
@@ -89,8 +94,7 @@ def index():
                     'action': 'Check Sign Placement',
                     'link': url_for('properties.property_page', slug=p['slug'])
                 })
-                
-            # 2. Momentum
+
             if p['scans_trend'] > 50 and p['scans_7d'] > 5:
                 today_cards.append({
                     'type': 'success',
@@ -99,40 +103,42 @@ def index():
                     'action': 'View Analytics',
                     'link': url_for('dashboard.property_analytics', property_id=p['id'])
                 })
-                
-            # 3. High Intent (CTA > 0, Leads = 0)
+
             if p['cta_7d'] > 0 and p['leads_7d'] == 0:
-                 today_cards.append({
+                today_cards.append({
                     'type': 'info',
                     'title': 'High Intent, No Leads',
                     'message': f"{p['address']} has {p['cta_7d']} engagements but no leads.",
                     'action': 'Review Pricing',
                     'link': url_for('dashboard.edit_property', property_id=p['id'])
                 })
-    
-    # 4. SmartSigns (Legacy/MVP Compat)
+
+    # 5. SmartSigns (Legacy/MVP Compat)
     from services.smart_signs import SmartSignsService
     sign_assets = SmartSignsService.get_user_assets(current_user.id)
-    
-    # 5. Leads (Recent)
-    leads = db.execute("""
-        SELECT l.*, p.address as property_address
+
+    # 6. Leads (Recent)
+    leads = db.execute(
+        """
+        SELECT l.*, p.address AS property_address
         FROM leads l
         JOIN properties p ON l.property_id = p.id
-        WHERE p.agent_id = %s
+        WHERE p.agent_id = ANY(%s)
         ORDER BY l.created_at DESC
         LIMIT 10
-    """, (agent_id['id'] if agent_id else -1,)).fetchall()
+        """,
+        (agent_ids_param,)
+    ).fetchall()
 
     return render_template(
-        "dashboard.html", 
-        metrics=metrics, 
-        listings=listings_data, 
+        "dashboard.html",
+        metrics=metrics,
+        listings=listings_data,
         today_cards=today_cards,
         sign_assets=sign_assets,
         leads=leads,
         properties=properties,
-        is_pro=current_user.is_pro
+        is_pro=current_user.is_pro,
     )
 
 

@@ -129,7 +129,7 @@ def register():
             pass
 
         # [SECURITY] Do NOT link agents here. Wait for verification.
-        # db.execute("UPDATE agents SET user_id = %s WHERE email = %s AND user_id IS NULL", (user_id, email))
+        # db.execute("UPDATE agents SET user_id = %s WHERE lower(email) = lower(%s) AND user_id IS NULL", (user_id, email))
         
         db.commit()
 
@@ -202,7 +202,7 @@ def login():
             
             if user_obj.is_verified:
                 db.execute(
-                     "UPDATE agents SET user_id = %s WHERE email = %s AND user_id IS NULL",
+                     "UPDATE agents SET user_id = %s WHERE lower(email) = lower(%s) AND user_id IS NULL",
                      (user['id'], email)
                 )
             db.commit()

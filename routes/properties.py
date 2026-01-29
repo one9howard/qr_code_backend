@@ -370,24 +370,46 @@ def property_page(slug):
             gating=gating
         ), 410
 
-    # Fetch Photos (Respecting Gating Limit)
-    limit_clause = ""
-    if not gating['is_paid']:
-        limit_clause = f"LIMIT {gating['max_photos']}"
-        
-    photo_rows = db.execute(
-        f'SELECT filename FROM property_photos WHERE property_id = %s {limit_clause}', 
+    # Fetch Photos
+    # IMPORTANT: In FREE/EXPIRED states, we must NOT generate or render real photo URLs.
+    # We can still compute a count for upsell copy.
+    total_photos_row = db.execute(
+        'SELECT COUNT(*) AS c FROM property_photos WHERE property_id = %s',
         (property_id,)
-    ).fetchall()
-    photos = [r['filename'] for r in photo_rows]
+    ).fetchone()
+    photo_count_total = int(total_photos_row['c']) if total_photos_row and total_photos_row.get('c') is not None else 0
 
+    photo_urls = []
+    if gating.get('is_paid') and photo_count_total > 0:
+        # Paid: we are allowed to generate URLs
+        limit_clause = f"LIMIT {gating.get('max_photos', 50)}"
+        photo_rows = db.execute(
+            f'SELECT filename FROM property_photos WHERE property_id = %s {limit_clause}',
+            (property_id,)
+        ).fetchall()
+        from utils.template_helpers import get_storage_url
+        photo_urls = [get_storage_url(r['filename']) for r in photo_rows]
+
+    # Property data for client-side JS (safe JSON injection in template)
+    tier_state = 'paid' if gating.get('is_paid') else ('expired' if gating.get('is_expired') else 'free')
+    property_data = {
+        'id': property_id,
+        'tier': tier_state,
+        'photos': photo_urls,
+        'photoCountTotal': photo_count_total,
+        'agentName': property_row.get('agent_name')
+    }
+
+    # Check for Open House Mode
     # Check for Open House Mode
     open_house_mode = request.args.get('mode') == 'open_house'
 
     return render_template(
         "property.html", 
         property=property_row, 
-        photos=photos, 
+        photo_urls=photo_urls,
+        photo_count_total=photo_count_total,
+        property_data=property_data,
         gating=gating,
         open_house_mode=open_house_mode
     )

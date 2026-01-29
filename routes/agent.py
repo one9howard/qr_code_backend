@@ -42,7 +42,7 @@ def submit():
 
             agent_name = request.form["agent_name"]
             brokerage = request.form["brokerage"]
-            agent_email = request.form["email"]
+            agent_email = request.form["email"].strip().lower()
             agent_phone = request.form["phone"]
 
             # URL Inputs & Validation
@@ -52,6 +52,14 @@ def submit():
             
             scheduling_url = normalize_https_url(raw_scheduling_url)
             virtual_tour_url = normalize_https_url(raw_virtual_tour_url)
+
+            if raw_scheduling_url and not scheduling_url:
+                flash("Invalid scheduling link. Must be a valid HTTPS URL (e.g. https://calendly.com/... )", "error")
+                return render_template("submit.html", agent_data=None), 400
+
+            if raw_virtual_tour_url and not virtual_tour_url:
+                flash("Invalid virtual tour URL. Must be a valid HTTPS URL.", "error")
+                return render_template("submit.html", agent_data=None), 400
 
             # Extract sign customization options
             sign_color = request.form.get("sign_color", DEFAULT_SIGN_COLOR)
@@ -164,6 +172,9 @@ def submit():
                 user_id = None
                 if current_user.is_authenticated and hasattr(current_user, 'is_verified') and current_user.is_verified:
                     user_id = current_user.id
+
+                # SECURITY: Do NOT persist scheduling_url for unclaimed/unverified agent rows.
+                scheduling_url_to_store = scheduling_url if user_id else None
                     
                 cursor.execute(
                     """
@@ -171,7 +182,7 @@ def submit():
                     VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
                     RETURNING id
                     """,
-                    (user_id, agent_name, brokerage, agent_email, agent_phone, agent_photo_key, logo_key, scheduling_url),
+                    (user_id, agent_name, brokerage, agent_email, agent_phone, agent_photo_key, logo_key, scheduling_url_to_store),
                 )
                 agent_id = cursor.fetchone()['id']
                 snapshot_photo_key = agent_photo_key
