@@ -39,23 +39,16 @@
     function initHeroGallery() {
         const heroImg = document.getElementById('hero-image');
 
-        // DEBUG: Alert to confirm initialization
-        alert('Gallery Init: ' + (heroImg ? 'Found Img' : 'No Img') + ', Photos: ' + (DATA.photos ? DATA.photos.length : 'None'));
-
         if (!heroImg || !DATA.photos) return;
 
         document.querySelectorAll('.thumb-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 const idx = parseInt(btn.dataset.index, 10);
 
-                // DEBUG: Alert on click
-                alert('Clicked thumb: ' + idx);
-
                 if (isNaN(idx)) return;
 
-                // Update hero image - Direct swap (no transition for debugging)
+                // Update hero image
                 if (DATA.photos[idx]) {
-                    alert('Swapping to: ' + DATA.photos[idx]);
                     heroImg.src = DATA.photos[idx];
                 }
 
