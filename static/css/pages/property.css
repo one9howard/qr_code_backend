@@ -622,6 +622,8 @@ textarea.form-input {
     margin-top: 0.25em;
     /* Better baseline alignment relative to font-size */
     flex-shrink: 0;
+    width: auto;
+    /* Override global 100% width from style.css */
 }
 
 .form-error {
