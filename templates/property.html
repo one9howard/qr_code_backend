@@ -440,7 +440,7 @@
         {% endif %}
 
         } catch (e) {
-            console.error('Data Injection Error', e);
+            console.error('Data Injection Error [Fixed]', e);
             // Fallback for safety
             if (!window.PROPERTY_DATA) window.PROPERTY_DATA = { photos: [] };
         }
