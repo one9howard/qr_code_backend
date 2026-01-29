@@ -195,7 +195,7 @@
                 {# Gallery Section #}
                 <section class="content-section" id="gallery-section">
                     <h2 class="section-title">Photos</h2>
-                    {% if gating.is_paid and photos and photos|length > 1 %}
+                    {% if gating.is_paid and photos %}
                     {# PAID: Render gallery grid #}
                     <div class="gallery-grid">
                         {% for photo in photos[:12] %}
@@ -427,10 +427,10 @@
         tier: "{{ 'paid' if gating.is_paid else ('expired' if gating.is_expired else 'free') }}",
             {% if gating.is_paid and photos %}
         photos: [{% for p in photos %}"{{ get_storage_url(p) }}"{% if not loop.last %}, {% endif %} {% endfor %}],
-        photoCount: {{ photos|length }},
+        photoCount: { { photos | length } },
         {% else %}
         photos: [],
-            photoCount: {{ photos|length if photos else 0 }},
+            photoCount: { { photos | length if photos else 0 } },
         {% endif %}
         agentName: "{{ property.agent_name|e }}"
         };
