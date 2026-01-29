@@ -39,6 +39,7 @@ def index():
     agent_id = db.execute("SELECT id FROM agents WHERE user_id = %s", (current_user.id,)).fetchone()
     listings_data = []
     
+    properties = []
     if agent_id:
         # Fetch properties with basic info
         properties = db.execute("""
@@ -130,6 +131,7 @@ def index():
         today_cards=today_cards,
         sign_assets=sign_assets,
         leads=leads,
+        properties=properties,
         is_pro=current_user.is_pro
     )
 
