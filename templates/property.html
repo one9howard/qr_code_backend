@@ -243,7 +243,6 @@
             {# RIGHT COLUMN: Sticky Agent Rail (Desktop) #}
             <aside class="agent-rail" id="agent-rail">
                 <div class="agent-card">
-                    {# ... Photo/Name/Brokerage ... #}
                     {% if property.agent_photo %}
                     <img src="{{ get_storage_url(property.agent_photo) }}" class="agent-photo"
                         alt="{{ property.agent_name }}">
@@ -258,82 +257,70 @@
                     </button>
 
                     <form id="lead-form" class="lead-form" autocomplete="on">
-                        <span>👤</span>
-                </div>
-                {% endif %}
-                <h3 class="agent-name">{{ property.agent_name }}</h3>
-                <p class="agent-brokerage">{{ property.brokerage }}</p>
+                        <input type="hidden" name="property_id" value="{{ property.id }}">
+                        <input type="hidden" name="request_type" id="request_type" value="info">
 
-                {# Primary CTA #}
-                <button type="button" class="btn-primary btn-request-info" id="scroll-to-form-btn">
-                    Request info
-                </button>
+                        {# Honeypot #}
+                        <div class="hp-field">
+                            <input type="text" name="website" id="website" tabindex="-1" autocomplete="off">
+                        </div>
 
-                {# Inline Lead Form #}
-                <form id="lead-form" class="lead-form" autocomplete="on">
-                    <input type="hidden" name="property_id" value="{{ property.id }}">
-                    <input type="hidden" name="request_type" id="request_type" value="info">
+                        <div class="form-group">
+                            <input type="text" name="buyer_name" id="buyer_name" placeholder="Your name" required
+                                class="form-input">
+                        </div>
+                        <div class="form-group">
+                            <input type="email" name="buyer_email" id="buyer_email" placeholder="Email" required
+                                class="form-input">
+                        </div>
+                        <div class="form-group">
+                            <input type="tel" name="buyer_phone" id="buyer_phone" placeholder="Phone"
+                                class="form-input">
+                        </div>
 
-                    {# Honeypot #}
-                    <div class="hp-field">
-                        <input type="text" name="website" id="website" tabindex="-1" autocomplete="off">
-                    </div>
+                        {# Collapsible message #}
+                        <div class="form-group message-toggle">
+                            <button type="button" class="toggle-message" id="toggle-message">
+                                + Add a message
+                            </button>
+                        </div>
+                        <div class="form-group message-field" id="message-field" style="display: none;">
+                            <textarea name="message" id="message" placeholder="I'm interested in..." rows="3"
+                                class="form-input"></textarea>
+                        </div>
 
-                    <div class="form-group">
-                        <input type="text" name="buyer_name" id="buyer_name" placeholder="Your name" required
-                            class="form-input">
-                    </div>
-                    <div class="form-group">
-                        <input type="email" name="buyer_email" id="buyer_email" placeholder="Email" required
-                            class="form-input">
-                    </div>
-                    <div class="form-group">
-                        <input type="tel" name="buyer_phone" id="buyer_phone" placeholder="Phone" class="form-input">
-                    </div>
+                        <input type="hidden" name="preferred_contact" value="email">
+                        <input type="hidden" name="best_time" value="">
 
-                    {# Collapsible message #}
-                    <div class="form-group message-toggle">
-                        <button type="button" class="toggle-message" id="toggle-message">
-                            + Add a message
+                        <div class="form-group consent-group">
+                            <label class="consent-label">
+                                <input type="checkbox" name="consent" id="consent" required>
+                                <span>I agree to be contacted by {{ property.agent_name }} regarding this
+                                    property.</span>
+                            </label>
+                        </div>
+
+                        <div id="lead-form-error" class="form-error"></div>
+                        <div id="lead-form-success" class="form-success"></div>
+
+                        <button type="submit" id="lead-submit-btn" class="btn-primary btn-submit">
+                            Send request
                         </button>
+                    </form>
+
+                    {# Secondary actions #}
+                    <div class="agent-actions">
+                        {% if property.agent_phone %}
+                        <a href="tel:{{ property.agent_phone }}" class="btn-secondary btn-call" data-action="call">
+                            📞 Call
+                        </a>
+                        {% endif %}
+                        <a href="mailto:{{ property.agent_email }}" class="btn-outline btn-email" data-action="email">
+                            ✉️ Email
+                        </a>
                     </div>
-                    <div class="form-group message-field" id="message-field" style="display: none;">
-                        <textarea name="message" id="message" placeholder="I'm interested in..." rows="3"
-                            class="form-input"></textarea>
-                    </div>
-
-                    <input type="hidden" name="preferred_contact" value="email">
-                    <input type="hidden" name="best_time" value="">
-
-                    <div class="form-group consent-group">
-                        <label class="consent-label">
-                            <input type="checkbox" name="consent" id="consent" required>
-                            <span>I agree to be contacted by {{ property.agent_name }} regarding this
-                                property.</span>
-                        </label>
-                    </div>
-
-                    <div id="lead-form-error" class="form-error"></div>
-                    <div id="lead-form-success" class="form-success"></div>
-
-                    <button type="submit" id="lead-submit-btn" class="btn-primary btn-submit">
-                        Send request
-                    </button>
-                </form>
-
-                {# Secondary actions #}
-                <div class="agent-actions">
-                    {% if property.agent_phone %}
-                    <a href="tel:{{ property.agent_phone }}" class="btn-secondary btn-call" data-action="call">
-                        📞 Call
-                    </a>
-                    {% endif %}
-                    <a href="mailto:{{ property.agent_email }}" class="btn-outline btn-email" data-action="email">
-                        ✉️ Email
-                    </a>
                 </div>
-        </div>
-        </aside>
+            </aside>
 
         </div>
     </main>
