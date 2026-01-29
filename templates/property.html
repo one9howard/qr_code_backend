@@ -8,6 +8,14 @@
     {# SEO Title: Address | Beds/Baths | CTA #}
     <title>{{ property.address or 'Property' }} | {{ property.beds }} bd {{ property.baths }} ba | Request info</title>
 
+    {# DEBUG: Catch Global Errors (Syntax Errors in inline scripts) #}
+    <script>
+        window.onerror = function (msg, url, line, col, error) {
+            alert('Global Error: ' + msg + '\nLine: ' + line + '\nCol: ' + col);
+            return false;
+        };
+    </script>
+
     {# Core Styles #}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/pages/property.css') }}">
