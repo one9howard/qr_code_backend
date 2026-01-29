@@ -454,13 +454,14 @@
             {% if gating.is_paid and photos %}
             // Inject photos one by one to avoid syntax errors
             {% for p in photos %}
-            window.PROPERTY_DATA.photos.push("{{ get_storage_url(p) }}");
+            window.PROPERTY_DATA.photos.push("{{ get_storage_url(p)|safe }}");
             {% endfor %}
 
             window.PROPERTY_DATA.photoCount = window.PROPERTY_DATA.photos.length;
             {% else %}
             // Free/expired tiers: do not leak photo URLs, but allow UI to show the count
-            window.PROPERTY_DATA.photoCount = {{ (photos|default([]))|length }};
+            window.PROPERTY_DATA.photoCount = {{ (photos |default ([]))| length }
+        };
         {% endif %}
 
         } catch (e) {
