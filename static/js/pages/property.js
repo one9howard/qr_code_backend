@@ -38,11 +38,15 @@
     // ============================================================
     function initHeroGallery() {
         const heroImg = document.getElementById('hero-image');
+        // DEBUG: Check why gallery might fail
+        console.log('[HeroGallery] Init', { heroImg, photos: DATA.photos });
+
         if (!heroImg || !DATA.photos) return;
 
         document.querySelectorAll('.thumb-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 const idx = parseInt(btn.dataset.index, 10);
+                console.log('[HeroGallery] Click', idx);
                 if (isNaN(idx)) return;
 
                 // Update hero image
