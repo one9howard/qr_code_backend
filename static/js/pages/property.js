@@ -38,24 +38,25 @@
     // ============================================================
     function initHeroGallery() {
         const heroImg = document.getElementById('hero-image');
-        // DEBUG: Check why gallery might fail
-        console.log('[HeroGallery] Init', { heroImg, photos: DATA.photos });
+
+        // DEBUG: Alert to confirm initialization
+        // alert('Gallery Init: ' + (heroImg ? 'Found Img' : 'No Img') + ', Photos: ' + (DATA.photos ? DATA.photos.length : 'None'));
 
         if (!heroImg || !DATA.photos) return;
 
         document.querySelectorAll('.thumb-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 const idx = parseInt(btn.dataset.index, 10);
-                console.log('[HeroGallery] Click', idx);
+
+                // DEBUG: Alert on click
+                // alert('Clicked thumb: ' + idx);
+
                 if (isNaN(idx)) return;
 
-                // Update hero image
+                // Update hero image - Direct swap (no transition for debugging)
                 if (DATA.photos[idx]) {
-                    heroImg.style.opacity = '0.5';
-                    setTimeout(() => {
-                        heroImg.src = DATA.photos[idx];
-                        heroImg.style.opacity = '1';
-                    }, 50);
+                    // alert('Swapping to: ' + DATA.photos[idx]);
+                    heroImg.src = DATA.photos[idx];
                 }
 
                 // Update active state
@@ -563,37 +564,7 @@
         }
     }
 
-    function initScrollToCTA() {
-        const scrollBtn = document.getElementById('scroll-to-form-btn');
-        const requestTourBtn = document.getElementById('request-tour');
 
-        if (scrollBtn) {
-            scrollBtn.addEventListener('click', () => {
-                const form = document.getElementById('lead-form');
-                if (form) {
-                    form.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    // Focus name input
-                    const nameInput = document.getElementById('buyer_name');
-                    if (nameInput) setTimeout(() => nameInput.focus({ preventScroll: true }), 500);
-                }
-            });
-        }
-
-        if (requestTourBtn) {
-            requestTourBtn.addEventListener('click', () => {
-                const form = document.getElementById('lead-form');
-                if (form) {
-                    const requestType = document.getElementById('request_type');
-                    if (requestType) requestType.value = 'tour';
-
-                    form.scrollIntoView({ behavior: 'smooth', block: 'center' });
-
-                    const nameInput = document.getElementById('buyer_name');
-                    if (nameInput) setTimeout(() => nameInput.focus({ preventScroll: true }), 500);
-                }
-            });
-        }
-    }
 
     // ============================================================
     // EVENT TRACKING (Best-effort, no-throw)
