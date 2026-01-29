@@ -151,9 +151,11 @@ class S3Storage(StorageBackend):
                 Params={'Bucket': self.bucket, 'Key': full_key},
                 ExpiresIn=expires_seconds
             )
+            # Debug log for S3 URL generation
+            print(f"[S3] Generated URL for key '{full_key}' -> {url[:80]}...")
             return url
         except Exception as e:
-            print(f"Error generating presigned URL: {e}")
+            print(f"[S3] ERROR generating presigned URL for '{full_key}': {e}")
             return ""
 
     def get_file(self, key):
