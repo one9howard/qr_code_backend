@@ -21,6 +21,7 @@
     document.addEventListener('DOMContentLoaded', init);
 
     function init() {
+        initHeroGallery();
         initCloseButton();
         initLeadForm();
         initMessageToggle();
@@ -30,7 +31,6 @@
         initMobileLeadModal();
         initKeyboardNav();
         initScrollToCTA();
-        initHeroGallery();
     }
 
     // ============================================================
