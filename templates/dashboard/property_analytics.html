@@ -39,7 +39,7 @@
                 <h1 style="font-size: 3rem; margin: 0; color: #2196f3;">{{ analytics.scans.total }}</h1>
                 <div style="color: #aaa; font-weight: bold;">QR Scans</div>
                 <div
-                    style="font-size: 0.8em; color: {% if analytics.scans.delta >= 0 %}#4CAF50{% else %}#f44336{% endif %};">
+                    class="trend-text {% if analytics.scans.delta >= 0 %}trend-positive{% else %}trend-negative{% endif %}">
                     {{ '%+d' % analytics.scans.delta }}% WoW
                 </div>
             </div>
@@ -51,7 +51,7 @@
                 <h1 style="font-size: 3rem; margin: 0; color: #9c27b0;">{{ analytics.views.total }}</h1>
                 <div style="color: #aaa; font-weight: bold;">Page Views</div>
                 <div
-                    style="font-size: 0.8em; color: {% if analytics.views.delta >= 0 %}#4CAF50{% else %}#f44336{% endif %};">
+                    class="trend-text {% if analytics.views.delta >= 0 %}trend-positive{% else %}trend-negative{% endif %}">
                     {{ '%+d' % analytics.views.delta }}% WoW
                 </div>
             </div>
@@ -72,7 +72,7 @@
                 <h1 style="font-size: 3rem; margin: 0; color: #4CAF50;">{{ analytics.leads.total }}</h1>
                 <div style="color: #4CAF50; font-weight: bold;">Leads</div>
                 <div
-                    style="font-size: 0.8em; color: {% if analytics.leads.delta >= 0 %}#4CAF50{% else %}#f44336{% endif %};">
+                    class="trend-text {% if analytics.leads.delta >= 0 %}trend-positive{% else %}trend-negative{% endif %}">
                     {{ '%+d' % analytics.leads.delta }}% WoW
                 </div>
             </div>

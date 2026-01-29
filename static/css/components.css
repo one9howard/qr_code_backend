@@ -91,6 +91,18 @@
     border-left: 6px solid #2196f3 !important;
 }
 
+.trend-text {
+    font-size: 0.8em;
+}
+
+.trend-positive {
+    color: #4CAF50 !important;
+}
+
+.trend-negative {
+    color: #f44336 !important;
+}
+
 /* =============================================================================
    Section Headers
    ============================================================================= */
