@@ -19,4 +19,15 @@ def user_status():
             "stripe_customer_id": current_user.stripe_customer_id
         },
         "db_user": dict(user_row) if user_row else None
+
+@dev_bp.route("/dev/photos")
+def debug_photos():
+    db = get_db()
+    photos = db.execute("SELECT id, property_id, filename FROM property_photos LIMIT 50").fetchall()
+    agents = db.execute("SELECT id, photo_filename, logo_filename FROM agents WHERE photo_filename IS NOT NULL OR logo_filename IS NOT NULL LIMIT 50").fetchall()
+    
+    return jsonify({
+        "property_photos": [dict(p) for p in photos],
+        "agents": [dict(a) for a in agents]
     })
+
