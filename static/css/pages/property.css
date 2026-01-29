@@ -578,7 +578,8 @@ textarea.form-input {
 }
 
 .consent-label input {
-    margin-top: 2px;
+    margin-top: 0.25em;
+    /* Better baseline alignment relative to font-size */
     flex-shrink: 0;
 }
 
