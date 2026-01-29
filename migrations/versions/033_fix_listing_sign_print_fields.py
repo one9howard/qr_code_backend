@@ -1,8 +1,8 @@
 """Fix listing sign print fields normalization
 
-Revision ID: 029
-Revises: 028
-Create Date: 2026-01-28 07:00:00
+Revision ID: 033_fix_listing_sign_print_fields
+Revises: 032_fix_sign_color_default
+Create Date: 2026-01-28 19:15:00
 
 """
 
@@ -10,8 +10,8 @@ from alembic import op
 import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
-revision = '029'
-down_revision = '028'
+revision = '033_fix_listing_sign_print_fields'
+down_revision = '032_fix_sign_color_default'
 branch_labels = None
 depends_on = None
 
