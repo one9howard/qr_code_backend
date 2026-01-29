@@ -128,14 +128,8 @@ def register():
             # OPTIONAL: If no guest_token, do we rely on email? 
             pass
 
-        # Link Guest Agents (if any created without user_id)
-        # Agents might not have guest_token column? Assuming email is safe for agents invited?
-        # Or should be same logic?
-        # The prompt specifically mentioned "Guest order linking".
-        db.execute(
-             "UPDATE agents SET user_id = %s WHERE email = %s AND user_id IS NULL",
-             (user_id, email)
-        )
+        # [SECURITY] Do NOT link agents here. Wait for verification.
+        # db.execute("UPDATE agents SET user_id = %s WHERE email = %s AND user_id IS NULL", (user_id, email))
         
         db.commit()
 
@@ -201,10 +195,16 @@ def login():
                 session.pop('guest_token', None)
                 session.pop('guest_tokens', None)
             
-            db.execute(
-                 "UPDATE agents SET user_id = %s WHERE email = %s AND user_id IS NULL",
-                 (user['id'], email)
-            )
+            # [SECURITY] Do NOT link agents here unverified.
+            # Only link if user is already verified (which they are if they pass login and check below)
+            # But the logic below handles redirection if UNVERIFIED. 
+            # We must only link if user.is_verified is True.
+            
+            if user_obj.is_verified:
+                db.execute(
+                     "UPDATE agents SET user_id = %s WHERE email = %s AND user_id IS NULL",
+                     (user['id'], email)
+                )
             db.commit()
             
             login_user(user_obj)
@@ -265,6 +265,13 @@ def verify_email():
             
         # Success
         db.execute("UPDATE users SET is_verified = %s, verification_code = NULL WHERE id = %s", (True, current_user.id))
+        
+        # [SECURITY] Link agents NOW that user is verified
+        db.execute(
+             "UPDATE agents SET user_id = %s WHERE lower(email) = lower(%s) AND user_id IS NULL",
+             (current_user.id, current_user.email)
+        )
+        
         db.commit()
         
         # Update session user

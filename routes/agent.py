@@ -97,12 +97,15 @@ def submit():
                         return render_template("submit.html", agent_data=None)
 
             # Find existing agent
-            cursor.execute("SELECT id, user_id, photo_filename, logo_filename FROM agents WHERE email = %s", (agent_email,))
+            # Find existing agent
+            # [SECURITY] Case-insensitive lookup
+            cursor.execute("SELECT id, user_id, email, photo_filename, logo_filename FROM agents WHERE lower(email) = lower(%s)", (agent_email,))
             agent = cursor.fetchone()
 
             snapshot_photo_key = agent_photo_key
             snapshot_logo_key = logo_key
             can_update_agent = False
+            agent_id = None
 
             if agent:
                 agent_id = agent["id"]
@@ -112,13 +115,27 @@ def submit():
                 if not snapshot_photo_key: snapshot_photo_key = agent["photo_filename"]
                 if not snapshot_logo_key: snapshot_logo_key = agent["logo_filename"]
 
-                # Ownership Check needed for updates...
+                # [SECURITY] Ownership & Blocking Rules
                 if existing_user_id is not None:
-                     if current_user.is_authenticated and current_user.id == existing_user_id:
+                     # Agent IS CLAIMED
+                     if not current_user.is_authenticated or current_user.id != existing_user_id:
+                         # HIJACK ATTEMPT or mismatch -> BLOCK
+                         flash("This agent email is already claimed by another user. Please log in as that agent to create listings.", "error")
+                         return render_template("submit.html", agent_data=None), 403
+                     else:
+                         # Owner -> Allow update
                          can_update_agent = True
+                
                 elif current_user.is_authenticated:
-                     can_update_agent = True
-                     cursor.execute("UPDATE agents SET user_id=%s WHERE id=%s", (current_user.id, agent_id))
+                     # Agent IS UNCLAIMED
+                     # Allow claim ONLY if Verified AND Email matches
+                     if hasattr(current_user, 'is_verified') and current_user.is_verified and current_user.email.lower() == agent_email.lower():
+                         can_update_agent = True
+                         cursor.execute("UPDATE agents SET user_id=%s WHERE id=%s", (current_user.id, agent_id))
+                     else:
+                         # Unverified or Guest or Mismatched Email -> DO NOT CLAIM
+                         # Allow creating property but do not touch agent record
+                         can_update_agent = False
 
                 if can_update_agent:
                     updates = []
@@ -143,7 +160,11 @@ def submit():
                     cursor.execute(f"UPDATE agents SET {', '.join(updates)} WHERE id=%s", tuple(params))
             else:
                 # Create New Agent
-                user_id = current_user.id if current_user.is_authenticated else None
+                # [SECURITY] Only link if verified
+                user_id = None
+                if current_user.is_authenticated and hasattr(current_user, 'is_verified') and current_user.is_verified:
+                    user_id = current_user.id
+                    
                 cursor.execute(
                     """
                     INSERT INTO agents (user_id, name, brokerage, email, phone, photo_filename, logo_filename, scheduling_url)
