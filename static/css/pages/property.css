@@ -577,6 +577,13 @@ textarea.form-input {
     cursor: pointer;
 }
 
+.consent-label span {
+    flex: 1;
+    white-space: normal;
+    word-break: break-word;
+    /* Prevent overflow if no spaces */
+}
+
 .consent-label input {
     margin-top: 0.25em;
     /* Better baseline alignment relative to font-size */
