@@ -10,10 +10,8 @@
 
     {% if cards %}
     {% for card in cards %}
-    <div class="glass-panel mb-4" style="padding: 1.5rem; border-left: 6px solid 
-            {% if card.type == 'warning' %}#f44336
-            {% elif card.type == 'success' %}#4CAF50
-            {% else %}#2196f3{% endif %};">
+    <div class="glass-panel mb-4 {% if card.type == 'warning' %}status-border-warning{% elif card.type == 'success' %}status-border-success{% else %}status-border-info{% endif %}"
+        style="padding: 1.5rem;">
 
         <h3 style="margin: 0 0 10px 0; color: white;">{{ card.title }}</h3>
         <p style="color: #aaa; margin-bottom: 15px;">{{ card.message }}</p>

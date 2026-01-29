@@ -79,6 +79,18 @@
     border: 1px solid rgba(245, 158, 11, 0.2);
 }
 
+.status-border-warning {
+    border-left: 6px solid #f44336 !important;
+}
+
+.status-border-success {
+    border-left: 6px solid #4CAF50 !important;
+}
+
+.status-border-info {
+    border-left: 6px solid #2196f3 !important;
+}
+
 /* =============================================================================
    Section Headers
    ============================================================================= */
