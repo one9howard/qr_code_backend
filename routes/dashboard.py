@@ -51,7 +51,7 @@ def index():
                 p.created_at,
                 (SELECT filename FROM property_photos pp WHERE pp.property_id = p.id LIMIT 1) as photo_filename
             FROM properties p
-            WHERE p.agent_id = %s
+            WHERE p.agent_id IN (SELECT id FROM agents WHERE user_id = %s)
             ORDER BY p.created_at DESC
         """, (agent_id['id'],)).fetchall()
         
