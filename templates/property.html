@@ -8,14 +8,6 @@
     {# SEO Title: Address | Beds/Baths | CTA #}
     <title>{{ property.address or 'Property' }} | {{ property.beds }} bd {{ property.baths }} ba | Request info</title>
 
-    {# DEBUG: Catch Global Errors (Syntax Errors in inline scripts) #}
-    <script>
-        window.onerror = function (msg, url, line, col, error) {
-            alert('Global Error: ' + msg + '\nLine: ' + line + '\nCol: ' + col);
-            return false;
-        };
-    </script>
-
     {# Core Styles #}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/pages/property.css') }}">
@@ -424,26 +416,33 @@
     </div>
 
     {# ============ SCRIPTS ============ #}
-    {# Pass minimal server data to JS - NO PHOTO URLS for FREE/EXPIRED #}
+    {# Pass minimal server data to JS - Safe Injection #}
     <script>
         try {
             window.PROPERTY_DATA = {
                 id: "{{ property.id }}",
                 tier: "{{ 'paid' if gating.is_paid else ('expired' if gating.is_expired else 'free') }}",
-                {% if gating.is_paid and photos %}
-            photos: [{% for p in photos %}"{{ get_storage_url(p) }}"{% if not loop.last %}, {% endif %} {% endfor %}],
-        photoCount: { { photos | length } },
-        {% else %}
-        photos: [],
-            photoCount: { { photos | length if photos else 0 } },
-        {% endif %}
-        agentName: "{{ property.agent_name|e }}"
+                photos: [],
+                photoCount: 0,
+                agentName: "{{ property.agent_name|e }}"
             };
-        // Debugging log (optional)
-        console.log('PROPERTY_DATA loaded', window.PROPERTY_DATA);
+
+            {% if gating.is_paid and photos %}
+            // Inject photos one by one to avoid syntax errors
+            {% for p in photos %}
+            window.PROPERTY_DATA.photos.push("{{ get_storage_url(p) }}");
+            {% endfor %}
+
+            window.PROPERTY_DATA.photoCount = window.PROPERTY_DATA.photos.length;
+            {% else %}
+            window.PROPERTY_DATA.photoCount = {{ photos | length if photos else 0 }
+        };
+        {% endif %}
+
         } catch (e) {
-            alert('CRITICAL DATA ERROR: ' + e.message);
-            console.error('CRITICAL DATA ERROR', e);
+            console.error('Data Injection Error', e);
+            // Fallback for safety
+            if (!window.PROPERTY_DATA) window.PROPERTY_DATA = { photos: [] };
         }
     </script>
     <script src="{{ url_for('static', filename='js/pages/property.js') }}" defer></script>
