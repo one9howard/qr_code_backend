@@ -70,8 +70,9 @@ class LocalStorage(StorageBackend):
         return key
 
     def get_url(self, key, expires_seconds=3600):
-        # Local URL served via /storage/ route in dev
-        return f"{self.base_url}/storage/{key}".replace("\\", "/")
+        # Return root-relative path to match app.py routes (/uploads/, /qr/)
+        # Using relative path fixes issues when accessing via IP vs localhost
+        return f"/{key}".replace("\\", "/")
 
     def get_file(self, key):
         abs_path = self._get_abs_path(key)
