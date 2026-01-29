@@ -410,21 +410,6 @@
             });
         });
 
-        // Thumbnail buttons
-        document.querySelectorAll('.thumb-btn[data-index]').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const idx = parseInt(btn.dataset.index, 10) || 0;
-                // Update hero image
-                const heroImg = document.getElementById('hero-image');
-                if (heroImg && DATA.photos[idx]) {
-                    heroImg.src = DATA.photos[idx];
-                }
-                // Update active state
-                document.querySelectorAll('.thumb-btn').forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-            });
-        });
-
         // Controls
         document.getElementById('lightbox-close')?.addEventListener('click', closeLightbox);
         document.getElementById('lightbox-prev')?.addEventListener('click', lightboxPrev);
