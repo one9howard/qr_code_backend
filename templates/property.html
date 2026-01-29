@@ -435,7 +435,7 @@
 
             window.PROPERTY_DATA.photoCount = window.PROPERTY_DATA.photos.length;
             {% else %}
-            window.PROPERTY_DATA.photoCount = {{ photos | length if photos else 0 }
+            window.PROPERTY_DATA.photoCount = {{ photos | length }
         };
         {% endif %}
 
