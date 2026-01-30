@@ -243,7 +243,9 @@
                         <span style="color: var(--text-main); font-weight: 500;">Your SmartSign just generated a buyer
                             inquiry.</span>
                     </div>
-                    <a href="#leads-section" style="color: var(--accent-cyan); font-size: 0.9rem;">View lead →</a>
+                    <a href="#"
+                        onclick="switchTab('analytics'); document.getElementById('leads-section').scrollIntoView({behavior: 'smooth'}); return false;"
+                        style="color: var(--accent-cyan); font-size: 0.9rem;">View lead →</a>
                 </div>
             </div>
             {% endif %}
@@ -640,7 +642,15 @@
                     <span style="color: var(--text-main); font-weight: 500;">First buyer inquiry received!</span>
                 </div>
                 {% endif %}
-                <h3>Recent Leads</h3>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                    <h3 style="margin: 0;">Recent Leads</h3>
+                    {% if is_pro and leads %}
+                    <a href="{{ url_for('leads.export_leads_csv') }}" class="glass-button secondary"
+                        style="padding: 6px 12px; font-size: 0.85rem; display: flex; align-items: center; gap: 6px;">
+                        <span>📥</span> Download CSV
+                    </a>
+                    {% endif %}
+                </div>
                 <div class="table-container">
                     {% if leads %}
                     <table class="saas-table">
