@@ -314,7 +314,7 @@ def _draw_safe_footer_stack(c, l, center_x, cta_text, url_text, cta_font, url_fo
     return 
 
 
-def generate_smartsign_pdf(asset, order_id=None, user_id=None):
+def generate_smartsign_pdf(asset, order_id=None, user_id=None, override_base_url=None):
     # 0. Register Fonts
     register_fonts()
 
@@ -337,12 +337,13 @@ def generate_smartsign_pdf(asset, order_id=None, user_id=None):
     c.translate(layout.bleed, layout.bleed)
     
     # Dispatch
+    active_base_url = override_base_url or PUBLIC_BASE_URL
     if layout_id == 'smart_v1_photo_banner':
-        _draw_photo_banner(c, layout, asset, user_id)
+        _draw_photo_banner(c, layout, asset, user_id, active_base_url)
     elif layout_id == 'smart_v1_agent_brand':
-        _draw_agent_brand(c, layout, asset, user_id)
+        _draw_agent_brand(c, layout, asset, user_id, active_base_url)
     else:
-        _draw_modern_minimal(c, layout, asset, user_id)
+        _draw_modern_minimal(c, layout, asset, user_id, active_base_url)
         
     c.showPage()
     c.save()
@@ -360,7 +361,7 @@ def generate_smartsign_pdf(asset, order_id=None, user_id=None):
     return key
 
 
-def _draw_modern_minimal(c, l, asset, user_id):
+def _draw_modern_minimal(c, l, asset, user_id, base_url):
     """Modern Minimal with Shared Identity Block."""
     spec = l.layout_spec
     
@@ -414,12 +415,12 @@ def _draw_modern_minimal(c, l, asset, user_id):
     
     # QR Content
     code = _read(asset, 'code')
-    qr_url = f"{PUBLIC_BASE_URL.rstrip('/')}/r/{code}" # USE PUBLIC URL
+    qr_url = f"{base_url.rstrip('/')}/r/{code}" # USE PUBLIC URL
     draw_qr(c, qr_url, x=center_x - qr_size/2, y=center_y - qr_size/2, size=qr_size, user_id=user_id)
  
     # --- Footer ---
     cta_text = CTA_MAP.get(_read(asset, 'cta_key'), 'SCAN FOR DETAILS')
-    display_url = f"{urllib.parse.urlparse(PUBLIC_BASE_URL).netloc}/r/{code}"
+    display_url = f"{urllib.parse.urlparse(base_url).netloc}/r/{code}"
 
     _draw_safe_footer_stack(
         c, l, center_x, 
@@ -431,7 +432,7 @@ def _draw_modern_minimal(c, l, asset, user_id):
     )
 
 
-def _draw_agent_brand(c, l, asset, user_id):
+def _draw_agent_brand(c, l, asset, user_id, base_url):
     """Agent Brand with Shared Identity Block."""
     spec = l.layout_spec
     
@@ -466,14 +467,14 @@ def _draw_agent_brand(c, l, asset, user_id):
     c.roundRect((l.width - card_size)/2, qr_y_center - (card_size/2), card_size, card_size, radius, fill=1, stroke=1)
 
     code = _read(asset, 'code')
-    qr_url = f"{PUBLIC_BASE_URL.rstrip('/')}/r/{code}"
+    qr_url = f"{base_url.rstrip('/')}/r/{code}"
     draw_qr(c, qr_url, x=(l.width - qr_size)/2, y=qr_y_center - (qr_size/2), size=qr_size, user_id=user_id)
     
     # --- Footer ---
     # Just Scan Label under QR in whitespace
     # And maybe duplicate URL small?
     
-    display_url = f"{urllib.parse.urlparse(PUBLIC_BASE_URL).netloc}/r/{code}"
+    display_url = f"{urllib.parse.urlparse(base_url).netloc}/r/{code}"
     label_y = qr_y_center - (card_size/2) - to_pt(0.5)
     c.setFillColorRGB(*hex_to_rgb(COLORS['bg_navy'])) # Higher Contrast
     draw_fitted_multiline(c, display_url, center_x, label_y, FONT_BODY, 24, 18, l.width*0.8, align='center')
@@ -489,7 +490,7 @@ def _draw_agent_brand(c, l, asset, user_id):
     draw_fitted_multiline(c, cta_text, center_x, footer_cy + (fs[0]*0.35), FONT_MED, fs[0], fs[1], l.width*0.9, max_lines=1, color=COLORS['bg_navy'])
 
 
-def _draw_photo_banner(c, l, asset, user_id):
+def _draw_photo_banner(c, l, asset, user_id, base_url):
     """Legacy Photo Banner - Updated to use Fonts/PublicURL but keep layout."""
     spec = l.layout_spec
     margin = l.safe_margin
@@ -521,7 +522,7 @@ def _draw_photo_banner(c, l, asset, user_id):
     qr_y = (band_y + spec['footer_band']) / 2
     
     code = _read(asset, 'code')
-    qr_url = f"{PUBLIC_BASE_URL.rstrip('/')}/r/{code}"
+    qr_url = f"{base_url.rstrip('/')}/r/{code}"
     draw_qr(c, qr_url, x=(l.width - qr_size)/2, y=qr_y - qr_size/2, size=qr_size, user_id=user_id)
     
     # Footer CTA

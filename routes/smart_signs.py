@@ -201,7 +201,9 @@ def preview_smartsign(asset_id):
         # order_id=None -> tmp location or deterministic?
         # Use None to just generate.
         # Wait, generate returns a KEY.
-        key = generate_smartsign_pdf(asset, order_id=None)
+        # FIX: Pass current host for preview to ensure QR works on Staging
+        current_host = request.url_root.rstrip('/')
+        key = generate_smartsign_pdf(asset, order_id=None, override_base_url=current_host)
         
         # Read back and serve
         storage = get_storage()
