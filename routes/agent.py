@@ -262,6 +262,8 @@ def submit():
             # --- MODE CHECK: Property Only (Free) vs Listing Sign (Paid) ---
             mode = request.form.get("mode")
             if mode == 'property_only':
+                db.commit() # Ensure insertion is persisted
+                current_app.logger.info(f"Property-only mode: Created Property {property_id}")
                 # Skip order creation, PDF generation, and checkout
                 flash("Property created successfully. Now assign your SmartSign.", "success")
                 return redirect(url_for('dashboard.index') + '#smart-signs-section')
