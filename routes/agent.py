@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 from utils.timestamps import utc_iso
 from services.subscriptions import is_subscription_active
 
-from flask import Blueprint, render_template, request, session, flash, url_for
+from flask import Blueprint, render_template, request, session, flash, url_for, redirect
 from flask_login import current_user
 from slugify import slugify
 
