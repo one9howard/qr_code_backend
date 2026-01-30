@@ -276,7 +276,7 @@
                     <p class="agent-brokerage">{{ property.brokerage }}</p>
 
                     <button type="button" class="btn-primary btn-request-info" id="scroll-to-form-btn">
-                        Request info
+                        Contact Agent
                     </button>
 
                     <form id="lead-form" class="lead-form" autocomplete="on">
@@ -327,7 +327,7 @@
                         <div id="lead-form-success" class="form-success"></div>
 
                         <button type="submit" id="lead-submit-btn" class="btn-primary btn-submit">
-                            Send request
+                            Request a Showing
                         </button>
                     </form>
 
@@ -356,7 +356,7 @@
         </a>
         {% endif %}
         <button type="button" class="mobile-btn mobile-btn-info" id="mobile-request-info" data-action="request_info">
-            💬<span>Request info</span>
+            💬<span>Contact</span>
         </button>
         <a href="mailto:{{ property.agent_email }}" class="mobile-btn mobile-btn-email" data-action="email">
             ✉️<span>Email</span>
@@ -442,12 +442,12 @@
     {# Safe JSON injection: no Jinja inside executable JS #}
     <script id="property-data" type="application/json">{{ property_data|tojson }}</script>
     <script>
-      try {
-        const el = document.getElementById('property-data');
-        window.PROPERTY_DATA = el ? JSON.parse(el.textContent) : {};
-      } catch (e) {
-        window.PROPERTY_DATA = {};
-      }
+        try {
+            const el = document.getElementById('property-data');
+            window.PROPERTY_DATA = el ? JSON.parse(el.textContent) : {};
+        } catch (e) {
+            window.PROPERTY_DATA = {};
+        }
     </script>
     <script src="{{ url_for('static', filename='js/pages/property.js') }}" defer></script>
 

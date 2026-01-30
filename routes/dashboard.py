@@ -113,9 +113,45 @@ def index():
                     'link': url_for('dashboard.edit_property', property_id=p['id'])
                 })
 
-    # 5. SmartSigns (Legacy/MVP Compat)
+    # 5. SmartSigns (Legacy/MVP Compat) with Performance Metrics
     from services.smart_signs import SmartSignsService
     sign_assets = SmartSignsService.get_user_assets(current_user.id)
+    
+    # 5b. Compute per-asset scans/leads/conversion
+    asset_ids = [a['id'] for a in sign_assets] if sign_assets else [-1]
+    
+    # Query scans per asset from qr_scans
+    scans_result = db.execute("""
+        SELECT sign_asset_id, COUNT(*) as count 
+        FROM qr_scans 
+        WHERE sign_asset_id = ANY(%s) 
+        GROUP BY sign_asset_id
+    """, (asset_ids,)).fetchall()
+    scans_by_asset = {r['sign_asset_id']: r['count'] for r in scans_result}
+    
+    # Query leads per asset from leads table
+    leads_result = db.execute("""
+        SELECT sign_asset_id, COUNT(*) as count 
+        FROM leads 
+        WHERE sign_asset_id = ANY(%s) 
+        GROUP BY sign_asset_id
+    """, (asset_ids,)).fetchall()
+    leads_by_asset = {r['sign_asset_id']: r['count'] for r in leads_result}
+    
+    # Enrich sign_assets with metrics
+    for asset in sign_assets:
+        aid = asset['id']
+        scans = scans_by_asset.get(aid, 0)
+        leads = leads_by_asset.get(aid, 0)
+        asset['scans'] = scans
+        asset['leads'] = leads
+        
+        # Conversion rate: show "—" if insufficient data
+        if scans < 5:
+            asset['conversion'] = "—"
+        else:
+            conv = (leads / scans) * 100
+            asset['conversion'] = f"{conv:.1f}%"
 
     # 6. Leads (Recent)
     leads = db.execute(
@@ -130,6 +166,58 @@ def index():
         (agent_ids_param,)
     ).fetchall()
 
+    # 7. Listing Signs (orders with order_type='sign')
+    listing_signs_raw = db.execute(
+        """
+        SELECT 
+            o.id as order_id,
+            p.id,
+            p.address,
+            p.price,
+            o.status,
+            o.created_at,
+            (SELECT COUNT(*) FROM qr_scans WHERE property_id = p.id) as scan_count
+        FROM orders o
+        JOIN properties p ON o.property_id = p.id
+        WHERE o.user_id = %s 
+          AND o.order_type = 'sign' 
+          AND o.status = 'paid'
+        ORDER BY o.created_at DESC
+        """,
+        (current_user.id,)
+    ).fetchall()
+    
+    # Enrich with status labels for display
+    listing_signs = []
+    for row in listing_signs_raw:
+        from services.gating import get_property_gating_status
+        gating = get_property_gating_status(row['id'])
+        
+        if gating['is_expired'] and not gating['is_paid']:
+            status_label = 'Expired'
+            status_color = 'expired'
+        elif gating['is_paid']:
+            status_label = 'Active'
+            status_color = 'active'
+        else:
+            status_label = 'Preview'
+            status_color = 'pending'
+        
+        listing_signs.append({
+            'id': row['id'],
+            'order_id': row['order_id'],
+            'address': row['address'],
+            'price': row['price'],
+            'scan_count': row['scan_count'] or 0,
+            'status_label': status_label,
+            'status_color': status_color,
+        })
+
+    # 8. Onboarding Context (for contextual zero-states)
+    has_smartsigns = len(sign_assets) > 0
+    has_assigned_smartsigns = any(a.get('active_property_id') for a in sign_assets)
+    has_any_activity = metrics.get('total_scans', 0) > 0 or metrics.get('total_views', 0) > 0
+
     return render_template(
         "dashboard.html",
         metrics=metrics,
@@ -139,7 +227,19 @@ def index():
         leads=leads,
         properties=properties,
         is_pro=current_user.is_pro,
+        listing_signs=listing_signs,
+        # Onboarding flags
+        has_smartsigns=has_smartsigns,
+        has_assigned_smartsigns=has_assigned_smartsigns,
+        has_any_activity=has_any_activity,
     )
+
+
+@dashboard_bp.route("/how-it-works")
+@login_required
+def how_it_works():
+    """How SmartSigns Get Leads - tactical onboarding page."""
+    return render_template("how_it_works.html", is_pro=current_user.is_pro)
 
 
 @dashboard_bp.route("/delete/<int:property_id>", methods=["POST"])

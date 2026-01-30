@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+
+{% block title %}How SmartSigns Get Leads | InSite Signs{% endblock %}
+
+{% block body_class %}saas-landing{% endblock %}
+
+{% block content %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/pages/landing_saas.css') }}">
+
+<div class="features-section" style="padding-top: 80px; min-height: 100vh;">
+    <div class="container-saas" style="max-width: 600px;">
+
+        <h2 class="section-title" style="font-size: 1.8rem; margin-bottom: 40px;">How SmartSigns Get Leads</h2>
+
+        <div style="display: flex; flex-direction: column; gap: 32px;">
+
+            <!-- Step 1 -->
+            <div style="display: flex; gap: 20px; align-items: flex-start;">
+                <div
+                    style="min-width: 48px; height: 48px; background: var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1.2rem;">
+                    1</div>
+                <div>
+                    <h3 style="margin: 0 0 8px 0; font-size: 1.1rem; color: var(--text-main);">Place a SmartSign at a
+                        property</h3>
+                    <p style="margin: 0; color: var(--text-muted); font-size: 0.95rem;">Order your reusable sign, then
+                        assign it to any listing from your dashboard.</p>
+                </div>
+            </div>
+
+            <!-- Step 2 -->
+            <div style="display: flex; gap: 20px; align-items: flex-start;">
+                <div
+                    style="min-width: 48px; height: 48px; background: var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1.2rem;">
+                    2</div>
+                <div>
+                    <h3 style="margin: 0 0 8px 0; font-size: 1.1rem; color: var(--text-main);">Buyer scans the QR code
+                    </h3>
+                    <p style="margin: 0; color: var(--text-muted); font-size: 0.95rem;">They land on the property page
+                        instantly. No app downloads required.</p>
+                </div>
+            </div>
+
+            <!-- Step 3 -->
+            <div style="display: flex; gap: 20px; align-items: flex-start;">
+                <div
+                    style="min-width: 48px; height: 48px; background: var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1.2rem;">
+                    3</div>
+                <div>
+                    <h3 style="margin: 0 0 8px 0; font-size: 1.1rem; color: var(--text-main);">Buyer contacts you
+                        directly</h3>
+                    <p style="margin: 0; color: var(--text-muted); font-size: 0.95rem;">They fill out a quick form or
+                        tap to call. Their info goes straight to you.</p>
+                </div>
+            </div>
+
+            <!-- Step 4 -->
+            <div style="display: flex; gap: 20px; align-items: flex-start;">
+                <div
+                    style="min-width: 48px; height: 48px; background: var(--accent-green); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1.2rem;">
+                    ✓</div>
+                <div>
+                    <h3 style="margin: 0 0 8px 0; font-size: 1.1rem; color: var(--text-main);">Leads appear in your
+                        dashboard</h3>
+                    <p style="margin: 0; color: var(--text-muted); font-size: 0.95rem;">Track every scan and lead. See
+                        which properties get the most interest.</p>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Trust sentence -->
+        <p style="text-align: center; margin-top: 48px; color: var(--accent-cyan); font-size: 0.9rem;">
+            SmartSign scans turn into direct buyer inquiries—no apps, no downloads.
+        </p>
+
+        <!-- CTA -->
+        <div style="text-align: center; margin-top: 32px;">
+            {% if is_pro %}
+            <a href="{{ url_for('smart_signs.order_start') }}" class="btn-primary" style="padding: 14px 32px;">Create
+                Your SmartSign</a>
+            {% else %}
+            <a href="{{ url_for('orders.select_property_for_sign') }}" class="btn-primary"
+                style="padding: 14px 32px;">Create Your First Sign</a>
+            {% endif %}
+        </div>
+
+        <div style="text-align: center; margin-top: 24px;">
+            <a href="{{ url_for('dashboard.index') }}" style="color: var(--text-muted); font-size: 0.9rem;">← Back to
+                Dashboard</a>
+        </div>
+
+    </div>
+</div>
+{% endblock %}

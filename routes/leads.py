@@ -88,8 +88,9 @@ def submit_lead():
     
     # Validate required fields
     property_id = data.get("property_id")
-    buyer_name = data.get("buyer_name", "").strip()
+    buyer_name = data.get("buyer_name", "").strip() or "Interested Buyer"  # Fallback if blank
     buyer_email = data.get("buyer_email", "").strip()
+    buyer_phone = data.get("buyer_phone", "").strip()[:20] or None
     consent = data.get("consent")
     
     # --- Event Tracker Helper ---
@@ -106,8 +107,8 @@ def submit_lead():
                 "tier_state": tier_state,
                 "honeypot_triggered": bool(data.get("website")),
                 "lead_fields": {
-                    "has_phone": bool(data.get("buyer_phone")),
-                    "has_email": bool(data.get("buyer_email")), # Boolean only
+                    "has_phone": bool(buyer_phone),
+                    "has_email": bool(buyer_email),
                     "has_message": bool(data.get("message"))
                 }
             }
@@ -116,23 +117,41 @@ def submit_lead():
     if not property_id:
         track_lead_attempt(False, "missing_property_id")
         return jsonify({"success": False, "error": "Missing property_id"}), 400
-    if not buyer_name:
-        track_lead_attempt(False, "missing_name")
-        return jsonify({"success": False, "error": "Name is required"}), 400
-    if not buyer_email:
-        track_lead_attempt(False, "missing_email")
-        return jsonify({"success": False, "error": "Email is required"}), 400
+    
+    # Require at least one contact method: email OR phone
+    if not buyer_email and not buyer_phone:
+        track_lead_attempt(False, "missing_contact")
+        return jsonify({"success": False, "error": "Email or phone is required"}), 400
+    
     if not consent:
         track_lead_attempt(False, "missing_consent")
         return jsonify({"success": False, "error": "Consent is required"}), 400
     
-    # Basic email validation
-    if "@" not in buyer_email or "." not in buyer_email:
+    # Basic email validation (if provided)
+    if buyer_email and ("@" not in buyer_email or "." not in buyer_email):
         track_lead_attempt(False, "invalid_email")
         return jsonify({"success": False, "error": "Invalid email address"}), 400
     
-    # Optional fields
-    buyer_phone = data.get("buyer_phone", "").strip()[:20] or None
+    # --- SmartSign Attribution (Signed Token) ---
+    sign_asset_id = None
+    lead_source = "direct"
+    
+    attrib_token = request.cookies.get("smart_attrib")
+    if attrib_token:
+        from utils.attrib import verify_attrib_token
+        from config import SECRET_KEY
+        
+        verified_asset_id = verify_attrib_token(attrib_token, SECRET_KEY, max_age_seconds=7*24*3600)
+        if verified_asset_id:
+            # Confirm asset exists in DB
+            asset_exists = db.execute(
+                "SELECT id FROM sign_assets WHERE id = %s", (verified_asset_id,)
+            ).fetchone()
+            if asset_exists:
+                sign_asset_id = verified_asset_id
+                lead_source = "smart_sign"
+    
+    # Optional fields (buyer_phone already extracted above)
     preferred_contact = data.get("preferred_contact", "call")
     best_time = data.get("best_time", "").strip()[:50] or None
     message = data.get("message", "").strip()[:1000] or None
@@ -171,17 +190,18 @@ def submit_lead():
     agent_id = property_row['agent_id']
     
     try:
-        # Insert lead
+        # Insert lead with attribution
         cursor = db.cursor()
-        # RETURNING id required
         cursor.execute(
             """INSERT INTO leads 
                (property_id, agent_id, buyer_name, buyer_email, buyer_phone,
-                preferred_contact, best_time, message, consent_given, ip_address)
-               VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                preferred_contact, best_time, message, consent_given, ip_address,
+                sign_asset_id, source)
+               VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                RETURNING id""",
-            (property_id, agent_id, buyer_name, buyer_email, buyer_phone,
-             preferred_contact, best_time, message, True, ip_address)
+            (property_id, agent_id, buyer_name, buyer_email or None, buyer_phone,
+             preferred_contact, best_time, message, True, ip_address,
+             sign_asset_id, lead_source)
         )
         lead_id = cursor.fetchone()['id']
         
@@ -244,15 +264,23 @@ def submit_lead():
             property_id=property_id,
             payload={
                 "status": outcome_status,
-                "provider": "email", # Default
+                "provider": "email",
                 "error_code": error_msg[:100] if error_msg else None
             }
         )
         
-        return jsonify({
+        # Build success response and clear attribution cookie
+        from flask import make_response
+        response = make_response(jsonify({
             "success": True,
             "message": "Thank you! The agent will contact you soon."
-        })
+        }))
+        
+        # Clear attribution cookie after successful lead creation
+        if sign_asset_id:
+            response.set_cookie('smart_attrib', '', max_age=0, path='/')
+        
+        return response
         
     except Exception as e:
         current_app.logger.error(f"[Leads] Error saving lead: {e}")

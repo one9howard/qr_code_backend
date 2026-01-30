@@ -20,6 +20,8 @@ properties_bp = Blueprint('properties', __name__)
 # Cookie settings
 INTERNAL_VIEW_COOKIE = 'internal_view'
 INTERNAL_VIEW_MAX_AGE = 1800  # 30 minutes
+SMART_ATTRIB_COOKIE = 'smart_attrib'
+SMART_ATTRIB_MAX_AGE = 7 * 24 * 3600  # 7 days
 
 
 def compute_visitor_hash(ip: str, user_agent: str) -> str:
@@ -180,8 +182,29 @@ def qr_scan_redirect(code):
     except Exception as e:
         print(f"[Analytics] Error logging QR scan: {e}")
     
-    # Redirect
-    return redirect(url_for('properties.property_page', slug=property_row['slug']))
+    # Create redirect response
+    response = make_response(
+        redirect(url_for('properties.property_page', slug=property_row['slug']))
+    )
+    
+    # Set signed attribution cookie ONLY for assigned SmartSign assets
+    if sign_asset_id:
+        import time
+        from utils.attrib import make_attrib_token
+        from config import SECRET_KEY
+        
+        token = make_attrib_token(sign_asset_id, int(time.time()), SECRET_KEY)
+        response.set_cookie(
+            SMART_ATTRIB_COOKIE,
+            token,
+            max_age=SMART_ATTRIB_MAX_AGE,
+            httponly=True,
+            samesite='Lax',
+            secure=IS_PRODUCTION,
+            path='/'
+        )
+    
+    return response
 
 
 # =============================================================================
