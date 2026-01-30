@@ -133,9 +133,8 @@
         </header>
 
         <div class="content-wrapper">
-            {% if smart_sign_count == 0 %}
-            <!-- ========== HARD ZERO-STATE GATE ========== -->
-            <!-- User has 0 SmartSigns: show ONLY the activation card, hide everything else -->
+            {% if dashboard_mode == 'no_signs' %}
+            <!-- ========== HARD ZERO-STATE GATE: No SmartSigns ========== -->
             <div class="col-span-12"
                 style="display: flex; justify-content: center; align-items: center; min-height: 60vh;">
                 <div class="card"
@@ -152,455 +151,534 @@
                     <p style="margin-top: 12px; color: var(--text-muted); font-size: 0.85rem;">Takes about 2 minutes</p>
                 </div>
             </div>
-            {% else %}
-            <!-- ========== NORMAL DASHBOARD (user has SmartSigns) ========== -->
 
-            <!-- Soft gate banner: SmartSign exists but not assigned -->
-            {% if has_smartsigns and not has_assigned_sign %}
-            <div class="col-span-12" style="margin-bottom: 16px;">
+            {% elif dashboard_mode == 'needs_assignment' %}
+            <!-- ========== SEMI-HARD GATE: Has SmartSigns but none assigned ========== -->
+            <div class="col-span-12" style="margin-bottom: 24px;">
                 <div class="card"
-                    style="display: flex; justify-content: space-between; align-items: center; padding: 16px 24px; background: linear-gradient(135deg, rgba(255,152,0,0.1) 0%, rgba(255,193,7,0.05) 100%); border: 1px solid rgba(255,152,0,0.3);">
-                    <div>
-                        <strong style="color: var(--text-main);">Assign your SmartSign to a property to start generating
-                            leads.</strong>
-                    </div>
+                    style="text-align: center; padding: 48px 40px; background: linear-gradient(135deg, rgba(255,152,0,0.1) 0%, rgba(255,193,7,0.05) 100%); border: 1px solid rgba(255,152,0,0.3);"
+                    data-testid="assignment-gate">
+                    <h2 style="margin: 0 0 12px 0; font-size: 1.5rem; color: var(--text-main);">Your SmartSign isn't
+                        live yet</h2>
+                    <p style="color: var(--text-muted); font-size: 1rem; line-height: 1.5; margin-bottom: 24px;">
+                        Assign it to a property to start generating buyer leads.
+                    </p>
                     {% if first_unassigned_sign_id %}
                     <a href="{{ url_for('smart_signs.edit_smartsign', asset_id=first_unassigned_sign_id) }}"
-                        class="btn-primary" style="padding: 10px 20px; font-size: 0.9rem;">Assign SmartSign</a>
+                        class="btn-primary" style="padding: 14px 28px; font-size: 1rem;">Assign SmartSign</a>
+                    {% endif %}
+                    {% if properties|length == 0 %}
+                    <p style="margin-top: 16px;">
+                        <a href="{{ url_for('orders.select_property_for_sign') }}"
+                            style="color: var(--accent-cyan); font-size: 0.9rem;">Or create a property first →</a>
+                    </p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Progress Bar (shown in needs_assignment mode) -->
+            <div class="col-span-12" style="margin-bottom: 20px;">
+                <div class="card" style="padding: 20px 24px;" data-testid="progress-bar">
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                        <span style="font-size: 0.9rem; color: var(--text-muted); font-weight: 500;">Progress to your
+                            first buyer lead</span>
+                        <span style="font-size: 0.85rem; color: var(--accent-cyan);">{{ progress_percent }}%</span>
+                    </div>
+                    <div style="height: 8px; background: rgba(255,255,255,0.1); border-radius: 4px; overflow: hidden;">
+                        <div
+                            style="width: {{ progress_percent }}%; height: 100%; background: linear-gradient(90deg, #4facfe 0%, #00f2fe 100%); border-radius: 4px; transition: width 0.3s ease;">
+                        </div>
+                    </div>
+                    <div style="margin-top: 12px; display: flex; justify-content: space-between; align-items: center;">
+                        <span style="font-size: 0.9rem; color: var(--text-main);">Next: {{ next_step_label }}</span>
+                        {% if next_step_url %}
+                        <a href="{{ next_step_url }}" class="btn-primary"
+                            style="padding: 8px 16px; font-size: 0.85rem;">{{ next_step_cta }}</a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Dimmed SmartSigns section for context -->
+            <div class="col-span-12" style="opacity: 0.6;">
+                <div class="card" style="padding: 16px 24px;">
+                    <h4 style="margin: 0; font-size: 0.95rem; color: var(--text-muted);">Your SmartSigns ({{
+                        smart_sign_count }})</h4>
+                    <p style="margin: 8px 0 0 0; font-size: 0.85rem; color: var(--text-muted);">Assign a SmartSign above
+                        to unlock the full dashboard.</p>
+                </div>
+            </div>
+
+            {% else %}
+            <!-- ========== ACTIVE DASHBOARD: User has assigned SmartSigns ========== -->
+
+            <!-- First Scan Banner -->
+            {% if is_first_scan_recent and not has_lead %}
+            <div class="col-span-12" style="margin-bottom: 16px;">
+                <div class="card"
+                    style="display: flex; justify-content: space-between; align-items: center; padding: 14px 20px; background: linear-gradient(135deg, rgba(76,175,80,0.1) 0%, rgba(129,199,132,0.05) 100%); border: 1px solid rgba(76,175,80,0.3);"
+                    data-testid="first-scan-banner">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <span style="font-size: 1.3rem;">📡</span>
+                        <span style="color: var(--text-main); font-weight: 500;">First scan detected — someone just
+                            interacted with your sign.</span>
+                    </div>
+                    {% if first_unassigned_sign_id %}
+                    <a href="#smart-signs-section" style="color: var(--accent-cyan); font-size: 0.9rem;">View SmartSign
+                        →</a>
                     {% endif %}
                 </div>
             </div>
             {% endif %}
 
-            <!-- Progress Checklist (shown when user has 0 leads or is in early stage) -->
-            {% if lead_count_total == 0 %}
-            <div class="col-span-12" style="margin-bottom: 20px;">
-                <div class="card" style="padding: 20px 24px;">
-                    <h4 style="margin: 0 0 16px 0; font-size: 1rem; color: var(--text-muted); font-weight: 500;">Get
-                        Your First Lead</h4>
-                    <div style="display: flex; flex-wrap: wrap; gap: 24px;">
-                        <div style="display: flex; align-items: center; gap: 10px;">
-                            {% if has_smartsigns %}<span style="color: #4CAF50;">✓</span>{% else %}<span
-                                style="color: var(--text-muted);">○</span>{% endif %}
-                            {% if has_smartsigns %}<span style="color: var(--text-main);">Create SmartSign</span>{% else
-                            %}<a href="{{ url_for('smart_signs.order_start') }}"
-                                style="color: var(--accent-cyan);">Create SmartSign</a>{% endif %}
-                        </div>
-                        <div style="display: flex; align-items: center; gap: 10px;">
-                            {% if has_assigned_sign %}<span style="color: #4CAF50;">✓</span>{% else %}<span
-                                style="color: var(--text-muted);">○</span>{% endif %}
-                            {% if has_assigned_sign %}<span style="color: var(--text-main);">Assign to Property</span>{%
-                            elif first_unassigned_sign_id %}<a
-                                href="{{ url_for('smart_signs.edit_smartsign', asset_id=first_unassigned_sign_id) }}"
-                                style="color: var(--accent-cyan);">Assign to Property</a>{% else %}<span
-                                style="color: var(--text-muted);">Assign to Property</span>{% endif %}
-                        </div>
-                        <div style="display: flex; align-items: center; gap: 10px;">
-                            {% if has_scan %}<span style="color: #4CAF50;">✓</span>{% else %}<span
-                                style="color: var(--text-muted);">○</span>{% endif %}
-                            <span
-                                style="color: {% if has_scan %}var(--text-main){% else %}var(--text-muted){% endif %};">Get
-                                First Scan</span>
-                        </div>
-                        <div style="display: flex; align-items: center; gap: 10px;">
-                            {% if lead_count_total > 0 %}<span style="color: #4CAF50;">✓</span>{% else %}<span
-                                style="color: var(--text-muted);">○</span>{% endif %}
-                            <span
-                                style="color: {% if lead_count_total > 0 %}var(--text-main){% else %}var(--text-muted){% endif %};">Receive
-                                Buyer Inquiry</span>
-                        </div>
+            <!-- First Lead Banner -->
+            {% if is_first_lead_recent %}
+            <div class="col-span-12" style="margin-bottom: 16px;">
+                <div class="card"
+                    style="display: flex; justify-content: space-between; align-items: center; padding: 14px 20px; background: linear-gradient(135deg, rgba(76,175,80,0.15) 0%, rgba(129,199,132,0.08) 100%); border: 1px solid rgba(76,175,80,0.4);"
+                    data-testid="first-lead-banner">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <span style="font-size: 1.3rem;">🎉</span>
+                        <span style="color: var(--text-main); font-weight: 500;">Your SmartSign just generated a buyer
+                            inquiry.</span>
                     </div>
+                    <a href="#leads-section" style="color: var(--accent-cyan); font-size: 0.9rem;">View lead →</a>
                 </div>
             </div>
             {% endif %}
 
-            <!-- Stats Row (always show when user has SmartSigns) -->
-            <div class="card col-span-3 stat-card">
-                <div class="stat-label">Total Scans</div>
-                <div class="stat-value">{{ metrics.scans.lifetime }}</div>
-                <div class="stat-trend {% if metrics.scans.delta >= 0 %}trend-up{% else %}trend-down{% endif %}">
-                    {{ '%+d' % metrics.scans.delta }}% (7d)
+            <!-- Progress Bar (shown when progress < 100%) -->
+            {% if progress_percent < 100 %} <div class="col-span-12" style="margin-bottom: 20px;">
+                <div class="card" style="padding: 16px 24px;" data-testid="progress-bar">
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                        <span style="font-size: 0.85rem; color: var(--text-muted);">Progress to your first buyer
+                            lead</span>
+                        <span style="font-size: 0.8rem; color: var(--accent-cyan);">{{ progress_percent }}%</span>
+                    </div>
+                    <div style="height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; overflow: hidden;">
+                        <div
+                            style="width: {{ progress_percent }}%; height: 100%; background: linear-gradient(90deg, #4facfe 0%, #00f2fe 100%); border-radius: 3px;">
+                        </div>
+                    </div>
+                    <div style="margin-top: 10px; display: flex; justify-content: space-between; align-items: center;">
+                        <span style="font-size: 0.85rem; color: var(--text-muted);">Next: {{ next_step_label }}</span>
+                        {% if next_step_url %}
+                        <a href="{{ next_step_url }}" style="color: var(--accent-cyan); font-size: 0.85rem;">{{
+                            next_step_cta }} →</a>
+                        {% endif %}
+                    </div>
                 </div>
-            </div>
+        </div>
+        {% endif %}
 
-            <div class="card col-span-3 stat-card">
-                <div class="stat-label">Total Views</div>
-                <div class="stat-value">{{ metrics.views.lifetime }}</div>
-                <div class="stat-trend {% if metrics.views.delta >= 0 %}trend-up{% else %}trend-down{% endif %}">
-                    {{ '%+d' % metrics.views.delta }}% (7d)
-                </div>
+        <!-- Stats Row (only show when has_scan is true) -->
+        {% if has_scan %}
+        <div class="card col-span-3 stat-card">
+            <div class="stat-label">Total Scans</div>
+            <div class="stat-value">{{ metrics.scans.lifetime }}</div>
+            <div class="stat-trend {% if metrics.scans.delta >= 0 %}trend-up{% else %}trend-down{% endif %}">
+                {{ '%+d' % metrics.scans.delta }}% (7d)
             </div>
+        </div>
 
-            <div class="card col-span-3 stat-card">
-                <div class="stat-label">Buyer Leads (30d)</div>
-                <div class="stat-value">{{ metrics.leads['30d'] }}</div>
-                <div class="stat-trend {% if metrics.leads.delta >= 0 %}trend-up{% else %}trend-down{% endif %}">
-                    {{ '%+d' % metrics.leads.delta }}% (7d)
-                </div>
+        <div class="card col-span-3 stat-card">
+            <div class="stat-label">Total Views</div>
+            <div class="stat-value">{{ metrics.views.lifetime }}</div>
+            <div class="stat-trend {% if metrics.views.delta >= 0 %}trend-up{% else %}trend-down{% endif %}">
+                {{ '%+d' % metrics.views.delta }}% (7d)
             </div>
+        </div>
 
-            <div class="card col-span-3 stat-card">
-                <div class="stat-label">Contact Intents (7d)</div>
-                <div class="stat-value">{{ metrics.ctas['7d'] }}</div>
-                <div class="stat-trend {% if metrics.ctas.delta >= 0 %}trend-up{% else %}trend-down{% endif %}">
-                    {{ '%+d' % metrics.ctas.delta }}% WoW
-                </div>
+        <div class="card col-span-3 stat-card">
+            <div class="stat-label">Buyer Leads (30d)</div>
+            <div class="stat-value">{{ metrics.leads['30d'] }}</div>
+            <div class="stat-trend {% if metrics.leads.delta >= 0 %}trend-up{% else %}trend-down{% endif %}">
+                {{ '%+d' % metrics.leads.delta }}% (7d)
             </div>
+        </div>
 
-            <!-- Trust sentence under stats -->
-            <div class="col-span-12" style="text-align: center; padding: 8px 0 16px 0;">
-                <p style="margin: 0; color: var(--accent-cyan); font-size: 0.85rem; opacity: 0.9;">SmartSign scans turn
-                    into direct buyer inquiries—no apps, no downloads.</p>
+        <div class="card col-span-3 stat-card">
+            <div class="stat-label">Contact Intents (7d)</div>
+            <div class="stat-value">{{ metrics.ctas['7d'] }}</div>
+            <div class="stat-trend {% if metrics.ctas.delta >= 0 %}trend-up{% else %}trend-down{% endif %}">
+                {{ '%+d' % metrics.ctas.delta }}% WoW
             </div>
+        </div>
 
-            <!-- TABS NAVIGATION -->
-            <div class="col-span-12 dashboard-tabs">
-                <button class="tab-btn active" onclick="switchTab('today')">Buyer Activity</button>
-                <button class="tab-btn" onclick="switchTab('listings')">Active Listings</button>
-                <button class="tab-btn" onclick="switchTab('smart')">Your SmartSigns</button>
-                <button class="tab-btn" onclick="switchTab('analytics')">Analytics</button>
+        <!-- Trust sentence under stats -->
+        <div class="col-span-12" style="text-align: center; padding: 8px 0 16px 0;">
+            <p style="margin: 0; color: var(--accent-cyan); font-size: 0.85rem; opacity: 0.9;">SmartSign scans turn
+                into direct buyer inquiries—no apps, no downloads.</p>
+        </div>
+        {% else %}
+        <!-- Analytics placeholder when no scans yet -->
+        <div class="col-span-12" style="margin-bottom: 20px;">
+            <div class="card"
+                style="padding: 24px; text-align: center; background: rgba(255,255,255,0.02); border: 1px dashed rgba(255,255,255,0.15);"
+                data-testid="analytics-placeholder">
+                <p style="margin: 0; color: var(--text-muted); font-size: 0.95rem;">📊 Analytics unlock after your first
+                    scan.</p>
+                <p style="margin: 8px 0 0 0; color: var(--text-muted); font-size: 0.85rem;">Place your SmartSign at a
+                    property and test-scan it to see stats here.</p>
             </div>
+        </div>
+        {% endif %}
 
-            <!-- TAB 0: TODAY (Default now?) -->
-            <div id="tab-today" class="grid-sections active col-span-12">
-                {% if today_cards %}
-                {% for card in today_cards %}
-                <div class="card col-span-12" style="border-left: 4px solid 
+        <!-- TABS NAVIGATION -->
+        <div class="col-span-12 dashboard-tabs">
+            <button class="tab-btn active" onclick="switchTab('today')">Buyer Activity</button>
+            <button class="tab-btn" onclick="switchTab('listings')">Active Listings</button>
+            <button class="tab-btn" onclick="switchTab('smart')">Your SmartSigns</button>
+            {% if has_scan %}
+            <button class="tab-btn" onclick="switchTab('analytics')">Analytics</button>
+            {% endif %}
+        </div>
+
+        <!-- TAB 0: TODAY (Default now?) -->
+        <div id="tab-today" class="grid-sections active col-span-12">
+            {% if today_cards %}
+            {% for card in today_cards %}
+            <div class="card col-span-12" style="border-left: 4px solid 
                         {% if card.type == 'warning' %}#f44336
                         {% elif card.type == 'success' %}#4CAF50
                         {% else %}#2196f3{% endif %};">
 
-                    <h3 style="margin: 0 0 5px 0; font-size: 1.1rem;">{{ card.title }}</h3>
-                    <p style="color: #aaa; margin-bottom: 10px; font-size: 0.9rem;">{{ card.message }}</p>
+                <h3 style="margin: 0 0 5px 0; font-size: 1.1rem;">{{ card.title }}</h3>
+                <p style="color: #aaa; margin-bottom: 10px; font-size: 0.9rem;">{{ card.message }}</p>
 
-                    <a href="{{ card.link }}" style="color: white; text-decoration: underline; font-size: 0.9rem;">{{
-                        card.action }} &rarr;</a>
-                </div>
-                {% endfor %}
-                {% else %}
-                <!-- Welcome/onboarding for new users -->
-                <div class="card col-span-12" style="text-align: center; padding: 48px 32px;">
-                    <div style="font-size: 2.5rem; margin-bottom: 16px;">👋</div>
-                    <h3 style="margin: 0 0 12px 0; font-size: 1.3rem; color: var(--text-main);">Welcome to InSite!</h3>
-                    <p
-                        style="color: var(--text-muted); font-size: 1rem; margin-bottom: 24px; max-width: 400px; margin-left: auto; margin-right: auto;">
-                        Create your first sign to start tracking scans and generating buyer leads.
-                    </p>
-                    <a href="{{ url_for('orders.select_property_for_sign') }}" class="btn-primary"
-                        style="padding: 14px 28px; font-size: 1rem;">Create Your First Sign →</a>
-                    <p style="margin-top: 16px;">
-                        <a href="{{ url_for('dashboard.how_it_works') }}"
-                            style="color: var(--accent-cyan); font-size: 0.9rem;">Learn how SmartSigns get you leads</a>
-                    </p>
-                </div>
-                {% endif %}
+                <a href="{{ card.link }}" style="color: white; text-decoration: underline; font-size: 0.9rem;">{{
+                    card.action }} &rarr;</a>
             </div>
+            {% endfor %}
+            {% else %}
+            <!-- Welcome/onboarding for new users -->
+            <div class="card col-span-12" style="text-align: center; padding: 48px 32px;">
+                <div style="font-size: 2.5rem; margin-bottom: 16px;">👋</div>
+                <h3 style="margin: 0 0 12px 0; font-size: 1.3rem; color: var(--text-main);">Welcome to InSite!</h3>
+                <p
+                    style="color: var(--text-muted); font-size: 1rem; margin-bottom: 24px; max-width: 400px; margin-left: auto; margin-right: auto;">
+                    Create your first sign to start tracking scans and generating buyer leads.
+                </p>
+                <a href="{{ url_for('orders.select_property_for_sign') }}" class="btn-primary"
+                    style="padding: 14px 28px; font-size: 1rem;">Create Your First Sign →</a>
+                <p style="margin-top: 16px;">
+                    <a href="{{ url_for('dashboard.how_it_works') }}"
+                        style="color: var(--accent-cyan); font-size: 0.9rem;">Learn how SmartSigns get you leads</a>
+                </p>
+            </div>
+            {% endif %}
+        </div>
 
-            <!-- TAB 1: LISTINGS -->
-            <div id="tab-listings" class="grid-sections col-span-12">
-                <!-- Listing Signs Card -->
-                <div class="card card-listing col-span-12">
-                    <div
-                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                        <div>
-                            <h3 style="margin: 0; font-size: 1.1rem; display: flex; align-items: center; gap: 8px;">
-                                🛑 Listing Signs
-                            </h3>
-                            <p style="margin: 4px 0 0 0; font-size: 0.85rem; color: var(--text-muted);">
-                                Property-specific signs.
-                            </p>
-                        </div>
-                        <a href="{{ url_for('orders.select_property_for_sign') }}" class="glass-button secondary">
-                            Order Sign
-                        </a>
+        <!-- TAB 1: LISTINGS -->
+        <div id="tab-listings" class="grid-sections col-span-12">
+            <!-- Listing Signs Card -->
+            <div class="card card-listing col-span-12">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <div>
+                        <h3 style="margin: 0; font-size: 1.1rem; display: flex; align-items: center; gap: 8px;">
+                            🛑 Listing Signs
+                        </h3>
+                        <p style="margin: 4px 0 0 0; font-size: 0.85rem; color: var(--text-muted);">
+                            Property-specific signs.
+                        </p>
                     </div>
+                    <a href="{{ url_for('orders.select_property_for_sign') }}" class="glass-button secondary">
+                        Order Sign
+                    </a>
+                </div>
 
-                    <div class="table-container">
-                        {% if listing_signs %}
-                        <table class="saas-table">
-                            <thead>
-                                <tr>
-                                    <th>Address</th>
-                                    <th>Material</th>
-                                    <th>Scans</th>
-                                    <th>Status</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for p in listing_signs %}
-                                <tr>
-                                    <td>
-                                        <div style="font-weight: 500;">{{ p.address }}</div>
-                                        <div style="font-size: 0.8rem; color: var(--text-muted);">{{ p.price if p.price
-                                            else 'Price not set' }}</div>
-                                    </td>
-                                    <td><span class="badge badge-gray">Standard</span></td>
-                                    <td><span class="badge badge-blue">{{ p.scan_count }}</span></td>
-                                    <td>
-                                        <span class="badge 
+                <div class="table-container">
+                    {% if listing_signs %}
+                    <table class="saas-table">
+                        <thead>
+                            <tr>
+                                <th>Address</th>
+                                <th>Material</th>
+                                <th>Scans</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for p in listing_signs %}
+                            <tr>
+                                <td>
+                                    <div style="font-weight: 500;">{{ p.address }}</div>
+                                    <div style="font-size: 0.8rem; color: var(--text-muted);">{{ p.price if p.price
+                                        else 'Price not set' }}</div>
+                                </td>
+                                <td><span class="badge badge-gray">Standard</span></td>
+                                <td><span class="badge badge-blue">{{ p.scan_count }}</span></td>
+                                <td>
+                                    <span class="badge 
                                         {% if p.status_color == 'active' %}badge-green
                                         {% elif p.status_color == 'expired' %}badge-orange
                                         {% else %}badge-gray{% endif %}">
-                                            {{ p.status_label }}
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <div style="display: flex; gap: 12px; align-items: center;">
-                                            <a href="{{ url_for('properties.internal_agent_redirect', property_id=p.id) }}"
-                                                target="_blank"
-                                                style="color: white; font-size: 0.9rem; text-decoration: underline;">View</a>
-                                            <a href="{{ url_for('dashboard.edit_property', property_id=p.id) }}"
-                                                style="color: var(--text-muted); font-size: 0.9rem;">Edit</a>
-                                        </div>
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                        {% else %}
-                        <div style="text-align: center; padding: 32px; color: var(--text-muted);">
-                            No listing signs created yet.
-                        </div>
-                        {% endif %}
-                    </div>
-                </div>
-
-                <!-- Analytics Listings Table -->
-                <div class="card col-span-12">
-                    <div
-                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                        <h3 style="margin: 0; font-size: 1.1rem;">Your Listings</h3>
-                        <a href="{{ url_for('agent.submit') }}" class="glass-button secondary">+ Add Property</a>
-                    </div>
-
-                    <div class="table-container">
-                        {% if listings %}
-                        <table class="saas-table">
-                            <thead>
-                                <tr>
-                                    <th>Address</th>
-                                    <th>7d Scans</th>
-                                    <th>7d Views</th>
-                                    <th>7d Leads</th>
-                                    <th>7d Intent</th>
-                                    <th>Last Activity</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for p in listings %}
-                                <tr onclick="window.location='{{ url_for('dashboard.property_analytics', property_id=p.id) }}';"
-                                    style="cursor: pointer;">
-                                    <td>
-                                        <div style="font-weight: 500;">{{ p.address }}</div>
-                                        <div style="font-size: 0.8rem; color: var(--text-muted);">{{ p.slug }}</div>
-                                        <!-- Tooltip for insights? -->
-                                        {% if p.insights %}
-                                        <div style="font-size: 0.75rem; color: #ff9800;">💡 {{ p.insights[0] }}</div>
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {{ p.scans_7d }}
-                                        {% if p.scans_trend != 0 %}
-                                        <span
-                                            style="font-size: 0.7em; color: {% if p.scans_trend > 0 %}#4CAF50{% else %}#f44336{% endif %};">
-                                            {{ '%+d' % p.scans_trend }}%
-                                        </span>
-                                        {% endif %}
-                                    </td>
-                                    <td>{{ p.views_7d }}</td>
-                                    <td>{{ p.leads_7d }}</td>
-                                    <td>{{ p.cta_7d }}</td>
-                                    <td>{{ p.last_activity if p.last_activity else '-' }}</td>
-                                    <td onclick="event.stopPropagation();">
+                                        {{ p.status_label }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <div style="display: flex; gap: 12px; align-items: center;">
+                                        <a href="{{ url_for('properties.internal_agent_redirect', property_id=p.id) }}"
+                                            target="_blank"
+                                            style="color: white; font-size: 0.9rem; text-decoration: underline;">View</a>
                                         <a href="{{ url_for('dashboard.edit_property', property_id=p.id) }}"
-                                            style="color: var(--text-muted); margin-right: 10px;">Edit</a>
-                                        <a href="{{ url_for('properties.property_page', slug=p.slug) }}" target="_blank"
-                                            style="color: var(--accent-blue);">View</a>
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                        {% else %}
-                        <div style="text-align: center; padding: 20px; color: var(--text-muted);">
-                            No properties found. Add one to start tracking analytics.
-                        </div>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-
-            <!-- TAB 2: SMART ASSETS -->
-            <div id="tab-smart" class="grid-sections col-span-12">
-                <div class="card card-smart col-span-12">
-                    <div
-                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                        <div>
-                            <h3 style="margin: 0; font-size: 1.1rem; display: flex; align-items: center; gap: 8px;">
-                                📦 SmartSigns
-                                {% if not is_pro %}
-                                <span class="badge badge-orange" style="font-size: 0.75rem;">PRO FEATURE</span>
-                                {% endif %}
-                            </h3>
-                            <p style="margin: 4px 0 0 0; font-size: 0.85rem; color: var(--text-muted);">
-                                Reusable signs with dynamic QR codes.
-                            </p>
-                            <p style="margin: 6px 0 0 0; font-size: 0.75rem; color: var(--accent-cyan); opacity: 0.8;">
-                                SmartSign scans turn into direct buyer inquiries—no apps, no downloads.
-                            </p>
-                        </div>
-                        {% if is_pro %}
-                        <a href="{{ url_for('smart_signs.order_start') }}" class="glass-button accent">Order
-                            SmartSign</a>
-                        {% else %}
-                        <a href="{{ url_for('billing.index') }}" class="glass-button secondary">Upgrade to Order</a>
-                        {% endif %}
-                    </div>
-
-                    <div class="table-container">
-                        {% if sign_assets %}
-                        <table class="saas-table">
-                            <thead>
-                                <tr>
-                                    <th>Label</th>
-                                    <th>Assigned Property</th>
-                                    <th>Status</th>
-                                    <th style="text-align: center;">Scans</th>
-                                    <th style="text-align: center;">Leads</th>
-                                    <th style="text-align: center;">Conv.</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for asset in sign_assets %}
-                                <tr>
-                                    <td>{{ asset.label }}<br><small
-                                            style="font-family: monospace; color: var(--accent-cyan);">{{ asset.code
-                                            }}</small></td>
-                                    <td>
-                                        {% if asset.active_property_id %}
-                                        <span style="color:var(--accent-green);">●</span> {{ asset.property_address }}
-                                        {% else %}
-                                        <span style="color:var(--text-muted);">Unassigned</span>
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if asset.is_frozen %}
-                                        <span class="badge badge-orange">Frozen</span>
-                                        {% elif not asset.activated_at %}
-                                        <span class="badge badge-gray">Pending</span>
-                                        {% else %}
-                                        <span class="badge badge-green">Active</span>
-                                        {% endif %}
-                                    </td>
-                                    <td style="text-align: center; font-family: monospace;">{{ asset.scans or 0 }}</td>
-                                    <td style="text-align: center; font-family: monospace;">{{ asset.leads or 0 }}</td>
-                                    <td style="text-align: center; font-family: monospace; color: var(--accent-cyan);">
-                                        {{ asset.conversion or '—' }}</td>
-                                    <td>
-                                        {% if is_pro and not asset.is_frozen and asset.activated_at %}
-                                        <form action="{{ url_for('dashboard.assign_smart_sign', asset_id=asset.id) }}"
-                                            method="POST" style="display: flex; gap: 8px; align-items: center;">
-                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-
-                                            <select name="property_id"
-                                                style="background: rgba(0,0,0,0.2); border: 1px solid var(--border-glass); color: white; padding: 4px 8px; border-radius: 4px; max-width: 150px;">
-                                                <option value="unassigned" {% if not asset.active_property_id
-                                                    %}selected{% endif %}>Unassigned</option>
-                                                {% for p in properties %}
-                                                <option value="{{ p.id }}" {% if p.id==asset.active_property_id
-                                                    %}selected{% endif %}>{{ p.address[:15] }}...</option>
-                                                {% endfor %}
-                                            </select>
-                                            <button type="submit" class="glass-button secondary"
-                                                style="padding: 4px 8px; font-size: 0.8rem;">Save</button>
-                                        </form>
-                                        {% endif %}
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                        {% else %}
-                        <div style="text-align: center; padding: 32px; color: var(--text-muted);">
-                            No SmartSigns yet.
-                        </div>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-
-            <!-- TAB 3: ANALYTICS -->
-            <div id="tab-analytics" class="grid-sections col-span-12">
-                <!-- Analytics Chart (Refactored) -->
-                <div class="card col-span-12">
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 20px;">
-                        <h3 style="margin: 0; font-size: 1.1rem;">Lead Performance</h3>
-                        {% if not is_pro %}
-                        <span class="badge badge-orange">🔒 Upgrade to Unlock</span>
-                        {% endif %}
-                    </div>
-                    <div class="chart-container" style="height: 300px; position: relative;">
-                        {% if is_pro and chart_data %}
-                        <canvas id="leadsChart"></canvas>
-                        {% elif not is_pro %}
-                        <div
-                            style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); z-index: 10;">
-                            <a href="{{ url_for('billing.index') }}" class="glass-button accent">Unlock Analytics</a>
-                        </div>
-                        {% else %}
-                        <div
-                            style="display: flex; align-items: center; justify-content: center; height: 100%; color: var(--text-muted);">
-                            No data.</div>
-                        {% endif %}
-                    </div>
-                </div>
-
-                <!-- Leads Table -->
-                <div class="card col-span-12" id="leads-section">
-                    <!-- First Lead Highlight -->
-                    {% if lead_count_total == 1 and is_first_lead_recent %}
-                    <div
-                        style="background: linear-gradient(135deg, rgba(76,175,80,0.1) 0%, rgba(129,199,132,0.05) 100%); border: 1px solid rgba(76,175,80,0.3); border-radius: 8px; padding: 12px 16px; margin-bottom: 16px; display: flex; align-items: center; gap: 10px;">
-                        <span style="font-size: 1.2rem;">🎉</span>
-                        <span style="color: var(--text-main); font-weight: 500;">First buyer inquiry received!</span>
+                                            style="color: var(--text-muted); font-size: 0.9rem;">Edit</a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    {% else %}
+                    <div style="text-align: center; padding: 32px; color: var(--text-muted);">
+                        No listing signs created yet.
                     </div>
                     {% endif %}
-                    <h3>Recent Leads</h3>
-                    <div class="table-container">
-                        {% if leads %}
-                        <table class="saas-table">
-                            <thead>
-                                <tr>
-                                    <th>Name</th>
-                                    <th>Property</th>
-                                    <th>Date</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for lead in leads %}
-                                <tr>
-                                    <td>{{ lead.buyer_name }}<br><small class="text-muted">{{ lead.buyer_email
-                                            }}</small></td>
-                                    <td>{{ lead.property_address }}</td>
-                                    <td>{{ (lead.created_at|string)[:10] }}</td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                        {% else %}
-                        <p class="text-muted">No leads yet.</p>
-                        {% endif %}
-                    </div>
                 </div>
             </div>
 
+            <!-- Analytics Listings Table -->
+            <div class="card col-span-12">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h3 style="margin: 0; font-size: 1.1rem;">Your Listings</h3>
+                    <a href="{{ url_for('agent.submit') }}" class="glass-button secondary">+ Add Property</a>
+                </div>
+
+                <div class="table-container">
+                    {% if listings %}
+                    <table class="saas-table">
+                        <thead>
+                            <tr>
+                                <th>Address</th>
+                                <th>7d Scans</th>
+                                <th>7d Views</th>
+                                <th>7d Leads</th>
+                                <th>7d Intent</th>
+                                <th>Last Activity</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for p in listings %}
+                            <tr onclick="window.location='{{ url_for('dashboard.property_analytics', property_id=p.id) }}';"
+                                style="cursor: pointer;">
+                                <td>
+                                    <div style="font-weight: 500;">{{ p.address }}</div>
+                                    <div style="font-size: 0.8rem; color: var(--text-muted);">{{ p.slug }}</div>
+                                    <!-- Tooltip for insights? -->
+                                    {% if p.insights %}
+                                    <div style="font-size: 0.75rem; color: #ff9800;">💡 {{ p.insights[0] }}</div>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {{ p.scans_7d }}
+                                    {% if p.scans_trend != 0 %}
+                                    <span
+                                        style="font-size: 0.7em; color: {% if p.scans_trend > 0 %}#4CAF50{% else %}#f44336{% endif %};">
+                                        {{ '%+d' % p.scans_trend }}%
+                                    </span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ p.views_7d }}</td>
+                                <td>{{ p.leads_7d }}</td>
+                                <td>{{ p.cta_7d }}</td>
+                                <td>{{ p.last_activity if p.last_activity else '-' }}</td>
+                                <td onclick="event.stopPropagation();">
+                                    <a href="{{ url_for('dashboard.edit_property', property_id=p.id) }}"
+                                        style="color: var(--text-muted); margin-right: 10px;">Edit</a>
+                                    <a href="{{ url_for('properties.property_page', slug=p.slug) }}" target="_blank"
+                                        style="color: var(--accent-blue);">View</a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    {% else %}
+                    <div style="text-align: center; padding: 20px; color: var(--text-muted);">
+                        No properties found. Add one to start tracking analytics.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
         </div>
-        {% endif %}
-        <!-- End of hard zero-state gate -->
-    </main>
+
+        <!-- TAB 2: SMART ASSETS -->
+        <div id="tab-smart" class="grid-sections col-span-12">
+            <div class="card card-smart col-span-12">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <div>
+                        <h3 style="margin: 0; font-size: 1.1rem; display: flex; align-items: center; gap: 8px;">
+                            📦 SmartSigns
+                            {% if not is_pro %}
+                            <span class="badge badge-orange" style="font-size: 0.75rem;">PRO FEATURE</span>
+                            {% endif %}
+                        </h3>
+                        <p style="margin: 4px 0 0 0; font-size: 0.85rem; color: var(--text-muted);">
+                            Reusable signs with dynamic QR codes.
+                        </p>
+                        <p style="margin: 6px 0 0 0; font-size: 0.75rem; color: var(--accent-cyan); opacity: 0.8;">
+                            SmartSign scans turn into direct buyer inquiries—no apps, no downloads.
+                        </p>
+                    </div>
+                    {% if is_pro %}
+                    <a href="{{ url_for('smart_signs.order_start') }}" class="glass-button accent">Order
+                        SmartSign</a>
+                    {% else %}
+                    <a href="{{ url_for('billing.index') }}" class="glass-button secondary">Upgrade to Order</a>
+                    {% endif %}
+                </div>
+
+                <div class="table-container">
+                    {% if sign_assets %}
+                    <table class="saas-table">
+                        <thead>
+                            <tr>
+                                <th>Label</th>
+                                <th>Assigned Property</th>
+                                <th>Status</th>
+                                <th style="text-align: center;">Scans</th>
+                                <th style="text-align: center;">Leads</th>
+                                <th style="text-align: center;">Conv.</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for asset in sign_assets %}
+                            <tr>
+                                <td>{{ asset.label }}<br><small
+                                        style="font-family: monospace; color: var(--accent-cyan);">{{ asset.code
+                                        }}</small></td>
+                                <td>
+                                    {% if asset.active_property_id %}
+                                    <span style="color:var(--accent-green);">●</span> {{ asset.property_address }}
+                                    {% else %}
+                                    <span style="color:var(--text-muted);">Unassigned</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if asset.is_frozen %}
+                                    <span class="badge badge-orange">Frozen</span>
+                                    {% elif not asset.activated_at %}
+                                    <span class="badge badge-gray">Pending</span>
+                                    {% else %}
+                                    <span class="badge badge-green">Active</span>
+                                    {% endif %}
+                                </td>
+                                <td style="text-align: center; font-family: monospace;">{{ asset.scans or 0 }}</td>
+                                <td style="text-align: center; font-family: monospace;">{{ asset.leads or 0 }}</td>
+                                <td style="text-align: center; font-family: monospace; color: var(--accent-cyan);">
+                                    {{ asset.conversion or '—' }}</td>
+                                <td>
+                                    {% if is_pro and not asset.is_frozen and asset.activated_at %}
+                                    <form action="{{ url_for('dashboard.assign_smart_sign', asset_id=asset.id) }}"
+                                        method="POST" style="display: flex; gap: 8px; align-items: center;">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                                        <select name="property_id"
+                                            style="background: rgba(0,0,0,0.2); border: 1px solid var(--border-glass); color: white; padding: 4px 8px; border-radius: 4px; max-width: 150px;">
+                                            <option value="unassigned" {% if not asset.active_property_id %}selected{%
+                                                endif %}>Unassigned</option>
+                                            {% for p in properties %}
+                                            <option value="{{ p.id }}" {% if p.id==asset.active_property_id %}selected{%
+                                                endif %}>{{ p.address[:15] }}...</option>
+                                            {% endfor %}
+                                        </select>
+                                        <button type="submit" class="glass-button secondary"
+                                            style="padding: 4px 8px; font-size: 0.8rem;">Save</button>
+                                    </form>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    {% else %}
+                    <div style="text-align: center; padding: 32px; color: var(--text-muted);">
+                        No SmartSigns yet.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 3: ANALYTICS -->
+        <div id="tab-analytics" class="grid-sections col-span-12">
+            <!-- Analytics Chart (Refactored) -->
+            <div class="card col-span-12">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 20px;">
+                    <h3 style="margin: 0; font-size: 1.1rem;">Lead Performance</h3>
+                    {% if not is_pro %}
+                    <span class="badge badge-orange">🔒 Upgrade to Unlock</span>
+                    {% endif %}
+                </div>
+                <div class="chart-container" style="height: 300px; position: relative;">
+                    {% if is_pro and chart_data %}
+                    <canvas id="leadsChart"></canvas>
+                    {% elif not is_pro %}
+                    <div
+                        style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); z-index: 10;">
+                        <a href="{{ url_for('billing.index') }}" class="glass-button accent">Unlock Analytics</a>
+                    </div>
+                    {% else %}
+                    <div
+                        style="display: flex; align-items: center; justify-content: center; height: 100%; color: var(--text-muted);">
+                        No data.</div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Leads Table -->
+            <div class="card col-span-12" id="leads-section">
+                <!-- First Lead Highlight -->
+                {% if lead_count_total == 1 and is_first_lead_recent %}
+                <div
+                    style="background: linear-gradient(135deg, rgba(76,175,80,0.1) 0%, rgba(129,199,132,0.05) 100%); border: 1px solid rgba(76,175,80,0.3); border-radius: 8px; padding: 12px 16px; margin-bottom: 16px; display: flex; align-items: center; gap: 10px;">
+                    <span style="font-size: 1.2rem;">🎉</span>
+                    <span style="color: var(--text-main); font-weight: 500;">First buyer inquiry received!</span>
+                </div>
+                {% endif %}
+                <h3>Recent Leads</h3>
+                <div class="table-container">
+                    {% if leads %}
+                    <table class="saas-table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Property</th>
+                                <th>Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for lead in leads %}
+                            <tr {% if loop.first and is_first_lead_recent
+                                %}style="background: rgba(76,175,80,0.15); box-shadow: inset 3px 0 0 #4CAF50;" {% endif
+                                %}>
+                                <td>
+                                    {% if loop.first and is_first_lead_recent %}
+                                    <span style="display:inline-block; margin-right:6px; font-size:0.9em;">🎉</span>
+                                    {% endif %}
+                                    {{ lead.buyer_name }}<br><small class="text-muted">{{ lead.buyer_email }}</small>
+                                </td>
+                                <td>{{ lead.property_address }}</td>
+                                <td>{{ (lead.created_at|string)[:10] }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    {% else %}
+                    <p class="text-muted">No leads yet.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+</div>
+{% endif %}
+<!-- End of hard zero-state gate -->
+</main>
 </div>
 
 <!-- Tab Switching Script -->

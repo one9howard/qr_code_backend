@@ -213,53 +213,118 @@ def index():
             'status_color': status_color,
         })
 
-    # 8. Onboarding Activation Checklist (Phase 1)
+    # 8. Onboarding Activation (Phase 1 Sprint)
     # Compute all flags server-side for template simplicity
+    from datetime import datetime, timedelta, timezone
+    
     smart_sign_count = len(sign_assets)
     has_smartsigns = smart_sign_count > 0
-    has_assigned_sign = any(a.get('active_property_id') for a in sign_assets)
     
-    # Check if user has any scans (for their SmartSigns)
+    # Count assigned vs unassigned SmartSigns
+    assigned_sign_count = sum(1 for a in sign_assets if a.get('active_property_id'))
+    has_assigned_sign = assigned_sign_count > 0
+    
+    # Scan counts and first scan detection
+    scan_count_total = 0
     has_scan = False
+    is_first_scan_recent = False
+    latest_scan_at = None
+    
     if has_smartsigns:
-        scan_check = db.execute("""
-            SELECT 1 FROM qr_scans 
-            WHERE sign_asset_id = ANY(%s) 
-            LIMIT 1
+        scan_stats = db.execute("""
+            SELECT COUNT(*) as count, MAX(scanned_at) as latest
+            FROM qr_scans 
+            WHERE sign_asset_id = ANY(%s)
         """, (asset_ids,)).fetchone()
-        has_scan = scan_check is not None
-    
-    # Lead counts for checklist and first-lead highlight
-    lead_count_result = db.execute("""
-        SELECT COUNT(*) as total FROM leads l
-        JOIN properties p ON l.property_id = p.id
-        WHERE p.agent_id = ANY(%s)
-    """, (agent_ids_param,)).fetchone()
-    lead_count_total = lead_count_result['total'] if lead_count_result else 0
-    
-    # Check if first lead is recent (within 24 hours)
-    is_first_lead_recent = False
-    if lead_count_total == 1 and leads:
-        from datetime import datetime, timedelta
-        first_lead = leads[0]
-        if first_lead.get('created_at'):
-            lead_time = first_lead['created_at']
-            if hasattr(lead_time, 'tzinfo'):
-                # Handle timezone-aware datetime
-                from datetime import timezone
+        scan_count_total = scan_stats['count'] or 0
+        has_scan = scan_count_total > 0
+        latest_scan_at = scan_stats['latest']
+        
+        # Check if first scan is recent (within 24 hours and exactly 1 scan)
+        if scan_count_total == 1 and latest_scan_at:
+            if hasattr(latest_scan_at, 'tzinfo') and latest_scan_at.tzinfo:
                 now = datetime.now(timezone.utc)
             else:
                 now = datetime.now()
-            is_first_lead_recent = (now - lead_time) < timedelta(hours=24)
+            is_first_scan_recent = (now - latest_scan_at) < timedelta(hours=24)
     
-    has_any_activity = metrics.get('total_scans', 0) > 0 or metrics.get('total_views', 0) > 0
+    # Lead counts and first lead detection
+    lead_stats = db.execute("""
+        SELECT COUNT(*) as total, MAX(l.created_at) as latest
+        FROM leads l
+        JOIN properties p ON l.property_id = p.id
+        WHERE p.agent_id = ANY(%s)
+    """, (agent_ids_param,)).fetchone()
+    lead_count_total = lead_stats['total'] or 0
+    latest_lead_at = lead_stats['latest']
     
-    # First unassigned SmartSign ID (for "Assign SmartSign" button)
+    # Check if first lead is recent (within 24 hours)
+    is_first_lead_recent = False
+    if lead_count_total == 1 and latest_lead_at:
+        if hasattr(latest_lead_at, 'tzinfo') and latest_lead_at.tzinfo:
+            now = datetime.now(timezone.utc)
+        else:
+            now = datetime.now()
+        is_first_lead_recent = (now - latest_lead_at) < timedelta(hours=24)
+    
+    # Dashboard Mode: determines overall state
+    # - "no_signs": hard gate, user has 0 SmartSigns
+    # - "needs_assignment": semi-hard gate, has SmartSigns but none assigned
+    # - "active": normal dashboard
+    if smart_sign_count == 0:
+        dashboard_mode = "no_signs"
+    elif assigned_sign_count == 0:
+        dashboard_mode = "needs_assignment"
+    else:
+        dashboard_mode = "active"
+    
+    # Progress percent for progress bar
+    # 0% = no sign, 25% = has sign, 50% = assigned, 75% = has scan, 100% = has lead
+    if lead_count_total > 0:
+        progress_percent = 100
+    elif has_scan:
+        progress_percent = 75
+    elif has_assigned_sign:
+        progress_percent = 50
+    elif has_smartsigns:
+        progress_percent = 25
+    else:
+        progress_percent = 0
+    
+    # First unassigned SmartSign ID (for "Assign SmartSign" button) - computed before next_step
     first_unassigned_sign_id = None
     for a in sign_assets:
         if not a.get('active_property_id'):
             first_unassigned_sign_id = a['id']
             break
+    
+    # Next step label and CTA for progress bar
+    if not has_smartsigns:
+        next_step_label = "Create your first SmartSign"
+        next_step_cta = "Create SmartSign"
+        next_step_url = url_for('smart_signs.order_start')
+    elif not has_assigned_sign:
+        next_step_label = "Assign your SmartSign to a property"
+        next_step_cta = "Assign SmartSign"
+        next_step_url = url_for('smart_signs.edit_smartsign', asset_id=first_unassigned_sign_id) if first_unassigned_sign_id else None
+    elif not has_scan:
+        next_step_label = "Place the sign and test-scan it"
+        next_step_cta = "View Property Page"
+        # Find first assigned property
+        first_assigned_property = None
+        for a in sign_assets:
+            if a.get('active_property_id'):
+                prop = db.execute("SELECT slug FROM properties WHERE id = %s", (a['active_property_id'],)).fetchone()
+                if prop:
+                    first_assigned_property = prop['slug']
+                    break
+        next_step_url = url_for('properties.property_page', slug=first_assigned_property) if first_assigned_property else None
+    else:
+        next_step_label = "Wait for a buyer inquiry (or test the form)"
+        next_step_cta = "View Leads"
+        next_step_url = url_for('dashboard.index') + '#leads-section'
+    
+    has_any_activity = metrics.get('total_scans', 0) > 0 or metrics.get('total_views', 0) > 0
 
     return render_template(
         "dashboard.html",
@@ -271,13 +336,21 @@ def index():
         properties=properties,
         is_pro=current_user.is_pro,
         listing_signs=listing_signs,
-        # Onboarding Activation (Phase 1)
+        # Onboarding Activation (Phase 1 Sprint)
+        dashboard_mode=dashboard_mode,
         smart_sign_count=smart_sign_count,
+        assigned_sign_count=assigned_sign_count,
         has_smartsigns=has_smartsigns,
         has_assigned_sign=has_assigned_sign,
         has_scan=has_scan,
+        scan_count_total=scan_count_total,
+        is_first_scan_recent=is_first_scan_recent,
         lead_count_total=lead_count_total,
         is_first_lead_recent=is_first_lead_recent,
+        progress_percent=progress_percent,
+        next_step_label=next_step_label,
+        next_step_cta=next_step_cta,
+        next_step_url=next_step_url,
         has_any_activity=has_any_activity,
         first_unassigned_sign_id=first_unassigned_sign_id,
         # Legacy compat
