@@ -59,8 +59,8 @@ def edit_smartsign(asset_id):
     
     # 2. Status Checks
     # a. Pro Check
-    if not is_subscription_active(current_user.subscription_status):
-        abort(403) # Must be Pro
+    # if not is_subscription_active(current_user.subscription_status):
+    #     abort(403) # Must be Pro
         
     # b. Activation Check
     if not asset.get('activated_at'):
@@ -126,6 +126,22 @@ def edit_smartsign(asset_id):
                 except Exception as e:
                     print(f"Headshot upload error: {e}")
 
+        # Property Assignment
+        property_id_str = request.form.get('property_id')
+        # Check if key exists in form (to allow unassigning via 'unassigned' or empty)
+        # Assuming frontend follows protocol: 'unassigned' or ID.
+        if property_id_str is not None:
+            from services.smart_signs import SmartSignsService
+            prop_id = None
+            if property_id_str and property_id_str != 'unassigned':
+                prop_id = int(property_id_str)
+            
+            try:
+                SmartSignsService.assign_asset(asset_id, prop_id, current_user.id)
+            except Exception as e:
+                flash(str(e), "error") # Clean error message
+                return redirect(url_for('smart_signs.edit_smartsign', asset_id=asset_id))
+
         # Execute Update
         if updates:
             sql = f"UPDATE sign_assets SET {', '.join(updates)}, updated_at=NOW() WHERE id=%s"
@@ -137,10 +153,20 @@ def edit_smartsign(asset_id):
         return redirect(url_for('smart_signs.edit_smartsign', asset_id=asset_id))
 
     # GET - Render Template
+    # Fetch properties for assignment dropdown
+    properties = db.execute("""
+        SELECT p.id, p.address 
+        FROM properties p
+        JOIN agents a ON p.agent_id = a.id
+        WHERE a.user_id = %s
+        ORDER BY p.address
+    """, (current_user.id,)).fetchall()
+
     # Pass style options for dropdowns
     return render_template(
         'smartsign_edit.html',
         asset=asset,
+        properties=properties,
         bg_options=list(STYLE_MAP.keys()),
         cta_options=list(CTA_MAP.keys())
     )
@@ -162,8 +188,10 @@ def preview_smartsign(asset_id):
         
     # Same access controls?
     # Yes
-    if not is_subscription_active(current_user.subscription_status) or \
-       not asset['activated_at'] or \
+    # Same access controls?
+    # Yes
+    # RELAXED for Phase 1: Pro check removed for preview
+    if not asset['activated_at'] or \
        asset['is_frozen']:
         abort(403)
         

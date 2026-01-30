@@ -115,9 +115,9 @@ class SmartSignsService:
         # 3. Check Subscription (Strict for Assignment too)
         user = db.execute("SELECT subscription_status FROM users WHERE id = %s", (user_id,)).fetchone()
         
-        # Canonical check
-        if not user or not is_subscription_active(user['subscription_status']):
-            raise PermissionError("Upgrade required: Only Pro users can assign SmartSigns.")
+        # Canonical check - RELAXED for Phase 1 (Ownership Entitlement)
+        # if not user or not is_subscription_active(user['subscription_status']):
+        #     raise PermissionError("Upgrade required: Only Pro users can assign SmartSigns.")
 
         # 4. Verify Property Ownership (if assigning)
         if property_id is not None:
