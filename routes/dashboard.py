@@ -115,7 +115,9 @@ def index():
 
     # 5. SmartSigns (Legacy/MVP Compat) with Performance Metrics
     from services.smart_signs import SmartSignsService
-    sign_assets = SmartSignsService.get_user_assets(current_user.id)
+    sign_assets_rows = SmartSignsService.get_user_assets(current_user.id)
+    # Convert to mutable dicts to allow adding proper metrics
+    sign_assets = [dict(row) for row in sign_assets_rows]
     
     # 5b. Compute per-asset scans/leads/conversion
     asset_ids = [a['id'] for a in sign_assets] if sign_assets else [-1]
