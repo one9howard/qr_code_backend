@@ -11,7 +11,7 @@ import sqlalchemy as sa
 
 # revision identifiers
 revision = '035_add_lead_attribution'
-down_revision = '034_add_scheduling_and_virtual_tour_urls'
+down_revision = '034_scheduling_tour_urls'
 branch_labels = None
 depends_on = None
 
