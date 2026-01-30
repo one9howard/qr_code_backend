@@ -22,7 +22,7 @@
             -->
 
             <div class="nav-links" id="nav-links">
-                <a href="#product">Product</a>
+                <a href="#product">Products</a>
                 <a href="#teams">Teams</a>
                 <a href="#pricing">Pricing</a>
                 <a href="{{ url_for('public.privacy') }}">Security</a>
@@ -54,7 +54,8 @@
                 <ul class="feature-bullets">
                     <li><span class="bullet-icon"></span> The missing link between your yard sign and your digital
                         pipeline</li>
-                    <li><span class="bullet-icon"></span> Feed your CRM with high-intent leads from your physical signs
+                    <li><span class="bullet-icon"></span> Feed your CRM with high-intent leads from your quick response
+                        signs
                     </li>
                     <li><span class="bullet-icon"></span> Stop losing drive-by traffic</li>
                 </ul>
@@ -62,10 +63,10 @@
                 <div class="hero-actions">
                     {% if current_user.is_authenticated %}
                     <a href="{{ url_for('dashboard.index') }}" class="btn-secondary">Dashboard</a>
-                    <a href="{{ url_for('public.select_sign') }}" class="btn-primary">QR Signs</a>
+                    <a href="{{ url_for('public.select_sign') }}" class="btn-primary">Create QR Signs</a>
                     {% else %}
                     <a href="{{ url_for('auth.login') }}" class="btn-secondary">Log in/Register</a>
-                    <a href="{{ url_for('public.select_sign') }}" class="btn-primary">QR Signs</a>
+                    <a href="{{ url_for('public.select_sign') }}" class="btn-primary">Create QR Signs</a>
                     {% endif %}
                 </div>
             </div>
