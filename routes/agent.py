@@ -259,7 +259,14 @@ def submit():
             final_headshot_key = snapshot_photo_key if include_headshot else None
             final_logo_key = snapshot_logo_key if include_logo else None
 
-            # ... [Order Creation] ...
+            # --- MODE CHECK: Property Only (Free) vs Listing Sign (Paid) ---
+            mode = request.form.get("mode")
+            if mode == 'property_only':
+                # Skip order creation, PDF generation, and checkout
+                flash("Property created successfully. Now assign your SmartSign.", "success")
+                return redirect(url_for('dashboard.index') + '#smart-signs-section')
+
+            # ... [Order Creation - Standard Flow] ...
 
             user_id = current_user.id if current_user.is_authenticated else None
             guest_email = None if current_user.is_authenticated else agent_email
@@ -372,4 +379,8 @@ def submit():
             (current_user.id,),
         ).fetchone()
 
-    return render_template("submit.html", agent_data=agent_data)
+    return render_template(
+        "submit.html", 
+        agent_data=agent_data,
+        is_property_only=(request.args.get("mode") == "property_only")
+    )

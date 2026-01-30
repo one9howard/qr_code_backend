@@ -169,7 +169,7 @@
                     {% endif %}
                     {% if properties|length == 0 %}
                     <p style="margin-top: 16px;">
-                        <a href="{{ url_for('orders.select_property_for_sign') }}"
+                        <a href="{{ url_for('agent.submit', mode='property_only') }}"
                             style="color: var(--accent-cyan); font-size: 0.9rem;">Or create a property first →</a>
                     </p>
                     {% endif %}
