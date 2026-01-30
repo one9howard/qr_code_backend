@@ -473,6 +473,7 @@ def _draw_agent_brand(c, l, asset, user_id):
     # Just Scan Label under QR in whitespace
     # And maybe duplicate URL small?
     
+    display_url = f"{urllib.parse.urlparse(PUBLIC_BASE_URL).netloc}/r/{code}"
     label_y = qr_y_center - (card_size/2) - to_pt(0.5)
     c.setFillColorRGB(*hex_to_rgb(COLORS['bg_navy'])) # Higher Contrast
     draw_fitted_multiline(c, display_url, center_x, label_y, FONT_BODY, 24, 18, l.width*0.8, align='center')

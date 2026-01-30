@@ -25,38 +25,47 @@ _fonts_registered = False
 def register_fonts():
     """
     Register Inter fonts from static/fonts/.
-    Raises RuntimeError in production if fonts are missing.
+    Raises RuntimeError in production if required fonts are missing.
     """
     global FONT_BODY, FONT_MED, FONT_BOLD, _fonts_registered
     
     if _fonts_registered:
         return
         
-    # Standard names established in P1 fix
-    inter_reg = os.path.join(FONTS_DIR, "Inter-Regular.ttf")
-    inter_med = os.path.join(FONTS_DIR, "Inter-Medium.ttf")
-    inter_bold = os.path.join(FONTS_DIR, "Inter-Bold.ttf")
+    # Search for fonts recursively under static/fonts
+    found_fonts = {}
+    target_fonts = {
+        "Inter-Regular.ttf": "Regular",
+        "Inter-Medium.ttf": "Medium",
+        "Inter-Bold.ttf": "Bold"
+    }
     
-    # Check existence
-    all_exist = all(os.path.exists(f) for f in [inter_reg, inter_med, inter_bold])
+    for root, dirs, files in os.walk(FONTS_DIR):
+        for f in files:
+            if f in target_fonts:
+                found_fonts[f] = os.path.join(root, f)
+
+    # Required for success: Regular and Bold
+    has_required = "Inter-Regular.ttf" in found_fonts and "Inter-Bold.ttf" in found_fonts
     
     from config import IS_PRODUCTION
-    if not all_exist and IS_PRODUCTION:
-        raise RuntimeError(f"CRITICAL: Inter fonts missing from {FONTS_DIR}. SmartSigns cannot be generated in production without standard typography.")
+    if not has_required and IS_PRODUCTION:
+        raise RuntimeError(f"CRITICAL: Required Inter fonts (Regular/Bold) missing from {FONTS_DIR}. SmartSigns cannot be generated.")
 
     try:
-        if os.path.exists(inter_reg):
-            pdfmetrics.registerFont(TTFont('Inter-Regular', inter_reg))
+        if "Inter-Regular.ttf" in found_fonts:
+            pdfmetrics.registerFont(TTFont('Inter-Regular', found_fonts["Inter-Regular.ttf"]))
             FONT_BODY = 'Inter-Regular'
             
-        if os.path.exists(inter_med):
-            pdfmetrics.registerFont(TTFont('Inter-Medium', inter_med))
+        if "Inter-Medium.ttf" in found_fonts:
+            pdfmetrics.registerFont(TTFont('Inter-Medium', found_fonts["Inter-Medium.ttf"]))
             FONT_MED = 'Inter-Medium'
             
-        if os.path.exists(inter_bold):
-            pdfmetrics.registerFont(TTFont('Inter-Bold', inter_bold))
+        if "Inter-Bold.ttf" in found_fonts:
+            pdfmetrics.registerFont(TTFont('Inter-Bold', found_fonts["Inter-Bold.ttf"]))
             FONT_BOLD = 'Inter-Bold'
             
+        # Success if we got the essentials
         if FONT_BODY == 'Inter-Regular' and FONT_BOLD == 'Inter-Bold':
             _fonts_registered = True
             
@@ -78,9 +87,11 @@ def format_phone(raw):
     if len(digits) == 11 and digits.startswith('1'):
         return f"1 ({digits[1:4]}) {digits[4:7]}-{digits[7:]}"
     return str(raw).strip()
+
+def fit_text_one_line(c, text, font_name, max_width, max_font, min_font):
     """
     Fit text into a single line by reducing font size.
-    Signature matches user requirement: (c, text, font_name, max_width, max_font, min_font)
+    Returns: chosen_size
     """
     if not text: return min_font
     

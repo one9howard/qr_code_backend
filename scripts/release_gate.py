@@ -5,15 +5,24 @@ import sys
 def check_forbidden_files():
     forbidden_exact = ["dump.sql", "dump.wkr"]
     found = []
+    
     for root, dirs, files in os.walk("."):
+        # Prune known safe dirs
         if ".git" in dirs: dirs.remove(".git")
         if "venv" in dirs: dirs.remove("venv")
         if "node_modules" in dirs: dirs.remove("node_modules")
         
+        # Check directories
+        for d in dirs:
+            if d == "__pycache__":
+                found.append(os.path.join(root, d))
+        
+        # Check files
         for f in files:
             is_forbidden = False
             if f in forbidden_exact: is_forbidden = True
             elif f.endswith(".dump"): is_forbidden = True
+            elif f.endswith(".pyc"): is_forbidden = True
             elif f.startswith("debug_") and (f.endswith(".json") or f.endswith(".html")):
                 is_forbidden = True
             
