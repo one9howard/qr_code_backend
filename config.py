@@ -79,6 +79,8 @@ PDF_PATH = os.path.join(STATIC_DIR, "pdf")
 
 # URLs
 BASE_URL = get_env_str("BASE_URL", default="http://localhost:5000")
+# Public URL for printed assets (never use staging domain in prod)
+PUBLIC_BASE_URL = get_env_str("PUBLIC_BASE_URL", default=BASE_URL)
 
 # Security: SECRET_KEY
 SECRET_KEY = os.getenv("SECRET_KEY")
