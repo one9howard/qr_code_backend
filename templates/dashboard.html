@@ -55,6 +55,12 @@
     .grid-sections.active {
         display: grid;
     }
+
+    .highlight-row {
+        background-color: rgba(79, 172, 254, 0.15) !important;
+        box-shadow: inset 4px 0 0 var(--accent-blue);
+        transition: background-color 1s ease;
+    }
 </style>
 
 <div class="app-layout">
@@ -164,13 +170,14 @@
                         Assign it to a property to start generating buyer leads.
                     </p>
                     {% if first_unassigned_sign_id %}
-                    <a href="{{ url_for('smart_signs.edit_smartsign', asset_id=first_unassigned_sign_id) }}"
+                    <a href="{{ url_for('dashboard.index', highlight_asset_id=first_unassigned_sign_id) }}#smart-signs-section"
                         class="btn-primary" style="padding: 14px 28px; font-size: 1rem;">Assign SmartSign</a>
                     {% endif %}
                     {% if properties|length == 0 %}
                     <p style="margin-top: 16px;">
-                        <a href="{{ url_for('agent.submit', mode='property_only') }}"
-                            style="color: var(--accent-cyan); font-size: 0.9rem;">Or create a property first →</a>
+                        <a href="{{ url_for('dashboard.new_property') }}"
+                            style="color: var(--accent-cyan); font-size: 0.9rem;">Or create a property first (Free)
+                            →</a>
                     </p>
                     {% endif %}
                 </div>
@@ -446,7 +453,8 @@
             <div class="card col-span-12">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                     <h3 style="margin: 0; font-size: 1.1rem;">Your Listings</h3>
-                    <a href="{{ url_for('agent.submit') }}" class="glass-button secondary">+ Add Property</a>
+                    <a href="{{ url_for('dashboard.new_property') }}" class="glass-button secondary">+ Create Property
+                        (Free)</a>
                 </div>
 
                 <div class="table-container">
@@ -509,7 +517,7 @@
 
         <!-- TAB 2: SMART ASSETS -->
         <div id="tab-smart" class="grid-sections col-span-12">
-            <div class="card card-smart col-span-12">
+            <div id="smart-signs-section" class="card card-smart col-span-12">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                     <div>
                         <h3 style="margin: 0; font-size: 1.1rem; display: flex; align-items: center; gap: 8px;">
@@ -549,7 +557,7 @@
                         </thead>
                         <tbody>
                             {% for asset in sign_assets %}
-                            <tr>
+                            <tr {% if asset.id==highlight_asset_id %}class="highlight-row" {% endif %}>
                                 <td>{{ asset.label }}<br><small
                                         style="font-family: monospace; color: var(--accent-cyan);">{{ asset.code
                                         }}</small></td>
@@ -710,6 +718,18 @@
         if (tabName === 'smart') buttons[2].classList.add('active');
         if (tabName === 'analytics') buttons[3].classList.add('active');
     }
+
+    function handleSmartSignsHash() {
+        if (window.location.hash === '#smart-signs-section') {
+            switchTab('smart');
+            setTimeout(() => {
+                document.getElementById('smart-signs-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 100);
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', handleSmartSignsHash);
+    window.addEventListener('hashchange', handleSmartSignsHash);
 </script>
 
 <!-- Scripts -->

@@ -12,7 +12,14 @@ from flask_login import login_required, current_user
 from database import get_db
 from config import PROPERTY_PHOTOS_DIR, PROPERTY_PHOTOS_KEY_PREFIX
 from utils.uploads import save_image_upload
+from utils.uploads import save_image_upload
 from utils.storage import get_storage
+from slugify import slugify
+from utils.qr_codes import generate_unique_code
+from utils.timestamps import utc_iso
+from services.gating import can_create_property
+from datetime import datetime, timezone, timedelta
+from services.subscriptions import is_subscription_active
 
 dashboard_bp = Blueprint('dashboard', __name__, url_prefix='/dashboard')
 
@@ -308,7 +315,10 @@ def index():
     elif not has_assigned_sign:
         next_step_label = "Assign your SmartSign to a property"
         next_step_cta = "Assign SmartSign"
-        next_step_url = url_for('smart_signs.edit_smartsign', asset_id=first_unassigned_sign_id) if first_unassigned_sign_id else None
+        if first_unassigned_sign_id:
+            next_step_url = url_for('dashboard.index', highlight_asset_id=first_unassigned_sign_id) + '#smart-signs-section'
+        else:
+            next_step_url = url_for('dashboard.index') + '#smart-signs-section'
     elif not has_scan:
         next_step_label = "Place the sign and test-scan it"
         next_step_cta = "View Property Page"
@@ -356,7 +366,9 @@ def index():
         has_any_activity=has_any_activity,
         first_unassigned_sign_id=first_unassigned_sign_id,
         # Legacy compat
+        # Legacy compat
         has_assigned_smartsigns=has_assigned_sign,
+        highlight_asset_id=request.args.get("highlight_asset_id", type=int),
     )
 
 
@@ -654,3 +666,89 @@ def assign_smart_sign(asset_id):
         print(f"[SmartSigns] Assign Error: {e}")
         
     return redirect(url_for('dashboard.index', _anchor='smart-signs-section'))
+
+@dashboard_bp.route("/properties/new", methods=["GET", "POST"])
+@login_required
+def new_property():
+    """
+    Free Property Creation Flow.
+    Separated from listing sign purchase flow.
+    """
+    if request.method == "POST":
+        db = get_db()
+        
+        # 0. Check Limits
+        is_pro = is_subscription_active(current_user.subscription_status)
+        
+        if not is_pro:
+            gating = can_create_property(current_user.id)
+            if not gating['allowed']:
+                flash(f"Free limit reached ({gating['limit']} listings). Upgrade to Pro.", "error")
+                return redirect(url_for('dashboard.new_property'))
+
+        # Fetch Agent ID
+        agent = db.execute("SELECT id FROM agents WHERE user_id = %s", (current_user.id,)).fetchone()
+        if not agent:
+            # Create Default Agent Profile if missing (required for property)
+            cursor = db.cursor()
+            cursor.execute(
+                "INSERT INTO agents (user_id, name, email) VALUES (%s, %s, %s) RETURNING id",
+                (current_user.id, current_user.display_name, current_user.email)
+            )
+            agent_id = cursor.fetchone()['id']
+            db.commit()
+        else:
+            agent_id = agent['id']
+            
+        # Parse Form
+        address = request.form.get('address')
+        beds = request.form.get('beds')
+        baths = request.form.get('baths')
+        price = request.form.get('price')
+        
+        # Expiry logic
+        expires_at = None
+        if not is_pro:
+             retention = int(os.environ.get("FREE_TIER_RETENTION_DAYS", "7"))
+             expires_at = (datetime.now(timezone.utc) + timedelta(days=retention)).isoformat(sep=' ')
+             
+        cursor = db.cursor()
+        cursor.execute("""
+            INSERT INTO properties (agent_id, address, beds, baths, price, created_at, expires_at)
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
+            RETURNING id
+        """, (agent_id, address, beds, baths, price, utc_iso(), expires_at))
+        pid = cursor.fetchone()['id']
+        
+        # Slug & QR
+        base_slug = slugify(address)
+        slug = base_slug
+        ctr = 2
+        while db.execute("SELECT 1 FROM properties WHERE slug=%s", (slug,)).fetchone():
+            slug = f"{base_slug}-{ctr}"
+            ctr += 1
+        cursor.execute("UPDATE properties SET slug=%s WHERE id=%s", (slug, pid))
+        
+        code = generate_unique_code(db, length=12)
+        cursor.execute("UPDATE properties SET qr_code=%s WHERE id=%s", (code, pid))
+        
+        db.commit()
+        
+        flash("Property created successfully.", "success")
+        
+        # Highlight logic: Find first unassigned asset
+        # (Replicated from index logic but simplified)
+        asset_check = db.execute("""
+            SELECT sa.id FROM sign_assets sa
+            WHERE sa.user_id = %s AND sa.active_property_id IS NULL
+            ORDER BY sa.created_at ASC LIMIT 1
+        """, (current_user.id,)).fetchone()
+        
+        target_url = url_for('dashboard.index')
+        if asset_check:
+            # Append params for highlighting
+            return redirect(url_for('dashboard.index', highlight_asset_id=asset_check['id']) + '#smart-signs-section')
+            
+        return redirect(target_url + '#smart-signs-section')
+        
+    return render_template("dashboard/property_new.html")

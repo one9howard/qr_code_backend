@@ -96,6 +96,11 @@ import pytest
 @pytest.fixture(scope="session", autouse=True)
 def _migrate_db_once():
     """Run Alembic migrations once per test session."""
+    if os.environ.get("SKIP_TEST_MIGRATION"):
+        print("Skipping DB migration as requested.")
+        yield
+        return
+
     db_url = os.environ.get("DATABASE_URL", "")
     
     if not db_url or not db_url.startswith("postgres"):
