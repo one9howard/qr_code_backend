@@ -14,31 +14,36 @@ from reportlab.lib.colors import HexColor
 
 # 1. Font Registration
 FONTS_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "static", "fonts")
-INTER_DIR = os.path.join(FONTS_DIR, "Inter", "static")
 
-# Safe Fallbacks
+# Safe Fallbacks (Helvetica used only as a last resort in non-prod)
 FONT_BODY = "Helvetica"
-FONT_MED = "Helvetica"     # No native medium in standard 14 fonts
+FONT_MED = "Helvetica"
 FONT_BOLD = "Helvetica-Bold"
 
 _fonts_registered = False
 
 def register_fonts():
     """
-    Register Inter fonts from static/fonts/Inter/static.
-    Updates global FONT constants if successful.
+    Register Inter fonts from static/fonts/.
+    Raises RuntimeError in production if fonts are missing.
     """
     global FONT_BODY, FONT_MED, FONT_BOLD, _fonts_registered
     
     if _fonts_registered:
         return
         
-    # Try Inter (Google Fonts static versions often have size suffix)
-    # We'll try the 24pt versions as reference TTFs
-    inter_reg = os.path.join(INTER_DIR, "Inter_24pt-Regular.ttf")
-    inter_med = os.path.join(INTER_DIR, "Inter_24pt-Medium.ttf")
-    inter_bold = os.path.join(INTER_DIR, "Inter_24pt-Bold.ttf")
+    # Standard names established in P1 fix
+    inter_reg = os.path.join(FONTS_DIR, "Inter-Regular.ttf")
+    inter_med = os.path.join(FONTS_DIR, "Inter-Medium.ttf")
+    inter_bold = os.path.join(FONTS_DIR, "Inter-Bold.ttf")
     
+    # Check existence
+    all_exist = all(os.path.exists(f) for f in [inter_reg, inter_med, inter_bold])
+    
+    from config import IS_PRODUCTION
+    if not all_exist and IS_PRODUCTION:
+        raise RuntimeError(f"CRITICAL: Inter fonts missing from {FONTS_DIR}. SmartSigns cannot be generated in production without standard typography.")
+
     try:
         if os.path.exists(inter_reg):
             pdfmetrics.registerFont(TTFont('Inter-Regular', inter_reg))
@@ -52,14 +57,27 @@ def register_fonts():
             pdfmetrics.registerFont(TTFont('Inter-Bold', inter_bold))
             FONT_BOLD = 'Inter-Bold'
             
-        _fonts_registered = True
+        if FONT_BODY == 'Inter-Regular' and FONT_BOLD == 'Inter-Bold':
+            _fonts_registered = True
             
     except Exception as e:
-        print(f"[PDF Utils] Error registering Inter fonts: {e}")
+        if IS_PRODUCTION:
+            raise RuntimeError(f"CRITICAL: Failed to register Inter fonts: {e}")
+        print(f"[PDF Utils] Warning: Failed to register Inter fonts: {e}")
 
-
-# 2. Text Fitting
-def fit_text_one_line(c, text, font_name, max_width, max_font, min_font):
+# 1.1 Phone Formatting
+def format_phone(raw):
+    """
+    Formats phone numbers: (XXX) XXX-XXXX
+    """
+    if not raw: return ""
+    import re
+    digits = re.sub(r'\D', '', str(raw))
+    if len(digits) == 10:
+        return f"({digits[:3]}) {digits[3:6]}-{digits[6:]}"
+    if len(digits) == 11 and digits.startswith('1'):
+        return f"1 ({digits[1:4]}) {digits[4:7]}-{digits[7:]}"
+    return str(raw).strip()
     """
     Fit text into a single line by reducing font size.
     Signature matches user requirement: (c, text, font_name, max_width, max_font, min_font)
@@ -197,7 +215,7 @@ def draw_identity_block(c, x, y, w, h, asset, storage, theme='dark'):
     
     info_w = w * 0.45
     
-    name_txt = (_get('brand_name') or _get('agent_name') or "Agent Name").upper()
+    name_txt = (_get('brand_name') or _get('agent_name') or "Agent Name").strip()
     phone_txt = _get('phone') or _get('agent_phone') or ""
     email_txt = _get('email') or _get('agent_email')
     
@@ -206,7 +224,8 @@ def draw_identity_block(c, x, y, w, h, asset, storage, theme='dark'):
         {'text': name_txt, 'font': FONT_BOLD, 'size': head_size * 0.35, 'color': text_primary},
     ]
     if phone_txt:
-        lines.append({'text': phone_txt, 'font': FONT_BOLD, 'size': head_size * 0.22, 'color': text_primary}) # High contrast for phone
+        formatted_phone = format_phone(phone_txt)
+        lines.append({'text': formatted_phone, 'font': FONT_BOLD, 'size': head_size * 0.22, 'color': text_primary})
     if email_txt:
         lines.append({'text': email_txt, 'font': FONT_MED, 'size': head_size * 0.18, 'color': text_secondary})
         
@@ -215,9 +234,8 @@ def draw_identity_block(c, x, y, w, h, asset, storage, theme='dark'):
     # --- 3. Brokerage (Right) ---
     right_margin = x + w - margin
     brok_w = w * 0.30
-    brok_x = right_margin - brok_w
     
-    logo_key = _get('logo_key') or _get('agent_logo_key')
+    logo_key = asset.get('logo_key') or asset.get('agent_logo_key')
     drawn_logo = False
     
     if logo_key and storage.exists(logo_key):
@@ -241,10 +259,10 @@ def draw_identity_block(c, x, y, w, h, asset, storage, theme='dark'):
         
     if not drawn_logo:
         # Brokerage Text Fallback
-        brok_name = _get('brokerage_name')
+        brok_name = asset.get('brokerage_name') or asset.get('brokerage')
         if brok_name:
              draw_fitted_text_block(
                  c, 
-                 [{'text': brok_name, 'font': FONT_MED, 'size': head_size * 0.25, 'color': text_secondary}],
-                 brok_x, content_y_top - (safe_h * 0.25), brok_w, align='right'
+                 [{'text': str(brok_name).strip(), 'font': FONT_MED, 'size': head_size * 0.22, 'color': text_secondary}],
+                 right_margin - brok_w, content_y_top - (safe_h * 0.3), brok_w, align='right'
              )

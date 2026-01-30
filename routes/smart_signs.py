@@ -357,6 +357,7 @@ def create_smart_order():
             'logo_key': payload.get('logo_key') or payload.get('agent_logo_key'),
             'include_headshot': bool(payload.get('headshot_key') or payload.get('agent_headshot_key')),
             'headshot_key': payload.get('headshot_key') or payload.get('agent_headshot_key'),
+            'brokerage_name': payload.get('brokerage_name') or payload.get('brokerage'),
             
             # Context for New PDF Generator (Phase 2)
             'layout_id': layout_id,

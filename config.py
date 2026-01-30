@@ -110,7 +110,21 @@ PROXY_FIX_NUM_PROXIES = int(os.environ.get("PROXY_FIX_NUM_PROXIES", "1"))
 # Environment Stage
 APP_STAGE = os.environ.get("APP_STAGE", "dev") # dev, staging, prod
 FLASK_ENV = os.environ.get("FLASK_ENV", "development")
-IS_PRODUCTION = (FLASK_ENV == "production")
+IS_PRODUCTION = (FLASK_ENV == "production" or os.environ.get("RAILWAY_ENVIRONMENT") == "production")
+
+# Strict URL Validation for Production
+if IS_PRODUCTION:
+    if not os.getenv("PUBLIC_BASE_URL"):
+         raise RuntimeError("CRITICAL: PUBLIC_BASE_URL environment variable is required in production.")
+    
+    # Must be HTTPS and NOT staging/localhost
+    p_url = PUBLIC_BASE_URL.lower()
+    if not p_url.startswith("https://"):
+         raise RuntimeError(f"CRITICAL: PUBLIC_BASE_URL must be HTTPS in production. Got: {PUBLIC_BASE_URL}")
+    
+    for forbidden in ["staging", "localhost", "127.0.0.1"]:
+        if forbidden in p_url:
+             raise RuntimeError(f"CRITICAL: PUBLIC_BASE_URL contains forbidden string '{forbidden}' in production. Link safety violated.")
 
 # Stripe Configuration
 STRIPE_SECRET_KEY = os.environ.get("STRIPE_SECRET_KEY")

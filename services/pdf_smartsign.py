@@ -426,7 +426,7 @@ def _draw_modern_minimal(c, l, asset, user_id):
         cta_text, display_url, 
         spec['fonts']['cta'], spec['fonts']['url'], 
         l.width - (2*l.safe_margin), 
-        COLORS['base_text'], COLORS['secondary_text'], 
+        COLORS['bg_navy'], COLORS['secondary_text'], 
         cta_lines=1
     )
 
@@ -474,9 +474,7 @@ def _draw_agent_brand(c, l, asset, user_id):
     # And maybe duplicate URL small?
     
     label_y = qr_y_center - (card_size/2) - to_pt(0.5)
-    display_url = f"{urllib.parse.urlparse(PUBLIC_BASE_URL).netloc}/r/{code}"
-    
-    c.setFillColorRGB(*hex_to_rgb(COLORS['base_text']))
+    c.setFillColorRGB(*hex_to_rgb(COLORS['bg_navy'])) # Higher Contrast
     draw_fitted_multiline(c, display_url, center_x, label_y, FONT_BODY, 24, 18, l.width*0.8, align='center')
 
     # Footer Band CTA
@@ -484,11 +482,10 @@ def _draw_agent_brand(c, l, asset, user_id):
     fs = spec['fonts']['cta']
     
     # Draw Centered in Footer Band
-    # footer center y
     footer_cy = top_of_footer / 2
     
     # Simple centered CTA
-    draw_fitted_multiline(c, cta_text, center_x, footer_cy + (fs[0]*0.35), FONT_BOLD, fs[0], fs[1], l.width*0.9, max_lines=1)
+    draw_fitted_multiline(c, cta_text, center_x, footer_cy + (fs[0]*0.35), FONT_MED, fs[0], fs[1], l.width*0.9, max_lines=1, color=COLORS['bg_navy'])
 
 
 def _draw_photo_banner(c, l, asset, user_id):
@@ -528,4 +525,4 @@ def _draw_photo_banner(c, l, asset, user_id):
     
     # Footer CTA
     cta_text = CTA_MAP.get(_read(asset, 'cta_key'), 'SCAN FOR DETAILS')
-    draw_fitted_multiline(c, cta_text, l.width/2, spec['footer_band']/2 + 20, FONT_BOLD, 80, 60, l.width*0.9)
+    draw_fitted_multiline(c, cta_text, l.width/2, spec['footer_band']/2 + 20, FONT_MED, 80, 60, l.width*0.9, color=COLORS['bg_navy'])

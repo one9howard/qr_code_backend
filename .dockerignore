@@ -77,6 +77,13 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
+# Forbidden Artifacts
+dump.sql
+dump.wkr
+*.dump
+debug_*.json
+debug_*.html
+
 # --- Build artifacts ---
 dist/
 build/
