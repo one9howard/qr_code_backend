@@ -1,85 +1,136 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="max-w-6xl mx-auto px-4 py-8">
-    <div class="mb-8 flex items-center justify-between">
+<style>
+    .smartsign-container {
+        max-width: 1200px;
+        margin: 40px auto;
+        padding: 0 20px;
+    }
+
+    .glass-input {
+        width: 100%;
+        padding: 12px;
+        background: rgba(15, 23, 42, 0.6);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        color: white;
+        border-radius: 8px;
+        font-size: 0.95rem;
+        transition: all 0.2s;
+    }
+
+    .glass-input:focus {
+        outline: none;
+        border-color: var(--accent-cyan);
+        background: rgba(15, 23, 42, 0.8);
+        box-shadow: 0 0 0 2px rgba(6, 182, 212, 0.2);
+    }
+
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    .form-label {
+        display: block;
+        font-size: 0.9rem;
+        color: rgba(255, 255, 255, 0.8);
+        margin-bottom: 8px;
+        font-weight: 500;
+    }
+
+    .section-title {
+        color: var(--accent-cyan);
+        font-size: 1.1rem;
+        margin-bottom: 15px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        font-weight: 600;
+    }
+
+    .preview-container {
+        position: sticky;
+        top: 100px;
+    }
+</style>
+
+<div class="smartsign-container">
+    <div class="flex items-center justify-between mb-8">
         <div>
-            <h1 class="text-2xl font-bold text-white">Edit SmartSign Design</h1>
-            <p class="text-gray-400">Customize the look of your permanent sign asset.</p>
+            <h1 class="section-header" style="margin-bottom: 5px;">Edit SmartSign Design</h1>
+            <p class="section-subheader">Customize the look and assignment of your permanent sign.</p>
         </div>
-        <a href="{{ url_for('dashboard.index', _anchor='smart-signs-section') }}"
-            class="text-sm text-gray-400 hover:text-white">
+        <a href="{{ url_for('dashboard.index', _anchor='smart-signs-section') }}" class="glass-button secondary">
             &larr; Back to Assets
         </a>
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <!-- Edit Form -->
-        <div class="card card--dark shadow rounded-lg p-6">
-            <form method="POST" enctype="multipart/form-data" class="space-y-6">
+        <div class="card card--dark">
+            <form method="POST" enctype="multipart/form-data">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
                 <!-- Assignment -->
-                <div class="pb-6 border-b border-gray-700">
-                    <h3 class="text-lg font-medium text-white mb-4">Assignment</h3>
-                    <div class="bg-gray-800 rounded-md p-4 border border-gray-700">
-                        <label class="block text-sm font-medium text-gray-300 mb-2">Linked Property</label>
-                        <p class="text-xs text-gray-400 mb-3">Scanning the sign will redirect to this property's
-                            listing.</p>
+                <div class="mb-8">
+                    <h3 class="section-title">Assignment</h3>
+                    <div class="bg-gray-800/50 rounded-lg p-4 border border-gray-700/50">
+                        <div class="form-group mb-0">
+                            <label class="form-label">Linked Property</label>
+                            <p class="text-xs text-gray-400 mb-3">Scanning the sign will redirect to this property's
+                                listing.</p>
 
-                        <select name="property_id"
-                            class="mt-1 block w-full rounded-md border-gray-600 shadow-sm focus:border-blue-500 focus:ring-blue-500 bg-gray-700 text-white">
-                            <option value="unassigned" {% if not asset.active_property_id %}selected{% endif %}>--
-                                Unassigned --</option>
-                            {% for prop in properties %}
-                            <option value="{{ prop.id }}" {% if asset.active_property_id==prop.id %}selected{% endif %}>
-                                {{ prop.address }}
-                            </option>
-                            {% endfor %}
-                        </select>
+                            <select name="property_id" class="glass-input">
+                                <option value="unassigned" {% if not asset.active_property_id %}selected{% endif %}>--
+                                    Unassigned --</option>
+                                {% for prop in properties %}
+                                <option value="{{ prop.id }}" {% if asset.active_property_id==prop.id %}selected{% endif
+                                    %}>
+                                    {{ prop.address }}
+                                </option>
+                                {% endfor %}
+                            </select>
 
-                        {% if properties|length == 0 %}
-                        <p class="mt-3 text-xs text-yellow-500">
-                            ⚠ No properties found. <a href="{{ url_for('agent.submit', mode='property_only') }}"
-                                class="underline text-yellow-400 font-bold">Create a property</a> to assign this sign.
-                        </p>
-                        {% endif %}
+                            {% if properties|length == 0 %}
+                            <p class="mt-3 text-sm text-yellow-500 flex items-center gap-2">
+                                <span>⚠️</span>
+                                <span>No properties found. <a href="{{ url_for('agent.submit', mode='property_only') }}"
+                                        class="text-yellow-400 underline hover:text-yellow-300 font-medium">Create a
+                                        property</a> to assign.</span>
+                            </p>
+                            {% endif %}
+                        </div>
                     </div>
                 </div>
 
                 <!-- Branding -->
-                <div>
-                    <h3 class="text-lg font-medium text-white mb-4">Branding</h3>
-                    <div class="grid grid-cols-1 gap-4">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-300">Brand Name /
-                                Header</label>
+                <div class="mb-8">
+                    <h3 class="section-title">Branding</h3>
+                    <div class="space-y-4">
+                        <div class="form-group">
+                            <label class="form-label">Brand Name / Header</label>
                             <input type="text" name="brand_name" value="{{ asset.brand_name or '' }}"
-                                class="mt-1 block w-full rounded-md border-gray-600 shadow-sm focus:border-blue-500 focus:ring-blue-500 bg-gray-700 text-white"
-                                placeholder="e.g. SMITH REALTY GROUP">
+                                class="glass-input" placeholder="e.g. SMITH REALTY GROUP">
                         </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-300">Phone</label>
-                            <input type="text" name="phone" value="{{ asset.phone or '' }}"
-                                class="mt-1 block w-full rounded-md border-gray-600 shadow-sm focus:border-blue-500 focus:ring-blue-500 bg-gray-700 text-white">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-300">Email</label>
-                            <input type="email" name="email" value="{{ asset.email or '' }}"
-                                class="mt-1 block w-full rounded-md border-gray-600 shadow-sm focus:border-blue-500 focus:ring-blue-500 bg-gray-700 text-white">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="form-group">
+                                <label class="form-label">Phone</label>
+                                <input type="text" name="phone" value="{{ asset.phone or '' }}" class="glass-input">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Email</label>
+                                <input type="email" name="email" value="{{ asset.email or '' }}" class="glass-input">
+                            </div>
                         </div>
                     </div>
                 </div>
 
                 <!-- Appearance -->
-                <div>
-                    <h3 class="text-lg font-medium text-white mb-4">Appearance</h3>
-                    <div class="grid grid-cols-1 gap-4">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-300">Background
-                                Style</label>
-                            <select name="background_style"
-                                class="mt-1 block w-full rounded-md border-gray-600 shadow-sm focus:border-blue-500 focus:ring-blue-500 bg-gray-700 text-white">
+                <div class="mb-8">
+                    <h3 class="section-title">Appearance</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="form-group">
+                            <label class="form-label">Background Style</label>
+                            <select name="background_style" class="glass-input">
                                 {% for style in bg_options %}
                                 <option value="{{ style }}" {% if asset.background_style==style %}selected{% endif %}>
                                     {{ style|replace('_', ' ')|title }}
@@ -87,11 +138,9 @@
                                 {% endfor %}
                             </select>
                         </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-300">Call to Action
-                                (CTA)</label>
-                            <select name="cta_key"
-                                class="mt-1 block w-full rounded-md border-gray-600 shadow-sm focus:border-blue-500 focus:ring-blue-500 bg-gray-700 text-white">
+                        <div class="form-group">
+                            <label class="form-label">Call to Action (CTA)</label>
+                            <select name="cta_key" class="glass-input">
                                 {% for cta in cta_options %}
                                 <option value="{{ cta }}" {% if asset.cta_key==cta %}selected{% endif %}>
                                     {{ cta|replace('_', ' ')|upper }}
@@ -103,65 +152,73 @@
                 </div>
 
                 <!-- Images -->
-                <div>
-                    <h3 class="text-lg font-medium text-white mb-4">Images</h3>
+                <div class="mb-8">
+                    <h3 class="section-title">Images</h3>
 
-                    <div class="space-y-4">
-                        <div class="flex items-start">
-                            <div class="flex items-center h-5">
-                                <input type="checkbox" name="include_logo" {% if asset.include_logo %}checked{% endif %}
-                                    class="focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300 rounded bg-gray-700">
-                            </div>
-                            <div class="ml-3 text-sm">
-                                <label class="font-medium text-gray-300">Include Logo</label>
-                                <p class="text-gray-400">Displayed in top-left corner</p>
+                    <!-- Logo -->
+                    <div class="bg-white/5 rounded-lg p-4 mb-4 border border-white/10">
+                        <div class="flex items-center justify-between mb-3">
+                            <label class="form-label mb-0">Company Logo</label>
+                            <div class="flex items-center">
+                                <input type="checkbox" name="include_logo" id="include_logo" {% if asset.include_logo
+                                    %}checked{% endif %}
+                                    class="mr-2 h-4 w-4 rounded border-gray-500 text-blue-600 focus:ring-blue-500">
+                                <label for="include_logo" class="text-sm text-gray-300 cursor-pointer select-none">Show
+                                    on sign</label>
                             </div>
                         </div>
-                        <div>
-                            {% if asset.logo_key %}
-                            <p class="text-xs text-green-500 mb-1">✓ Current Logo Uploaded</p>
-                            {% endif %}
-                            <input type="file" name="logo_file" accept="image/*"
-                                class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 bg-gray-800 text-gray-300">
+                        {% if asset.logo_key %}
+                        <div class="text-green-400 text-xs mb-2 flex items-center gap-1">
+                            <span>✓</span> Current logo on file
                         </div>
+                        {% endif %}
+                        <input type="file" name="logo_file" accept="image/*"
+                            class="glass-input text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700">
+                    </div>
 
-                        <div class="flex items-start mt-4">
-                            <div class="flex items-center h-5">
-                                <input type="checkbox" name="include_headshot" {% if asset.include_headshot %}checked{%
-                                    endif %}
-                                    class="focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300 rounded bg-gray-700">
-                            </div>
-                            <div class="ml-3 text-sm">
-                                <label class="font-medium text-gray-300">Include Headshot</label>
-                                <p class="text-gray-400">Displayed in top-right corner</p>
+                    <!-- Headshot -->
+                    <div class="bg-white/5 rounded-lg p-4 border border-white/10">
+                        <div class="flex items-center justify-between mb-3">
+                            <label class="form-label mb-0">Agent Headshot</label>
+                            <div class="flex items-center">
+                                <input type="checkbox" name="include_headshot" id="include_headshot" {% if
+                                    asset.include_headshot %}checked{% endif %}
+                                    class="mr-2 h-4 w-4 rounded border-gray-500 text-blue-600 focus:ring-blue-500">
+                                <label for="include_headshot"
+                                    class="text-sm text-gray-300 cursor-pointer select-none">Show on sign</label>
                             </div>
                         </div>
-                        <div>
-                            {% if asset.headshot_key %}
-                            <p class="text-xs text-green-500 mb-1">✓ Current Headshot Uploaded</p>
-                            {% endif %}
-                            <input type="file" name="headshot_file" accept="image/*"
-                                class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 bg-gray-800 text-gray-300">
+                        {% if asset.headshot_key %}
+                        <div class="text-green-400 text-xs mb-2 flex items-center gap-1">
+                            <span>✓</span> Current headshot on file
                         </div>
+                        {% endif %}
+                        <input type="file" name="headshot_file" accept="image/*"
+                            class="glass-input text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700">
                     </div>
                 </div>
 
-                <div class="pt-5 border-t border-gray-700">
-                    <button type="submit"
-                        class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                        Save Design
+                <div class="pt-6 border-t border-gray-700">
+                    <button type="submit" class="glass-button primary w-full justify-center text-lg">
+                        Save Design & Assignment
                     </button>
+                    <p class="text-center text-xs text-gray-500 mt-3">Preview will update automatically after saving.
+                    </p>
                 </div>
             </form>
         </div>
 
         <!-- Preview -->
-        <div class="card card--dark rounded-lg p-6 flex flex-col items-center justify-center">
-            <h3 class="text-lg font-medium text-white mb-4">PDF Preview</h3>
-            <iframe
-                src="{{ url_for('smart_signs.preview_smartsign', asset_id=asset.id) }}?t={{ range(1, 10000) | random }}"
-                class="w-full h-96 border-0 shadow-lg" title="Sign Preview"></iframe>
-            <p class="mt-4 text-xs text-center text-gray-500">Preview auto-generated (refresh after save)</p>
+        <div class="preview-container">
+            <div class="card card--dark flex flex-col items-center justify-center sticky top-24">
+                <h3 class="section-header" style="font-size: 1.2rem; margin-bottom: 20px;">Live Preview</h3>
+                <div class="w-full bg-white/5 rounded-lg p-2 mb-4 border border-white/10">
+                    <iframe
+                        src="{{ url_for('smart_signs.preview_smartsign', asset_id=asset.id) }}?t={{ range(1, 10000) | random }}"
+                        class="w-full h-[500px] border-none rounded bg-white shadow-2xl" title="Sign Preview"></iframe>
+                </div>
+                <p class="text-sm text-gray-400">This is exactly how your sign will look when scanned.</p>
+            </div>
         </div>
     </div>
 </div>
