@@ -168,9 +168,9 @@ def submit():
                     cursor.execute(f"UPDATE agents SET {', '.join(updates)} WHERE id=%s", tuple(params))
             else:
                 # Create New Agent
-                # [SECURITY] Only link if verified
+                # [SECURITY] Link if authenticated (Staging often unverified)
                 user_id = None
-                if current_user.is_authenticated and hasattr(current_user, 'is_verified') and current_user.is_verified:
+                if current_user.is_authenticated:
                     user_id = current_user.id
 
                 # SECURITY: Do NOT persist scheduling_url for unclaimed/unverified agent rows.
