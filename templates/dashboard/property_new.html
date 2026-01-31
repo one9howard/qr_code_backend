@@ -7,82 +7,66 @@
 <!-- Use Submit Page Styles -->
 <link rel="stylesheet" href="{{ url_for('static', filename='css/pages/submit.css') }}">
 
-<div class="app-layout">
-    {% include "includes/dashboard_sidebar.html" %}
-    <main class="app-main" style="background: transparent;"> <!-- Override default main bg -->
-        <header class="app-header" style="border-bottom: none;">
-            <div style="display: flex; align-items: center; gap: 16px;">
-                <button class="mobile-menu-trigger"
-                    onclick="document.getElementById('sidebar').classList.toggle('active')"
-                    style="background: none; border: none; cursor: pointer; color: white; display: flex; align-items: center;">
-                    <svg viewBox="0 0 24 24" width="28" height="28" stroke="white" stroke-width="2" fill="none">
-                        <path d="M3 12h18M3 6h18M3 18h18" />
-                    </svg>
-                </button>
-                <a href="{{ url_for('dashboard.index') }}"
-                    style="color: rgba(255,255,255,0.7); text-decoration: none; display: flex; align-items: center; gap: 8px;">
-                    <span>←</span> Back to Dashboard
-                </a>
-            </div>
-        </header>
-
-        <div class="content-wrapper">
-            <div class="card card--dark" style="max-width: 600px; margin: 0 auto;">
+<div class="submit-container" style="padding-top: 80px;">
+    <!-- Centered Form -->
+    <div class="card card--dark" style="max-width: 600px; width: 100%; margin: 0 auto;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px;">
+            <div>
                 <h1 class="section-header" style="margin-top: 0; margin-bottom: 8px; font-size: 1.5rem;">Create Property
                 </h1>
-                <p class="section-subheader" style="margin-bottom: 24px; font-size: 0.95rem;">
+                <p class="section-subheader" style="margin-bottom: 0px; font-size: 0.95rem;">
                     Add a property to your dashboard. This does <strong>not</strong> create a listing sign order.
                 </p>
-
-                {% with messages = get_flashed_messages(with_categories=true) %}
-                {% if messages %}
-                {% for category, message in messages %}
-                <div class="glass-toast"
-                    style="position: static; transform: none; margin-bottom: 20px; width: auto; max-width: none;">
-                    <span style="font-size: 1.2rem; margin-right: 10px;">
-                        {% if category == 'error' %}⚠️{% else %}✅{% endif %}
-                    </span>
-                    {{ message }}
-                </div>
-                {% endfor %}
-                {% endif %}
-                {% endwith %}
-
-                <form method="POST">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-
-                    <div class="input-group" style="margin-bottom: 20px;">
-                        <label class="input-label">Property Address</label>
-                        <input name="address" class="glass-input" placeholder="123 Main St, City, State" required>
-                    </div>
-
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
-                        <div class="input-group">
-                            <label class="input-label">Beds</label>
-                            <input name="beds" class="glass-input" placeholder="3" required>
-                        </div>
-                        <div class="input-group">
-                            <label class="input-label">Baths</label>
-                            <input name="baths" class="glass-input" placeholder="2.5" required>
-                        </div>
-                    </div>
-
-                    <div class="input-group" style="margin-bottom: 30px;">
-                        <label class="input-label">Price (Optional)</label>
-                        <input name="price" class="glass-input" placeholder="$500,000">
-                    </div>
-
-                    <div style="display: flex; justify-content: flex-end; gap: 16px; align-items: center;">
-                        <a href="{{ url_for('dashboard.index') }}"
-                            style="color: rgba(255,255,255,0.6); text-decoration: none; font-size: 0.9rem;">Cancel</a>
-                        <button type="submit" class="glass-button primary">
-                            Create Property
-                        </button>
-                    </div>
-                </form>
             </div>
+            <a href="{{ url_for('dashboard.index') }}"
+                style="color: rgba(255,255,255,0.6); text-decoration: none; font-size: 1.5rem; line-height: 1;">&times;</a>
         </div>
-    </main>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        {% for category, message in messages %}
+        <div class="glass-toast"
+            style="position: static; transform: none; margin-bottom: 20px; width: auto; max-width: none;">
+            <span style="font-size: 1.2rem; margin-right: 10px;">
+                {% if category == 'error' %}⚠️{% else %}✅{% endif %}
+            </span>
+            {{ message }}
+        </div>
+        {% endfor %}
+        {% endif %}
+        {% endwith %}
+
+        <form method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+            <div class="input-group" style="margin-bottom: 20px;">
+                <label class="input-label">Property Address</label>
+                <input name="address" class="glass-input" placeholder="123 Main St, City, State" required>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+                <div class="input-group">
+                    <label class="input-label">Beds</label>
+                    <input name="beds" class="glass-input" placeholder="3" required>
+                </div>
+                <div class="input-group">
+                    <label class="input-label">Baths</label>
+                    <input name="baths" class="glass-input" placeholder="2.5" required>
+                </div>
+            </div>
+
+            <div class="input-group" style="margin-bottom: 30px;">
+                <label class="input-label">Price (Optional)</label>
+                <input name="price" class="glass-input" placeholder="$500,000">
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; gap: 16px; align-items: center;">
+                <button type="submit" class="glass-button primary" style="width: 100%;">
+                    Create Property
+                </button>
+            </div>
+        </form>
+    </div>
 </div>
 
 <style>
