@@ -23,12 +23,17 @@
 </style>
 
 <div class="app-layout">
-    <!-- Sidebar Placeholder / Navigation (Optional: If we want full uniformity, we'd include sidebar here) -->
-    <!-- For now, we focus on the main content area styling match -->
-
+    {% include "includes/dashboard_sidebar.html" %}
     <main class="app-main" style="width: 100%;">
         <header class="app-header">
             <div style="display: flex; align-items: center; gap: 16px;">
+                <button class="mobile-menu-trigger"
+                    onclick="document.getElementById('sidebar').classList.toggle('active')"
+                    style="background: none; border: none; cursor: pointer; color: white; display: flex; align-items: center;">
+                    <svg viewBox="0 0 24 24" width="28" height="28" stroke="white" stroke-width="2" fill="none">
+                        <path d="M3 12h18M3 6h18M3 18h18" />
+                    </svg>
+                </button>
                 <a href="{{ url_for('dashboard.index') }}"
                     style="color: var(--text-muted); text-decoration: none; display: flex; align-items: center; gap: 8px;">
                     <span>←</span> Back to Dashboard
@@ -38,7 +43,7 @@
             <div></div>
         </header>
 
-        <div class="content-wrapper standalone-form-wrapper">
+        <div class="content-wrapper">
             <div class="card form-card">
                 <h1 style="margin-top: 0; margin-bottom: 8px; font-size: 1.5rem;">Create Property</h1>
                 <p style="color: var(--text-muted); margin-bottom: 24px; font-size: 0.95rem;">
