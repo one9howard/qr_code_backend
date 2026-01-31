@@ -96,8 +96,8 @@
                         SmartSigns turn sign scans into direct buyer inquiries.<br>
                         Create one, place it at a listing, and leads appear here.
                     </p>
-                    <a href="{{ url_for('smart_signs.order_start') }}" class="btn-primary"
-                        style="padding: 16px 32px; font-size: 1.05rem; display: inline-block;">Create SmartSign</a>
+                    <a href="{{ url_for('smart_signs.order_start') }}" class="glass-button primary"
+                        style="padding: 10px 24px; font-size: 1rem; display: inline-flex;">Create SmartSign</a>
                     <p style="margin-top: 12px; color: var(--text-muted); font-size: 0.85rem;">Takes about 2 minutes</p>
                 </div>
             </div>
@@ -116,7 +116,7 @@
                     {% if first_unassigned_sign_id %}
                     <a href="{{ url_for('dashboard.index', highlight_asset_id=first_unassigned_sign_id) }}#smart-signs-section"
                         class="glass-button primary"
-                        style="padding: 12px 24px; font-size: 1rem; display: inline-flex;">Assign SmartSign</a>
+                        style="padding: 8px 20px; font-size: 1rem; display: inline-flex;">Assign SmartSign</a>
                     {% endif %}
                     {% if properties|length == 0 %}
                     <p style="margin-top: 16px;">
@@ -125,30 +125,6 @@
                             →</a>
                     </p>
                     {% endif %}
-                </div>
-            </div>
-
-            <!-- Progress Bar (shown in needs_assignment mode) -->
-            <div class="col-span-12" style="margin-bottom: 20px;">
-                <div class="card" style="padding: 20px 24px;" data-testid="progress-bar">
-                    <div
-                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-                        <span style="font-size: 0.9rem; color: var(--text-muted); font-weight: 500;">Progress to your
-                            first buyer lead</span>
-                        <span style="font-size: 0.85rem; color: var(--accent-cyan);">{{ progress_percent }}%</span>
-                    </div>
-                    <div style="height: 8px; background: rgba(255,255,255,0.1); border-radius: 4px; overflow: hidden;">
-                        <div
-                            style="width: {{ progress_percent }}%; height: 100%; background: linear-gradient(90deg, #4facfe 0%, #00f2fe 100%); border-radius: 4px; transition: width 0.3s ease;">
-                        </div>
-                    </div>
-                    <div style="margin-top: 12px; display: flex; justify-content: space-between; align-items: center;">
-                        <span style="font-size: 0.9rem; color: var(--text-main);">Next: {{ next_step_label }}</span>
-                        {% if next_step_url %}
-                        <a href="{{ next_step_url }}" class="btn-primary"
-                            style="padding: 8px 16px; font-size: 0.85rem;">{{ next_step_cta }}</a>
-                        {% endif %}
-                    </div>
                 </div>
             </div>
 

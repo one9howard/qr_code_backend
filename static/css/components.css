@@ -309,3 +309,69 @@
     font-weight: bold;
     color: white;
 }
+
+/* =============================================================================
+   Button Components
+   ============================================================================= */
+.glass-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-weight: 500;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-decoration: none;
+    border: 1px solid transparent;
+    gap: 8px;
+    line-height: 1.2;
+}
+
+.glass-button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    text-decoration: none;
+    color: white;
+}
+
+.glass-button:active {
+    transform: translateY(0);
+}
+
+.glass-button.primary {
+    background: var(--accent-blue, #0077ff) !important;
+    /* Force blue override */
+    color: white !important;
+    border-color: rgba(255, 255, 255, 0.1);
+    box-shadow: 0 2px 8px rgba(0, 119, 255, 0.25);
+}
+
+.glass-button.primary:hover {
+    filter: brightness(1.1);
+    box-shadow: 0 4px 15px rgba(0, 119, 255, 0.4);
+}
+
+.glass-button.secondary {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    border-color: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(4px);
+}
+
+.glass-button.secondary:hover {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+.glass-button.accent {
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    color: white;
+    border: none;
+}
+
+.glass-button.accent:hover {
+    filter: brightness(1.1);
+    box-shadow: 0 4px 15px rgba(79, 172, 254, 0.4);
+}
