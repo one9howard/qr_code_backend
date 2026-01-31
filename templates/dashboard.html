@@ -115,7 +115,8 @@
                     </p>
                     {% if first_unassigned_sign_id %}
                     <a href="{{ url_for('dashboard.index', highlight_asset_id=first_unassigned_sign_id) }}#smart-signs-section"
-                        class="btn-primary" style="padding: 14px 28px; font-size: 1rem;">Assign SmartSign</a>
+                        class="glass-button primary"
+                        style="padding: 12px 24px; font-size: 1rem; display: inline-flex;">Assign SmartSign</a>
                     {% endif %}
                     {% if properties|length == 0 %}
                     <p style="margin-top: 16px;">
@@ -218,7 +219,8 @@
                     <div style="margin-top: 10px; display: flex; justify-content: space-between; align-items: center;">
                         <span style="font-size: 0.85rem; color: var(--text-muted);">Next: {{ next_step_label }}</span>
                         {% if next_step_url %}
-                        <a href="{{ next_step_url }}" style="color: var(--accent-cyan); font-size: 0.85rem;">{{
+                        <a href="{{ next_step_url }}" class="glass-button primary"
+                            style="padding: 6px 12px; font-size: 0.8rem;">{{
                             next_step_cta }} →</a>
                         {% endif %}
                     </div>
@@ -653,14 +655,13 @@
         // Show target
         document.getElementById('tab-' + tabName).classList.add('active');
 
-        // Update Button State (Need to select specific button based on text or index, simplistic for now)
-        // Actually, passed this into function? No, let's find the button by onclick attribute match
-        // Simpler: just loop buttons and check onclick value
+        // Update Button State by matching onclick attribute (safer than index)
         const buttons = document.querySelectorAll('.tab-btn');
-        if (tabName === 'today') buttons[0].classList.add('active');
-        if (tabName === 'listings') buttons[1].classList.add('active');
-        if (tabName === 'smart') buttons[2].classList.add('active');
-        if (tabName === 'analytics') buttons[3].classList.add('active');
+        buttons.forEach(btn => {
+            if (btn.getAttribute('onclick').includes("'" + tabName + "'")) {
+                btn.classList.add('active');
+            }
+        });
     }
 
     function handleSmartSignsHash() {
