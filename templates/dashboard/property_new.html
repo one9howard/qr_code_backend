@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}Create Property | InSite Signs{% endblock %}
+{% block body_class %}dashboard-body{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 600px; padding: 40px 20px;">
+    <div class="card" style="padding: 30px;">
+        <h1 style="margin-bottom: 10px; font-size: 1.5rem;">Create Property</h1>
+        <p style="color: var(--text-muted); margin-bottom: 24px;">
+            Add a property to your dashboard. This does <strong>not</strong> create a listing sign order.
+        </p>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        {% for category, message in messages %}
+        <div class="alert alert-{{ category }}"
+            style="color: #ff6b6b; background: rgba(255, 107, 107, 0.1); padding: 10px; border-radius: 6px; margin-bottom: 20px;">
+            {{ message }}
+        </div>
+        {% endfor %}
+        {% endif %}
+        {% endwith %}
+
+        <form method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; margin-bottom: 6px; color: var(--text-secondary);">Property
+                    Address</label>
+                <input name="address" class="glass-input" placeholder="123 Main St, City, State" required
+                    style="width: 100%; padding: 10px; border-radius: 6px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: white;">
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px;">
+                <div>
+                    <label style="display: block; margin-bottom: 6px; color: var(--text-secondary);">Beds</label>
+                    <input name="beds" class="glass-input" placeholder="3" required
+                        style="width: 100%; padding: 10px; border-radius: 6px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: white;">
+                </div>
+                <div>
+                    <label style="display: block; margin-bottom: 6px; color: var(--text-secondary);">Baths</label>
+                    <input name="baths" class="glass-input" placeholder="2.5" required
+                        style="width: 100%; padding: 10px; border-radius: 6px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: white;">
+                </div>
+            </div>
+
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; margin-bottom: 6px; color: var(--text-secondary);">Price
+                    (Optional)</label>
+                <input name="price" class="glass-input" placeholder="$500,000"
+                    style="width: 100%; padding: 10px; border-radius: 6px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: white;">
+            </div>
+
+            <div style="margin-top: 30px; display: flex; justify-content: flex-end; gap: 12px;">
+                <a href="{{ url_for('dashboard.index') }}"
+                    style="padding: 10px 20px; color: var(--text-muted); text-decoration: none;">Cancel</a>
+                <button type="submit" class="glass-button primary"
+                    style="padding: 10px 24px; background: var(--accent-blue); color: white; border: none; border-radius: 6px; cursor: pointer;">
+                    Create Property
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
