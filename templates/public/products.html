@@ -11,20 +11,7 @@
 <div class="hero-wrapper" style="min-height: auto; padding-bottom: 60px;">
     <div class="hero-grid"></div>
     <div class="container-saas">
-        <!-- Nav (Duplicate of landing nav for consistency or include? Base.html handles nav usually but landing overrides it) -->
-        <!-- The user prompt implies consistent nav. Base.html has a nav but landing.html often has its own. 
-             Base.html's nav is generic. Landing's is specific. 
-             Since this is a "product chooser", let's use the standard base.html nav if possible, 
-             OR just valid content since base.html wraps it.
-             Wait, landing.html HAS a specific nav inside 'hero-wrapper'. 
-             Base.html HAS a nav too. 
-             In landing.html: {% block content %} starts with styles then hero-wrapper then nav.
-             So landing.html REPLACE base navigation? No, base.html has {% block nav_links %}.
-             Let's check base.html again.
-             Base.html has "nav-center desktop-only" with {% block nav_links %}.
-             If I extend base.html, I get the base nav.
-             Let's use the base nav but populated with links.
-        -->
+        <!-- Nav handled by base.html -->
 
         <div class="hero-content" style="text-align: center; padding-top: 120px;">
             <h1 class="section-title" style="font-size: 3rem;">Our Products</h1>
