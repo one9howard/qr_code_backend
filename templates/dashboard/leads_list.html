@@ -1,86 +1,115 @@
 {% extends "base.html" %}
 
+{% block title %}Lead Management | InSite Signs{% endblock %}
+{% block body_class %}dashboard-saas-body{% endblock %}
+
 {% block content %}
-<div class="dashboard-container">
-    <div class="dashboard-header">
-        <h1>Lead Management</h1>
-        <p class="subtitle">Track and manage your buyer inquiries</p>
-    </div>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/pages/dashboard_saas.css') }}">
 
-    <!-- Filters -->
-    <div class="glass-panel" style="margin-bottom: 20px; padding: 15px;">
-        <form method="GET" action="{{ url_for('lead_management.list_leads') }}"
-            style="display: flex; gap: 15px; align-items: center;">
-            <select name="status" class="glass-input" style="width: auto;">
-                <option value="">All Statuses</option>
-                <option value="new" {% if current_filter.status=='new' %}selected{% endif %}>New</option>
-                <option value="contacted" {% if current_filter.status=='contacted' %}selected{% endif %}>Contacted
-                </option>
-                <option value="qualified" {% if current_filter.status=='qualified' %}selected{% endif %}>Qualified
-                </option>
-                <option value="closed" {% if current_filter.status=='closed' %}selected{% endif %}>Closed</option>
-                <option value="lost" {% if current_filter.status=='lost' %}selected{% endif %}>Lost</option>
-            </select>
+<div class="app-layout">
+    {% include "includes/dashboard_sidebar.html" %}
 
-            <select name="property_id" class="glass-input" style="width: auto; max-width: 300px;">
-                <option value="">All Properties</option>
-                {% for p in properties %}
-                <option value="{{ p.id }}" {% if current_filter.property_id==p.id|string %}selected{% endif %}>{{
-                    p.address }}</option>
-                {% endfor %}
-            </select>
+    <main class="app-main">
+        <header class="app-header">
+            <h1 class="page-title">Lead Management</h1>
+        </header>
 
-            <button type="submit" class="glass-button secondary">Filter</button>
-            <a href="{{ url_for('lead_management.list_leads') }}" class="glass-button secondary"
-                style="opacity: 0.7;">Clear</a>
-        </form>
-    </div>
+        <div class="content-wrapper">
+            <div class="col-span-12">
+                <p style="color: var(--text-muted); margin-bottom: 24px;">Track and manage your buyer inquiries</p>
 
-    <!-- Leads Table -->
-    <div class="glass-panel">
-        <table class="dashboard-table">
-            <thead>
-                <tr>
-                    <th>Date</th>
-                    <th>Name</th>
-                    <th>Property</th>
-                    <th>Status</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for lead in leads %}
-                <tr>
-                    <td>{{ lead.created_at }}</td>
-                    <td>
-                        <div style="font-weight: bold;">{{ lead.buyer_name }}</div>
-                        <div style="font-size: 0.8em; opacity: 0.7;">{{ lead.buyer_email }}</div>
-                    </td>
-                    <td>{{ lead.property_address }}</td>
-                    <td>
-                        <span class="status-pill {{ lead.status }}">{{ lead.status|upper }}</span>
-                    </td>
-                    <td>
-                        <a href="{{ url_for('lead_management.lead_detail', lead_id=lead.id) }}"
-                            class="glass-button secondary">
-                            View
-                        </a>
-                    </td>
-                </tr>
-                {% else %}
-                <tr>
-                    <td colspan="5" style="text-align: center; padding: 30px; opacity: 0.6;">
-                        No leads found.
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
+                <!-- Filters -->
+                <div class="card" style="margin-bottom: 24px; padding: 20px;">
+                    <form method="GET" action="{{ url_for('lead_management.list_leads') }}"
+                        style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
+                        <select name="status" class="glass-input" style="width: auto; min-width: 150px;">
+                            <option value="">All Statuses</option>
+                            <option value="new" {% if current_filter.status=='new' %}selected{% endif %}>New</option>
+                            <option value="contacted" {% if current_filter.status=='contacted' %}selected{% endif %}>
+                                Contacted
+                            </option>
+                            <option value="qualified" {% if current_filter.status=='qualified' %}selected{% endif %}>
+                                Qualified
+                            </option>
+                            <option value="closed" {% if current_filter.status=='closed' %}selected{% endif %}>Closed
+                            </option>
+                            <option value="lost" {% if current_filter.status=='lost' %}selected{% endif %}>Lost</option>
+                        </select>
+
+                        <select name="property_id" class="glass-input"
+                            style="width: auto; min-width: 200px; max-width: 300px;">
+                            <option value="">All Properties</option>
+                            {% for p in properties %}
+                            <option value="{{ p.id }}" {% if current_filter.property_id==p.id|string %}selected{% endif
+                                %}>{{
+                                p.address }}</option>
+                            {% endfor %}
+                        </select>
+
+                        <button type="submit" class="glass-button secondary">Filter</button>
+                        <a href="{{ url_for('lead_management.list_leads') }}" class="glass-button secondary"
+                            style="opacity: 0.7;">Clear</a>
+                    </form>
+                </div>
+
+                <!-- Leads Table -->
+                <div class="table-container">
+                    <table class="saas-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Name</th>
+                                <th>Property</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for lead in leads %}
+                            <tr>
+                                <td style="color: var(--text-muted);">{{ lead.created_at }}</td>
+                                <td>
+                                    <div style="font-weight: 500; color: white;">{{ lead.buyer_name }}</div>
+                                    <div style="font-size: 0.85em; color: var(--text-muted);">{{ lead.buyer_email }}
+                                    </div>
+                                </td>
+                                <td>{{ lead.property_address }}</td>
+                                <td>
+                                    <span class="status-pill {{ lead.status }}">{{ lead.status|upper }}</span>
+                                </td>
+                                <td>
+                                    <a href="{{ url_for('lead_management.lead_detail', lead_id=lead.id) }}"
+                                        class="glass-button secondary" style="padding: 4px 12px; font-size: 0.9em;">
+                                        View
+                                    </a>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="5" style="text-align: center; padding: 48px; color: var(--text-muted);">
+                                    No leads found.
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
 </div>
 
 <style>
     /* Status Colors */
+    .status-pill {
+        padding: 4px 12px;
+        border-radius: 999px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        display: inline-block;
+    }
+
     .status-pill.new {
         background: rgba(52, 152, 219, 0.2);
         color: #3498db;
@@ -112,11 +141,18 @@
     }
 
     .glass-input {
-        background: rgba(255, 255, 255, 0.1);
-        border: 1px solid rgba(255, 255, 255, 0.2);
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
         color: white;
-        padding: 8px 12px;
-        border-radius: 6px;
+        padding: 10px 16px;
+        border-radius: 8px;
+        font-family: inherit;
+    }
+
+    .glass-input:focus {
+        outline: none;
+        border-color: var(--primary);
+        background: rgba(255, 255, 255, 0.08);
     }
 </style>
 {% endblock %}

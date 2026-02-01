@@ -1,30 +1,46 @@
 {% extends "base.html" %}
 
+{% block title %}Today's Focus | InSite Signs{% endblock %}
+{% block body_class %}dashboard-saas-body{% endblock %}
+
 {% block content %}
-<div class="container" style="max-width: 800px; margin-top: 30px;">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/pages/dashboard_saas.css') }}">
 
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
-        <h1 style="margin: 0;">Today's Focus</h1>
-        <a href="{{ url_for('dashboard.index') }}" class="glass-button">Back to Dashboard</a>
-    </div>
+<div class="app-layout">
+    {% include "includes/dashboard_sidebar.html" %}
 
-    {% if cards %}
-    {% for card in cards %}
-    <div class="glass-panel mb-4 {% if card.type == 'warning' %}status-border-warning{% elif card.type == 'success' %}status-border-success{% else %}status-border-info{% endif %}"
-        style="padding: 1.5rem;">
+    <main class="app-main">
+        <header class="app-header">
+            <h1 class="page-title">Today's Focus</h1>
+        </header>
 
-        <h3 style="margin: 0 0 10px 0; color: white;">{{ card.title }}</h3>
-        <p style="color: #aaa; margin-bottom: 15px;">{{ card.message }}</p>
+        <div class="content-wrapper">
+            <div class="col-span-12" style="max-width: 800px; margin: 0 auto;">
 
-        <a href="{{ card.link }}" class="glass-button secondary">{{ card.action }} &rarr;</a>
-    </div>
-    {% endfor %}
-    {% else %}
-    <div class="glass-panel" style="padding: 3rem; text-align: center; color: #aaa;">
-        <h3>All caught up!</h3>
-        <p>No urgent actions required today.</p>
-    </div>
-    {% endif %}
+                <div style="display: flex; justify-content: flex-end; margin-bottom: 24px;">
+                    <a href="{{ url_for('dashboard.index') }}" class="glass-button secondary">Back to Dashboard</a>
+                </div>
 
+                {% if cards %}
+                {% for card in cards %}
+                <div class="card mb-4 {% if card.type == 'warning' %}status-border-warning{% elif card.type == 'success' %}status-border-success{% else %}status-border-info{% endif %}"
+                    style="padding: 1.5rem; margin-bottom: 24px;">
+
+                    <h3 style="margin: 0 0 10px 0; color: white;">{{ card.title }}</h3>
+                    <p style="color: var(--text-muted); margin-bottom: 15px;">{{ card.message }}</p>
+
+                    <a href="{{ card.link }}" class="glass-button secondary">{{ card.action }} &rarr;</a>
+                </div>
+                {% endfor %}
+                {% else %}
+                <div class="card" style="padding: 3rem; text-align: center; color: var(--text-muted);">
+                    <h3>All caught up!</h3>
+                    <p>No urgent actions required today.</p>
+                </div>
+                {% endif %}
+
+            </div>
+        </div>
+    </main>
 </div>
 {% endblock %}
