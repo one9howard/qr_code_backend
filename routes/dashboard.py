@@ -794,23 +794,3 @@ def new_property():
     return render_template("dashboard/property_new.html")
 
 
-@dashboard_bp.route("/kits")
-@login_required
-def kits():
-    """Marketing Kits Dashboard."""
-    db = get_db()
-    
-    # Get all properties for the user with kit status
-    properties = db.execute("""
-        SELECT 
-            p.id, 
-            p.address,
-            (SELECT status FROM listing_kits lk WHERE lk.property_id = p.id ORDER BY created_at DESC LIMIT 1) as kit_status,
-            (SELECT id FROM listing_kits lk WHERE lk.property_id = p.id ORDER BY created_at DESC LIMIT 1) as kit_id
-        FROM properties p
-        JOIN agents a ON p.agent_id = a.id
-        WHERE a.user_id = %s
-        ORDER BY p.created_at DESC
-    """, (current_user.id,)).fetchall()
-    
-    return render_template("dashboard/kits.html", properties=properties, is_pro=current_user.is_pro)
