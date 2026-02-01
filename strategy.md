@@ -1,5 +1,5 @@
 # strategy.md — InSite Signs: Single Source of Truth
-**Last updated:** 2026-01-27  
+**Last updated:** 2026-01-31  
 **Scope:** Monetization + SmartSigns Option B strict + Kits + Fulfillment + Analytics/UX (Phase 5)
 
 ---
