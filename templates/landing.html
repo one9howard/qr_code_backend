@@ -22,9 +22,9 @@
             -->
 
             <div class="nav-links" id="nav-links">
-                <a href="{{ url_for('public.products') }}">Products</a>
+                <a href="#signs">Products</a>
                 <a href="mailto:sales@insitesigns.com">Teams</a>
-                <a href="#pricing">Pricing</a>
+                <a href="#plans">Pricing</a>
                 <a href="{{ url_for('public.privacy') }}">Security</a>
 
                 {% if current_user.is_authenticated %}
@@ -103,12 +103,62 @@
     </div>
 </div>
 
-<!-- Features Section -->
-<div class="features-section" id="features">
+<!-- Section 1: Choose Your Sign Type -->
+<div class="features-section" id="signs">
     <div class="container-saas">
-        <h2 class="section-title">Features at a glance</h2>
+        <h2 class="section-title">1. Choose Your Sign Type</h2>
 
-        <div class="features-grid" id="pricing">
+        <div class="features-grid" style="margin-bottom: 80px;">
+            <!-- Smart Sign Card -->
+            <div class="pricing-card pro" style="border: 1px solid var(--primary);">
+                <div class="pricing-badge">REUSABLE</div>
+                <div class="pricing-title">Smart Sign</div>
+                <div class="pricing-price" style="font-size: 1.5rem; color: var(--text-main);">For Open Houses &
+                    Branding</div>
+                <ul class="pricing-features">
+                    <li>🔄 Reusable/Reassignable QR Code Signs</li>
+                    <li>📱 Perfect for Open Houses</li>
+                    <li>🎨 Customizable Agent Branding</li>
+                    <li>📊 Lifetime Analytics</li>
+                </ul>
+                <p style="text-align: center; color: var(--accent-orange); font-size: 0.9rem; margin-bottom: 2rem;">
+                    Login required. Pro required to reassign.
+                </p>
+                {% if current_user.is_authenticated %}
+                <a href="{{ url_for('smart_signs.order_start') }}" class="btn-primary">Create Smart Sign</a>
+                {% else %}
+                <a href="{{ url_for('auth.login', next=url_for('smart_signs.order_start')) }}" class="btn-primary">Login
+                    to Create</a>
+                {% endif %}
+            </div>
+
+            <!-- Listing Sign Card -->
+            <div class="pricing-card">
+                <div class="pricing-badge" style="background: var(--text-muted);">NOT REUSABLE</div>
+                <div class="pricing-title">Listing Sign</div>
+                <div class="pricing-price" style="font-size: 1.5rem; color: var(--text-main);">For Specific Properties
+                </div>
+                <ul class="pricing-features">
+                    <li>🏠 Tied to One Property Address</li>
+                    <li>🛠 Available in Coroplast and Aluminum</li>
+                    <li>📍 Auto-Generated Property Page</li>
+                    <li>📦 Ship Direct to Listing</li>
+                </ul>
+                <p style="text-align: center; color: var(--accent-blue); font-size: 0.9rem; margin-bottom: 2rem;">
+                    Guest checkout available.
+                </p>
+                <!-- Direct link to Listing Sign creation flow -->
+                <a href="{{ url_for('agent.submit') }}" class="btn-secondary">Create Listing Sign</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Section 2: Plans -->
+<div class="features-section" id="plans" style="background: rgba(255,255,255,0.02);">
+    <div class="container-saas">
+        <h2 class="section-title">2. Choose Your Plan</h2>
+        <div class="features-grid">
             <!-- Free Plan -->
             <div class="pricing-card">
                 <div class="pricing-title">Free</div>
@@ -165,6 +215,50 @@
                     <li>Dedicated Account Manager</li>
                 </ul>
                 <a href="mailto:sales@insitesigns.com" class="btn-secondary">Contact Sales</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Section 3: Add-ons -->
+<div class="features-section" id="addons">
+    <div class="container-saas">
+        <h2 class="section-title">3. Add-ons & Extras</h2>
+        <div class="features-grid">
+            <!-- Smart Risers -->
+            <div class="pricing-card">
+                <div class="pricing-title">Smart Risers</div>
+                <div class="pricing-price">Hardlinks</div>
+                <ul class="pricing-features">
+                    <li>Add QR capabilities to existing posts</li>
+                    <li>Weather-resistant adhesive</li>
+                    <li>NFC Enabled (Optional)</li>
+                </ul>
+                <a href="mailto:sales@insitesigns.com?subject=Smart Risers Inquiry" class="btn-secondary">Contact
+                    Sales</a>
+            </div>
+
+            <!-- Marketing Kits -->
+            <div class="pricing-card">
+                <div class="pricing-title">Marketing Kits</div>
+                <div class="pricing-price">Included</div>
+                <p style="text-align: center; color: var(--text-muted); font-size: 0.9rem;">(With Pro Subscription)</p>
+                <ul class="pricing-features">
+                    <li>Social Media Assets</li>
+                    <li>Printable Flyers</li>
+                    <li>Email Templates</li>
+                    <li>Auto-Generated</li>
+                </ul>
+                {% if current_user.is_authenticated %}
+                {% if current_user.is_pro %}
+                <a href="{{ url_for('dashboard.kits') }}" class="btn-secondary">View Kits</a>
+                {% else %}
+                <a href="{{ url_for('billing.start') }}" class="btn-secondary">Upgrade to Unlock</a>
+                {% endif %}
+                {% else %}
+                <a href="{{ url_for('auth.login', next=url_for('dashboard.kits')) }}" class="btn-secondary">Login to
+                    View</a>
+                {% endif %}
             </div>
         </div>
     </div>
