@@ -742,7 +742,36 @@ def new_property():
         
         code = generate_unique_code(db, length=12)
         cursor.execute("UPDATE properties SET qr_code=%s WHERE id=%s", (code, pid))
-        
+
+        # Handle Photo Uploads
+        if 'property_photos' in request.files:
+            photos = request.files.getlist('property_photos')
+            valid_photos = [p for p in photos if p and p.filename != '']
+            
+            if valid_photos:
+                # Basic Limit Check (simpler than edit flow)
+                max_photos = 1 if not is_pro else 20
+                if len(valid_photos) > max_photos:
+                    flash(f"Limit reached: You can only upload {max_photos} photo(s). Upgrade for more.", "warning")
+                    valid_photos = valid_photos[:max_photos]
+
+                for photo in valid_photos:
+                    try:
+                        base_name = f"property_{pid}"
+                        safe_key = save_image_upload(
+                            photo,
+                            PROPERTY_PHOTOS_KEY_PREFIX,
+                            base_name,
+                            validate_image=True
+                        )
+                        cursor.execute(
+                            "INSERT INTO property_photos (property_id, filename) VALUES (%s, %s)", 
+                            (pid, safe_key)
+                        )
+                    except Exception as e:
+                        print(f"Error saving photo: {e}")
+                        # Continue saving others
+
         db.commit()
         
         flash("Property created successfully.", "success")

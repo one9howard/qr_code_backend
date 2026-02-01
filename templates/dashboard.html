@@ -116,6 +116,7 @@
                     {% if first_unassigned_sign_id %}
                     <a href="{{ url_for('dashboard.index', highlight_asset_id=first_unassigned_sign_id) }}#smart-signs-section"
                         class="glass-button accent"
+                        onclick="switchTab('smart'); setTimeout(() => document.getElementById('smart-signs-section').scrollIntoView({behavior: 'smooth'}), 100);"
                         style="padding: 12px 24px; font-size: 1rem; display: inline-flex;">Assign SmartSign</a>
                     {% endif %}
                     {% if properties|length == 0 %}

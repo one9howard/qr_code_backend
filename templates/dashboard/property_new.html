@@ -36,7 +36,7 @@
         {% endif %}
         {% endwith %}
 
-        <form method="POST">
+        <form method="POST" enctype="multipart/form-data">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
             <div class="input-group" style="margin-bottom: 20px;">
@@ -55,9 +55,17 @@
                 </div>
             </div>
 
-            <div class="input-group" style="margin-bottom: 30px;">
+            <div class="input-group" style="margin-bottom: 20px;">
                 <label class="input-label">Price (Optional)</label>
                 <input name="price" class="glass-input" placeholder="$500,000">
+            </div>
+
+            <div class="input-group" style="margin-bottom: 30px;">
+                <label class="input-label">Photos (Optional)</label>
+                <input type="file" name="property_photos" class="glass-input" accept="image/*" multiple>
+                <p style="color: rgba(255,255,255,0.5); font-size: 0.8rem; margin-top: 6px;">
+                    Supported: JPG, PNG. Max 5MB per file.
+                </p>
             </div>
 
             <div style="display: flex; justify-content: flex-end; gap: 16px; align-items: center;">
