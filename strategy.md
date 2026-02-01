@@ -146,17 +146,19 @@ Entitlement: Pro OR `listing_kit` order in PAID_STATUSES.
 
 ---
 
-## 7) SmartSigns (Option B strict)
+## 7) SmartSigns (Practical Product Mode)
 
 - No normal-user manual asset creation.
 - Paid webhook creates and activates the asset.
-- Assign/reassign requires:
-  - Pro active/trialing
-  - activated asset
-  - not frozen
+- **Initial Assignment**: Allowed for sign owner (Free or Pro).
+- **Reassign/Unassign**: Requires Pro active/trialing.
+- **Requirements**:
+  - Asset must be activated.
+  - Asset must NOT be frozen.
 - Cancel Pro:
   - freeze assets (resolver keeps working)
   - reassignment disabled
+  - initial assignment disabled (implicit via freeze checks, or if frozen=true)
 
 ---
 

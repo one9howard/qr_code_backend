@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+
+{% block title %}Marketing Kits | InSite Signs{% endblock %}
+{% block body_class %}dashboard-saas-body{% endblock %}
+
+{% block content %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/pages/dashboard_saas.css') }}">
+<script>
+    async function generateKit(propertyId) {
+        const btn = document.getElementById(`btn-generate-${propertyId}`);
+        const originalText = btn.innerHTML;
+        btn.innerHTML = 'Generating...';
+        btn.disabled = true;
+
+        try {
+            const response = await fetch(`/api/kits/${propertyId}/start`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': "{{ csrf_token() }}"
+                }
+            });
+            const data = await response.json();
+
+            if (response.status === 402 && data.checkout_url) {
+                // Payment required -> Redirect to Stripe
+                window.location.href = data.checkout_url;
+                return;
+            }
+
+            if (response.ok) {
+                // Success -> Reload to show queued/completed status
+                window.location.reload();
+            } else {
+                alert(data.error || 'Error generating kit');
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+        } catch (e) {
+            console.error(e);
+            alert('Network error');
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }
+    }
+</script>
+
+<div class="app-layout">
+    {% include "includes/dashboard_sidebar.html" %}
+
+    <main class="app-main">
+        <header class="app-header">
+            <h1 class="page-title">Marketing Kits</h1>
+        </header>
+
+        <div class="content-wrapper">
+            <div class="card col-span-12">
+                <div style="margin-bottom: 24px;">
+                    <h2 style="font-size: 1.2rem; margin: 0 0 8px 0;">Property Marketing Kits</h2>
+                    <p style="color: var(--text-muted); margin: 0;">
+                        Download social media assets and flyers for your listings.
+                    </p>
+                </div>
+
+                <div class="table-container">
+                    {% if properties %}
+                    <table class="saas-table">
+                        <thead>
+                            <tr>
+                                <th>Property</th>
+                                <th>Status</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for p in properties %}
+                            <tr>
+                                <td>
+                                    <div style="font-weight: 500;">{{ p.address }}</div>
+                                </td>
+                                <td>
+                                    {% if not p.kit_status %}
+                                    <span class="badge badge-gray">Not Generated</span>
+                                    {% elif p.kit_status == 'queued' %}
+                                    <span class="badge badge-blue">Generating...</span>
+                                    {% elif p.kit_status == 'completed' %}
+                                    <span class="badge badge-green">Ready</span>
+                                    {% elif p.kit_status == 'failed' %}
+                                    <span class="badge badge-red">Failed</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if p.kit_status == 'completed' %}
+                                    <a href="{{ url_for('listing_kits.download_kit', kit_id=p.kit_id) }}"
+                                        class="glass-button primary" style="padding: 6px 12px; font-size: 0.9rem;">
+                                        Download ZIP
+                                    </a>
+                                    {% elif p.kit_status == 'queued' %}
+                                    <button disabled class="glass-button secondary" style="opacity: 0.7;">
+                                        In Progress
+                                    </button>
+                                    {% else %}
+                                    <button id="btn-generate-{{ p.id }}" onclick="generateKit({{ p.id }})"
+                                        class="glass-button secondary">
+                                        Generate Kit
+                                    </button>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    {% else %}
+                    <div style="text-align: center; padding: 48px; color: var(--text-muted);">
+                        No properties found. Add a property to generate marketing kits.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+{% endblock %}

@@ -88,11 +88,13 @@ class SmartSignsService:
     def assign_asset(asset_id, property_id, user_id):
         """
         Assigns or Reassigns a Sign Asset to a Property.
-        Strict Requirements:
+        
+        Practical Product Mode Rules:
           - User must own the Asset.
-          - User must own the Property (if property_id is not None).
-          - User must be PRO.
-          - Asset must NOT be frozen.
+          - Asset must be ACTIVATED and NOT FROZEN.
+          - Initial Assignment (active_property_id IS NULL): Allowed for ALL users (Free/Pro).
+          - Reassignment (active_property_id -> new_id): Pro ONLY.
+          - Unassignment (active_property_id -> None): Pro ONLY.
         """
         db = get_db()
         
@@ -108,18 +110,30 @@ class SmartSignsService:
             raise ValueError("Asset is frozen. Reactivate Pro subscription to reassign.")
             
         # 2b. Check Activation Status (Option B)
-        # "Asset must be activated (activated_at set) to be assignable"
         if asset['activated_at'] is None:
              raise ValueError("This reusable sign must be activated by a SmartSign purchase before it can be assigned.")
 
-        # 3. Check Subscription (Strict for Assignment too)
+        # 3. Check Subscription & Gating (Practical Product Mode)
         user = db.execute("SELECT subscription_status FROM users WHERE id = %s", (user_id,)).fetchone()
+        is_pro = user and is_subscription_active(user['subscription_status'])
         
-        # Canonical check - RELAXED for Phase 1 (Ownership Entitlement)
-        # if not user or not is_subscription_active(user['subscription_status']):
-        #     raise PermissionError("Upgrade required: Only Pro users can assign SmartSigns.")
+        old_property_id = asset['active_property_id']
+        
+        # Idempotency check
+        if old_property_id == property_id:
+            return asset
 
-        # 4. Verify Property Ownership (if assigning)
+        # Enforce Pro requirement for REASSIGN or UNASSIGN
+        # logic: if it was already assigned (old_prop_id IS NOT NULL) and we are changing it (which we are, due to idempotency check above)
+        # then this is a reassign/unassign operation.
+        if old_property_id is not None:
+            if not is_pro:
+                # Must contain "Upgrade required" and "reassign"
+                raise PermissionError("Upgrade required: Only Pro users can reassign or unassign SmartSigns.")
+
+        # If old_property_id is None (Initial Assignment), we allow it for everyone.
+
+        # 4. Verify Property Ownership (if assigning to a property)
         if property_id is not None:
             # Check if property exists and belongs to an agent owned by this user
             prop = db.execute("""
@@ -132,18 +146,13 @@ class SmartSignsService:
             if not prop:
                 raise ValueError("Property not found or access denied.")
 
-        # 5. Check for Change (Idempotency / History optimization)
-        old_property_id = asset['active_property_id']
-        if old_property_id == property_id:
-            return asset # No change
-            
-        # 6. Update Asset
+        # 5. Update Asset
         db.execute(
             "UPDATE sign_assets SET active_property_id = %s, updated_at = now() WHERE id = %s",
             (property_id, asset_id)
         )
         
-        # 7. Write History
+        # 6. Write History
         db.execute(
             """
             INSERT INTO sign_asset_history 

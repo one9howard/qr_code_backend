@@ -14,7 +14,12 @@
 
 ## Dashboard (Authenticated)
 - `GET /dashboard` (Overview)
-- `GET /dashboard/leads`
+  - Anchor `#listings-section` (Listings Tab)
+  - Anchor `#smart-signs-section` (SmartSigns Tab)
+  - Anchor `#leads-section` (Analytics Tab)
+- `GET /dashboard/today` (Today's Actions)
+- `GET /dashboard/kits` (Marketing Kits)
+- `GET /dashboard/leads` (Lead Management)
 - `GET /dashboard/properties/<id>/edit`
 - `GET /account` (Settings)
 

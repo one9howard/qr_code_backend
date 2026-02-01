@@ -21,17 +21,28 @@
     </a>
 
     <nav class="sidebar-nav">
-        <a href="{{ url_for('dashboard.index') }}"
-            class="nav-item {% if request.endpoint == 'dashboard.index' %}active{% endif %}">
-            <span class="nav-icon">📊</span> Dashboard
+        <a href="{{ url_for('dashboard.today') }}"
+            class="nav-item {% if request.endpoint == 'dashboard.today' %}active{% endif %}">
+            <span class="nav-icon">📅</span> Today
         </a>
-        <a href="{{ url_for('dashboard.index') }}#leads-section" class="nav-item">
-            <span class="nav-icon">👥</span> Buyer Leads
+        <a href="{{ url_for('dashboard.index', _anchor='listings-section') }}"
+            class="nav-item {% if request.endpoint == 'dashboard.index' and not request.hash == '#smart-signs-section' %}active{% endif %}">
+            <span class="nav-icon">🏠</span> Listings
         </a>
-        <a href="{{ url_for('dashboard.how_it_works') }}"
-            class="nav-item {% if request.endpoint == 'dashboard.how_it_works' %}active{% endif %}">
-            <span class="nav-icon">💡</span> How SmartSigns Get Leads
+        <a href="{{ url_for('lead_management.list_leads') }}"
+            class="nav-item {% if request.endpoint and request.endpoint.startswith('lead_management.') %}active{% endif %}">
+            <span class="nav-icon">👥</span> Leads
         </a>
+        <a href="{{ url_for('dashboard.index', _anchor='smart-signs-section') }}" class="nav-item">
+            <span class="nav-icon">📦</span> SmartSigns
+        </a>
+        <a href="{{ url_for('dashboard.kits') }}"
+            class="nav-item {% if request.endpoint == 'dashboard.kits' %}active{% endif %}">
+            <span class="nav-icon">🎨</span> Kits
+        </a>
+
+        <div style="height: 1px; background: rgba(255,255,255,0.1); margin: 12px 16px;"></div>
+
         <a href="{{ url_for('account.index') }}"
             class="nav-item {% if request.endpoint == 'account.index' %}active{% endif %}">
             <span class="nav-icon">⚙️</span> Settings

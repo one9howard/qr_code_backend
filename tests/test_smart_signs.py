@@ -56,17 +56,14 @@ class TestSmartSigns:
         assert hist['new_property_id'] == prop_id
         assert hist['changed_by_user_id'] == user_id
 
-    def test_free_cannot_assign_asset(self, app, db):
-        """Free user cannot assign asset even if they own it."""
-        db.execute("INSERT INTO users (email, password_hash, subscription_status) VALUES ('downgrade@t.com', 'x', 'active')")
-        user_id = db.execute("SELECT id FROM users WHERE email='downgrade@t.com'").fetchone()[0]
+    def test_free_can_initial_assign_asset(self, app, db):
+        """Free user CAN do initial assignment of activated asset (Practical Mode)."""
+        db.execute("INSERT INTO users (email, password_hash, subscription_status) VALUES ('free_initial@t.com', 'x', 'free')")
+        user_id = db.execute("SELECT id FROM users WHERE email='free_initial@t.com'").fetchone()[0]
         
-        # Create asset while active
-        asset = self._create_active_asset(db, user_id, "Downgrade Sign")
-        
-        # Downgrade User
-        db.execute("UPDATE users SET subscription_status='free' WHERE id=%s", (user_id,))
-        db.commit()
+        # Create asset (activated, unassigned)
+        asset = self._create_active_asset(db, user_id, "Free Initial Sign")
+        assert asset['active_property_id'] is None
         
         # Setup Property
         db.execute("INSERT INTO agents (user_id, name, brokerage, email) VALUES (%s, 'A', 'B', 'a@b.com')", (user_id,))
@@ -75,9 +72,69 @@ class TestSmartSigns:
         prop_id = db.execute("SELECT id FROM properties WHERE agent_id=%s", (agent_id,)).fetchone()[0]
         db.commit()
         
-        # Attempt Assign
-        with pytest.raises(PermissionError, match="Upgrade required"):
-            SmartSignsService.assign_asset(asset['id'], prop_id, user_id)
+        # Attempt Initial Assign -> Should PASS
+        updated = SmartSignsService.assign_asset(asset['id'], prop_id, user_id)
+        assert updated['active_property_id'] == prop_id
+
+    def test_free_cannot_reassign_asset(self, app, db):
+        """Free user CANNOT reassign asset (change property)."""
+        # Start as Pro to make initial setup easy
+        db.execute("INSERT INTO users (email, password_hash, subscription_status) VALUES ('reassign@t.com', 'x', 'active')")
+        user_id = db.execute("SELECT id FROM users WHERE email='reassign@t.com'").fetchone()[0]
+        
+        # Setup Properties
+        db.execute("INSERT INTO agents (user_id, name, brokerage, email) VALUES (%s, 'A', 'B', 'a@b.com')", (user_id,))
+        agent_id = db.execute("SELECT id FROM agents WHERE user_id=%s", (user_id,)).fetchone()[0]
+        db.execute("INSERT INTO properties (agent_id, address, beds, baths) VALUES (%s, 'Prop A', '1', '1')", (agent_id,))
+        prop_a = db.execute("SELECT id FROM properties WHERE address='Prop A'").fetchone()[0]
+        db.execute("INSERT INTO properties (agent_id, address, beds, baths) VALUES (%s, 'Prop B', '1', '1')", (agent_id,))
+        prop_b = db.execute("SELECT id FROM properties WHERE address='Prop B'").fetchone()[0]
+        db.commit()
+        
+        # Assign to A (while Pro)
+        asset = self._create_active_asset(db, user_id, "Reassign Sign")
+        SmartSignsService.assign_asset(asset['id'], prop_a, user_id)
+        
+        # Downgrade User
+        db.execute("UPDATE users SET subscription_status='free' WHERE id=%s", (user_id,))
+        db.commit()
+        
+        # Attempt Reassign to B -> FAIL
+        with pytest.raises(PermissionError) as excinfo:
+            SmartSignsService.assign_asset(asset['id'], prop_b, user_id)
+        
+        msg = str(excinfo.value)
+        assert "Upgrade required" in msg
+        assert "reassign" in msg.lower() # Check both substrings
+
+    def test_free_cannot_unassign_asset(self, app, db):
+        """Free user CANNOT unassign asset (set to None)."""
+        # Start as Pro
+        db.execute("INSERT INTO users (email, password_hash, subscription_status) VALUES ('unassign@t.com', 'x', 'active')")
+        user_id = db.execute("SELECT id FROM users WHERE email='unassign@t.com'").fetchone()[0]
+        
+        # Setup Property
+        db.execute("INSERT INTO agents (user_id, name, brokerage, email) VALUES (%s, 'A', 'B', 'a@b.com')", (user_id,))
+        agent_id = db.execute("SELECT id FROM agents WHERE user_id=%s", (user_id,)).fetchone()[0]
+        db.execute("INSERT INTO properties (agent_id, address, beds, baths) VALUES (%s, 'Prop A', '1', '1')", (agent_id,))
+        prop_a = db.execute("SELECT id FROM properties WHERE address='Prop A'").fetchone()[0]
+        db.commit()
+        
+        # Assign to A
+        asset = self._create_active_asset(db, user_id, "Unassign Sign")
+        SmartSignsService.assign_asset(asset['id'], prop_a, user_id)
+        
+        # Downgrade
+        db.execute("UPDATE users SET subscription_status='free' WHERE id=%s", (user_id,))
+        db.commit()
+        
+        # Attempt Unassign -> FAIL
+        with pytest.raises(PermissionError) as excinfo:
+            SmartSignsService.assign_asset(asset['id'], None, user_id)
+            
+        msg = str(excinfo.value)
+        assert "Upgrade required" in msg
+        assert "reassign" in msg.lower() # Treating unassign as part of "reassign" restriction
 
     def test_frozen_blocks_assign(self, app, db):
         """Frozen asset cannot be reassigned."""

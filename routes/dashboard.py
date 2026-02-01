@@ -515,7 +515,7 @@ def edit_property(property_id):
     return render_template("edit_property.html", property=property_row, photos=photos)
 
 
-@dashboard_bp.route("/dashboard/properties/<int:property_id>/analytics")
+@dashboard_bp.route("/properties/<int:property_id>/analytics")
 @login_required
 def property_analytics(property_id):
     """
@@ -538,7 +538,7 @@ def property_analytics(property_id):
     
     return render_template("dashboard/property_analytics.html", property=property_row, analytics=metrics)
 
-@dashboard_bp.route("/dashboard/today")
+@dashboard_bp.route("/today")
 @login_required
 def today():
     """
@@ -596,6 +596,49 @@ def today():
 
 
 # =============================================================================
+# Legacy Redirects (Fixing route prefixes)
+# =============================================================================
+
+@dashboard_bp.route("/dashboard/today")
+@login_required
+def legacy_today():
+    return redirect(url_for('dashboard.today'), code=301)
+
+@dashboard_bp.route("/dashboard/properties/<int:property_id>/analytics")
+@login_required
+def legacy_property_analytics(property_id):
+    return redirect(url_for('dashboard.property_analytics', property_id=property_id), code=301)
+
+
+# =============================================================================
+# Kits
+# =============================================================================
+
+@dashboard_bp.route("/kits")
+@login_required
+def kits():
+    """
+    Kits Management Page.
+    Lists properties and their kit status.
+    """
+    db = get_db()
+    # Query properties for current user with LEFT JOIN listing_kits to get kit_id + kit_status
+    properties = db.execute(
+        """
+        SELECT p.id, p.address, lk.id as kit_id, lk.status as kit_status
+        FROM properties p
+        JOIN agents a ON p.agent_id = a.id
+        LEFT JOIN listing_kits lk ON lk.property_id = p.id
+        WHERE a.user_id = %s
+        ORDER BY p.created_at DESC
+        """,
+        (current_user.id,)
+    ).fetchall()
+    
+    return render_template("dashboard/kits.html", properties=properties)
+
+
+# =============================================================================
 # SmartSigns Management (MVP)
 # =============================================================================
 
@@ -604,7 +647,10 @@ def today():
 @dashboard_bp.route("/smart-signs/<int:asset_id>/assign", methods=["POST"])
 @login_required
 def assign_smart_sign(asset_id):
-    """Assign or Reassign a SmartSign (Pro only)."""
+    """
+    Assign or Reassign a SmartSign.
+    Entitlements are enforced by SmartSignsService.assign_asset.
+    """
     from services.smart_signs import SmartSignsService
     
     property_id = request.form.get("property_id")
@@ -617,50 +663,15 @@ def assign_smart_sign(asset_id):
             flash("Invalid property selection.", "error")
             return redirect(url_for('dashboard.index', _anchor='smart-signs-section'))
     
-    # Determine reason code for tracking
-    reason_code = None
-    
     try:
         SmartSignsService.assign_asset(asset_id, property_id, current_user.id)
         flash("SmartSign assignment updated.", "success")
     except ValueError as e:
-        error_msg = str(e)
-        # Determine reason code from error message
-        if "frozen" in error_msg.lower():
-            reason_code = "asset_frozen"
-        elif "activated" in error_msg.lower():
-            reason_code = "not_activated"
-        else:
-            reason_code = "validation_error"
-        
-        # Track event
-        try:
-            from services.events import track_event
-            track_event(
-                'upgrade_prompt_shown',
-                user_id=current_user.id,
-                meta={'reason': 'smart_sign_reassign_blocked', 'blocked_reason': reason_code}
-            )
-        except Exception:
-            pass  # Best-effort tracking
-        
-        flash(error_msg, "error")
+        # Business logic errors (frozen, not activated, etc)
+        flash(str(e), "error")
     except PermissionError as e:
-        error_msg = str(e)
-        reason_code = "upgrade_required"
-        
-        # Track event
-        try:
-            from services.events import track_event
-            track_event(
-                'upgrade_prompt_shown',
-                user_id=current_user.id,
-                meta={'reason': 'smart_sign_reassign_blocked', 'blocked_reason': reason_code}
-            )
-        except Exception:
-            pass  # Best-effort tracking
-        
-        flash(f"{error_msg} Upgrade to Pro to reassign SmartSigns.", "error")
+        # Upgrade required for reassign/unassign
+        flash(f"{e}", "error") # Message already contains "Upgrade required"
     except Exception as e:
         flash("Error assigning SmartSign.", "error")
         print(f"[SmartSigns] Assign Error: {e}")

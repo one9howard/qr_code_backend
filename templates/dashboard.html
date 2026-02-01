@@ -96,7 +96,7 @@
                         SmartSigns turn sign scans into direct buyer inquiries.<br>
                         Create one, place it at a listing, and leads appear here.
                     </p>
-                    <a href="{{ url_for('smart_signs.order_start') }}" class="btn-primary"
+                    <a href="{{ url_for('smart_signs.order_start') }}" class="glass-button accent"
                         style="padding: 16px 32px; font-size: 1.05rem; display: inline-block;">Create SmartSign</a>
                     <p style="margin-top: 12px; color: var(--text-muted); font-size: 0.85rem;">Takes about 2 minutes</p>
                 </div>
@@ -396,7 +396,7 @@
             </div>
 
             <!-- Analytics Listings Table -->
-            <div class="card col-span-12">
+            <div class="card col-span-12" id="listings-section">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                     <h3 style="margin: 0; font-size: 1.1rem;">Your Listings</h3>
                     <a href="{{ url_for('dashboard.new_property') }}" class="glass-button secondary">+ Create Property
@@ -468,23 +468,18 @@
                     <div>
                         <h3 style="margin: 0; font-size: 1.1rem; display: flex; align-items: center; gap: 8px;">
                             📦 SmartSigns
-                            {% if not is_pro %}
-                            <span class="badge badge-orange" style="font-size: 0.75rem;">PRO FEATURE</span>
-                            {% endif %}
                         </h3>
                         <p style="margin: 4px 0 0 0; font-size: 0.85rem; color: var(--text-muted);">
                             Reusable signs with dynamic QR codes.
+                            {% if not is_pro %}
+                            <span style="opacity: 0.7;">(Pro required to reassign)</span>
+                            {% endif %}
                         </p>
                         <p style="margin: 6px 0 0 0; font-size: 0.75rem; color: var(--accent-cyan); opacity: 0.8;">
                             SmartSign scans turn into direct buyer inquiries—no apps, no downloads.
                         </p>
                     </div>
-                    {% if is_pro %}
-                    <a href="{{ url_for('smart_signs.order_start') }}" class="glass-button accent">Order
-                        SmartSign</a>
-                    {% else %}
-                    <a href="{{ url_for('billing.index') }}" class="glass-button secondary">Upgrade to Order</a>
-                    {% endif %}
+                    <a href="{{ url_for('smart_signs.order_start') }}" class="glass-button accent">Order SmartSign</a>
                 </div>
 
                 <div class="table-container">
@@ -528,15 +523,38 @@
                                 <td style="text-align: center; font-family: monospace; color: var(--accent-cyan);">
                                     {{ asset.conversion or '—' }}</td>
                                 <td>
-                                    {% if is_pro and not asset.is_frozen and asset.activated_at %}
+                                <td>
+                                    <!-- Assignment UI -->
+                                    {% if not asset.is_frozen and asset.activated_at %}
+
+                                    <!-- Case 1: Unassigned (Allowed for ALL) -->
+                                    {% if not asset.active_property_id %}
                                     <form action="{{ url_for('dashboard.assign_smart_sign', asset_id=asset.id) }}"
-                                        method="POST" style="display: flex; gap: 8px; align-items: center;">
+                                        method="POST"
+                                        style="display: flex; gap: 8px; align-items: center; margin-bottom: 4px;">
                                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
                                         <select name="property_id"
                                             style="background: rgba(0,0,0,0.2); border: 1px solid var(--border-glass); color: white; padding: 4px 8px; border-radius: 4px; max-width: 150px;">
-                                            <option value="unassigned" {% if not asset.active_property_id %}selected{%
-                                                endif %}>Unassigned</option>
+                                            <option value="" disabled selected>Assign to...</option>
+                                            {% for p in properties %}
+                                            <option value="{{ p.id }}">{{ p.address[:15] }}...</option>
+                                            {% endfor %}
+                                        </select>
+                                        <button type="submit" class="glass-button secondary"
+                                            style="padding: 4px 8px; font-size: 0.8rem;">Save</button>
+                                    </form>
+
+                                    <!-- Case 2: Assigned + Pro (Allowed Reassign) -->
+                                    {% elif is_pro %}
+                                    <form action="{{ url_for('dashboard.assign_smart_sign', asset_id=asset.id) }}"
+                                        method="POST"
+                                        style="display: flex; gap: 8px; align-items: center; margin-bottom: 4px;">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                                        <select name="property_id"
+                                            style="background: rgba(0,0,0,0.2); border: 1px solid var(--border-glass); color: white; padding: 4px 8px; border-radius: 4px; max-width: 150px;">
+                                            <option value="unassigned">Unassigned</option>
                                             {% for p in properties %}
                                             <option value="{{ p.id }}" {% if p.id==asset.active_property_id %}selected{%
                                                 endif %}>{{ p.address[:15] }}...</option>
@@ -545,6 +563,34 @@
                                         <button type="submit" class="glass-button secondary"
                                             style="padding: 4px 8px; font-size: 0.8rem;">Save</button>
                                     </form>
+
+                                    <!-- Case 3: Assigned + Free (Locked) -->
+                                    {% else %}
+                                    <div style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 4px;">
+                                        <span style="margin-right: 6px;">Assigned</span>
+                                        <a href="{{ url_for('billing.index') }}"
+                                            style="color: var(--accent-cyan); text-decoration: underline;">Upgrade to
+                                            reassign</a>
+                                    </div>
+                                    {% endif %}
+
+                                    <!-- Actions Row -->
+                                    <div style="display: flex; gap: 10px; font-size: 0.85rem; align-items: center;">
+                                        <a href="{{ url_for('smart_signs.edit_smartsign', asset_id=asset.id) }}"
+                                            style="color: var(--text-muted);">Edit</a>
+                                        <a href="{{ url_for('smart_signs.preview_smartsign', asset_id=asset.id) }}"
+                                            target="_blank" rel="noopener" style="color: var(--text-muted);">Preview
+                                            PDF</a>
+                                        <button
+                                            onclick="copyText('{{ url_for('properties.qr_scan_redirect', code=asset.code, _external=True) }}', this)"
+                                            style="background:none; border:none; color: var(--accent-blue); padding:0; cursor:pointer; text-decoration: underline;">
+                                            Copy QR
+                                        </button>
+                                    </div>
+
+                                    {% else %}
+                                    <!-- Frozen or Inactive -->
+                                    <span class="text-muted" style="font-size: 0.8rem;">Actions unavailable</span>
                                     {% endif %}
                                 </td>
                             </tr>
@@ -624,7 +670,12 @@
                                     {% if loop.first and is_first_lead_recent %}
                                     <span style="display:inline-block; margin-right:6px; font-size:0.9em;">🎉</span>
                                     {% endif %}
-                                    {{ lead.buyer_name }}<br><small class="text-muted">{{ lead.buyer_email }}</small>
+                                    {{ lead.buyer_name }}
+                                    <br>
+                                    <a href="{{ url_for('lead_management.lead_detail', lead_id=lead.id) }}"
+                                        style="color: var(--accent-blue); font-size: 0.85rem; text-decoration: underline;">
+                                        View Lead
+                                    </a>
                                 </td>
                                 <td>{{ lead.property_address }}</td>
                                 <td>{{ (lead.created_at|string)[:10] }}</td>
@@ -647,6 +698,27 @@
 
 <!-- Tab Switching Script -->
 <script>
+    function copyText(text, el) {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(text).then(() => {
+                const original = el.innerText;
+                el.innerText = "Copied";
+                setTimeout(() => el.innerText = original, 1200);
+            });
+        } else {
+            // Fallback
+            const textArea = document.createElement("textarea");
+            textArea.value = text;
+            document.body.appendChild(textArea);
+            textArea.select();
+            document.execCommand("Copy");
+            document.body.removeChild(textArea);
+            const original = el.innerText;
+            el.innerText = "Copied";
+            setTimeout(() => el.innerText = original, 1200);
+        }
+    }
+
     function switchTab(tabName) {
         // Hide all sections
         document.querySelectorAll('.grid-sections').forEach(el => el.classList.remove('active'));
@@ -664,17 +736,22 @@
         });
     }
 
-    function handleSmartSignsHash() {
-        if (window.location.hash === '#smart-signs-section') {
+    function handleHashNavigation() {
+        const hash = window.location.hash;
+        if (hash === '#smart-signs-section') {
             switchTab('smart');
-            setTimeout(() => {
-                document.getElementById('smart-signs-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            }, 100);
+            setTimeout(() => document.getElementById('smart-signs-section')?.scrollIntoView({ behavior: 'smooth' }), 100);
+        } else if (hash === '#leads-section') {
+            switchTab('analytics');
+            setTimeout(() => document.getElementById('leads-section')?.scrollIntoView({ behavior: 'smooth' }), 100);
+        } else if (hash === '#listings-section') {
+            switchTab('listings');
+            setTimeout(() => document.getElementById('listings-section')?.scrollIntoView({ behavior: 'smooth' }), 100);
         }
     }
 
-    document.addEventListener('DOMContentLoaded', handleSmartSignsHash);
-    window.addEventListener('hashchange', handleSmartSignsHash);
+    document.addEventListener('DOMContentLoaded', handleHashNavigation);
+    window.addEventListener('hashchange', handleHashNavigation);
 </script>
 
 <!-- Scripts -->
