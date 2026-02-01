@@ -101,30 +101,39 @@ def edit_smartsign(asset_id):
             brand_name, phone, email, bg_style, cta_key, inc_logo, inc_head
         ])
         
-        # File Uploads
+        # Allowed extensions for uploads
+        ALLOWED_EXTS = {'.png', '.jpg', '.jpeg', '.webp'}
+        
+        # File Uploads with UUID keys
         if 'logo_file' in request.files:
             f = request.files['logo_file']
             if f and f.filename:
                 ext = os.path.splitext(f.filename)[1].lower()
-                key = f"uploads/brands/{current_user.id}/smartsign_logo_{asset_id}{ext}"
-                try:
-                    storage.put_file(f, key)
-                    updates.append("logo_key=%s")
-                    params.append(key)
-                except Exception as e:
-                    print(f"Logo upload error: {e}")
+                if ext not in ALLOWED_EXTS:
+                    flash(f"Invalid logo file type: {ext}. Allowed: png, jpg, jpeg, webp", "error")
+                else:
+                    key = f"uploads/smartsign/{current_user.id}/{uuid.uuid4().hex}{ext}"
+                    try:
+                        storage.put_file(f, key)
+                        updates.append("logo_key=%s")
+                        params.append(key)
+                    except Exception as e:
+                        print(f"Logo upload error: {e}")
                     
         if 'headshot_file' in request.files:
             f = request.files['headshot_file']
             if f and f.filename:
                 ext = os.path.splitext(f.filename)[1].lower()
-                key = f"uploads/brands/{current_user.id}/smartsign_headshot_{asset_id}{ext}"
-                try:
-                    storage.put_file(f, key)
-                    updates.append("headshot_key=%s")
-                    params.append(key)
-                except Exception as e:
-                    print(f"Headshot upload error: {e}")
+                if ext not in ALLOWED_EXTS:
+                    flash(f"Invalid headshot file type: {ext}. Allowed: png, jpg, jpeg, webp", "error")
+                else:
+                    key = f"uploads/smartsign/{current_user.id}/{uuid.uuid4().hex}{ext}"
+                    try:
+                        storage.put_file(f, key)
+                        updates.append("headshot_key=%s")
+                        params.append(key)
+                    except Exception as e:
+                        print(f"Headshot upload error: {e}")
 
         # Property Assignment
         property_id_str = request.form.get('property_id')
@@ -284,18 +293,27 @@ def create_smart_order():
     headshot_key = request.form.get('agent_headshot_key')
     logo_key = request.form.get('agent_logo_key')
     
+    # Allowed extensions for uploads
+    ALLOWED_EXTS = {'.png', '.jpg', '.jpeg', '.webp'}
+    
     if request.files.get('headshot_file'):
         f = request.files['headshot_file']
         if f.filename:
-            ext = os.path.splitext(f.filename)[1]
-            k = f"uploads/brands/{current_user.id}_new_head{ext}"
+            ext = os.path.splitext(f.filename)[1].lower()
+            if ext not in ALLOWED_EXTS:
+                flash(f"Invalid headshot file type: {ext}. Allowed: png, jpg, jpeg, webp", "error")
+                return redirect(url_for('smart_signs.order_start'))
+            k = f"uploads/smartsign/{current_user.id}/{uuid.uuid4().hex}{ext}"
             headshot_key = storage.put_file(f, k)
             
     if request.files.get('logo_file'):
         f = request.files['logo_file']
         if f.filename:
-            ext = os.path.splitext(f.filename)[1]
-            k = f"uploads/brands/{current_user.id}_new_logo{ext}"
+            ext = os.path.splitext(f.filename)[1].lower()
+            if ext not in ALLOWED_EXTS:
+                flash(f"Invalid logo file type: {ext}. Allowed: png, jpg, jpeg, webp", "error")
+                return redirect(url_for('smart_signs.order_start'))
+            k = f"uploads/smartsign/{current_user.id}/{uuid.uuid4().hex}{ext}"
             logo_key = storage.put_file(f, k)
 
     # 3. Design Payload

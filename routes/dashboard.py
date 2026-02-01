@@ -18,6 +18,7 @@ from slugify import slugify
 from utils.qr_codes import generate_unique_code
 from utils.timestamps import utc_iso
 from services.gating import can_create_property
+from constants import PAID_STATUSES
 from datetime import datetime, timezone, timedelta
 from services.subscriptions import is_subscription_active
 
@@ -190,10 +191,10 @@ def index():
         JOIN properties p ON o.property_id = p.id
         WHERE o.user_id = %s 
           AND o.order_type = 'sign' 
-          AND o.status = 'paid'
+          AND o.status = ANY(%s)
         ORDER BY o.created_at DESC
         """,
-        (current_user.id,)
+        (current_user.id, list(PAID_STATUSES))
     ).fetchall()
     
     # Enrich with status labels for display
@@ -336,7 +337,13 @@ def index():
         next_step_cta = "View Leads"
         next_step_url = url_for('dashboard.index') + '#leads-section'
     
-    has_any_activity = metrics.get('total_scans', 0) > 0 or metrics.get('total_views', 0) > 0
+    # has_any_activity: True if any lifetime metrics are non-zero
+    has_any_activity = (
+        metrics.get('scans', {}).get('lifetime', 0) > 0 or
+        metrics.get('views', {}).get('lifetime', 0) > 0 or
+        metrics.get('leads', {}).get('lifetime', 0) > 0 or
+        metrics.get('ctas', {}).get('7d', 0) > 0
+    )
 
     return render_template(
         "dashboard.html",

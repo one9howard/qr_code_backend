@@ -7,7 +7,7 @@ Handles the lifecycle of paid orders, including:
 - Enabling Entitlements (Listing Unlock, SmartSign Activation)
 - Triggering Fulfillment (Print Jobs, Listing Kits)
 
-Designed to be called idempotently from both Webhooks (Primary) and Success Pages (Redundancy).
+CANONICAL: Called ONLY from webhooks. Success pages are READ-ONLY and do not call this.
 """
 import logging
 import json

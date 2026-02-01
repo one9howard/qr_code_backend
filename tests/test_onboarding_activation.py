@@ -199,7 +199,7 @@ def test_user_with_unassigned_sign(app, client):
         db = get_db()
         ur = db.execute("INSERT INTO users (email, password_hash, is_pro) VALUES ('t2@e.com', 'x', true) RETURNING id").fetchone()
         ar = db.execute("INSERT INTO agents (user_id, name, email) VALUES (%s, 'A2', 'a2@e.com') RETURNING id", (ur['id'],)).fetchone()
-        sr = db.execute("INSERT INTO sign_assets (user_id, label, qr_code, status) VALUES (%s, 'S1', 'Q1', 'active') RETURNING id", (ur['id'],)).fetchone()
+        sr = db.execute("INSERT INTO sign_assets (user_id, code, label, activated_at) VALUES (%s, 'TEST_S1', 'S1', NOW()) RETURNING id", (ur['id'],)).fetchone()
         db.commit()
         
         yield MockUser(ur['id']), MockAgent(ar['id']), MockSignAsset(sr['id'])
@@ -216,7 +216,7 @@ def test_user_with_assigned_sign(app, client):
         ur = db.execute("INSERT INTO users (email, password_hash, is_pro) VALUES ('t3@e.com', 'x', true) RETURNING id").fetchone()
         ar = db.execute("INSERT INTO agents (user_id, name, email) VALUES (%s, 'A3', 'a3@e.com') RETURNING id", (ur['id'],)).fetchone()
         pr = db.execute("INSERT INTO properties (agent_id, address, slug) VALUES (%s, '123 St', 'slug3') RETURNING id", (ar['id'],)).fetchone()
-        sr = db.execute("INSERT INTO sign_assets (user_id, label, qr_code, status, active_property_id) VALUES (%s, 'S2', 'Q2', 'active', %s) RETURNING id", (ur['id'], pr['id'])).fetchone()
+        sr = db.execute("INSERT INTO sign_assets (user_id, code, label, activated_at, active_property_id) VALUES (%s, 'TEST_S2', 'S2', NOW(), %s) RETURNING id", (ur['id'], pr['id'])).fetchone()
         db.commit()
         
         yield MockUser(ur['id']), MockAgent(ar['id']), MockSignAsset(sr['id']), MockProperty(pr['id'])

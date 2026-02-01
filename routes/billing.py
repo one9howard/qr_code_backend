@@ -279,14 +279,21 @@ def unlock_listing_checkout(property_id):
 @billing_bp.route("/billing/success")
 @login_required
 def success():
+    """
+    Billing Success Page - READ-ONLY.
+    
+    This page verifies payment status for display purposes only.
+    All subscription activation and state mutation is handled exclusively
+    by webhooks. No DB writes occur here.
+    """
     session_id = request.args.get('session_id')
     
     # Simple success default
-    status_message = "Payment successful!"
+    status_message = "Payment successful! Your account will be updated momentarily."
     
     if session_id:
         try:
-            # Synchronous verification: Check Stripe directly
+            # Read-only verification: Check Stripe directly for display
             session = stripe.checkout.Session.retrieve(session_id)
             
             # Verify it belongs to this user (security)
@@ -299,62 +306,19 @@ def success():
                 is_own_session = True
                 
             if is_own_session and session.payment_status == 'paid':
-                # Phase 6 Requirement: READ-ONLY Success Route
-                # State mutation is handled exclusively by webhooks.
-                # We simply confirm the payment status to the user.
-                
-                purpose = session.metadata.get('purpose')
+                purpose = session.metadata.get('purpose') if session.metadata else None
                 
                 if purpose == 'listing_unlock':
-                    status_message = "Listing unlocked successfully! It is now active forever."
+                    status_message = "Listing unlock confirmed! It will be active within moments."
                     current_app.logger.info(f"[Billing] Success Page: Listing Unlock Session {session.id} verified as paid.")
-                    
-                    # Immediate Activation Fallback (for local dev/dropped webhooks)
-                    # For listing unlocks, we need the property_id from metadata
-                    property_id = session.metadata.get('property_id')
-                    if property_id:
-                        db = get_db()
-                        db.execute("UPDATE properties SET expires_at = NULL WHERE id = %s", (property_id,))
-                        db.commit()
-                        current_app.logger.info(f"[Billing] Immediate fallback: Unlocked property {property_id}")
-
                 else:
                     # Default: Subscription Upgrade
-                    subscription_id = session.subscription
                     current_app.logger.info(f"[Billing] Success Page: Subscription Session {session.id} verified as paid.")
-                    status_message = "Subscription upgraded successfully! You are now a Pro member."
-                    
-                    # Immediate Activation Fallback (for local dev/dropped webhooks)
-                    if subscription_id:
-                        try:
-                            # Fetch subscription to get correct status/period
-                            sub = stripe.Subscription.retrieve(subscription_id)
-                            sub_status = getattr(sub, 'status', 'active')
-                            current_period_end = getattr(sub, 'current_period_end', None)
-                            end_date_iso = datetime.fromtimestamp(current_period_end).isoformat() if current_period_end else None
-                            
-                            db = get_db()
-                            db.execute('''
-                                UPDATE users 
-                                SET stripe_customer_id = %s, 
-                                    stripe_subscription_id = %s,
-                                    subscription_status = %s, 
-                                    subscription_end_date = %s 
-                                WHERE id = %s
-                            ''', (session.customer, subscription_id, sub_status, end_date_iso, current_user.id))
-                            db.commit()
-                            
-                            # Refresh user session if needed (Flask-Login usually handles this via user_loader)
-                            current_app.logger.info(f"[Billing] Immediate fallback: Activated subscription {subscription_id} for user {current_user.id}")
-                            
-                        except Exception as e:
-                            current_app.logger.error(f"[Billing] Immediate fallback failed: {e}")
-                            # Non-critical, webhook might still catch it
-
+                    status_message = "Subscription confirmed! You are now a Pro member."
                 
         except Exception as e:
             current_app.logger.error(f"[Billing] Verification failed: {e}")
-            # Don't show error to user, just load success page. Webhooks will retry later if configured.
+            # Don't show error to user, just load success page.
 
     return render_template("billing_success.html", message=status_message)
 

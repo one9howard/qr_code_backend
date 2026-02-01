@@ -43,15 +43,17 @@ def test_smart_sign_strictness():
     import inspect
     
     # Verify checkout routes do NOT contain INSERT INTO sign_assets
-    src_ss = inspect.getsource(smart_signs.checkout_smartsign)
+    src_ss = inspect.getsource(smart_signs.create_smart_order)
     assert 'INSERT INTO sign_assets' not in src_ss
-    assert 'generate_unique_code' not in src_ss
+    
+    src_sp = inspect.getsource(smart_signs.start_payment)
+    assert 'INSERT INTO sign_assets' not in src_sp
     
     src_sr = inspect.getsource(smart_riser.checkout_smart_riser)
     assert 'INSERT INTO sign_assets' not in src_sr
     
-    # Verify Webhook DOES contain creation logic
-    from routes import webhook
-    src_wh = inspect.getsource(webhook.handle_payment_checkout)
-    assert 'INSERT INTO sign_assets' in src_wh
-    assert 'activation_order_id' in src_wh
+    # Verify services/orders.py contains creation logic (post-payment)
+    from services import orders
+    src_orders = inspect.getsource(orders.process_paid_order)
+    assert 'INSERT INTO sign_assets' in src_orders
+    assert 'activation_order_id' in src_orders

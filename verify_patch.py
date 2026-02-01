@@ -31,16 +31,16 @@ run('findstr "status=\'queued\'" routes\\listing_kits.py services\\listing_kits.
 print("--- Webhook Canonical Freeze ---")
 run('findstr "PAID_STATUSES" routes\\webhook.py')
 
-print("--- SmartSigns Creation (Should be missing in checkout) ---")
+print("--- SmartSigns Creation (Should be missing in checkout routes) ---")
 # On Windows findstr returns 1 if not found. We EXPECT not found for checkout routes.
-subprocess.run('findstr "INSERT INTO sign_assets" routes\\smart_signs.py routes\\smart_riser.py', shell=True)
+subprocess.run('findstr "INSERT INTO sign_assets" routes\\smart_signs.py routes\\smart_riser.py routes\\webhook.py', shell=True)
 print("(Above command should have no output if successful exclusion)")
 
-print("--- SmartSigns Creation (Should be present in webhook) ---")
-run('findstr "INSERT INTO sign_assets" routes\\webhook.py')
+print("--- SmartSigns Creation (Should be present in services/orders.py) ---")
+run('findstr "INSERT INTO sign_assets" services\\orders.py')
 
 print("--- Activation Linkage ---")
-run('findstr "activation_order_id" routes\\webhook.py')
+run('findstr "activation_order_id" services\\orders.py')
 
 print("=== 3. TESTS ===")
 run("python -m pytest -q tests/test_strategy_alignment.py")

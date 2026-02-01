@@ -232,24 +232,13 @@ def order_sign():
 
 @orders_bp.route('/order/success')
 def order_success():
-    session_id = request.args.get('session_id')
+    """
+    Order Success Page - READ-ONLY.
     
-    if session_id:
-        try:
-            # [REDUNDANCY] Check payment status immediately
-            # Essential for localhost where webhooks miss
-            session = stripe.checkout.Session.retrieve(session_id)
-            if session.payment_status == 'paid':
-                from database import get_db
-                from services.orders import process_paid_order
-                try:
-                    process_paid_order(get_db(), session)
-                    current_app.logger.info(f"[Order Success] Redundant check processed session {session_id}")
-                except Exception as e:
-                    current_app.logger.warning(f"[Order Success] Redundant process failed: {e}")
-        except Exception as e:
-             current_app.logger.error(f"[Order Success] Failed to retrieve session {session_id}: {e}")
-
+    This page is purely informational. All fulfillment and state mutation
+    is handled exclusively by webhooks via services.orders.process_paid_order.
+    """
+    session_id = request.args.get('session_id')
     return render_template('order_success.html', session_id=session_id)
 
 @orders_bp.route('/order/cancel')

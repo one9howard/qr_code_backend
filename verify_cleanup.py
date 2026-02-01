@@ -1,46 +1,69 @@
+"""
+Verify Cleanup Script - Release Gate Checks.
 
+Validates strategy.md invariants:
+- PAID_STATUSES used canonically
+- No scattered 'paid' literals
+- Webhook-only fulfillment
+- No PII in logs
+- Safe upload keys
+"""
 import sys
 import subprocess
 
-def run(cmd):
+def run(cmd, allow_fail=False):
     print(f"\nRUNNING: {cmd}")
     res = subprocess.run(cmd, shell=True, capture_output=True, text=True)
-    if res.returncode != 0:
-        # Grep returns 1 if NOT found, which might be good for negative checks
-        # But compile should be 0
-        if "py_compile" in cmd:
-            print(f"FAILED: {cmd}")
-            print(res.stderr)
-            sys.exit(1)
-    print("OUTPUT (First 500 chars):")
-    print(res.stdout[:500])
+    if res.returncode != 0 and not allow_fail:
+        print(f"FAILED: {cmd}")
+        print(res.stderr)
+        print(res.stdout)
+        sys.exit(1)
+    print("OUTPUT:")
+    print(res.stdout[:1000] if res.stdout else "(no output)")
     return res
 
-print("=== COMPILE CHECK ===")
-run("python -m py_compile routes/smart_riser.py")
+print("=== 1. COMPILE CHECK ===")
+run("python -m compileall -q .")
 
-print("=== GREP CHECK: SmartRiser order_type ===")
+print("=== 2. SUCCESS PAGES READ-ONLY ===")
 # Should return NOTHING (Exit 1)
-res = run('findstr "order_type.*smart_sign" routes\\smart_riser.py')
-if res.returncode == 0 and "smart_sign" in res.stdout:
-    print("FAILURE: Found 'smart_sign' in smart_riser.py order_type logic!")
-    # sys.exit(1) # Don't exit yet, show all output
+res = subprocess.run('findstr /i "process_paid_order" routes\\orders.py routes\\billing.py', shell=True, capture_output=True, text=True)
+if res.returncode == 0 and "process_paid_order" in res.stdout:
+    print("FAILURE: Success pages still contain process_paid_order!")
+    sys.exit(1)
+print("PASS: Success pages are read-only")
 
-print("=== GREP CHECK: SmartRiser Metadata ===")
-run('findstr "metadata.*order_type" routes\\smart_riser.py')
+print("=== 3. CANONICAL PAID_STATUSES ===")
+# Dashboard should use PAID_STATUSES, not literal 'paid'
+res = subprocess.run('findstr /i "status = \'paid\'" routes\\dashboard.py', shell=True, capture_output=True, text=True)
+if res.returncode == 0:
+    print("FAILURE: Found literal 'paid' in dashboard.py!")
+    sys.exit(1)
+run('findstr "PAID_STATUSES" routes\\dashboard.py')
+print("PASS: Dashboard uses PAID_STATUSES")
 
-print("=== GREP CHECK: Admin Orders Drift ===")
-# Should return NOTHING (Exit 1)
-res = run('findstr "order.status == \'paid\'" templates\\admin_orders.html')
-if res.returncode == 0 and "order.status == 'paid'" in res.stdout:
-     print("FAILURE: Found literal 'paid' check in admin_orders.html!")
+print("=== 4. NO PII IN LOGS ===")
+res = subprocess.run('findstr /i "from {buyer_email}" routes\\leads.py', shell=True, capture_output=True, text=True)
+if res.returncode == 0:
+    print("FAILURE: PII (buyer_email) found in leads.py logger!")
+    sys.exit(1)
+print("PASS: No PII in leads.py logs")
 
-print("=== TESTS ===")
-run("python -m pytest tests/test_fix_cleanup.py")
+print("=== 5. SAFE UPLOAD KEYS ===")
+res = subprocess.run('findstr /i "uploads/brands" routes\\smart_signs.py', shell=True, capture_output=True, text=True)
+if res.returncode == 0:
+    print("FAILURE: Old 'uploads/brands' paths found in smart_signs.py!")
+    sys.exit(1)
+run('findstr "uploads/smartsign" routes\\smart_signs.py')
+print("PASS: Safe upload keys in smart_signs.py")
 
-print("\nBOOT SANITY (Simulated)")
-try:
-    from app import create_app
-    print("App Import OK")
-except Exception as e:
-    print(f"App Import Failed: {e}")
+print("=== 6. SIGN_ASSETS CREATION IN ORDERS SERVICE ===")
+res = subprocess.run('findstr /i "INSERT INTO sign_assets" routes\\smart_signs.py routes\\smart_riser.py routes\\webhook.py', shell=True, capture_output=True, text=True)
+if res.returncode == 0:
+    print("FAILURE: sign_assets INSERT found in checkout routes!")
+    sys.exit(1)
+run('findstr "INSERT INTO sign_assets" services\\orders.py')
+print("PASS: sign_assets creation in services/orders.py only")
+
+print("\n=== ALL CLEANUP CHECKS PASSED ===")

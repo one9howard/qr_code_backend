@@ -218,7 +218,7 @@ def submit_lead():
         db.commit()
         
         current_app.logger.info(
-            f"[Leads] New lead {lead_id} for property {property_id} from {buyer_email}"
+            f"[Leads] New lead {lead_id} for property {property_id}"
         )
         
         # Track Success (Lead Submitted)
