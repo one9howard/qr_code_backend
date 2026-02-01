@@ -12,6 +12,11 @@
     <div class="hero-grid"></div>
     <div class="container-saas">
         <!-- Nav handled by base.html -->
+        <div style="position: absolute; top: 20px; left: 40px; z-index: 10;">
+            <a href="{{ url_for('public.landing') }}" style="display: inline-block;">
+                <img src="{{ url_for('static', filename='img/logo.png') }}" alt="InSite Signs" style="height: 40px;">
+            </a>
+        </div>
 
         <div class="hero-content" style="text-align: center; padding-top: 120px;">
             <h1 class="section-title" style="font-size: 3rem;">Our Products</h1>
