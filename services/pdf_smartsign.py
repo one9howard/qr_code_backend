@@ -13,12 +13,7 @@ from utils.pdf_generator import draw_qr
 from utils.storage import get_storage
 from config import BASE_URL, PUBLIC_BASE_URL
 from services.print_catalog import BANNER_COLOR_PALETTE
-from services.printing.layout_utils import (
-    register_fonts, 
-    draw_identity_block, 
-    fit_text_one_line, 
-    FONT_BODY, FONT_MED, FONT_BOLD, FONT_SERIF, FONT_SCRIPT
-)
+import services.printing.layout_utils as lu
 import urllib.parse
 
 # Preset CTA texts (Benefit Driven Check)
@@ -329,7 +324,7 @@ def _draw_safe_footer_stack(c, l, center_x, cta_text, url_text, cta_font, url_fo
     # Use PUBLIC_BASE_URL for print
     
     _, _, url_h_used = draw_fitted_multiline(
-        c, url_text, center_x, safe_bottom_y + url_fs, FONT_BODY, 
+        c, url_text, center_x, safe_bottom_y + url_fs, lu.FONT_BODY, 
         url_font[0], url_font[1], max_w, max_lines=1, align='center', color=url_color
     )
     
@@ -339,13 +334,13 @@ def _draw_safe_footer_stack(c, l, center_x, cta_text, url_text, cta_font, url_fo
     
     # Reuse multiline fitting
     res = calculate_fitted_multiline(
-        c, cta_text, FONT_BOLD, cta_font[0], cta_font[1], max_w, max_lines=cta_lines
+        c, cta_text, lu.FONT_BOLD, cta_font[0], cta_font[1], max_w, max_lines=cta_lines
     )
     
     y_start = cta_bottom_limit + ( (len(res['lines']) - 1) * res['line_height'] )
     
     c.setFillColorRGB(*hex_to_rgb(text_color))
-    c.setFont(FONT_BOLD, res['size'])
+    c.setFont(lu.FONT_BOLD, res['size'])
     
     for i, line in enumerate(res['lines']):
         draw_y = y_start - (i * res['line_height'])
@@ -356,7 +351,7 @@ def _draw_safe_footer_stack(c, l, center_x, cta_text, url_text, cta_font, url_fo
 
 def generate_smartsign_pdf(asset, order_id=None, user_id=None, override_base_url=None):
     # 0. Register Fonts
-    register_fonts()
+    lu.register_fonts()
 
     # 1. Extract Config
     size_key = _read(asset, 'print_size') or _read(asset, 'size') or DEFAULT_SIGN_SIZE
@@ -425,7 +420,7 @@ def _draw_modern_minimal(c, l, asset, user_id, base_url):
     # Use Shared Identity Block
     # Theme Light (White BG) but we want clean text.
     # Actually Minimal has Dark Text on White.
-    draw_identity_block(
+    lu.draw_identity_block(
         c, 
         x=0, y=band_y, w=l.width, h=header_h, 
         asset=asset, storage=get_storage(), 
@@ -483,7 +478,7 @@ def _draw_agent_brand(c, l, asset, user_id, base_url):
     band_y = l.height - band_h
     
     # Draw Dark Theme Identity Block directly
-    draw_identity_block(
+    lu.draw_identity_block(
         c, 
         x=-l.bleed, y=band_y, w=l.width+2*l.bleed, h=band_h+l.bleed, # Bleed cover
         asset=asset, storage=get_storage(), 
@@ -519,7 +514,7 @@ def _draw_agent_brand(c, l, asset, user_id, base_url):
     display_url = f"{urllib.parse.urlparse(base_url).netloc}/r/{code}"
     label_y = qr_y_center - (card_size/2) - to_pt(0.5)
     c.setFillColorRGB(*hex_to_rgb(COLORS['bg_navy'])) # Higher Contrast
-    draw_fitted_multiline(c, display_url, center_x, label_y, FONT_BODY, 24, 18, l.width*0.8, align='center')
+    draw_fitted_multiline(c, display_url, center_x, label_y, lu.FONT_BODY, 24, 18, l.width*0.8, align='center')
 
     # Footer Band CTA
     cta_text = CTA_MAP.get(_read(asset, 'cta_key'), 'SCAN FOR DETAILS')
@@ -529,7 +524,7 @@ def _draw_agent_brand(c, l, asset, user_id, base_url):
     footer_cy = top_of_footer / 2
     
     # Simple centered CTA
-    draw_fitted_multiline(c, cta_text, center_x, footer_cy + (fs[0]*0.35), FONT_MED, fs[0], fs[1], l.width*0.9, max_lines=1, color=COLORS['bg_navy'])
+    draw_fitted_multiline(c, cta_text, center_x, footer_cy + (fs[0]*0.35), lu.FONT_MED, fs[0], fs[1], l.width*0.9, max_lines=1, color=COLORS['bg_navy'])
 
 
 def _draw_photo_banner(c, l, asset, user_id, base_url):
@@ -550,7 +545,7 @@ def _draw_photo_banner(c, l, asset, user_id, base_url):
     # The Photo Banner layout is stricter (Text Right, Photo Left).
     # Let's map it to Identity Block for consistency!
     # Theme dark usually.
-    draw_identity_block(
+    lu.draw_identity_block(
         c, 
         x=-l.bleed, y=band_y, w=l.width+2*l.bleed, h=band_h+l.bleed,
         asset=asset, storage=get_storage(), 
@@ -569,7 +564,7 @@ def _draw_photo_banner(c, l, asset, user_id, base_url):
     
     # Footer CTA
     cta_text = CTA_MAP.get(_read(asset, 'cta_key'), 'SCAN FOR DETAILS')
-    draw_fitted_multiline(c, cta_text, l.width/2, spec['footer_band']/2 + 20, FONT_MED, 80, 60, l.width*0.9, color=COLORS['bg_navy'])
+    draw_fitted_multiline(c, cta_text, l.width/2, spec['footer_band']/2 + 20, lu.FONT_MED, 80, 60, l.width*0.9, color=COLORS['bg_navy'])
 
 
 
@@ -615,8 +610,8 @@ def _draw_smart_v2_vertical_banner(c, l, asset, user_id, base_url):
     # Actually rail height is full height.
     
     c.setFillColorRGB(1, 1, 1) # White
-    fit_size = fit_text_one_line(c, status_text, FONT_SERIF, avail_h, font_status[0], font_status[1])
-    c.setFont(FONT_SERIF, fit_size)
+    fit_size = lu.fit_text_one_line(c, status_text, lu.FONT_SERIF, avail_h, font_status[0], font_status[1])
+    c.setFont(lu.FONT_SERIF, fit_size)
     c.drawCentredString(0, -fit_size * 0.35, status_text) # Optimize vertical center visually
     c.restoreState()
     
@@ -653,8 +648,8 @@ def _draw_smart_v2_vertical_banner(c, l, asset, user_id, base_url):
     cta_y = qr_y_center - (card_size/2) - to_pt(0.4)
     
     c.setFillColorRGB(*hex_to_rgb(COLORS['cta_fallback'])) # Light Gray/Silver
-    fit_cta = fit_text_one_line(c, cta_text, FONT_SCRIPT, content_w * 0.8, font_cta[0], font_cta[1])
-    c.setFont(FONT_SCRIPT, fit_cta)
+    fit_cta = lu.fit_text_one_line(c, cta_text, lu.FONT_SCRIPT, content_w * 0.8, font_cta[0], font_cta[1])
+    c.setFont(lu.FONT_SCRIPT, fit_cta)
     c.drawCentredString(content_center_x, cta_y, cta_text)
     
     # Agent Headshot (Circular)
@@ -692,8 +687,8 @@ def _draw_smart_v2_vertical_banner(c, l, asset, user_id, base_url):
     font_name = spec['fonts']['name']
     
     c.setFillColorRGB(1, 1, 1)
-    fit_name = fit_text_one_line(c, name_text, FONT_SCRIPT, content_w * 0.9, font_name[0], font_name[1])
-    c.setFont(FONT_SCRIPT, fit_name)
+    fit_name = lu.fit_text_one_line(c, name_text, lu.FONT_SCRIPT, content_w * 0.9, font_name[0], font_name[1])
+    c.setFont(lu.FONT_SCRIPT, fit_name)
     c.drawCentredString(content_center_x, name_y, name_text)
     
     # Phone (Sans Bold)
@@ -703,8 +698,8 @@ def _draw_smart_v2_vertical_banner(c, l, asset, user_id, base_url):
     
     c.setFillColorRGB(1, 1, 1)
     # Letter spacing?
-    fit_phone = fit_text_one_line(c, phone_text, FONT_BOLD, content_w * 0.8, font_phone[0], font_phone[1])
-    c.setFont(FONT_BOLD, fit_phone)
+    fit_phone = lu.fit_text_one_line(c, phone_text, lu.FONT_BOLD, content_w * 0.8, font_phone[0], font_phone[1])
+    c.setFont(lu.FONT_BOLD, fit_phone)
     c.drawCentredString(content_center_x, phone_y, phone_text)
     
     # License Number (Optional)
@@ -741,7 +736,7 @@ def _draw_smart_v2_vertical_banner(c, l, asset, user_id, base_url):
          lic_y = phone_y - fit_phone * 1.2
          
          c.setFillColorRGB(0.7, 0.7, 0.7) # Muted
-         c.setFont(FONT_BODY, font_lic[0]) # Small Sans
+         c.setFont(lu.FONT_BODY, font_lic[0]) # Small Sans
          c.drawCentredString(content_center_x, lic_y, full_lic)
 
 

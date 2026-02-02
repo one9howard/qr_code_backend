@@ -7,10 +7,7 @@ from reportlab.pdfgen import canvas
 from reportlab.lib.utils import ImageReader
 from reportlab.lib.colors import HexColor
 
-from services.printing.layout_utils import (
-    FONT_SERIF, FONT_SCRIPT, FONT_BOLD, FONT_MED, FONT_BODY,
-    draw_identity_block, fit_text_one_line, format_phone
-)
+import services.printing.layout_utils as lu
 from utils.pdf_generator import hex_to_rgb, draw_qr, LayoutSpec
 from utils.storage import get_storage
 from config import BASE_URL
@@ -52,7 +49,7 @@ def _draw_listing_v2_phone_qr_premium(c, layout, address, beds, baths, sqft, pri
         c.setFillColorRGB(*accent_rgb)
         c.rect(0, h - status_h, w, status_h, fill=1, stroke=0)
         
-        c.setFont(FONT_SERIF, status_h * 0.5)
+        c.setFont(lu.FONT_SERIF, status_h * 0.5)
         c.setFillColorRGB(1, 1, 1)
         c.drawCentredString(w/2, h - status_h * 0.65, status_text.upper())
         
@@ -67,17 +64,17 @@ def _draw_listing_v2_phone_qr_premium(c, layout, address, beds, baths, sqft, pri
         _draw_qr_safe(c, url, qr_x, qr_y, qr_size, user_id)
         
         # CTA
-        c.setFont(FONT_SCRIPT, w * 0.08)
+        c.setFont(lu.FONT_SCRIPT, w * 0.08)
         c.setFillColorRGB(*COLOR_TEXT)
         c.drawCentredString(w/2, qr_y - (w * 0.08), "Scan for details")
         
         # 3. Giant Phone (Lower Middle)
         phone_y_center = h * 0.35
-        phone_fmt = format_phone(agent_phone)
+        phone_fmt = lu.format_phone(agent_phone)
         
         # Fits HUGE
-        phone_size = fit_text_one_line(c, phone_fmt, FONT_BOLD, w * 0.9, w * 0.18, w * 0.10)
-        c.setFont(FONT_BOLD, phone_size)
+        phone_size = lu.fit_text_one_line(c, phone_fmt, lu.FONT_BOLD, w * 0.9, w * 0.18, w * 0.10)
+        c.setFont(lu.FONT_BOLD, phone_size)
         c.setFillColorRGB(*accent_rgb) # Use accent for phone? Or Black? User said "Giant Sans Bold".
         c.drawCentredString(w/2, phone_y_center, phone_fmt)
         
@@ -94,7 +91,7 @@ def _draw_listing_v2_phone_qr_premium(c, layout, address, beds, baths, sqft, pri
             'brokerage': brokerage,
             'logo_key': logo_key
         }
-        draw_identity_block(c, 0, 0, w, block_h, asset_shim, get_storage(), theme='dark')
+        lu.draw_identity_block(c, 0, 0, w, block_h, asset_shim, get_storage(), theme='dark')
         
     else:
         # LANDSCAPE (36x24) or Split
@@ -123,18 +120,18 @@ def _draw_listing_v2_phone_qr_premium(c, layout, address, beds, baths, sqft, pri
         url = _resolve_qr_url(qr_value, qr_key)
         _draw_qr_safe(c, url, qr_x, qr_y, qr_size, user_id)
         
-        c.setFont(FONT_SCRIPT, h * 0.06)
+        c.setFont(lu.FONT_SCRIPT, h * 0.06)
         c.setFillColorRGB(*COLOR_TEXT)
         c.drawCentredString(qr_x + qr_size/2, qr_y - (h * 0.08), "Scan for details")
         
         # Col 2: Status + Phone
         c.setFillColorRGB(*accent_rgb)
-        c.setFont(FONT_SERIF, h * 0.08)
+        c.setFont(lu.FONT_SERIF, h * 0.08)
         c.drawCentredString(w/2, h * 0.7, status_text.upper())
         
-        phone_fmt = format_phone(agent_phone)
-        p_size = fit_text_one_line(c, phone_fmt, FONT_BOLD, col_w * 0.95, h * 0.12, h * 0.08)
-        c.setFont(FONT_BOLD, p_size)
+        phone_fmt = lu.format_phone(agent_phone)
+        p_size = lu.fit_text_one_line(c, phone_fmt, lu.FONT_BOLD, col_w * 0.95, h * 0.12, h * 0.08)
+        c.setFont(lu.FONT_BOLD, p_size)
         c.drawCentredString(w/2, h * 0.5, phone_fmt)
         
         # License line?
@@ -154,11 +151,11 @@ def _draw_listing_v2_phone_qr_premium(c, layout, address, beds, baths, sqft, pri
         
         # Name
         c.setFillColorRGB(*COLOR_TEXT)
-        c.setFont(FONT_SCRIPT, h * 0.07) # User said "Script name"
+        c.setFont(lu.FONT_SCRIPT, h * 0.07) # User said "Script name"
         c.drawCentredString(col_w/2, photo_y - (h*0.06), agent_name)
         
         # Brokerage below
-        c.setFont(FONT_MED, h * 0.03)
+        c.setFont(lu.FONT_MED, h * 0.03)
         c.drawCentredString(col_w/2, photo_y - (h*0.10), brokerage.upper())
         
         # Separators
@@ -198,7 +195,7 @@ def _draw_listing_v2_address_qr_premium(c, layout, address, beds, baths, sqft, p
         'brokerage': brokerage,
         'logo_key': logo_key
     }
-    draw_identity_block(c, 0, 0, w, strip_h, asset_shim, get_storage(), theme='dark')
+    lu.draw_identity_block(c, 0, 0, w, strip_h, asset_shim, get_storage(), theme='dark')
     
     # Body Area
     body_h = h - strip_h
@@ -223,15 +220,15 @@ def _draw_listing_v2_address_qr_premium(c, layout, address, beds, baths, sqft, p
     c.setFillColorRGB(*COLOR_TEXT)
     
     # Fit Address (Serif)
-    addr_size = fit_text_one_line(c, address.upper(), FONT_SERIF, w * 0.9, body_h * 0.15, body_h * 0.08)
-    c.setFont(FONT_SERIF, addr_size)
+    addr_size = lu.fit_text_one_line(c, address.upper(), lu.FONT_SERIF, w * 0.9, body_h * 0.15, body_h * 0.08)
+    c.setFont(lu.FONT_SERIF, addr_size)
     c.drawCentredString(w/2, addr_y, address.upper())
     
     # City/State
     sub_y = addr_y - addr_size * 1.2
     if city and state_val:
         sub_txt = f"{city}, {state_val}"
-        c.setFont(FONT_MED, addr_size * 0.4)
+        c.setFont(lu.FONT_MED, addr_size * 0.4)
         c.drawCentredString(w/2, sub_y, sub_txt.upper())
     
     # QR Code (Center of remaining space)
@@ -248,7 +245,7 @@ def _draw_listing_v2_address_qr_premium(c, layout, address, beds, baths, sqft, p
     _draw_qr_safe(c, url, qr_x, qr_y, qr_size, user_id)
     
     # CTA
-    c.setFont(FONT_SCRIPT, qr_size * 0.15)
+    c.setFont(lu.FONT_SCRIPT, qr_size * 0.15)
     c.drawCentredString(w/2, qr_y - (qr_size * 0.15), "Scan for details")
     
     # License Line
@@ -300,7 +297,7 @@ def _draw_license_line(c, x, y, num, state, align='center'):
     txt = f"{label} {num}"
     
     c.setFillColorRGB(0.5, 0.5, 0.5)
-    c.setFont(FONT_MED, 10) # Small
+    c.setFont(lu.FONT_MED, 10) # Small
     if align == 'center':
         c.drawCentredString(x, y, txt)
     elif align == 'right':

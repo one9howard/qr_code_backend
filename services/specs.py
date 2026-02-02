@@ -51,6 +51,7 @@ SMARTSIGN_LAYOUT_IDS: List[str] = [
     "smart_v1_photo_banner",
     "smart_v1_minimal",      # Agent-First Minimal (Variant A)
     "smart_v1_agent_brand",
+    "smart_v2_vertical_banner",  # Premium Vertical Banner
 ]
 
 # ---- 4) SmartSign: smart_v1_minimal (Variant A) ----

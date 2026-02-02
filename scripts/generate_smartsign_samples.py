@@ -1,99 +1,183 @@
+#!/usr/bin/env python
+"""
+Fixture-Driven SmartSign Sample Generator
+
+Generates sample SmartSign PDFs using data from a fixture file.
+Does not require database access.
+
+Usage:
+    python scripts/generate_smartsign_samples.py
+    
+    # Use custom fixture file:
+    SMARTSIGN_SAMPLES_FIXTURE=/path/to/fixture.json python scripts/generate_smartsign_samples.py
+    
+Output directory: tmp/smartsign_samples/
+"""
+
 import os
 import sys
+import json
 
 # Ensure project root is in path
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from services.pdf_smartsign import generate_smartsign_pdf
-from services.print_catalog import SMART_SIGN_LAYOUTS
-from services.printing.layout_utils import register_fonts
+# Default fixture path
+DEFAULT_FIXTURE = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+    'fixtures', 'smartsign_samples.json'
+)
 
-def run_samples():
-    print(">>> 1. Registering Fonts...")
-    try:
-        register_fonts()
-        print("    [OK] Fonts registered.")
-    except Exception as e:
-        print(f"    [FAIL] Font registration error: {e}")
-        sys.exit(1)
+# Output directory
+OUTPUT_DIR = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+    'tmp', 'smartsign_samples'
+)
 
-    print(f">>> 2. Generating Samples for Layouts: {SMART_SIGN_LAYOUTS}")
+
+def load_fixture():
+    """Load sample data from fixture file."""
+    fixture_path = os.environ.get('SMARTSIGN_SAMPLES_FIXTURE', DEFAULT_FIXTURE)
     
-    # Fake Asset Data (Phase 2 Compatible)
-    mock_assets = {
-        'default': {
-            'code': 'TESTCODE123',
-            'print_size': '18x24',
-            'agent_name': 'Sarah Thomas',
-            'agent_phone': '123-456-7890',
-            'status_text': 'FOR SALE',
-            'cta_key': 'scan_for_details',
-            'state': 'CA',
-            'license_number': '1234567',
-            'show_license_number': True,
-            # Keys would need to exist in storage, but we can test w/o images or mock them
-            # For now, let's assume no images or just text rendering
-        },
-        'brand': {
-             'code': 'BRAND123',
-             'print_size': '24x36',
-             'agent_name': 'James Luxury',
-             'agent_phone': '555-000-9999',
-             'status_text': 'OPEN HOUSE',
-            'cta_key': 'scan_to_schedule',
-             'state': 'NY',
-             'license_number': '999999',
-        }
+    if not os.path.exists(fixture_path):
+        print(f"[ERROR] Fixture file not found: {fixture_path}")
+        sys.exit(1)
+    
+    with open(fixture_path, 'r', encoding='utf-8') as f:
+        data = json.load(f)
+    
+    return data.get('samples', [])
+
+
+def generate_sample(sample_data, output_dir, index):
+    """Generate a single sample PDF from fixture data."""
+    from services.pdf_smartsign import generate_smartsign_pdf
+    import services.printing.layout_utils as lu
+    
+    # Register fonts first
+    lu.register_fonts()
+    
+    layout_id = sample_data.get('layout_id', 'smart_v1_minimal')
+    size = sample_data.get('size', '18x24')
+    agent = sample_data.get('agent', {})
+    
+    # Build asset dict matching what generate_smartsign_pdf expects
+    asset = {
+        'code': f'SAMPLE{index:03d}',
+        'print_size': size,
+        'layout_id': layout_id,
+        'agent_name': agent.get('name', 'Sample Agent'),
+        'agent_phone': agent.get('phone', '555-555-5555'),
+        'agent_email': agent.get('email', 'agent@example.com'),
+        'brokerage_name': agent.get('brokerage', 'Sample Realty'),
+        'brand_name': agent.get('brokerage', 'Sample Realty'),
+        'phone': agent.get('phone', '555-555-5555'),
+        'email': agent.get('email', 'agent@example.com'),
+        'background_style': sample_data.get('background_style', 'navy'),
+        'banner_color_id': sample_data.get('banner_color_id', 'navy'),
+        'cta_key': sample_data.get('cta_key', 'scan_for_details'),
+        'status_text': sample_data.get('status_text', 'FOR SALE'),
+        
+        # License fields
+        'state': sample_data.get('state'),
+        'license_number': sample_data.get('license_number'),
+        'show_license_number': sample_data.get('show_license_number'),
+        'license_label_override': sample_data.get('license_label_override'),
+        
+        # No images for samples (optional)
+        'include_logo': False,
+        'include_headshot': False,
+        'logo_key': None,
+        'headshot_key': None,
     }
     
-    output_dir = "pdfs/samples"
-    os.makedirs(output_dir, exist_ok=True)
+    # Generate filename
+    filename = f"sample_{layout_id}_{size.replace('x', '_')}.pdf"
+    output_path = os.path.join(output_dir, filename)
     
-    for layout in SMART_SIGN_LAYOUTS:
-        print(f"    Generating {layout}...")
-        
-        # Pick standard mock
-        asset = mock_assets['default'].copy()
-        asset['layout_id'] = layout
-        
+    # Generate PDF
+    # Note: generate_smartsign_pdf writes to storage.
+    # For standalone generation, we patch the storage to write locally.
+    from unittest.mock import MagicMock, patch
+    from io import BytesIO
+    
+    captured_pdf = {}
+    
+    def mock_put_file(data, key, **kwargs):  # Accept content_type etc.
+        if hasattr(data, 'seek'):
+            data.seek(0)
+        if hasattr(data, 'read'):
+            captured_pdf['data'] = data.read()
+        else:
+            captured_pdf['data'] = data
+        captured_pdf['key'] = key
+        return key
+    
+    mock_storage = MagicMock()
+    mock_storage.put_file = mock_put_file
+    mock_storage.exists.return_value = False
+    mock_storage.get_file.return_value = BytesIO(b'')
+    
+    with patch('services.pdf_smartsign.get_storage', return_value=mock_storage):
         try:
-            # We bypass storage for images by not providing keys if we don't have them
-            # Or use a local file if needed.
-            # For this test, text rendering is the critical part to verify layout logic.
+            key = generate_smartsign_pdf(asset, order_id=index, user_id=1)
             
-            key = generate_smartsign_pdf(asset, order_id=999, user_id=1, override_base_url="https://staging.insitesigns.com")
-            
-            # The generate function returns a key, but it writes to Storage interface.
-            # If using LocalStorage (default in dev), it puts it in 'storage_local/pdfs/...'
-            # We want to verify it exists.
-            
-            print(f"    -> Generated Key: {key}")
-            
-            # If local storage, verify file
-            from utils.storage import get_storage
-            s = get_storage()
-            if s.exists(key):
-                 data = s.get_file(key)
-                 if hasattr(data, 'read'):
-                     data = data.read()
-                 size = len(data)
-                 print(f"       [OK] File exists, size: {size} bytes")
-                 
-                 # Optional: Copy to samples dir for easy viewing
-                 # (If s is LocalStorage, we can just copy)
-                 # Simulating copy:
-                 out_path = os.path.join(output_dir, f"sample_{layout}.pdf")
-                 with open(out_path, "wb") as f:
-                     f.write(data)
-                 print(f"       Saved copy to: {out_path}")
-                 
+            # Write captured PDF to local file
+            if 'data' in captured_pdf:
+                with open(output_path, 'wb') as f:
+                    f.write(captured_pdf['data'])
+                return output_path
             else:
-                 print("       [FAIL] Storage key not found.")
-                 
+                print(f"  [WARN] No PDF data captured for {filename}")
+                return None
+                
         except Exception as e:
-            print(f"       [ERROR] {e}")
+            print(f"  [ERROR] Failed to generate {filename}: {e}")
             import traceback
             traceback.print_exc()
+            return None
+
+
+def main():
+    print("=" * 60)
+    print("SmartSign Sample Generator (Fixture-Driven)")
+    print("=" * 60)
+    
+    # Load fixtures
+    print("\n>>> Loading fixture data...")
+    samples = load_fixture()
+    print(f"    Found {len(samples)} sample(s) to generate.")
+    
+    # Create output directory
+    os.makedirs(OUTPUT_DIR, exist_ok=True)
+    print(f"    Output directory: {OUTPUT_DIR}")
+    
+    # Generate samples
+    print("\n>>> Generating samples...")
+    generated = []
+    
+    for i, sample in enumerate(samples, start=1):
+        layout_id = sample.get('layout_id', 'unknown')
+        size = sample.get('size', '?')
+        print(f"    [{i}/{len(samples)}] {layout_id} @ {size}...")
+        
+        output_path = generate_sample(sample, OUTPUT_DIR, i)
+        if output_path:
+            print(f"        -> {output_path}")
+            generated.append(output_path)
+    
+    # Summary
+    print("\n" + "=" * 60)
+    print(f"Generated {len(generated)}/{len(samples)} sample PDFs.")
+    print("=" * 60)
+    
+    # Print all generated paths (useful for CI/scripts)
+    if generated:
+        print("\nGenerated files:")
+        for path in generated:
+            print(path)
+    
+    return 0 if len(generated) == len(samples) else 1
+
 
 if __name__ == "__main__":
-    run_samples()
+    sys.exit(main())

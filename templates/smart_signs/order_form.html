@@ -101,6 +101,29 @@
                             <span class="layout-name">Agent Brand</span>
                             <span class="layout-desc">Logo-centric with dark footer.</span>
                         </label>
+
+                        <!-- Option 4: Vertical Banner (Premium) -->
+                        <label class="layout-card">
+                            <input type="radio" name="layout_id" value="smart_v2_vertical_banner">
+                            <div class="preview-box">
+                                <div class="mini-sign premium-style">
+                                    <div class="mini-content" style="display:flex;">
+                                        <div
+                                            style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center;">
+                                            <div class="mini-qr"></div>
+                                            <div class="line short"></div>
+                                        </div>
+                                        <div
+                                            style="width: 20%; background: linear-gradient(to bottom, #1a1a1a, #333); display:flex; align-items:center; justify-content:center;">
+                                            <span style="writing-mode: vertical-rl; color:#fff; font-size:8px;">FOR
+                                                SALE</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <span class="layout-name">Vertical Banner (Premium)</span>
+                            <span class="layout-desc">Script typography, side status rail.</span>
+                        </label>
                     </div>
 
                     <div class="input-group">
@@ -150,6 +173,36 @@
                                 value="{{ current_user.email }}" required>
                         </div>
                     </div>
+
+                    <!-- License Fields (Optional) -->
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+                        <div class="input-group">
+                            <label class="input-label">State</label>
+                            <input type="text" name="state" class="glass-input" placeholder="CA, MA, etc" maxlength="2"
+                                style="text-transform: uppercase;">
+                        </div>
+                        <div class="input-group">
+                            <label class="input-label">License Number</label>
+                            <input type="text" name="license_number" class="glass-input" placeholder="Optional">
+                        </div>
+                        <div class="input-group" style="display: flex; align-items: center; padding-top: 24px;">
+                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                <input type="checkbox" name="show_license_number" value="1">
+                                <span class="input-label" style="margin: 0;">Show on sign</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Advanced: License Label Override (collapsed by default) -->
+                    <details style="margin-bottom: 20px;">
+                        <summary style="cursor: pointer; color: var(--text-muted); font-size: 0.85rem;">Advanced Options
+                        </summary>
+                        <div class="input-group" style="margin-top: 12px;">
+                            <label class="input-label">License Label Override</label>
+                            <input type="text" name="license_label_override" class="glass-input"
+                                placeholder="e.g. 'DRE #' or 'Lic #' (leave blank for auto)">
+                        </div>
+                    </details>
                 </div>
 
                 <!-- Section 3: Uploads -->

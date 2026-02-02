@@ -317,6 +317,12 @@ def create_smart_order():
             logo_key = storage.put_file(f, k)
 
     # 3. Design Payload
+    # License fields - normalize values
+    state_raw = (request.form.get('state') or '').strip().upper()
+    license_number = (request.form.get('license_number') or '').strip()
+    show_license_number = 'show_license_number' in request.form  # Checkbox
+    license_label_override = (request.form.get('license_label_override') or '').strip()
+    
     payload = {
         'banner_color_id': request.form.get('banner_color_id'),
         'agent_name': request.form.get('agent_name'),
@@ -326,6 +332,16 @@ def create_smart_order():
         'agent_headshot_key': headshot_key,
         'agent_logo_key': logo_key
     }
+    
+    # Add license fields only if provided (omit empties to keep JSON clean)
+    if state_raw:
+        payload['state'] = state_raw
+    if license_number:
+        payload['license_number'] = license_number
+    if show_license_number:
+        payload['show_license_number'] = True
+    if license_label_override:
+        payload['license_label_override'] = license_label_override
     
     # 4. Validation (Strict)
     from services.printing.validation import validate_smartsign_payload
@@ -397,7 +413,9 @@ def create_smart_order():
         mock_asset = {
             'code': asset_code,
             'brand_name': payload.get('brand_name') or payload.get('agent_name'), # normalize
+            'agent_name': payload.get('agent_name'),  # Also pass as agent_name for V2 layouts
             'phone': payload.get('phone') or payload.get('agent_phone'),
+            'agent_phone': payload.get('agent_phone'),
             'email': payload.get('email') or payload.get('agent_email'),
             'background_style': payload.get('background_style') or payload.get('banner_color_id'),
             'cta_key': 'scan_for_details', # Default
@@ -406,6 +424,12 @@ def create_smart_order():
             'include_headshot': bool(payload.get('headshot_key') or payload.get('agent_headshot_key')),
             'headshot_key': payload.get('headshot_key') or payload.get('agent_headshot_key'),
             'brokerage_name': payload.get('brokerage_name') or payload.get('brokerage'),
+            
+            # License fields (for V2 layouts)
+            'state': payload.get('state'),
+            'license_number': payload.get('license_number'),
+            'show_license_number': payload.get('show_license_number'),
+            'license_label_override': payload.get('license_label_override'),
             
             # Context for New PDF Generator (Phase 2)
             'layout_id': layout_id,
