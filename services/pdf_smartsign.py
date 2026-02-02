@@ -481,7 +481,7 @@ def _draw_agent_brand(c, l, asset, user_id, base_url):
 
     # Footer Band CTA
     cta_text = CTA_MAP.get(_read(asset, 'cta_key'), 'SCAN FOR DETAILS')
-    fs = spec['fonts']['cta']
+    fs = spec['fonts']['cta1']
     
     # Draw Centered in Footer Band
     footer_cy = top_of_footer / 2
