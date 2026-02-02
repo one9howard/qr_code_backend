@@ -116,7 +116,7 @@
                     {% if first_unassigned_sign_id %}
                     <a href="{{ url_for('dashboard.index', highlight_asset_id=first_unassigned_sign_id) }}#smart-signs-section"
                         class="glass-button accent"
-                        onclick="switchTab('smart'); setTimeout(() => document.getElementById('smart-signs-section').scrollIntoView({behavior: 'smooth'}), 100);"
+                        onclick="setTimeout(() => document.getElementById('smart-signs-section').scrollIntoView({behavior: 'smooth'}), 100);"
                         style="padding: 12px 24px; font-size: 1rem; display: inline-flex;">Assign SmartSign</a>
                     {% endif %}
                     {% if properties|length == 0 %}
@@ -153,15 +153,8 @@
                 </div>
             </div>
 
-            <!-- Dimmed SmartSigns section for context -->
-            <div class="col-span-12" style="opacity: 0.6;">
-                <div class="card" style="padding: 16px 24px;">
-                    <h4 style="margin: 0; font-size: 0.95rem; color: var(--text-muted);">Your SmartSigns ({{
-                        smart_sign_count }})</h4>
-                    <p style="margin: 8px 0 0 0; font-size: 0.85rem; color: var(--text-muted);">Assign a SmartSign above
-                        to unlock the full dashboard.</p>
-                </div>
-            </div>
+            <!-- SmartSigns Section (Fully Active for Assignment) -->
+            {% include "includes/smart_signs_table.html" %}
 
             {% else %}
             <!-- ========== ACTIVE DASHBOARD: User has assigned SmartSigns ========== -->
@@ -464,147 +457,7 @@
 
         <!-- TAB 2: SMART ASSETS -->
         <div id="tab-smart" class="grid-sections col-span-12">
-            <div id="smart-signs-section" class="card card-smart col-span-12">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                    <div>
-                        <h3 style="margin: 0; font-size: 1.1rem; display: flex; align-items: center; gap: 8px;">
-                            📦 SmartSigns
-                        </h3>
-                        <p style="margin: 4px 0 0 0; font-size: 0.85rem; color: var(--text-muted);">
-                            Reusable signs with dynamic QR codes.
-                            {% if not is_pro %}
-                            <span style="opacity: 0.7;">(Pro required to reassign)</span>
-                            {% endif %}
-                        </p>
-                        <p style="margin: 6px 0 0 0; font-size: 0.75rem; color: var(--accent-cyan); opacity: 0.8;">
-                            SmartSign scans turn into direct buyer inquiries—no apps, no downloads.
-                        </p>
-                    </div>
-                    <a href="{{ url_for('smart_signs.order_start') }}" class="glass-button accent">Order SmartSign</a>
-                </div>
-
-                <div class="table-container">
-                    {% if sign_assets %}
-                    <table class="saas-table">
-                        <thead>
-                            <tr>
-                                <th>Label</th>
-                                <th>Assigned Property</th>
-                                <th>Status</th>
-                                <th style="text-align: center;">Scans</th>
-                                <th style="text-align: center;">Leads</th>
-                                <th style="text-align: center;">Conv.</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for asset in sign_assets %}
-                            <tr {% if asset.id==highlight_asset_id %}class="highlight-row" {% endif %}>
-                                <td>{{ asset.label }}<br><small
-                                        style="font-family: monospace; color: var(--accent-cyan);">{{ asset.code
-                                        }}</small></td>
-                                <td>
-                                    {% if asset.active_property_id %}
-                                    <span style="color:var(--accent-green);">●</span> {{ asset.property_address }}
-                                    {% else %}
-                                    <span style="color:var(--text-muted);">Unassigned</span>
-                                    {% endif %}
-                                </td>
-                                <td>
-                                    {% if asset.is_frozen %}
-                                    <span class="badge badge-orange">Frozen</span>
-                                    {% elif not asset.activated_at %}
-                                    <span class="badge badge-gray">Pending</span>
-                                    {% else %}
-                                    <span class="badge badge-green">Active</span>
-                                    {% endif %}
-                                </td>
-                                <td style="text-align: center; font-family: monospace;">{{ asset.scans or 0 }}</td>
-                                <td style="text-align: center; font-family: monospace;">{{ asset.leads or 0 }}</td>
-                                <td style="text-align: center; font-family: monospace; color: var(--accent-cyan);">
-                                    {{ asset.conversion or '—' }}</td>
-                                <td>
-                                <td>
-                                    <!-- Assignment UI -->
-                                    {% if not asset.is_frozen and asset.activated_at %}
-
-                                    <!-- Case 1: Unassigned (Allowed for ALL) -->
-                                    {% if not asset.active_property_id %}
-                                    <form action="{{ url_for('dashboard.assign_smart_sign', asset_id=asset.id) }}"
-                                        method="POST"
-                                        style="display: flex; gap: 8px; align-items: center; margin-bottom: 4px;">
-                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-
-                                        <select name="property_id"
-                                            style="background: rgba(0,0,0,0.2); border: 1px solid var(--border-glass); color: white; padding: 4px 8px; border-radius: 4px; max-width: 150px;">
-                                            <option value="" disabled selected>Assign to...</option>
-                                            {% for p in properties %}
-                                            <option value="{{ p.id }}">{{ p.address[:15] }}...</option>
-                                            {% endfor %}
-                                        </select>
-                                        <button type="submit" class="glass-button secondary"
-                                            style="padding: 4px 8px; font-size: 0.8rem;">Save</button>
-                                    </form>
-
-                                    <!-- Case 2: Assigned + Pro (Allowed Reassign) -->
-                                    {% elif is_pro %}
-                                    <form action="{{ url_for('dashboard.assign_smart_sign', asset_id=asset.id) }}"
-                                        method="POST"
-                                        style="display: flex; gap: 8px; align-items: center; margin-bottom: 4px;">
-                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-
-                                        <select name="property_id"
-                                            style="background: rgba(0,0,0,0.2); border: 1px solid var(--border-glass); color: white; padding: 4px 8px; border-radius: 4px; max-width: 150px;">
-                                            <option value="unassigned">Unassigned</option>
-                                            {% for p in properties %}
-                                            <option value="{{ p.id }}" {% if p.id==asset.active_property_id %}selected{%
-                                                endif %}>{{ p.address[:15] }}...</option>
-                                            {% endfor %}
-                                        </select>
-                                        <button type="submit" class="glass-button secondary"
-                                            style="padding: 4px 8px; font-size: 0.8rem;">Save</button>
-                                    </form>
-
-                                    <!-- Case 3: Assigned + Free (Locked) -->
-                                    {% else %}
-                                    <div style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 4px;">
-                                        <span style="margin-right: 6px;">Assigned</span>
-                                        <a href="{{ url_for('billing.index') }}"
-                                            style="color: var(--accent-cyan); text-decoration: underline;">Upgrade to
-                                            reassign</a>
-                                    </div>
-                                    {% endif %}
-
-                                    <!-- Actions Row -->
-                                    <div style="display: flex; gap: 10px; font-size: 0.85rem; align-items: center;">
-                                        <a href="{{ url_for('smart_signs.edit_smartsign', asset_id=asset.id) }}"
-                                            style="color: var(--text-muted);">Edit</a>
-                                        <a href="{{ url_for('smart_signs.preview_smartsign', asset_id=asset.id) }}"
-                                            target="_blank" rel="noopener" style="color: var(--text-muted);">Preview
-                                            PDF</a>
-                                        <button
-                                            onclick="copyText('{{ url_for('properties.qr_scan_redirect', code=asset.code, _external=True) }}', this)"
-                                            style="background:none; border:none; color: var(--accent-blue); padding:0; cursor:pointer; text-decoration: underline;">
-                                            Copy QR
-                                        </button>
-                                    </div>
-
-                                    {% else %}
-                                    <!-- Frozen or Inactive -->
-                                    <span class="text-muted" style="font-size: 0.8rem;">Actions unavailable</span>
-                                    {% endif %}
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                    {% else %}
-                    <div style="text-align: center; padding: 32px; color: var(--text-muted);">
-                        No SmartSigns yet.
-                    </div>
-                    {% endif %}
-                </div>
-            </div>
+            {% include "includes/smart_signs_table.html" %}
         </div>
 
         <!-- TAB 3: ANALYTICS -->
