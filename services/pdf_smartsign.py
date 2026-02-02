@@ -17,7 +17,7 @@ from services.printing.layout_utils import (
     register_fonts, 
     draw_identity_block, 
     fit_text_one_line, 
-    FONT_BODY, FONT_MED, FONT_BOLD
+    FONT_BODY, FONT_MED, FONT_BOLD, FONT_SERIF, FONT_SCRIPT
 )
 import urllib.parse
 
@@ -55,7 +55,7 @@ SPECS = {
             'qr_size': to_pt(11.00),
             'qr_padding': to_pt(0.55),
             'headshot_diameter': to_pt(1.90),
-            'fonts': { # Legacy Photo Banner Metrics (still using Helvetica or mapped?)
+            'fonts': {
                 'name': (64, 44), 'phone': (48, 36), 'brokerage': (56, 38),
                 'cta': (80, 60), 'url': (28, 22)
             }
@@ -70,6 +70,19 @@ SPECS = {
                 'name': (64, 44), 'brokerage': (56, 38), 
                 'scan_label': (44, 34), 'cta1': (80, 60), 'cta2': (96, 72), 'url': (28, 22)
             }
+        },
+        'smart_v2_vertical_banner': {
+             'safe_margin_in': 0.5,
+             'rail_width_percent': 0.22,
+             'qr_percent': 0.35, 
+             'headshot_percent': 0.28,
+             'fonts': {
+                 'status': (72, 54),
+                 'cta': (48, 36),
+                 'name': (72, 48),
+                 'phone': (42, 32),
+                 'license': (20, 16)
+             }
         }
     },
     '24x36': {
@@ -94,6 +107,19 @@ SPECS = {
                 'name': (86, 60), 'brokerage': (76, 54), 
                 'scan_label': (56, 42), 'cta1': (110, 80), 'cta2': (132, 96), 'url': (34, 26)
             }
+        },
+        'smart_v2_vertical_banner': {
+             'safe_margin_in': 0.75,
+             'rail_width_percent': 0.22,
+             'qr_percent': 0.35,
+             'headshot_percent': 0.28,
+             'fonts': {
+                 'status': (100, 72),
+                 'cta': (64, 48),
+                 'name': (96, 72),
+                 'phone': (54, 42),
+                 'license': (24, 18)
+             }
         }
     },
     '36x24': {
@@ -118,9 +144,23 @@ SPECS = {
                 'name': (86, 60), 'brokerage': (76, 54), 
                 'scan_label': (56, 42), 'cta1': (110, 80), 'cta2': (132, 96), 'url': (34, 26)
             }
+        },
+        'smart_v2_vertical_banner': {
+             'safe_margin_in': 0.60,
+             'rail_width_percent': 0.22,
+             'qr_percent': 0.35,
+             'headshot_percent': 0.28,
+             'fonts': {
+                 'status': (80, 60),
+                 'cta': (54, 40),
+                 'name': (84, 60),
+                 'phone': (48, 36),
+                 'license': (22, 16)
+             }
         }
     }
 }
+
 
 # Dynamic Injection: Smart V1 Minimal (Canonical)
 _min_specs = SMARTSIGN_V1_MINIMAL_SPECS['sizes']
@@ -323,7 +363,7 @@ def generate_smartsign_pdf(asset, order_id=None, user_id=None, override_base_url
     if size_key not in SIGN_SIZES: size_key = DEFAULT_SIGN_SIZE
 
     layout_id = _read(asset, 'layout_id', 'smart_v1_minimal')
-    if layout_id not in ['smart_v1_minimal', 'smart_v1_agent_brand', 'smart_v1_photo_banner']:
+    if layout_id not in ['smart_v1_minimal', 'smart_v1_agent_brand', 'smart_v1_photo_banner', 'smart_v2_vertical_banner']:
         layout_id = 'smart_v1_minimal'
 
     layout = SmartSignLayout(size_key, layout_id)
@@ -342,6 +382,8 @@ def generate_smartsign_pdf(asset, order_id=None, user_id=None, override_base_url
         _draw_photo_banner(c, layout, asset, user_id, active_base_url)
     elif layout_id == 'smart_v1_agent_brand':
         _draw_agent_brand(c, layout, asset, user_id, active_base_url)
+    elif layout_id == 'smart_v2_vertical_banner':
+        _draw_smart_v2_vertical_banner(c, layout, asset, user_id, active_base_url)
     else:
         _draw_modern_minimal(c, layout, asset, user_id, active_base_url)
         
@@ -528,3 +570,210 @@ def _draw_photo_banner(c, l, asset, user_id, base_url):
     # Footer CTA
     cta_text = CTA_MAP.get(_read(asset, 'cta_key'), 'SCAN FOR DETAILS')
     draw_fitted_multiline(c, cta_text, l.width/2, spec['footer_band']/2 + 20, FONT_MED, 80, 60, l.width*0.9, color=COLORS['bg_navy'])
+
+
+
+def _draw_smart_v2_vertical_banner(c, l, asset, user_id, base_url):
+    """
+    Premium V2 Vertical Banner.
+    Features:
+    - Right Side Rail (Vertical Text)
+    - Circular Headshot
+    - Script Typography
+    """
+    spec = l.layout_spec
+    safe_margin = to_pt(spec.get('safe_margin_in', 0.5))
+    
+    # --- 1. Background (Dark Theme Base) ---
+    c.setFillColorRGB(*hex_to_rgb(COLORS['bg_navy'])) # Dark base
+    c.rect(-l.bleed, -l.bleed, l.width + 2*l.bleed, l.height + 2*l.bleed, fill=1, stroke=0)
+    
+    # --- 2. Right Rail ---
+    rail_w = l.width * spec['rail_width_percent']
+    rail_x_start = l.width - rail_w
+    
+    # Render Divider Line? Or just rail area.
+    # Let's put a subtle separator
+    c.setStrokeColorRGB(1, 1, 1, 0.2)
+    c.setLineWidth(1)
+    c.line(rail_x_start, 0, rail_x_start, l.height)
+    
+    # Vertical Status Text
+    status_text = (_read(asset, 'status_text') or "FOR SALE").upper()
+    font_status = spec['fonts']['status']
+    
+    c.saveState()
+    # Center of rail
+    rail_center_x = rail_x_start + (rail_w / 2)
+    rail_center_y = l.height / 2
+    
+    c.translate(rail_center_x, rail_center_y)
+    c.rotate(-90)
+    
+    # Fit Text to Height (which is now width)
+    avail_h = l.height - (safe_margin * 2)
+    # Actually rail height is full height.
+    
+    c.setFillColorRGB(1, 1, 1) # White
+    fit_size = fit_text_one_line(c, status_text, FONT_SERIF, avail_h, font_status[0], font_status[1])
+    c.setFont(FONT_SERIF, fit_size)
+    c.drawCentredString(0, -fit_size * 0.35, status_text) # Optimize vertical center visually
+    c.restoreState()
+    
+    # --- 3. Left Content Area ---
+    content_w = rail_x_start
+    content_center_x = content_w / 2
+    
+    # QR Code (Top)
+    qr_size_target = l.width * spec['qr_percent']
+    qr_y_center = l.height * 0.78 # Upper quadrant
+    
+    # Draw White Card for QR
+    card_pad = to_pt(0.3)
+    card_size = qr_size_target + (2 * card_pad)
+    
+    c.setFillColorRGB(1, 1, 1)
+    c.setStrokeColorRGB(1, 1, 1)
+    # Simple crisp box
+    c.rect(content_center_x - card_size/2, qr_y_center - card_size/2, card_size, card_size, fill=1, stroke=0)
+    
+    code = _read(asset, 'code')
+    qr_url = f"{base_url.rstrip('/')}/r/{code}"
+    draw_qr(c, qr_url, x=content_center_x - qr_size_target/2, y=qr_y_center - qr_size_target/2, size=qr_size_target, user_id=user_id)
+    
+    # CTA (Under QR)
+    # Script Font
+    cta_text = CTA_MAP.get(_read(asset, 'cta_key'), 'Scan for Details') # Title Case for script?
+    # Actually script looks better if we don't force UPPER.
+    # Convert 'SCAN FOR DETAILS' -> Title Case if needed?
+    # CTA_MAP values are UPPER. Let's title case them for the script font.
+    cta_text = cta_text.title() 
+    
+    font_cta = spec['fonts']['cta']
+    cta_y = qr_y_center - (card_size/2) - to_pt(0.4)
+    
+    c.setFillColorRGB(*hex_to_rgb(COLORS['cta_fallback'])) # Light Gray/Silver
+    fit_cta = fit_text_one_line(c, cta_text, FONT_SCRIPT, content_w * 0.8, font_cta[0], font_cta[1])
+    c.setFont(FONT_SCRIPT, fit_cta)
+    c.drawCentredString(content_center_x, cta_y, cta_text)
+    
+    # Agent Headshot (Circular)
+    head_d = l.width * spec['headshot_percent']
+    head_y_center = l.height * 0.45
+    
+    head_key = _read(asset, 'headshot_key') or _read(asset, 'agent_headshot_key')
+    storage = get_storage()
+    
+    if head_key and storage.exists(head_key):
+        try:
+            c.saveState()
+            # Clip
+            p = c.beginPath()
+            p.circle(content_center_x, head_y_center, head_d/2)
+            c.clipPath(p, stroke=0)
+            
+            img_data = storage.get_file(head_key)
+            img = ImageReader(img_data)
+            c.drawImage(img, content_center_x - head_d/2, head_y_center - head_d/2, width=head_d, height=head_d)
+            c.restoreState()
+            
+            # Gold/Bronze Ring
+            c.setStrokeColor(HexColor('#C5A065')) # Bronze-ish
+            c.setLineWidth(3)
+            c.circle(content_center_x, head_y_center, head_d/2, stroke=1, fill=0)
+        except:
+            # Fallback circle
+            c.setFillColor(HexColor('#333'))
+            c.circle(content_center_x, head_y_center, head_d/2, fill=1, stroke=0)
+
+    # Agent Name (Script)
+    name_y = head_y_center - (head_d/2) - to_pt(0.5)
+    name_text = (_read(asset, 'agent_name') or "Agent Name")
+    font_name = spec['fonts']['name']
+    
+    c.setFillColorRGB(1, 1, 1)
+    fit_name = fit_text_one_line(c, name_text, FONT_SCRIPT, content_w * 0.9, font_name[0], font_name[1])
+    c.setFont(FONT_SCRIPT, fit_name)
+    c.drawCentredString(content_center_x, name_y, name_text)
+    
+    # Phone (Sans Bold)
+    phone_y = name_y - fit_name # Drop down
+    phone_text = format_phone_local(_read(asset, 'agent_phone'))
+    font_phone = spec['fonts']['phone']
+    
+    c.setFillColorRGB(1, 1, 1)
+    # Letter spacing?
+    fit_phone = fit_text_one_line(c, phone_text, FONT_BOLD, content_w * 0.8, font_phone[0], font_phone[1])
+    c.setFont(FONT_BOLD, fit_phone)
+    c.drawCentredString(content_center_x, phone_y, phone_text)
+    
+    # License Number (Optional)
+    # Logic: 
+    # If license_number empty -> Skip
+    # If show_license_number explicitly False -> Skip
+    # If None -> CA=True, else False
+    
+    lic_num = _read(asset, 'license_number')
+    show_lic = _read(asset, 'show_license_number') # Bool or None
+    state = (_read(asset, 'state') or "").upper()
+    
+    should_show = False
+    if lic_num:
+        if show_lic is True:
+            should_show = True
+        elif show_lic is False:
+            should_show = False
+        else:
+             # Default
+             if state == 'CA': should_show = True
+             
+    if should_show and lic_num:
+         lic_label_ov = _read(asset, 'license_label_override')
+         if lic_label_ov:
+             label = lic_label_ov
+         elif state == 'CA':
+             label = "DRE #"
+         else:
+             label = "Lic #"
+             
+         full_lic = f"{label}{lic_num}"
+         font_lic = spec['fonts']['license']
+         lic_y = phone_y - fit_phone * 1.2
+         
+         c.setFillColorRGB(0.7, 0.7, 0.7) # Muted
+         c.setFont(FONT_BODY, font_lic[0]) # Small Sans
+         c.drawCentredString(content_center_x, lic_y, full_lic)
+
+
+    # Brokerage Logo (Bottom Center of Left Panel)
+    logo_key = _read(asset, 'logo_key') or _read(asset, 'agent_logo_key')
+    if logo_key and storage.exists(logo_key):
+        try:
+             # Draw Area
+             footer_y = safe_margin
+             max_h = to_pt(1.5) 
+             max_w = content_w * 0.6
+             
+             l_data = storage.get_file(logo_key)
+             l_img = ImageReader(l_data)
+             iw, ih = l_img.getSize()
+             aspect = iw / ih
+             
+             draw_w = max_h * aspect
+             if draw_w > max_w:
+                 draw_w = max_w
+                 draw_h = draw_w / aspect
+             else:
+                 draw_h = max_h
+                 
+             c.drawImage(l_img, content_center_x - draw_w/2, footer_y, width=draw_w, height=draw_h, mask='auto', preserveAspectRatio=True)
+        except: pass
+
+def format_phone_local(raw):
+    # Quick inline formatter if layout_utils isn't available
+    if not raw: return ""
+    import re
+    digits = re.sub(r'\D', '', str(raw))
+    if len(digits) == 10:
+        return f"{digits[:3]}-{digits[3:6]}-{digits[6:]}"
+    return str(raw)

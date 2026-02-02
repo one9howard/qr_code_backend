@@ -19,6 +19,8 @@ FONTS_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file_
 FONT_BODY = "Helvetica"
 FONT_MED = "Helvetica"
 FONT_BOLD = "Helvetica-Bold"
+FONT_SERIF = "Helvetica"     # Fallback
+FONT_SCRIPT = "Helvetica"    # Fallback
 
 _fonts_registered = False
 
@@ -27,7 +29,7 @@ def register_fonts():
     Register Inter fonts from static/fonts/.
     Raises RuntimeError in production if required fonts are missing.
     """
-    global FONT_BODY, FONT_MED, FONT_BOLD, _fonts_registered
+    global FONT_BODY, FONT_MED, FONT_BOLD, FONT_SERIF, FONT_SCRIPT, _fonts_registered
     
     if _fonts_registered:
         return
@@ -37,7 +39,9 @@ def register_fonts():
     target_fonts = {
         "Inter-Regular.ttf": "Regular",
         "Inter-Medium.ttf": "Medium",
-        "Inter-Bold.ttf": "Bold"
+        "Inter-Bold.ttf": "Bold",
+        "BodoniModa-VariableFont_opsz,wght.ttf": "Bodoni",
+        "Allura-Regular.ttf": "Allura"
     }
     
     for root, dirs, files in os.walk(FONTS_DIR):
@@ -64,6 +68,15 @@ def register_fonts():
         if "Inter-Bold.ttf" in found_fonts:
             pdfmetrics.registerFont(TTFont('Inter-Bold', found_fonts["Inter-Bold.ttf"]))
             FONT_BOLD = 'Inter-Bold'
+            
+        # New Premium Fonts (SmartSign V2)
+        if "BodoniModa-VariableFont_opsz,wght.ttf" in found_fonts:
+            pdfmetrics.registerFont(TTFont('BodoniModa', found_fonts["BodoniModa-VariableFont_opsz,wght.ttf"]))
+            FONT_SERIF = 'BodoniModa'
+            
+        if "Allura-Regular.ttf" in found_fonts:
+            pdfmetrics.registerFont(TTFont('Allura', found_fonts["Allura-Regular.ttf"]))
+            FONT_SCRIPT = 'Allura'
             
         # Success if we got the essentials
         if FONT_BODY == 'Inter-Regular' and FONT_BOLD == 'Inter-Bold':
