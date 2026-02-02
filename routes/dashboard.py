@@ -724,6 +724,18 @@ def new_property():
         baths = request.form.get('baths')
         price = request.form.get('price')
         
+        # Optional URLs
+        from utils.urls import normalize_https_url
+        raw_scheduling = request.form.get('scheduling_url', '')
+        scheduling_url = normalize_https_url(raw_scheduling) if raw_scheduling else None
+        
+        raw_virtual_tour = request.form.get('virtual_tour_url', '')
+        virtual_tour_url = normalize_https_url(raw_virtual_tour) if raw_virtual_tour else None
+        
+        # Update agent's scheduling_url if provided
+        if scheduling_url:
+            db.execute("UPDATE agents SET scheduling_url = %s WHERE id = %s", (scheduling_url, agent_id))
+        
         # Expiry logic
         expires_at = None
         if not is_pro:
@@ -732,10 +744,10 @@ def new_property():
              
         cursor = db.cursor()
         cursor.execute("""
-            INSERT INTO properties (agent_id, address, beds, baths, price, created_at, expires_at)
-            VALUES (%s, %s, %s, %s, %s, %s, %s)
+            INSERT INTO properties (agent_id, address, beds, baths, price, virtual_tour_url, created_at, expires_at)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
             RETURNING id
-        """, (agent_id, address, beds, baths, price, utc_iso(), expires_at))
+        """, (agent_id, address, beds, baths, price, virtual_tour_url, utc_iso(), expires_at))
         pid = cursor.fetchone()['id']
         
         # Slug & QR
