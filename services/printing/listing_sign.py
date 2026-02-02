@@ -12,6 +12,8 @@ from reportlab.lib.units import inch
 from database import get_db
 from utils.storage import get_storage
 from utils.pdf_generator import LayoutSpec, SIGN_SIZES, DEFAULT_SIGN_SIZE, _draw_standard_layout, _draw_landscape_split_layout, hex_to_rgb
+from utils.listing_designs import _draw_listing_v2_phone_qr_premium, _draw_listing_v2_address_qr_premium
+from services.printing.layout_utils import register_fonts
 from config import BASE_URL
 from utils.qr_urls import property_scan_url
 
@@ -74,6 +76,7 @@ def generate_listing_sign_pdf(order, output_path=None):
     Returns:
         str: Storage key for generated PDF
     """
+    register_fonts()
     db = get_db()
     storage = get_storage()
     
@@ -172,6 +175,9 @@ def generate_listing_sign_pdf(order, output_path=None):
     size_config = SIGN_SIZES[sign_size]
     layout = LayoutSpec(size_config['width_in'], size_config['height_in'])
     
+    # Layout ID Dispatch
+    layout_id = get_val(order, 'layout_id') or 'listing_standard'
+
     # Generate PDF in memory
     pdf_buffer = io.BytesIO()
     c = canvas.Canvas(pdf_buffer, pagesize=(layout.width + 2*layout.bleed, layout.height + 2*layout.bleed))
@@ -184,18 +190,34 @@ def generate_listing_sign_pdf(order, output_path=None):
         c.saveState()
         c.translate(layout.bleed, layout.bleed)
         
-        if is_landscape:
-            _draw_landscape_split_layout(
-                c, layout, address, beds, baths, sqft, price,
-                agent_name, brokerage, agent_email, agent_phone,
-                None, None, sign_color, qr_value=qr_url, user_id=user_id
-            )
+        args_v2 = {
+            'address': address, 'beds': beds, 'baths': baths, 'sqft': sqft, 'price': price,
+            'agent_name': agent_name, 'brokerage': brokerage, 
+            'agent_email': agent_email, 'agent_phone': agent_phone,
+            'qr_key': None, 'agent_photo_key': None,
+            'sign_color': sign_color, 'qr_value': qr_url, 'user_id': user_id,
+            'license_number': None, 'state': prop_row.get('state'), 'city': prop_row.get('city')
+        }
+
+        if layout_id == 'listing_v2_phone_qr_premium':
+             _draw_listing_v2_phone_qr_premium(c, layout, **args_v2)
+             
+        elif layout_id == 'listing_v2_address_qr_premium':
+             _draw_listing_v2_address_qr_premium(c, layout, **args_v2)
+
         else:
-            _draw_standard_layout(
-                c, layout, address, beds, baths, sqft, price,
-                agent_name, brokerage, agent_email, agent_phone,
-                None, None, sign_color, qr_value=qr_url, user_id=user_id
-            )
+            if is_landscape:
+                _draw_landscape_split_layout(
+                    c, layout, address, beds, baths, sqft, price,
+                    agent_name, brokerage, agent_email, agent_phone,
+                    None, None, sign_color, qr_value=qr_url, user_id=user_id
+                )
+            else:
+                _draw_standard_layout(
+                    c, layout, address, beds, baths, sqft, price,
+                    agent_name, brokerage, agent_email, agent_phone,
+                    None, None, sign_color, qr_value=qr_url, user_id=user_id
+                )
         
         c.restoreState()
         c.showPage()

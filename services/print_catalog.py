@@ -37,6 +37,12 @@ SMART_SIGN_LAYOUTS = (
     'smart_v2_vertical_banner'
 )
 
+LISTING_SIGN_LAYOUTS = (
+    'listing_standard',
+    'listing_v2_phone_qr_premium',
+    'listing_v2_address_qr_premium'
+)
+
 # Strict Color Palette (ID -> Hex)
 BANNER_COLOR_PALETTE = {
     'blue': '#0077ff',
@@ -174,6 +180,8 @@ def validate_layout(print_product, layout_id):
     elif print_product == 'listing_sign':
         if not layout_id:
             return False, "Layout ID required"
+        if layout_id not in LISTING_SIGN_LAYOUTS:
+             return False, f"Invalid Listing Sign layout: {layout_id}"
         return True, ""
     elif print_product == 'smart_riser':
         # Risers might not have layouts yet? Assuming generic or none required.
