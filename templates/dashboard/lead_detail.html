@@ -1,130 +1,197 @@
 {% extends "base.html" %}
 
+{% block title %}{{ lead.buyer_name }} | Leads{% endblock %}
+{% block body_class %}dashboard-saas-body{% endblock %}
+
 {% block content %}
-<div class="dashboard-container">
-    <a href="{{ url_for('lead_management.list_leads') }}"
-        style="color: #aaa; text-decoration: none; margin-bottom: 20px; display: inline-block;">
-        &larr; Back to Leads
-    </a>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/pages/dashboard_saas.css') }}">
 
-    <div class="dashboard-grid" style="grid-template-columns: 1fr 1fr; gap: 20px;">
+<div class="app-layout">
+    {% include "includes/dashboard_sidebar.html" %}
 
-        <!-- LEFT COL: Info & Tasks -->
-        <div class="col-left">
-            <!-- Lead Info -->
-            <div class="glass-panel" style="padding: 20px; margin-bottom: 20px;">
-                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                    <div>
-                        <h2 style="margin: 0; font-size: 1.5rem;">{{ lead.buyer_name }}</h2>
-                        <a href="mailto:{{ lead.buyer_email }}" style="color: var(--accent-color);">{{ lead.buyer_email
-                            }}</a>
-                        {% if lead.buyer_phone %}
-                        <div style="margin-top: 5px;">{{ lead.buyer_phone }}</div>
-                        {% endif %}
+    <main class="app-main">
+        <header class="app-header">
+            <div style="display: flex; align-items: center; gap: 16px;">
+                <a href="{{ url_for('lead_management.list_leads') }}"
+                    style="color: var(--text-muted); text-decoration: none; font-size: 1.2rem; display: flex; align-items: center;">
+                    &larr;
+                </a>
+                <h1 class="page-title">{{ lead.buyer_name }}</h1>
+                <span class="badge 
+                    {% if lead.status == 'new' %}badge-blue
+                    {% elif lead.status == 'contacted' %}badge-purple
+                    {% elif lead.status == 'qualified' %}badge-green
+                    {% elif lead.status == 'closed' %}badge-success
+                    {% else %}badge-gray{% endif %}">
+                    {{ lead.status|title }}
+                </span>
+            </div>
+
+            <div class="header-actions">
+                <form action="{{ url_for('lead_management.update_status', lead_id=lead.id) }}" method="POST"
+                    style="margin: 0;">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <select name="status" onchange="this.form.submit()" class="glass-input"
+                        style="padding: 6px 12px; font-size: 0.9rem; border-radius: 6px;">
+                        <option value="new" {% if lead.status=='new' %}selected{% endif %}>New</option>
+                        <option value="contacted" {% if lead.status=='contacted' %}selected{% endif %}>Contacted
+                        </option>
+                        <option value="qualified" {% if lead.status=='qualified' %}selected{% endif %}>Qualified
+                        </option>
+                        <option value="closed" {% if lead.status=='closed' %}selected{% endif %}>Closed</option>
+                        <option value="lost" {% if lead.status=='lost' %}selected{% endif %}>Lost</option>
+                    </select>
+                </form>
+            </div>
+        </header>
+
+        <div class="content-wrapper">
+            <!-- LEFT COL: Info & Tasks -->
+            <div class="col-span-8">
+                <!-- Lead Info -->
+                <div class="card" style="margin-bottom: 24px;">
+                    <h2 class="section-subheader" style="margin-top: 0; color: white;">Contact Details</h2>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+                        <div>
+                            <div class="stat-label">Email</div>
+                            <div style="font-size: 1.1rem;">
+                                <a href="mailto:{{ lead.buyer_email }}" style="color: var(--primary);">{{
+                                    lead.buyer_email }}</a>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="stat-label">Phone</div>
+                            <div style="font-size: 1.1rem; color: white;">
+                                {% if lead.buyer_phone %}{{ lead.buyer_phone }}{% else %}<span
+                                    style="color: var(--text-muted)">--</span>{% endif %}
+                            </div>
+                        </div>
+                        <div style="grid-column: span 2;">
+                            <div class="stat-label">Property Interest</div>
+                            <div style="font-size: 1.1rem; color: white;">{{ lead.property_address }}</div>
+                        </div>
+                        <div>
+                            <div class="stat-label">Preferred Method</div>
+                            <div style="font-size: 1rem; color: white;">{{ lead.preferred_contact }}</div>
+                        </div>
+                        <div>
+                            <div class="stat-label">Best Time</div>
+                            <div style="font-size: 1rem; color: white;">
+                                {% if lead.best_time %}{{ lead.best_time }}{% else %}Anytime{% endif %}
+                            </div>
+                        </div>
                     </div>
 
-                    <form action="{{ url_for('lead_management.update_status', lead_id=lead.id) }}" method="POST">
-                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                        <select name="status" onchange="this.form.submit()" class="glass-input" style="padding: 5px;">
-                            <option value="new" {% if lead.status=='new' %}selected{% endif %}>New</option>
-                            <option value="contacted" {% if lead.status=='contacted' %}selected{% endif %}>Contacted
-                            </option>
-                            <option value="qualified" {% if lead.status=='qualified' %}selected{% endif %}>Qualified
-                            </option>
-                            <option value="closed" {% if lead.status=='closed' %}selected{% endif %}>Closed</option>
-                            <option value="lost" {% if lead.status=='lost' %}selected{% endif %}>Lost</option>
-                        </select>
-                    </form>
-                </div>
-
-                <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1);">
-                    <strong>Property:</strong> {{ lead.property_address }}<br>
-                    <strong>Preferred Method:</strong> {{ lead.preferred_contact }}<br>
-                    {% if lead.best_time %}<strong>Best Time:</strong> {{ lead.best_time }}<br>{% endif %}
                     {% if lead.message %}
-                    <div style="margin-top: 10px; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 5px;">
-                        <em>"{{ lead.message }}"</em>
+                    <div
+                        style="margin-top: 24px; padding: 16px; background: rgba(255,255,255,0.05); border-radius: 8px; border-left: 3px solid var(--primary);">
+                        <div class="stat-label" style="margin-bottom: 4px;">Message</div>
+                        <em style="color: #e2e8f0;">"{{ lead.message }}"</em>
                     </div>
                     {% endif %}
                 </div>
-            </div>
 
-            <!-- Tasks -->
-            <div class="glass-panel" style="padding: 20px;">
-                <h3>Tasks</h3>
-                <ul style="list-style: none; padding: 0;">
-                    {% for task in tasks %}
-                    <li
-                        style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">
-                        <span {% if task.status=='done' %}style="text-decoration: line-through; opacity: 0.5;" {% endif
-                            %}>
-                            {{ task.title }}
-                        </span>
-                        {% if task.status == 'open' %}
-                        <form action="{{ url_for('lead_management.manage_tasks', lead_id=lead.id) }}" method="POST"
-                            style="margin: 0;">
-                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                            <input type="hidden" name="action" value="complete">
-                            <input type="hidden" name="task_id" value="{{ task.id }}">
-                            <button type="submit" class="glass-button secondary"
-                                style="padding: 2px 8px; font-size: 0.8rem;">Done</button>
-                        </form>
-                        {% endif %}
-                    </li>
-                    {% endfor %}
-                </ul>
+                <!-- Tasks -->
+                <div class="card">
+                    <h3 class="section-subheader"
+                        style="margin-top: 0; color: white; display: flex; justify-content: space-between; align-items: center;">
+                        Tasks
+                    </h3>
 
-                <form action="{{ url_for('lead_management.manage_tasks', lead_id=lead.id) }}" method="POST"
-                    style="margin-top: 15px; display: flex; gap: 10px;">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                    <input type="hidden" name="action" value="create">
-                    <input type="text" name="title" placeholder="New task..." class="glass-input" required>
-                    <button type="submit" class="glass-button secondary">Add</button>
-                </form>
-            </div>
-        </div>
+                    <form action="{{ url_for('lead_management.manage_tasks', lead_id=lead.id) }}" method="POST"
+                        style="margin-bottom: 20px; display: flex; gap: 10px;">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <input type="hidden" name="action" value="create">
+                        <input type="text" name="title" placeholder="Add a new task..." class="glass-input"
+                            style="flex: 1;" required>
+                        <button type="submit" class="glass-button secondary">Add</button>
+                    </form>
 
-        <!-- RIGHT COL: Notes & Timeline -->
-        <div class="col-right">
-            <!-- Notes -->
-            <div class="glass-panel" style="padding: 20px; margin-bottom: 20px;">
-                <h3>Notes</h3>
-                <div class="notes-list" style="max-height: 200px; overflow-y: auto; margin-bottom: 15px;">
-                    {% for note in notes %}
-                    <div
-                        style="background: rgba(255,255,255,0.05); padding: 10px; border-radius: 5px; margin-bottom: 5px;">
-                        <div style="font-size: 0.9rem;">{{ note.body }}</div>
-                        <div style="font-size: 0.7rem; opacity: 0.5; margin-top: 5px;">{{ note.created_at }}</div>
-                    </div>
-                    {% endfor %}
+                    <ul style="list-style: none; padding: 0; margin: 0;">
+                        {% for task in tasks %}
+                        <li
+                            style="display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <div
+                                    style="width: 8px; height: 8px; border-radius: 50%; background: {% if task.status=='done' %}var(--success){% else %}var(--warning){% endif %};">
+                                </div>
+                                <span {% if task.status=='done' %}style="text-decoration: line-through; opacity: 0.5;"
+                                    {% endif %}>
+                                    {{ task.title }}
+                                </span>
+                            </div>
+                            {% if task.status == 'open' %}
+                            <form action="{{ url_for('lead_management.manage_tasks', lead_id=lead.id) }}" method="POST"
+                                style="margin: 0;">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <input type="hidden" name="action" value="complete">
+                                <input type="hidden" name="task_id" value="{{ task.id }}">
+                                <button type="submit" class="glass-button secondary"
+                                    style="padding: 4px 10px; font-size: 0.8rem;">
+                                    Mark Done
+                                </button>
+                            </form>
+                            {% endif %}
+                        </li>
+                        {% else %}
+                        <div style="text-align: center; color: var(--text-muted); padding: 20px;">No tasks yet.</div>
+                        {% endfor %}
+                    </ul>
                 </div>
-
-                <form action="{{ url_for('lead_management.add_note', lead_id=lead.id) }}" method="POST">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                    <textarea name="body" class="glass-input" rows="3" placeholder="Add a note..." required></textarea>
-                    <button type="submit" class="glass-button secondary" style="margin-top: 10px;">Save Note</button>
-                </form>
             </div>
 
-            <!-- Timeline -->
-            <div class="glass-panel" style="padding: 20px;">
-                <h3>Activity Timeline</h3>
-                <div class="timeline" style="font-size: 0.9rem;">
-                    {% for event in events %}
-                    <div
-                        style="padding: 10px 0; border-left: 2px solid var(--accent-color); padding-left: 15px; position: relative;">
-                        <div style="font-weight: bold; color: var(--accent-color);">{{ event.event_type|replace('_', '
-                            ')|title }}</div>
-                        <div>{{ event.payload }}</div>
-                        <div style="font-size: 0.7rem; opacity: 0.5;">{{ event.created_at }}</div>
+            <!-- RIGHT COL: Notes & Timeline -->
+            <div class="col-span-4">
+                <!-- Notes -->
+                <div class="card" style="margin-bottom: 24px;">
+                    <h3 class="section-subheader" style="margin-top: 0; color: white;">Notes</h3>
+                    <div class="notes-list"
+                        style="max-height: 300px; overflow-y: auto; margin-bottom: 15px; padding-right: 5px;">
+                        {% for note in notes %}
                         <div
-                            style="position: absolute; left: -5px; top: 15px; width: 8px; height: 8px; background: var(--accent-color); border-radius: 50%;">
+                            style="background: rgba(0,0,0,0.2); padding: 12px; border-radius: 8px; margin-bottom: 10px;">
+                            <div style="font-size: 0.95rem; color: #e2e8f0; white-space: pre-wrap;">{{ note.body }}
+                            </div>
+                            <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 6px;">
+                                {{ note.created_at }}
+                            </div>
                         </div>
+                        {% else %}
+                        <div style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 15px;">No notes added.
+                        </div>
+                        {% endfor %}
                     </div>
-                    {% endfor %}
+
+                    <form action="{{ url_for('lead_management.add_note', lead_id=lead.id) }}" method="POST">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <textarea name="body" class="glass-input" rows="3" placeholder="Type a note..." required
+                            style="width: 100%; box-sizing: border-box;"></textarea>
+                        <button type="submit" class="glass-button secondary" style="margin-top: 10px; width: 100%;">Save
+                            Note</button>
+                    </form>
+                </div>
+
+                <!-- Timeline -->
+                <div class="card">
+                    <h3 class="section-subheader" style="margin-top: 0; color: white;">Activity</h3>
+                    <div class="timeline" style="font-size: 0.9rem;">
+                        {% for event in events %}
+                        <div
+                            style="padding: 12px 0 12px 20px; border-left: 2px solid var(--border-glass); position: relative;">
+                            <div
+                                style="position: absolute; left: -5px; top: 16px; width: 8px; height: 8px; background: var(--primary); border-radius: 50%;">
+                            </div>
+                            <div style="font-weight: 600; color: white;">
+                                {{ event.event_type|replace('_', ' ')|title }}
+                            </div>
+                            <div style="color: var(--text-muted); margin-bottom: 4px;">{{ event.payload }}</div>
+                            <div style="font-size: 0.75rem; color: rgba(255,255,255,0.4);">{{ event.created_at }}</div>
+                        </div>
+                        {% endfor %}
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
+    </main>
 </div>
 {% endblock %}
