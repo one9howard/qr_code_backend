@@ -8,5 +8,7 @@ if [[ "$ROLE" == "worker" ]]; then
   exec python scripts/async_worker.py
 else
   echo "[railway] starting web"
+  echo "[railway] running migrations"
+  alembic upgrade head
   exec gunicorn --workers 3 --bind 0.0.0.0:${PORT} --log-level debug --access-logfile - --error-logfile - app:app
 fi
