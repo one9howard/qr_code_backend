@@ -13,8 +13,12 @@ def check_release_clean():
         if "__pycache__" in dirs:
             errors.append(f"[DIRTY] Found __pycache__ in {root}")
         for f in files:
-            if f.endswith(".pyc"):
                 errors.append(f"[DIRTY] Found .pyc file: {os.path.join(root, f)}")
+
+    # 1.5. Forbidden Directories Check
+    for forbidden in ["pdfs", "tmp"]:
+        if os.path.exists(forbidden) and os.path.isdir(forbidden):
+            errors.append(f"[DIRTY] Forbidden directory exists: {forbidden}/ (should be removed before release)")
 
     # 2. Critical Scripts Existence
     required_scripts = [

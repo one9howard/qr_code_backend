@@ -709,17 +709,29 @@ def _draw_smart_v2_vertical_banner(c, l, asset, user_id, base_url):
     # If None -> CA=True, else False
     
     lic_num = _read(asset, 'license_number')
-    show_lic = _read(asset, 'show_license_number') # Bool or None
+    lic_num = _read(asset, 'license_number')
+    
+    # Tri-State Logic
+    option = _read(asset, 'show_license_option') # auto, show, hide
+    legacy_bool = _read(asset, 'show_license_number') # Legacy boolean backup
     state = (_read(asset, 'state') or "").upper()
     
     should_show = False
-    if lic_num:
-        if show_lic is True:
+    
+    if option == 'show':
+        should_show = True
+    elif option == 'hide':
+        should_show = False
+    elif option == 'auto':
+        if state == 'CA': should_show = True
+    else:
+        # Fallback for old data where option might be missing
+        if legacy_bool is True:
             should_show = True
-        elif show_lic is False:
-            should_show = False
+        elif legacy_bool is False:
+             should_show = False
         else:
-             # Default
+             # Default Auto
              if state == 'CA': should_show = True
              
     if should_show and lic_num:

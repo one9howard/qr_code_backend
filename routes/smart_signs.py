@@ -320,7 +320,7 @@ def create_smart_order():
     # License fields - normalize values
     state_raw = (request.form.get('state') or '').strip().upper()
     license_number = (request.form.get('license_number') or '').strip()
-    show_license_number = 'show_license_number' in request.form  # Checkbox
+    show_license_option = request.form.get('show_license_option') # auto, show, hide
     license_label_override = (request.form.get('license_label_override') or '').strip()
     
     payload = {
@@ -330,7 +330,8 @@ def create_smart_order():
         'agent_email': request.form.get('agent_email'),
         'brokerage_name': request.form.get('brokerage_name'),
         'agent_headshot_key': headshot_key,
-        'agent_logo_key': logo_key
+        'agent_logo_key': logo_key,
+        'show_license_option': show_license_option or 'auto'
     }
     
     # Add license fields only if provided (omit empties to keep JSON clean)
@@ -338,8 +339,8 @@ def create_smart_order():
         payload['state'] = state_raw
     if license_number:
         payload['license_number'] = license_number
-    if show_license_number:
-        payload['show_license_number'] = True
+    # Legacy support / Clarity: We track option string now, but if migrating old data, 
+    # we might strictly rely on option.
     if license_label_override:
         payload['license_label_override'] = license_label_override
     
@@ -428,7 +429,10 @@ def create_smart_order():
             # License fields (for V2 layouts)
             'state': payload.get('state'),
             'license_number': payload.get('license_number'),
-            'show_license_number': payload.get('show_license_number'),
+            'state': payload.get('state'),
+            'license_number': payload.get('license_number'),
+            'show_license_option': payload.get('show_license_option', 'auto'),
+            # 'show_license_number': payload.get('show_license_number'), # Legacy hidden
             'license_label_override': payload.get('license_label_override'),
             
             # Context for New PDF Generator (Phase 2)

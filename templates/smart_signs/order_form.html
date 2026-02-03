@@ -185,11 +185,13 @@
                             <label class="input-label">License Number</label>
                             <input type="text" name="license_number" class="glass-input" placeholder="Optional">
                         </div>
-                        <div class="input-group" style="display: flex; align-items: center; padding-top: 24px;">
-                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
-                                <input type="checkbox" name="show_license_number" value="1">
-                                <span class="input-label" style="margin: 0;">Show on sign</span>
-                            </label>
+                        <div class="input-group">
+                            <label class="input-label">License Display</label>
+                            <select name="show_license_option" class="glass-input">
+                                <option value="auto" selected>Auto (Show if CA)</option>
+                                <option value="show">Always Show</option>
+                                <option value="hide">Do Not Show</option>
+                            </select>
                         </div>
                     </div>
 
