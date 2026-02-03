@@ -20,63 +20,30 @@
         <img src="{{ url_for('static', filename='img/logo.png') }}" alt="InSite Signs" style="height: 56px;">
     </a>
 
-    {# Temporarily disabled for debugging 500 error
     <div style="padding: 0 16px 16px 16px;">
-        <a href="{{ url_for('smart_signs.order_start') }}" class="glass-button accent"
+        <a href="{{ url_for('dashboard.new_property') }}" class="glass-button accent"
             style="width: 100%; justify-content: center; text-align: center; display: flex; gap: 8px; font-size: 0.9rem; margin-bottom: 8px;">
-            <span>+</span> Order SmartSign
+            <span>+</span> Create New Property
         </a>
-    </div>
-    #}
-
-    <!-- Create Actions -->
-    <div style="padding: 0 16px 16px 16px;">
-        <button class="glass-button accent" style="width: 100%; justify-content: center; margin-bottom: 8px;">
-            <span>+</span> Create New
-        </button>
-        <!-- Sub-actions (Visual Mockup for now, could be dropdown) -->
-        <div style="display: flex; flex-direction: column; gap: 4px; padding-left: 8px;">
-            <a href="{{ url_for('submit.index') }}"
-                style="color: rgba(255,255,255,0.7); text-decoration: none; font-size: 0.85rem; padding: 4px 8px; border-left: 2px solid rgba(255,255,255,0.2);">
-                Add Property
-            </a>
-            <a href="{{ url_for('smart_signs.order_start') }}"
-                style="color: rgba(255,255,255,0.7); text-decoration: none; font-size: 0.85rem; padding: 4px 8px; border-left: 2px solid rgba(255,255,255,0.2);">
-                Order SmartSign
-            </a>
-        </div>
     </div>
 
     <nav class="sidebar-nav">
-        <!-- 1. Today (Home) -->
         <a href="{{ url_for('dashboard.today') }}"
             class="nav-item {% if request.endpoint == 'dashboard.today' %}active{% endif %}">
             <span class="nav-icon">📅</span> Today
         </a>
 
-        <!-- 2. Listings -->
         <a href="{{ url_for('dashboard.index', _anchor='listings-section') }}"
             class="nav-item {% if request.endpoint == 'dashboard.index' and not request.hash == '#smart-signs-section' %}active{% endif %}">
             <span class="nav-icon">🏠</span> Listings
         </a>
-
-        <!-- 3. Leads -->
         <a href="{{ url_for('lead_management.list_leads') }}"
             class="nav-item {% if request.endpoint and request.endpoint.startswith('lead_management.') %}active{% endif %}">
             <span class="nav-icon">👥</span> Leads
         </a>
-
-        <!-- 4. SmartSigns -->
         <a href="{{ url_for('dashboard.index', _anchor='smart-signs-section') }}" class="nav-item">
             <span class="nav-icon">📦</span> SmartSigns
         </a>
-
-        <!-- 5. Listing Signs (Placeholder) -->
-        <a href="#" class="nav-item">
-            <span class="nav-icon">🚩</span> Listing Signs
-        </a>
-
-        <!-- 6. Kits -->
         <a href="{{ url_for('dashboard.kits') }}"
             class="nav-item {% if request.endpoint == 'dashboard.kits' %}active{% endif %}">
             <span class="nav-icon">🎨</span> Kits
