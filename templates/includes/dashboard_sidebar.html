@@ -20,10 +20,21 @@
         <img src="{{ url_for('static', filename='img/logo.png') }}" alt="InSite Signs" style="height: 56px;">
     </a>
 
+    <div style="padding: 0 16px 16px 16px;">
+        <a href="{{ url_for('smart_signs.order_start') }}" class="glass-button accent"
+            style="width: 100%; justify-content: center; text-align: center; display: flex; gap: 8px; font-size: 0.9rem; margin-bottom: 8px;">
+            <span>+</span> Order SmartSign
+        </a>
+    </div>
+
     <nav class="sidebar-nav">
         <a href="{{ url_for('dashboard.today') }}"
             class="nav-item {% if request.endpoint == 'dashboard.today' %}active{% endif %}">
             <span class="nav-icon">📅</span> Today
+        </a>
+
+        class="nav-item {% if request.endpoint == 'dashboard.today' %}active{% endif %}">
+        <span class="nav-icon">📅</span> Today
         </a>
         <a href="{{ url_for('dashboard.index', _anchor='listings-section') }}"
             class="nav-item {% if request.endpoint == 'dashboard.index' and not request.hash == '#smart-signs-section' %}active{% endif %}">

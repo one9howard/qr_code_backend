@@ -37,7 +37,7 @@ def index():
     db = get_db()
 
     # --- Phase 5: Analytics Service Integration ---
-    from services.analytics import per_agent_rollup, per_property_metrics
+    from services.analytics import per_agent_rollup, per_property_metrics, get_agent_lead_timeseries
 
     # 1. Main Metrics Rollup
     metrics = per_agent_rollup(current_user.id)
@@ -345,9 +345,13 @@ def index():
         metrics.get('ctas', {}).get('7d', 0) > 0
     )
 
+    # 9. Chart Data (Lead Timeseries)
+    chart_data = get_agent_lead_timeseries(current_user.id, days=30)
+
     return render_template(
         "dashboard.html",
         metrics=metrics,
+        chart_data=chart_data,
         listings=listings_data,
         today_cards=today_cards,
         sign_assets=sign_assets,

@@ -200,8 +200,107 @@ def per_agent_rollup(user_id: int, range_days: int = 7) -> dict:
             "7d": leads_7d,
             "delta": calc_delta(leads_7d, leads_prev_7d)
         },
+    return {
+        "scans": { 
+            "lifetime": scans_lifetime,
+            "7d": scans_7d,
+            "delta": calc_delta(scans_7d, scans_prev_7d)
+        },
+        "views": { 
+            "lifetime": views_lifetime, 
+            "7d": views_7d,
+            "delta": calc_delta(views_7d, views_prev_7d)
+        },
+        "leads": { 
+            "lifetime": leads_lifetime, 
+            "30d": leads_30d,
+            "7d": leads_7d,
+            "delta": calc_delta(leads_7d, leads_prev_7d)
+        },
         "ctas": { 
             "7d": ctas_7d, 
             "delta": calc_delta(ctas_7d, ctas_prev_7d)
         }
+    }
+
+
+def get_agent_lead_timeseries(user_id: int, days: int = 30) -> dict:
+    """
+    Get daily lead counts for the last N days for chart visualization.
+    Returns:
+        {
+            "has_data": bool,
+            "labels": ["YYYY-MM-DD", ...],
+            "leads": [int, ...]
+        }
+    """
+    db = get_db()
+    
+    # Get agent ID
+    agent_rows = db.execute("SELECT id FROM agents WHERE user_id = %s", (user_id,)).fetchall()
+    if not agent_rows:
+        return {"has_data": False, "labels": [], "leads": []}
+    agent_ids_param = [r['id'] for r in agent_rows]
+
+    # Generate date series and left join with leads
+    # Using Postgres `generate_series` for gap filling
+    query = """
+        WITH date_series AS (
+            SELECT generate_series(
+                CURRENT_DATE - INTERVAL '%s days', 
+                CURRENT_DATE, 
+                '1 day'::interval
+            )::date AS day
+        )
+        SELECT 
+            ds.day,
+            COUNT(l.id) as lead_count
+        FROM date_series ds
+        LEFT JOIN leads l ON DATE(l.created_at) = ds.day
+        LEFT JOIN properties p ON l.property_id = p.id
+        WHERE (p.agent_id = ANY(%s) OR l.id IS NULL)
+        GROUP BY ds.day
+        ORDER BY ds.day ASC;
+    """
+    
+    # Note: The WHERE clause needs care. If we filter by agent_id, we might filter out the NULLs from the left join.
+    # Better approach: Join leads first, then right join to date series.
+    
+    query_robust = """
+        WITH agent_leads AS (
+            SELECT DATE(l.created_at) as created_day
+            FROM leads l
+            JOIN properties p ON l.property_id = p.id
+            WHERE p.agent_id = ANY(%s)
+            AND l.created_at >= CURRENT_DATE - INTERVAL '%s days'
+        )
+        SELECT 
+            to_char(ds.day, 'YYYY-MM-DD') as day_label,
+            COUNT(al.created_day) as lead_count
+        FROM (
+            SELECT generate_series(
+                CURRENT_DATE - INTERVAL '%s days', 
+                CURRENT_DATE, 
+                '1 day'::interval
+            )::date AS day
+        ) ds
+        LEFT JOIN agent_leads al ON ds.day = al.created_day
+        GROUP BY ds.day
+        ORDER BY ds.day ASC;
+    """
+    
+    # Safe execute
+    days_minus_1 = days - 1 # e.g. 30 days includes today, so go back 29 days
+    results = db.execute(query_robust, (agent_ids_param, days_minus_1, days_minus_1)).fetchall()
+    
+    labels = [r['day_label'] for r in results]
+    data = [r['lead_count'] for r in results]
+    
+    # Check if there is any data at all (nonzero sum) to determine empty state
+    has_data = sum(data) > 0
+    
+    return {
+        "has_data": has_data,
+        "labels": labels,
+        "leads": data
     }

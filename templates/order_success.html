@@ -10,7 +10,48 @@
         <p class="mb-4" style="color: #ccc; margin-bottom: 1.5rem;">You will receive an email confirmation shortly.</p>
         <div class="mt-4">
             {% if current_user.is_authenticated %}
-            <a href="{{ url_for('dashboard.index') }}" class="glass-button">Return to Dashboard</a>
+            <!-- Next Steps Wizard -->
+            <div class="card"
+                style="max-width: 500px; margin: 0 auto; padding: 24px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); text-align: left;">
+                <h3 style="margin-top: 0; font-size: 1.1rem; color: white;">What's Next?</h3>
+                <div style="display: flex; flex-direction: column; gap: 16px; margin-top: 16px;">
+
+                    <!-- Step 1: Create Property -->
+                    <div style="display: flex; gap: 12px;">
+                        <div
+                            style="width: 24px; height: 24px; background: var(--accent-cyan); color: black; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 0.8rem;">
+                            1</div>
+                        <div>
+                            <div style="font-weight: 500; color: white;">Create a Property</div>
+                            <div style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 8px;">Create a
+                                listing to link to your new sign.</div>
+                            <a href="{{ url_for('dashboard.new_property') }}" class="glass-button accent"
+                                style="display: inline-block; font-size: 0.9rem;">+ Create Property</a>
+                        </div>
+                    </div>
+
+                    <div style="height: 1px; background: rgba(255,255,255,0.1); margin: 4px 0;"></div>
+
+                    <!-- Step 2: Assign (Informational) -->
+                    <div style="display: flex; gap: 12px; opacity: 0.6;">
+                        <div
+                            style="width: 24px; height: 24px; background: rgba(255,255,255,0.2); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 0.8rem;">
+                            2</div>
+                        <div>
+                            <div style="font-weight: 500; color: white;">Assign Sign</div>
+                            <div style="font-size: 0.9rem; color: var(--text-muted);">Link the property to the sign in
+                                your dashboard.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="margin-top: 24px; text-align: center;">
+                    <a href="{{ url_for('dashboard.index') }}"
+                        style="color: var(--text-muted); text-decoration: underline; font-size: 0.9rem;">Skip to
+                        Dashboard</a>
+                </div>
+            </div>
+
             {% else %}
             <p style="margin-bottom: 20px; opacity: 0.9;">Create an account to track your order status and analytics.
             </p>
