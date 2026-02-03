@@ -97,139 +97,145 @@
 
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <!-- Edit Form -->
-        <div class="card card--dark">
+        <!-- Edit Form -->
+        <div>
             <form method="POST" enctype="multipart/form-data">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="card card--dark">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
-                <!-- Assignment -->
-                <div class="mb-8">
-                    <h3 class="section-title">Assignment</h3>
-                    <div class="bg-gray-800/50 rounded-lg p-4 border border-gray-700/50">
-                        <div class="form-group mb-0">
-                            <label class="form-label">Linked Property</label>
-                            <p class="text-xs text-gray-400 mb-3">Scanning the sign will redirect to this property's
-                                listing.</p>
+                    <!-- Assignment -->
+                    <div class="mb-8">
+                        <h3 class="section-title">Assignment</h3>
+                        <div class="bg-gray-800/50 rounded-lg p-4 border border-gray-700/50">
+                            <div class="form-group mb-0">
+                                <label class="form-label">Linked Property</label>
+                                <p class="text-xs text-gray-400 mb-3">Scanning the sign will redirect to this property's
+                                    listing.</p>
 
-                            <select name="property_id" class="glass-input">
-                                <option value="unassigned" {% if not asset.active_property_id %}selected{% endif %}>--
-                                    Unassigned --</option>
-                                {% for prop in properties %}
-                                <option value="{{ prop.id }}" {% if asset.active_property_id==prop.id %}selected{% endif
-                                    %}>
-                                    {{ prop.address }}
-                                </option>
-                                {% endfor %}
-                            </select>
+                                <select name="property_id" class="glass-input">
+                                    <option value="unassigned" {% if not asset.active_property_id %}selected{% endif %}>
+                                        -- Unassigned --</option>
+                                    {% for prop in properties %}
+                                    <option value="{{ prop.id }}" {% if asset.active_property_id==prop.id %}selected{%
+                                        endif %}>
+                                        {{ prop.address }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
 
-                            {% if properties|length == 0 %}
-                            <p class="mt-3 text-sm text-yellow-500 flex items-center gap-2">
-                                <span>⚠️</span>
-                                <span>No properties found. <a href="{{ url_for('agent.submit', mode='property_only') }}"
-                                        class="text-yellow-400 underline hover:text-yellow-300 font-medium">Create a
-                                        property</a> to assign.</span>
-                            </p>
-                            {% endif %}
+                                {% if properties|length == 0 %}
+                                <p class="mt-3 text-sm text-yellow-500 flex items-center gap-2">
+                                    <span>⚠️</span>
+                                    <span>No properties found. <a
+                                            href="{{ url_for('agent.submit', mode='property_only') }}"
+                                            class="text-yellow-400 underline hover:text-yellow-300 font-medium">Create a
+                                            property</a> to assign.</span>
+                                </p>
+                                {% endif %}
+                            </div>
                         </div>
                     </div>
-                </div>
 
-                <!-- Branding -->
-                <div class="mb-8">
-                    <h3 class="section-title">Branding</h3>
-                    <div class="space-y-4">
-                        <div class="form-group">
-                            <label class="form-label">Brand Name / Header</label>
-                            <input type="text" name="brand_name" value="{{ asset.brand_name or '' }}"
-                                class="glass-input" placeholder="e.g. SMITH REALTY GROUP">
+                    <!-- Branding -->
+                    <div class="mb-8">
+                        <h3 class="section-title">Branding</h3>
+                        <div class="space-y-4">
+                            <div class="form-group">
+                                <label class="form-label">Brand Name / Header</label>
+                                <input type="text" name="brand_name" value="{{ asset.brand_name or '' }}"
+                                    class="glass-input" placeholder="e.g. SMITH REALTY GROUP">
+                            </div>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div class="form-group">
+                                    <label class="form-label">Phone</label>
+                                    <input type="text" name="phone" value="{{ asset.phone or '' }}" class="glass-input">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Email</label>
+                                    <input type="email" name="email" value="{{ asset.email or '' }}"
+                                        class="glass-input">
+                                </div>
+                            </div>
                         </div>
+                    </div>
+
+                    <!-- Appearance -->
+                    <div class="mb-8">
+                        <h3 class="section-title">Appearance</h3>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div class="form-group">
-                                <label class="form-label">Phone</label>
-                                <input type="text" name="phone" value="{{ asset.phone or '' }}" class="glass-input">
+                                <label class="form-label">Background Style</label>
+                                <select name="background_style" class="glass-input">
+                                    {% for style in bg_options %}
+                                    <option value="{{ style }}" {% if asset.background_style==style %}selected{% endif
+                                        %}>
+                                        {{ style|replace('_', ' ')|title }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
                             </div>
                             <div class="form-group">
-                                <label class="form-label">Email</label>
-                                <input type="email" name="email" value="{{ asset.email or '' }}" class="glass-input">
+                                <label class="form-label">Call to Action (CTA)</label>
+                                <select name="cta_key" class="glass-input">
+                                    {% for cta in cta_options %}
+                                    <option value="{{ cta }}" {% if asset.cta_key==cta %}selected{% endif %}>
+                                        {{ cta|replace('_', ' ')|upper }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
                             </div>
                         </div>
                     </div>
-                </div>
 
-                <!-- Appearance -->
-                <div class="mb-8">
-                    <h3 class="section-title">Appearance</h3>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div class="form-group">
-                            <label class="form-label">Background Style</label>
-                            <select name="background_style" class="glass-input">
-                                {% for style in bg_options %}
-                                <option value="{{ style }}" {% if asset.background_style==style %}selected{% endif %}>
-                                    {{ style|replace('_', ' ')|title }}
-                                </option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Call to Action (CTA)</label>
-                            <select name="cta_key" class="glass-input">
-                                {% for cta in cta_options %}
-                                <option value="{{ cta }}" {% if asset.cta_key==cta %}selected{% endif %}>
-                                    {{ cta|replace('_', ' ')|upper }}
-                                </option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                    </div>
-                </div>
+                    <!-- Images -->
+                    <div class="mb-8">
+                        <h3 class="section-title">Images</h3>
 
-                <!-- Images -->
-                <div class="mb-8">
-                    <h3 class="section-title">Images</h3>
-
-                    <!-- Logo -->
-                    <div class="bg-white/5 rounded-lg p-4 mb-4 border border-white/10">
-                        <div class="flex items-center justify-between mb-3">
-                            <label class="form-label mb-0">Company Logo</label>
-                            <div class="flex items-center">
-                                <input type="checkbox" name="include_logo" id="include_logo" {% if asset.include_logo
-                                    %}checked{% endif %}
-                                    class="mr-2 h-4 w-4 rounded border-gray-500 text-blue-600 focus:ring-blue-500">
-                                <label for="include_logo" class="text-sm text-gray-300 cursor-pointer select-none">Show
-                                    on sign</label>
+                        <!-- Logo -->
+                        <div class="bg-white/5 rounded-lg p-4 mb-4 border border-white/10">
+                            <div class="flex items-center justify-between mb-3">
+                                <label class="form-label mb-0">Company Logo</label>
+                                <div class="flex items-center">
+                                    <input type="checkbox" name="include_logo" id="include_logo" {% if
+                                        asset.include_logo %}checked{% endif %}
+                                        class="mr-2 h-4 w-4 rounded border-gray-500 text-blue-600 focus:ring-blue-500">
+                                    <label for="include_logo"
+                                        class="text-sm text-gray-300 cursor-pointer select-none">Show on sign</label>
+                                </div>
                             </div>
-                        </div>
-                        {% if asset.logo_key %}
-                        <div class="text-green-400 text-xs mb-2 flex items-center gap-1">
-                            <span>✓</span> Current logo on file
-                        </div>
-                        {% endif %}
-                        <input type="file" name="logo_file" accept="image/*"
-                            class="glass-input text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700">
-                    </div>
-
-                    <!-- Headshot -->
-                    <div class="bg-white/5 rounded-lg p-4 border border-white/10">
-                        <div class="flex items-center justify-between mb-3">
-                            <label class="form-label mb-0">Agent Headshot</label>
-                            <div class="flex items-center">
-                                <input type="checkbox" name="include_headshot" id="include_headshot" {% if
-                                    asset.include_headshot %}checked{% endif %}
-                                    class="mr-2 h-4 w-4 rounded border-gray-500 text-blue-600 focus:ring-blue-500">
-                                <label for="include_headshot"
-                                    class="text-sm text-gray-300 cursor-pointer select-none">Show on sign</label>
+                            {% if asset.logo_key %}
+                            <div class="text-green-400 text-xs mb-2 flex items-center gap-1">
+                                <span>✓</span> Current logo on file
                             </div>
+                            {% endif %}
+                            <input type="file" name="logo_file" accept="image/*"
+                                class="glass-input text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700">
                         </div>
-                        {% if asset.headshot_key %}
-                        <div class="text-green-400 text-xs mb-2 flex items-center gap-1">
-                            <span>✓</span> Current headshot on file
-                        </div>
-                        {% endif %}
-                        <input type="file" name="headshot_file" accept="image/*"
-                            class="glass-input text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700">
-                    </div>
-                </div>
 
-                <div class="footer-spacer"></div>
+                        <!-- Headshot -->
+                        <div class="bg-white/5 rounded-lg p-4 border border-white/10">
+                            <div class="flex items-center justify-between mb-3">
+                                <label class="form-label mb-0">Agent Headshot</label>
+                                <div class="flex items-center">
+                                    <input type="checkbox" name="include_headshot" id="include_headshot" {% if
+                                        asset.include_headshot %}checked{% endif %}
+                                        class="mr-2 h-4 w-4 rounded border-gray-500 text-blue-600 focus:ring-blue-500">
+                                    <label for="include_headshot"
+                                        class="text-sm text-gray-300 cursor-pointer select-none">Show on sign</label>
+                                </div>
+                            </div>
+                            {% if asset.headshot_key %}
+                            <div class="text-green-400 text-xs mb-2 flex items-center gap-1">
+                                <span>✓</span> Current headshot on file
+                            </div>
+                            {% endif %}
+                            <input type="file" name="headshot_file" accept="image/*"
+                                class="glass-input text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700">
+                        </div>
+                    </div>
+
+                    <div class="footer-spacer"></div>
+                </div>
 
                 <div class="sticky-footer">
                     <div class="sticky-footer-content">

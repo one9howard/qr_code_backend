@@ -183,23 +183,7 @@ def per_agent_rollup(user_id: int, range_days: int = 7) -> dict:
         if prev == 0: return 100 if curr > 0 else 0
         return int(((curr - prev) / prev) * 100)
 
-    return {
-        "scans": { 
-            "lifetime": scans_lifetime,
-            "7d": scans_7d,
-            "delta": calc_delta(scans_7d, scans_prev_7d)
-        },
-        "views": { 
-            "lifetime": views_lifetime, 
-            "7d": views_7d,
-            "delta": calc_delta(views_7d, views_prev_7d)
-        },
-        "leads": { 
-            "lifetime": leads_lifetime, 
-            "30d": leads_30d,
-            "7d": leads_7d,
-            "delta": calc_delta(leads_7d, leads_prev_7d)
-        },
+
     return {
         "scans": { 
             "lifetime": scans_lifetime,
