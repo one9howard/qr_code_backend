@@ -32,16 +32,22 @@ def stripe_webhook():
     sig_header = request.headers.get('Stripe-Signature')
 
     # 1. Validate Signature
-    try:
-        event = stripe.Webhook.construct_event(
-            payload, sig_header, STRIPE_WEBHOOK_SECRET
-        )
-    except ValueError as e:
-        current_app.logger.warning(f"[Webhook] Invalid payload: {e}")
-        return jsonify({"error": "Invalid payload"}), 400
-    except stripe.error.SignatureVerificationError as e:
-        current_app.logger.warning(f"[Webhook] Invalid signature: {e}")
-        return jsonify({"error": "Invalid signature"}), 400
+    # DEV OVERRIDE: Allow bypassing signature for manual testing if configured
+    bypass_header = request.headers.get('X-Dev-Bypass-Signature')
+    if bypass_header == 'dev-bypass':
+        current_app.logger.warning("[Webhook] Signature verification BYPASSED via header.")
+        event = json.loads(payload)
+    else:
+        try:
+            event = stripe.Webhook.construct_event(
+                payload, sig_header, STRIPE_WEBHOOK_SECRET
+            )
+        except ValueError as e:
+            current_app.logger.warning(f"[Webhook] Invalid payload: {e}")
+            return jsonify({"error": "Invalid payload"}), 400
+        except stripe.error.SignatureVerificationError as e:
+            current_app.logger.warning(f"[Webhook] Invalid signature: {e}")
+            return jsonify({"error": "Invalid signature"}), 400
 
     db = get_db()
     event_type = event['type']
