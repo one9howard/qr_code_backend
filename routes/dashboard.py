@@ -167,7 +167,7 @@ def index():
     # 5c. [FIX] Append Pending SmartSign Orders (Unpaid)
     # These do not have assets yet, but should be visible to resume.
     pending_smart_orders = db.execute("""
-        SELECT id, created_at, payload
+        SELECT id, created_at, design_payload as payload
         FROM orders
         WHERE user_id = %s 
           AND order_type = 'smart_sign'
