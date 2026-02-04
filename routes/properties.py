@@ -24,6 +24,7 @@ SMART_ATTRIB_COOKIE = 'smart_attrib'
 SMART_ATTRIB_MAX_AGE = 7 * 24 * 3600  # 7 days
 
 
+def compute_visitor_hash(ip, user_agent):
     """
     Compute a privacy-conscious visitor hash.
     Uses daily salt so hashes rotate and don't enable permanent tracking.
