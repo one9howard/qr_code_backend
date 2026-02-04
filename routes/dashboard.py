@@ -136,6 +136,7 @@ def index():
         FROM qr_scans 
         WHERE sign_asset_id = ANY(%s) 
         GROUP BY sign_asset_id
+    """, (asset_ids,)).fetchall()
     scans_by_asset = {r['sign_asset_id']: r['count'] for r in scans_result}
     
     # Query leads per asset from leads table
