@@ -39,6 +39,9 @@ maintenance/
 tests/
 test_inbox/
 sample_pdfs/
+pdfs/
+tmp/
+var/
 dev_assets/
 
 # --- Logs / ad-hoc artifacts ---

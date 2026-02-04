@@ -9,16 +9,25 @@ def check_release_clean():
     errors = []
     
     # 1. Bytecode check
+    # 1. Bytecode check
     for root, dirs, files in os.walk("."):
         if "__pycache__" in dirs:
             errors.append(f"[DIRTY] Found __pycache__ in {root}")
         for f in files:
+            if f.endswith(".pyc"):
                 errors.append(f"[DIRTY] Found .pyc file: {os.path.join(root, f)}")
 
-    # 1.5. Forbidden Directories Check
-    for forbidden in ["pdfs", "tmp"]:
-        if os.path.exists(forbidden) and os.path.isdir(forbidden):
-            errors.append(f"[DIRTY] Forbidden directory exists: {forbidden}/ (should be removed before release)")
+    # 1.5. Forbidden Runtime Artifacts Check
+    # Directories like 'pdfs' and 'tmp' are allowed to exist (e.g. for mount points)
+    # but should not contain actual artifacts in a clean release.
+    for runtime_dir in ["pdfs", "tmp"]:
+        if os.path.exists(runtime_dir) and os.path.isdir(runtime_dir):
+            # Check content
+            contents = os.listdir(runtime_dir)
+            # Allow empty or just .gitkeep
+            artifacts = [c for c in contents if c != ".gitkeep"]
+            if artifacts:
+                 errors.append(f"[DIRTY] Runtime artifacts found in {runtime_dir}/: {artifacts}")
 
     # 2. Critical Scripts Existence
     required_scripts = [

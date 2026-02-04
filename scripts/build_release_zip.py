@@ -112,6 +112,9 @@ def get_profile_config(profile: str):
         # Artifacts and temp files
         "artifacts",
         "docs/archive/*",
+        "pdfs",
+        "tmp",
+        "var",
     ]
 
     # Common forbidden content (always)
@@ -158,6 +161,12 @@ def get_profile_config(profile: str):
         "private/*",
         "instance",
         "instance/*",
+        "pdfs",
+        "pdfs/*",
+        "tmp",
+        "tmp/*",
+        "var",
+        "var/*",
 
         # Debug/test artifacts
         "debug_size.py",

@@ -5,6 +5,9 @@ from config import UPLOAD_DIR, PROPERTY_PHOTOS_DIR, SECRET_KEY, MAX_CONTENT_LENG
 from database import close_connection
 from models import User
 import os
+import logging
+
+logger = logging.getLogger(__name__)
 
 # Blueprints
 from routes.auth import auth_bp
@@ -22,9 +25,9 @@ from routes.campaigns import campaigns_bp
 from routes.events import events_bp
 
 def create_app(test_config=None):
-    print("[App] create_app() called")
+    logger.info("[App] create_app() called")
     app = Flask(__name__)
-    print("[App] Flask app instance created")
+    logger.info("[App] Flask app instance created")
     
     # Apply Test Config Overrides (Early)
     if test_config:
@@ -60,7 +63,7 @@ def create_app(test_config=None):
         from werkzeug.middleware.proxy_fix import ProxyFix
         n = PROXY_FIX_NUM_PROXIES
         app.wsgi_app = ProxyFix(app.wsgi_app, x_for=n, x_proto=n, x_host=n, x_port=n)
-        print(f"[Security] ProxyFix enabled for {n} proxies")
+        logger.info(f"[Security] ProxyFix enabled for {n} proxies")
 
     # Extensions
     csrf = CSRFProtect(app)
@@ -82,7 +85,7 @@ def create_app(test_config=None):
         try:
             init_stripe(app)
         except Exception as e:
-            print(f"[BOOT-FATAL] Stripe Init Failed: {e}")
+            logger.error(f"[BOOT-FATAL] Stripe Init Failed: {e}")
             if app.config.get('APP_STAGE') in ('prod', 'staging'):
                 raise e
 
@@ -97,11 +100,11 @@ def create_app(test_config=None):
                 if is_strict:
                     raise RuntimeError(msg)
                 else:
-                    print(f"[Startup] WARNING: {msg} (Dev Mode). Skipping cache.")
+                    logger.warning(f"[Startup] WARNING: {msg} (Dev Mode). Skipping cache.")
             else:
                 # Attempt Cache Warm
                 try:
-                    print("[Startup] Warming Stripe Price Cache...")
+                    logger.info("[Startup] Warming Stripe Price Cache...")
                     from services.stripe_price_resolver import warm_cache
                     from services.print_catalog import get_all_required_lookup_keys
                     warm_cache(get_all_required_lookup_keys())
@@ -109,15 +112,15 @@ def create_app(test_config=None):
                     if is_strict:
                         raise RuntimeError(f"Pricing Cache Failed: {e}")
                     else:
-                        print(f"[Startup] Dev Warning: Cache warm failed: {e}")
+                        logger.warning(f"[Startup] Dev Warning: Cache warm failed: {e}")
 
         except Exception as e:
             # Fatal boot error
             if app.config.get('APP_STAGE') in ('prod', 'staging'):
-                print(f"[BOOT-FATAL] Configuration Error: {e}", flush=True)
+                logger.critical(f"[BOOT-FATAL] Configuration Error: {e}")
                 raise RuntimeError(f"Configuration Error: {e}")
             else:
-                print(f"[Startup] CRITICAL (Dev Ignored): {e}")
+                logger.critical(f"[Startup] CRITICAL (Dev Ignored): {e}")
 
     # Runtime migration removed - use 'python migrate_v2.py' instead
     # with app.app_context():
@@ -288,13 +291,13 @@ def create_app(test_config=None):
     return app
 
 # WSGI Entry Point
+# WSGI Entry Point
 import traceback
 
 try:
     app = create_app()
 except Exception as e:
-    print(f"[BOOT-FATAL] create_app failed: {type(e).__name__}: {e}", flush=True)
-    traceback.print_exc()
+    logging.getLogger(__name__).critical(f"[BOOT-FATAL] create_app failed: {type(e).__name__}: {e}", exc_info=True)
     raise
 
 if __name__ == "__main__":

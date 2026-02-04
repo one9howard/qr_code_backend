@@ -709,7 +709,6 @@ def _draw_smart_v2_vertical_banner(c, l, asset, user_id, base_url):
     # If None -> CA=True, else False
     
     lic_num = _read(asset, 'license_number')
-    lic_num = _read(asset, 'license_number')
     
     # Tri-State Logic
     option = _read(asset, 'show_license_option') # auto, show, hide
@@ -723,6 +722,7 @@ def _draw_smart_v2_vertical_banner(c, l, asset, user_id, base_url):
     elif option == 'hide':
         should_show = False
     elif option == 'auto':
+        # TODO: Move specific state logic to a config table
         if state == 'CA': should_show = True
     else:
         # Fallback for old data where option might be missing

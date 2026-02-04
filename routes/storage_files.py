@@ -3,7 +3,7 @@ Storage Files Blueprint - Dev-only file serving for local storage.
 Only active when STORAGE_BACKEND == 'local' and APP_STAGE != 'production'.
 """
 from flask import Blueprint, abort, send_file
-from config import STORAGE_BACKEND, APP_STAGE
+from config import STORAGE_BACKEND, IS_PRODUCTION
 
 storage_files_bp = Blueprint('storage_files', __name__)
 
@@ -15,7 +15,7 @@ def serve_storage_file(key):
     Returns 404 for missing files or if disabled.
     """
     # Security: Only serve in local storage mode and non-production
-    if STORAGE_BACKEND != 'local' or APP_STAGE == 'production':
+    if STORAGE_BACKEND != 'local' or IS_PRODUCTION:
         abort(404)
     
     from utils.storage import get_storage

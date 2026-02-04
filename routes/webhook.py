@@ -32,24 +32,16 @@ def stripe_webhook():
     sig_header = request.headers.get('Stripe-Signature')
 
     # 1. Validate Signature
-    # DEV OVERRIDE: Allow bypassing signature for manual testing if configured
-    bypass_header = request.headers.get('X-Dev-Bypass-Signature')
-    bypass_param = request.args.get('dev_bypass')
-    
-    if bypass_header == 'dev-bypass' or bypass_param == 'true':
-        current_app.logger.warning("[Webhook] Signature verification BYPASSED via header/param.")
-        event = json.loads(payload)
-    else:
-        try:
-            event = stripe.Webhook.construct_event(
-                payload, sig_header, STRIPE_WEBHOOK_SECRET
-            )
-        except ValueError as e:
-            current_app.logger.warning(f"[Webhook] Invalid payload: {e}")
-            return jsonify({"error": "Invalid payload"}), 400
-        except stripe.error.SignatureVerificationError as e:
-            current_app.logger.warning(f"[Webhook] Invalid signature: {e}")
-            return jsonify({"error": "Invalid signature"}), 400
+    try:
+        event = stripe.Webhook.construct_event(
+            payload, sig_header, STRIPE_WEBHOOK_SECRET
+        )
+    except ValueError as e:
+        current_app.logger.warning(f"[Webhook] Invalid payload: {e}")
+        return jsonify({"error": "Invalid payload"}), 400
+    except stripe.error.SignatureVerificationError as e:
+        current_app.logger.warning(f"[Webhook] Invalid signature: {e}")
+        return jsonify({"error": "Invalid signature"}), 400
 
     db = get_db()
     event_type = event['type']
@@ -70,6 +62,8 @@ def stripe_webhook():
         db.commit()
     except Exception:
         # Ignore insert errors (likely unique constraint violation if exists)
+        # We process a rollback to clear the aborted transaction state
+        db.rollback()
         # We proceed to try claiming it.
         pass
 

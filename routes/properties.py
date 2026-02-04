@@ -24,12 +24,15 @@ SMART_ATTRIB_COOKIE = 'smart_attrib'
 SMART_ATTRIB_MAX_AGE = 7 * 24 * 3600  # 7 days
 
 
-def compute_visitor_hash(ip: str, user_agent: str) -> str:
     """
     Compute a privacy-conscious visitor hash.
     Uses daily salt so hashes rotate and don't enable permanent tracking.
     """
-    server_secret = os.getenv("SECRET_KEY", "default-secret")
+    from flask import current_app
+    server_secret = current_app.config['SECRET_KEY']
+    if not server_secret:
+        raise ValueError("SECRET_KEY must be configured for visitor hashing.")
+        
     daily_salt = f"{date.today().isoformat()}-{server_secret}"
     raw = f"{ip}|{user_agent}|{daily_salt}"
     return hashlib.sha256(raw.encode()).hexdigest()[:16]

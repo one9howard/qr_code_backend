@@ -25,6 +25,11 @@ def close_connection(exception=None):
     if db is not None:
         db.close()
 
+import logging
+from config import IS_PRODUCTION
+
+logger = logging.getLogger(__name__)
+
 class PostgresDB:
     """
     Strict Postgres wrapper.
@@ -41,8 +46,10 @@ class PostgresDB:
              return cur
         except Exception as e:
              # Provide better context for debugging
-             print(f"[DB] Query Failed: {e}")
-             print(f"[DB] SQL: {sql}")
+             # In PROD, do NOT log raw SQL (PII Risk)
+             logger.error(f"[DB] Query Failed: {e}")
+             if not IS_PRODUCTION:
+                 logger.error(f"[DB] SQL: {sql}")
              raise e
 
     def commit(self):

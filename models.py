@@ -92,9 +92,18 @@ class Property:
         return self._agent
 
 class Order:
+    ALLOWED_COLUMNS = (
+        'id', 'user_id', 'property_id', 'stripe_session_id', 'amount_total', 
+        'status', 'print_product', 'print_size', 'material', 'quantity', 
+        'shipping_address', 'sign_pdf_path', 'preview_url', 
+        'checkout_session_id', 'order_type', 'sign_asset_id', 'design_payload',
+        'provider_job_id', 'layout_id', 'created_at', 'updated_at'
+    )
+
     def __init__(self, **kwargs):
         for k, v in kwargs.items():
-            setattr(self, k, v)
+            if k in self.ALLOWED_COLUMNS:
+                setattr(self, k, v)
             
     @classmethod
     def get(cls, order_id):
@@ -129,6 +138,8 @@ class Order:
             vals = []
             for k, v in self.__dict__.items():
                 if k.startswith('_') or k == 'id': continue
+                if k not in self.ALLOWED_COLUMNS: continue
+                
                 cols.append(f"{k} = %s")
                 if isinstance(v, (dict, list)):
                     vals.append(Json(v))
@@ -146,6 +157,8 @@ class Order:
             placeholders = []
             for k, v in self.__dict__.items():
                 if k.startswith('_'): continue
+                if k not in self.ALLOWED_COLUMNS: continue
+                
                 cols.append(k)
                 
                 if isinstance(v, (dict, list)):
@@ -162,9 +175,15 @@ class Order:
 
 
 class AppEvent:
+    ALLOWED_COLUMNS = (
+        'id', 'event_type', 'source', 'user_id', 'property_id', 'session_id', 
+        'qr_code', 'sign_asset_id', 'payload', 'occurred_at'
+    )
+
     def __init__(self, **kwargs):
         for k, v in kwargs.items():
-            setattr(self, k, v)
+            if k in self.ALLOWED_COLUMNS:
+                setattr(self, k, v)
     
     @classmethod
     def create(cls, **kwargs):
@@ -181,6 +200,7 @@ class AppEvent:
         
         for k, v in kwargs.items():
             if k == 'id' or k.startswith('_'): continue
+            if k not in cls.ALLOWED_COLUMNS: continue
             
             cols.append(k)
             if k == 'payload' and isinstance(v, (dict, list)):
@@ -205,9 +225,15 @@ class AppEvent:
         return [cls(**dict(r)) for r in rows]
 
 class AgentAction:
+    ALLOWED_COLUMNS = (
+        'id', 'user_id', 'action_type', 'status', 'proposal', 'execution', 
+        'feedback', 'policy_snapshot', 'input_event_refs', 'created_at', 'updated_at'
+    )
+
     def __init__(self, **kwargs):
         for k, v in kwargs.items():
-            setattr(self, k, v)
+            if k in self.ALLOWED_COLUMNS:
+                setattr(self, k, v)
     
     @classmethod
     def create(cls, **kwargs):
@@ -220,6 +246,7 @@ class AgentAction:
         
         for k, v in kwargs.items():
             if k == 'id' or k.startswith('_'): continue
+            if k not in cls.ALLOWED_COLUMNS: continue
             
             cols.append(k)
             if k in ('proposal', 'execution', 'policy_snapshot', 'input_event_refs') and isinstance(v, (dict, list)):
@@ -244,6 +271,8 @@ class AgentAction:
             vals = []
             for k, v in self.__dict__.items():
                 if k.startswith('_') or k == 'id': continue
+                if k not in self.ALLOWED_COLUMNS: continue
+                
                 cols.append(f"{k} = %s")
                 if k in ('proposal', 'execution', 'policy_snapshot', 'input_event_refs') and isinstance(v, (dict, list)):
                     vals.append(Json(v))

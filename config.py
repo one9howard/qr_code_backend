@@ -1,6 +1,9 @@
 import os
 import tempfile
+import logging
 from utils.env import get_env_str, get_env_bool
+
+logger = logging.getLogger(__name__)
 
 # Only load .env in development. In production, config comes from environment variables (ECS/Docker).
 from dotenv import load_dotenv
@@ -15,7 +18,7 @@ INSTANCE_DIR = get_env_str("INSTANCE_DIR", default=os.path.join(BASE_DIR, "insta
 try:
     os.makedirs(INSTANCE_DIR, exist_ok=True)
 except OSError as e:
-    print(f"[Config] WARNING: Could not create INSTANCE_DIR at {INSTANCE_DIR} ({e}). Falling back to /tmp/instance.")
+    logger.warning(f"[Config] WARNING: Could not create INSTANCE_DIR at {INSTANCE_DIR} ({e}). Falling back to /tmp/instance.")
     # Force /tmp because tempfile.gettempdir() might return /temp which is read-only in this env
     INSTANCE_DIR = os.path.join("/tmp", "instance")
     os.makedirs(INSTANCE_DIR, exist_ok=True)
@@ -54,7 +57,7 @@ S3_BUCKET = get_env_str("S3_BUCKET")
 # Validate output region to avoid crashes if user provides garbage
 _region = get_env_str("AWS_REGION", default="us-east-1")
 if " " in _region or not _region.replace("-", "").isalnum():
-    print(f"[Config] WARNING: Invalid AWS_REGION detected: '{_region}'. Defaulting to 'us-east-1'.")
+    logger.warning(f"[Config] WARNING: Invalid AWS_REGION detected: '{_region}'. Defaulting to 'us-east-1'.")
     _region = "us-east-1"
 AWS_REGION = _region
 
@@ -89,7 +92,7 @@ if not SECRET_KEY:
         raise ValueError("SECRET_KEY must be set in production environment.")
     else:
         SECRET_KEY = "dev-secret-key-change-this"
-        print("[WARNING] Using default SECRET_KEY for development. DO NOT use in production!")
+        logger.warning("[WARNING] Using default SECRET_KEY for development. DO NOT use in production!")
 
 # File Upload Security
 MAX_CONTENT_LENGTH = 16 * 1024 * 1024
@@ -101,7 +104,7 @@ if not PRINT_JOBS_TOKEN:
         raise ValueError("PRINT_JOBS_TOKEN (or PRINT_SERVER_TOKEN) must be set in production environment.")
     else:
         PRINT_JOBS_TOKEN = "dev-print-token"
-        print("[WARNING] Using default PRINT_JOBS_TOKEN for development.")
+        logger.warning("[WARNING] Using default PRINT_JOBS_TOKEN for development.")
 
 # Trust Proxy Headers (for running behind load balancers/reverse proxies)
 TRUST_PROXY_HEADERS = get_env_bool("TRUST_PROXY_HEADERS", default=False)
@@ -158,7 +161,7 @@ if os.environ.get("FLASK_ENV") == "production":
     if STRIPE_PRICE_MONTHLY.startswith("price_monthly_id"): _placeholder_prices.append("STRIPE_PRICE_MONTHLY")
     
     if _placeholder_prices:
-        print(f"[Config] WARNING: Placeholder prices detected in production: {_placeholder_prices}")
+        logger.warning(f"[Config] WARNING: Placeholder prices detected in production: {_placeholder_prices}")
 
 STRIPE_SIGN_SUCCESS_URL = os.environ.get("STRIPE_SIGN_SUCCESS_URL", f"{BASE_URL}/order/success?session_id={{CHECKOUT_SESSION_ID}}")
 STRIPE_SIGN_CANCEL_URL = os.environ.get("STRIPE_SIGN_CANCEL_URL", f"{BASE_URL}/order/cancel")

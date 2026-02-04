@@ -145,6 +145,9 @@ def _ensure_pdf_in_storage(db, order, storage):
     elif (print_product and print_product.startswith('listing_sign')) or order_type == 'sign':
         pdf_key = _generate_listing_sign_pdf(db, order, storage)
         
+    elif print_product == 'smart_riser':
+        pdf_key = _generate_smart_riser_pdf(db, order, storage)
+        
     elif order_type == 'listing_kit':
         # Listing kit may not need print fulfillment, or has different flow
         logger.info(f"[Fulfillment] Listing kit order {order_id} - no print PDF needed")
@@ -223,6 +226,19 @@ def _generate_listing_sign_pdf(db, order, storage):
         return pdf_key
     except Exception as e:
         logger.error(f"[Fulfillment] Listing sign PDF generation failed: {e}")
+        return None
+
+
+def _generate_smart_riser_pdf(db, order, storage):
+    """Generate SmartRiser PDF."""
+    from services.printing.smart_riser import generate_smart_riser_pdf
+    
+    try:
+        pdf_key = generate_smart_riser_pdf(order)
+        print(f"[Fulfillment] Generated SmartRiser PDF: {pdf_key}")
+        return pdf_key
+    except Exception as e:
+        logger.error(f"[Fulfillment] SmartRiser PDF generation failed: {e}")
         return None
 
 
