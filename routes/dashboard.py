@@ -592,13 +592,11 @@ def property_analytics(property_id):
 @dashboard_bp.route("/today")
 @login_required
 def today():
-    """
-    'Today' Action Feed.
-    Highlights actionable items:
-    - Zero Scans (7d)
-    - Momentum (>50% Scan Growth)
-    - High Intent (CTA but no Lead)
-    """
+    # 'Today' Action Feed.
+    # Highlights actionable items:
+    # - Zero Scans (7d)
+    # - Momentum (>50% Scan Growth)
+    # - High Intent (CTA but no Lead)
     db = get_db()
     from services.analytics import per_property_metrics
     
