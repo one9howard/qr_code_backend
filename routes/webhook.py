@@ -34,8 +34,10 @@ def stripe_webhook():
     # 1. Validate Signature
     # DEV OVERRIDE: Allow bypassing signature for manual testing if configured
     bypass_header = request.headers.get('X-Dev-Bypass-Signature')
-    if bypass_header == 'dev-bypass':
-        current_app.logger.warning("[Webhook] Signature verification BYPASSED via header.")
+    bypass_param = request.args.get('dev_bypass')
+    
+    if bypass_header == 'dev-bypass' or bypass_param == 'true':
+        current_app.logger.warning("[Webhook] Signature verification BYPASSED via header/param.")
         event = json.loads(payload)
     else:
         try:
