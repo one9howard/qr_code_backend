@@ -683,7 +683,8 @@ def _draw_smart_v2_vertical_banner(c, l, asset, user_id, base_url):
 
     # Agent Name (Script)
     name_y = head_y_center - (head_d/2) - to_pt(0.5)
-    name_text = (_read(asset, 'agent_name') or "Agent Name")
+    # Prefer persisted agent_name, fallback to brand_name or placeholder
+    name_text = _read(asset, 'agent_name') or _read(asset, 'brand_name') or "Agent Name"
     font_name = spec['fonts']['name']
     
     c.setFillColorRGB(1, 1, 1)
@@ -693,7 +694,9 @@ def _draw_smart_v2_vertical_banner(c, l, asset, user_id, base_url):
     
     # Phone (Sans Bold)
     phone_y = name_y - fit_name # Drop down
-    phone_text = format_phone_local(_read(asset, 'agent_phone'))
+    # Prefer persisted agent_phone, fallback to phone
+    phone_raw = _read(asset, 'agent_phone') or _read(asset, 'phone')
+    phone_text = format_phone_local(phone_raw)
     font_phone = spec['fonts']['phone']
     
     c.setFillColorRGB(1, 1, 1)
@@ -729,27 +732,27 @@ def _draw_smart_v2_vertical_banner(c, l, asset, user_id, base_url):
         if legacy_bool is True:
             should_show = True
         elif legacy_bool is False:
-             should_show = False
+            should_show = False
         else:
-             # Default Auto
-             if state == 'CA': should_show = True
-             
+            # Default Auto
+            if state == 'CA': should_show = True
+            
     if should_show and lic_num:
-         lic_label_ov = _read(asset, 'license_label_override')
-         if lic_label_ov:
-             label = lic_label_ov
-         elif state == 'CA':
-             label = "DRE #"
-         else:
-             label = "Lic #"
+        lic_label_ov = _read(asset, 'license_label_override')
+        if lic_label_ov:
+            label = lic_label_ov
+        elif state == 'CA':
+            label = "DRE #"
+        else:
+            label = "Lic #"
              
-         full_lic = f"{label}{lic_num}"
-         font_lic = spec['fonts']['license']
-         lic_y = phone_y - fit_phone * 1.2
+        full_lic = f"{label}{lic_num}"
+        font_lic = spec['fonts']['license']
+        lic_y = phone_y - fit_phone * 1.2
          
-         c.setFillColorRGB(0.7, 0.7, 0.7) # Muted
-         c.setFont(lu.FONT_BODY, font_lic[0]) # Small Sans
-         c.drawCentredString(content_center_x, lic_y, full_lic)
+        c.setFillColorRGB(0.7, 0.7, 0.7) # Muted
+        c.setFont(lu.FONT_BODY, font_lic[0]) # Small Sans
+        c.drawCentredString(content_center_x, lic_y, full_lic)
 
 
     # Brokerage Logo (Bottom Center of Left Panel)

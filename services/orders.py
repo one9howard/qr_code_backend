@@ -250,6 +250,21 @@ def process_paid_order(db, session):
                 
                 label = f"SmartSign {code}"
                 
+                # V2 Fields (Phase 2 Persistence)
+                agent_name = payload.get('agent_name') or payload.get('brand_name')
+                agent_phone = payload.get('agent_phone') or payload.get('phone')
+                # Safer state handling: defaults to NULL if empty string
+                _state_raw = (payload.get('state') or '').strip().upper()
+                state = _state_raw[:2] if _state_raw else None
+                
+                _lic_raw = (payload.get('license_number') or '').strip()
+                license_number = _lic_raw if _lic_raw else None
+                
+                show_license_option = payload.get('show_license_option') or 'auto'
+                
+                _lic_label = (payload.get('license_label_override') or '').strip()
+                license_label_override = _lic_label if _lic_label else None
+                
                 # Create Activated Asset
                 res = db.execute("""
                     INSERT INTO sign_assets (
@@ -257,15 +272,17 @@ def process_paid_order(db, session):
                         background_style, cta_key,
                         include_logo, logo_key,
                         include_headshot, headshot_key,
+                        agent_name, agent_phone, state, license_number, show_license_option, license_label_override,
                         created_at, activated_at, is_frozen, activation_order_id, label
                     )
-                    VALUES (%s, %s, %s, %s, %s, %s, 'scan_for_details', %s, %s, %s, %s, NOW(), NOW(), FALSE, %s, %s)
+                    VALUES (%s, %s, %s, %s, %s, %s, 'scan_for_details', %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, NOW(), NOW(), FALSE, %s, %s)
                     RETURNING id
                 """, (
                     user_id, code, brand_name, phone, email_addr,
                     bg_style, 
                     inc_logo, logo_key,
                     inc_head, headshot_key,
+                    agent_name, agent_phone, state, license_number, show_license_option, license_label_override,
                     order_id, label
                 )).fetchone()
                 
