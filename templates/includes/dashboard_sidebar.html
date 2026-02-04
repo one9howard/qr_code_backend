@@ -22,7 +22,7 @@
 
     <div style="padding: 0 16px 16px 16px;">
         <a href="{{ url_for('dashboard.new_property') }}" class="glass-button accent"
-            style="width: 100%; justify-content: center; text-align: center; display: flex; gap: 8px; font-size: 0.9rem; margin-bottom: 8px;">
+            style="display: flex; justify-content: center; text-align: center; gap: 8px; font-size: 0.9rem; margin-bottom: 8px;">
             <span>+</span> Create New Property
         </a>
     </div>
@@ -43,6 +43,9 @@
         </a>
         <a href="{{ url_for('dashboard.index', _anchor='smart-signs-section') }}" class="nav-item">
             <span class="nav-icon">📦</span> SmartSigns
+        </a>
+        <a href="{{ url_for('dashboard.index', _anchor='listings-section') }}" class="nav-item">
+            <span class="nav-icon">🛑</span> Listing Signs
         </a>
         <a href="{{ url_for('dashboard.kits') }}"
             class="nav-item {% if request.endpoint == 'dashboard.kits' %}active{% endif %}">
