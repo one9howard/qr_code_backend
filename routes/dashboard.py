@@ -136,7 +136,6 @@ def index():
         FROM qr_scans 
         WHERE sign_asset_id = ANY(%s) 
         GROUP BY sign_asset_id
-    """, (asset_ids,)).fetchall()
     scans_by_asset = {r['sign_asset_id']: r['count'] for r in scans_result}
     
     # Query leads per asset from leads table
@@ -155,6 +154,7 @@ def index():
         leads = leads_by_asset.get(aid, 0)
         asset['scans'] = scans
         asset['leads'] = leads
+        asset['is_pending_order'] = False # Default Flag
         
         # Conversion rate: show "—" if insufficient data
         if scans < 5:
@@ -162,6 +162,46 @@ def index():
         else:
             conv = (leads / scans) * 100
             asset['conversion'] = f"{conv:.1f}%"
+
+    # 5c. [FIX] Append Pending SmartSign Orders (Unpaid)
+    # These do not have assets yet, but should be visible to resume.
+    pending_smart_orders = db.execute("""
+        SELECT id, created_at, payload
+        FROM orders
+        WHERE user_id = %s 
+          AND order_type = 'smart_sign'
+          AND status = 'pending_payment'
+        ORDER BY created_at DESC
+    """, (current_user.id,)).fetchall()
+
+    for po in pending_smart_orders:
+        # Create a mock asset object
+        # Try to extract name from payload if possible
+        import json
+        label = "Draft Verification Sign"
+        try:
+             # payload is often dict in compiled SQL, but check type
+             pl = po['payload']
+             if isinstance(pl, str):
+                 pl = json.loads(pl)
+             if pl and 'agent_name' in pl:
+                 label = f"Draft: {pl['agent_name']}"
+        except:
+             pass
+
+        sign_assets.insert(0, {
+            'id': po['id'], # Use ORDER ID here, template must handle this!
+            'label': label,
+            'code': '—',
+            'active_property_id': None,
+            'property_address': None,
+            'is_frozen': False,
+            'activated_at': None,
+            'scans': 0,
+            'leads': 0,
+            'conversion': '—',
+            'is_pending_order': True
+        })
 
     # 6. Leads (Recent)
     leads = db.execute(
