@@ -48,7 +48,7 @@
 
     <!-- Drawer Menu -->
     <div class="drawer-overlay" id="drawer-overlay" onclick="toggleDrawer()"></div>
-    <div class="drawer-menu" id="drawer-menu">
+    <div class="drawer-menu" id="drawer-menu" style="transform: translateX(-100%); transition: transform 0.3s ease;">
         <div class="drawer-header">
             <img src="{{ url_for('static', filename='img/logo.png') }}" alt="InSite" style="height: 32px;">
             <button class="close-drawer" onclick="toggleDrawer()">&times;</button>

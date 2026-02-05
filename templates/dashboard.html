@@ -270,6 +270,16 @@
         {% endif %}
 
         <!-- Stats Row (only show when has_scan is true) -->
+        <!-- TABS NAVIGATION (Moved Above Fold) -->
+        <div class="col-span-12 dashboard-tabs">
+            <button class="tab-btn active" onclick="switchTab('today')">Buyer Activity</button>
+            <button class="tab-btn" onclick="switchTab('listings')">Properties</button>
+            <button class="tab-btn" onclick="switchTab('smart')">Your SmartSigns</button>
+            {% if has_scan %}
+            <button class="tab-btn" onclick="switchTab('analytics')">Analytics</button>
+            {% endif %}
+        </div>
+
         {% if has_scan %}
         <div class="card col-span-3 stat-card">
             <div class="stat-label">Total Scans</div>
@@ -322,15 +332,7 @@
         </div>
         {% endif %}
 
-        <!-- TABS NAVIGATION -->
-        <div class="col-span-12 dashboard-tabs">
-            <button class="tab-btn active" onclick="switchTab('today')">Buyer Activity</button>
-            <button class="tab-btn" onclick="switchTab('listings')">Properties</button>
-            <button class="tab-btn" onclick="switchTab('smart')">Your SmartSigns</button>
-            {% if has_scan %}
-            <button class="tab-btn" onclick="switchTab('analytics')">Analytics</button>
-            {% endif %}
-        </div>
+
 
         <!-- TAB 0: TODAY (Default now?) -->
         <div id="tab-today" class="grid-sections active col-span-12">
