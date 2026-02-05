@@ -7,8 +7,55 @@
 
 <div class="submit-container" style="max-width: 800px; margin: 40px auto; padding: 0 20px; display: block !important;">
 
-    <!-- Header -->
+    <!-- Wizard Header & Progress -->
+    <div style="text-align: center; margin-bottom: 20px;">
+        <h1 class="section-header" style="margin-bottom: 8px;">Order Sign</h1>
+        <p class="section-subheader">Customize your sign for the property below.</p>
+    </div>
+
+    <!-- Progress Bar -->
+    <div class="wizard-progress-container">
+        <div class="step-indicator active" data-step="1">1. Specs</div>
+        <div class="step-line"></div>
+        <div class="step-indicator" data-step="2">2. Design</div>
+        <div class="step-line"></div>
+        <div class="step-indicator" data-step="3">3. Review</div>
+    </div>
+
     <style>
+        .wizard-progress-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 30px;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .step-indicator {
+            background: rgba(255, 255, 255, 0.1);
+            color: #666;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .step-indicator.active {
+            background: var(--accent-blue);
+            color: white;
+            box-shadow: 0 4px 12px rgba(0, 119, 255, 0.3);
+        }
+
+        .step-line {
+            flex: 1;
+            height: 2px;
+            background: rgba(255, 255, 255, 0.1);
+            margin: 0 10px;
+        }
+
         /* Force parent container to allow full width (fixes inheritance issues) */
         .container {
             max-width: 100% !important;
@@ -31,11 +78,30 @@
         .submit-container {
             display: block !important;
         }
+
+        .wizard-actions {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 2rem;
+            gap: 1rem;
+        }
+
+        .wizard-step {
+            animation: fadeIn 0.4s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
     </style>
-    <div style="text-align: center; margin-bottom: 30px;">
-        <h1 class="section-header" style="margin-bottom: 8px;">Order Sign</h1>
-        <p class="section-subheader">Customize your sign for the property below.</p>
-    </div>
 
     <div class="card card--dark">
         <!-- Property Summary -->
@@ -51,44 +117,9 @@
             <input type="hidden" name="property_id" value="{{ property.id }}">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
-            <!-- Sign Customization Options -->
-            <h3 style="color: #2196f3; margin-bottom: 1rem;">Sign Options</h3>
-
-            <div class="sign-options-container">
-                <!-- Color Palette -->
-                <label style="color: #666; font-size: 0.9rem; margin-bottom: 10px; display: block;">Banner Color</label>
-                <div class="color-palette">
-                    <label class="color-option">
-                        <input type="radio" name="sign_color" value="#1F6FEB" checked>
-                        <div class="color-swatch" style="background: #1F6FEB;"></div>
-                        <span class="color-label">Ocean Blue</span>
-                    </label>
-                    <label class="color-option">
-                        <input type="radio" name="sign_color" value="#2EA043">
-                        <div class="color-swatch" style="background: #2EA043;"></div>
-                        <span class="color-label">Forest Green</span>
-                    </label>
-                    <label class="color-option">
-                        <input type="radio" name="sign_color" value="#CF222E">
-                        <div class="color-swatch" style="background: #CF222E;"></div>
-                        <span class="color-label">Ruby Red</span>
-                    </label>
-                    <label class="color-option">
-                        <input type="radio" name="sign_color" value="#8250DF">
-                        <div class="color-swatch" style="background: #8250DF;"></div>
-                        <span class="color-label">Royal Purple</span>
-                    </label>
-                    <label class="color-option">
-                        <input type="radio" name="sign_color" value="#FB8500">
-                        <div class="color-swatch" style="background: #FB8500;"></div>
-                        <span class="color-label">Sunset Orange</span>
-                    </label>
-                    <label class="color-option">
-                        <input type="radio" name="sign_color" value="#0969DA">
-                        <div class="color-swatch" style="background: #0969DA;"></div>
-                        <span class="color-label">Sky Teal</span>
-                    </label>
-                </div>
+            <!-- STEP 1: SPECS -->
+            <div class="wizard-step" id="step1">
+                <h3 style="color: #2196f3; margin-bottom: 1rem;">Step 1: Product Specifications</h3>
 
                 <!-- Product Type Selector -->
                 <div
@@ -125,13 +156,31 @@
                     }
                 </style>
 
+                <!-- Material Selector -->
+                <div id="materialSection">
+                    <label style="color: #666; font-size: 0.9rem; margin-bottom: 5px; display: block;">Material</label>
+                    <select name="material" id="materialSelect" class="size-selector" style="margin-bottom: 1.5rem;">
+                        <option value="coroplast_4mm" selected>Coroplast (4mm) - Standard</option>
+                        <option value="aluminum_040">Aluminum (.040) - Premium (+$$)</option>
+                    </select>
+                </div>
+
+                <!-- Size Selector -->
+                <label style="color: #666; font-size: 0.9rem; margin-bottom: 5px; display: block;">Size</label>
+                <select name="sign_size" id="sizeSelect" class="size-selector">
+                    <!-- Populated by JS -->
+                </select>
+            </div>
+
+            <!-- STEP 2: DESIGN -->
+            <div class="wizard-step" id="step2" style="display: none;">
+                <h3 style="color: #2196f3; margin-bottom: 1rem;">Step 2: Design Options</h3>
+
                 <!-- Layout Selection (Hidden for Riders) -->
                 <span id="layoutContainer">
                     <label style="color: #666; font-size: 0.9rem; margin-bottom: 15px; display: block;">Sign
                         Layout</label>
 
-                    <!-- Standardized Grid from SmartSigns -->
-                    <!-- Standardized Grid for Listing Signs -->
                     <div class="layout-grid"
                         style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 2rem;">
                         <!-- Option 1: Standard -->
@@ -185,141 +234,294 @@
                     </div>
                 </span>
 
-                <!-- Material Selector -->
-                <div id="materialSection">
-                    <label style="color: #666; font-size: 0.9rem; margin-bottom: 5px; display: block;">Material</label>
-                    <select name="material" id="materialSelect" class="size-selector" style="margin-bottom: 1.5rem;">
-                        <option value="coroplast_4mm" selected>Coroplast (4mm) - Standard</option>
-                        <option value="aluminum_040">Aluminum (.040) - Premium (+$$)</option>
-                    </select>
+                <!-- Color Palette -->
+                <label style="color: #666; font-size: 0.9rem; margin-bottom: 10px; display: block;">Banner Color</label>
+                <div class="color-palette">
+                    <label class="color-option">
+                        <input type="radio" name="sign_color" value="#1F6FEB" checked>
+                        <div class="color-swatch" style="background: #1F6FEB;"></div>
+                        <span class="color-label">Ocean Blue</span>
+                    </label>
+                    <label class="color-option">
+                        <input type="radio" name="sign_color" value="#2EA043">
+                        <div class="color-swatch" style="background: #2EA043;"></div>
+                        <span class="color-label">Forest Green</span>
+                    </label>
+                    <label class="color-option">
+                        <input type="radio" name="sign_color" value="#CF222E">
+                        <div class="color-swatch" style="background: #CF222E;"></div>
+                        <span class="color-label">Ruby Red</span>
+                    </label>
+                    <label class="color-option">
+                        <input type="radio" name="sign_color" value="#8250DF">
+                        <div class="color-swatch" style="background: #8250DF;"></div>
+                        <span class="color-label">Royal Purple</span>
+                    </label>
+                    <label class="color-option">
+                        <input type="radio" name="sign_color" value="#FB8500">
+                        <div class="color-swatch" style="background: #FB8500;"></div>
+                        <span class="color-label">Sunset Orange</span>
+                    </label>
+                    <label class="color-option">
+                        <input type="radio" name="sign_color" value="#0969DA">
+                        <div class="color-swatch" style="background: #0969DA;"></div>
+                        <span class="color-label">Sky Teal</span>
+                    </label>
                 </div>
-
-                <!-- Size Selector -->
-                <label style="color: #666; font-size: 0.9rem; margin-bottom: 5px; display: block;">Size</label>
-                <select name="sign_size" id="sizeSelect" class="size-selector">
-                    <!-- Populated by JS -->
-                </select>
-
-                <script>
-                    const productTypes = document.querySelectorAll('input[name="product_type"]');
-                    const sizeSelect = document.getElementById('sizeSelect');
-                    const materialSelect = document.getElementById('materialSelect');
-                    const layoutContainer = document.getElementById('layoutContainer');
-                    const materialSection = document.getElementById('materialSection');
-                    const aluminumOption = materialSelect.querySelector('option[value="aluminum_040"]');
-
-                    const OPTIONS = {
-                        yard_sign: [
-                            { val: '12x18', txt: '12" × 18" (Small Yard Sign)' },
-                            { val: '18x24', txt: '18" × 24" (Standard)' },
-                            { val: '24x36', txt: '24" × 36" (Large)' },
-                            { val: '36x24', txt: '36" × 24" (Wide/Landscape)' }
-                        ],
-                        smart_riser: [
-                            { val: '6x24', txt: '6" × 24" (Standard Rider)' },
-                            { val: '6x36', txt: '6" × 36" (Large Rider)' }
-                        ]
-                    };
-
-                    function updateFormState() {
-                        const type = document.querySelector('input[name="product_type"]:checked').value;
-
-                        // 1. Update Sizes
-                        sizeSelect.innerHTML = '';
-                        OPTIONS[type].forEach(opt => {
-                            const option = document.createElement('option');
-                            option.value = opt.val;
-                            option.textContent = opt.txt;
-                            if (opt.val === '18x24' || opt.val === '6x24') option.selected = true;
-                            sizeSelect.appendChild(option);
-                        });
-
-                        // 2. Toggle Sections and Constraints
-                        if (type === 'smart_riser') {
-                            layoutContainer.style.display = 'none';
-                            // Riders are Aluminum only per spec? Or Coro available?
-                            // User key "smart_riser_6x24" implies a specific product.
-                            // Print catalog says Risers are Aluminum only.
-                            materialSelect.value = 'aluminum_040';
-                            materialSelect.disabled = true; // Lock to Aluminum
-
-                            // Visual update for locked select (optional)
-                            materialSelect.style.opacity = '0.7';
-                        } else {
-                            layoutContainer.style.display = 'block';
-                            materialSelect.disabled = false;
-                            materialSelect.style.opacity = '1';
-
-                            // Re-apply 12x18 constraint
-                            checkMaterialConstraints();
-                        }
-                    }
-
-                    function checkMaterialConstraints() {
-                        const type = document.querySelector('input[name="product_type"]:checked').value;
-                        if (type !== 'yard_sign') return;
-
-                        const size = sizeSelect.value;
-                        const coroOpt = materialSelect.querySelector('option[value="coroplast_4mm"]');
-
-                        // Reset option states/text
-                        aluminumOption.disabled = false;
-                        aluminumOption.textContent = 'Aluminum (.040) - Premium (+$$)';
-                        coroOpt.disabled = false;
-                        coroOpt.textContent = 'Coroplast (4mm) - Standard';
-
-                        // Matrix enforcement:
-                        // - 12x18: coroplast only
-                        if (size === '12x18') {
-                            materialSelect.value = 'coroplast_4mm';
-                            aluminumOption.disabled = true;
-                            aluminumOption.textContent = 'Aluminum (Not available for 12x18)';
-                            return;
-                        }
-
-                        // - 36x24: aluminum only
-                        if (size === '36x24') {
-                            materialSelect.value = 'aluminum_040';
-                            coroOpt.disabled = true;
-                            coroOpt.textContent = 'Coroplast (Not available for 36x24)';
-                            return;
-                        }
-                    }
-
-                    function coerceSizeForMaterial() {
-                        const type = document.querySelector('input[name="product_type"]:checked').value;
-                        if (type !== 'yard_sign') return;
-
-                        const mat = materialSelect.value;
-                        const size = sizeSelect.value;
-
-                        if (mat === 'aluminum_040' && size === '12x18') {
-                            sizeSelect.value = '18x24';
-                        }
-                        if (mat === 'coroplast_4mm' && size === '36x24') {
-                            sizeSelect.value = '18x24';
-                        }
-
-                        // Re-apply constraints to update option disable states
-                        checkMaterialConstraints();
-                    }
-
-                    productTypes.forEach(radio => radio.addEventListener('change', updateFormState));
-                    sizeSelect.addEventListener('change', () => {
-                        checkMaterialConstraints();
-                    });
-                    materialSelect.addEventListener('change', () => {
-                        coerceSizeForMaterial();
-                    });
-
-                    // Init
-                    updateFormState();
-                </script>
             </div>
 
-            <button type="submit" class="glass-button accent generate-btn"
-                style="margin-top: 2rem; width: 100%;">Proceed to
-                Payment</button>
+            <!-- STEP 3: REVIEW -->
+            <div class="wizard-step" id="step3" style="display: none;">
+                <h3 style="color: #2196f3; margin-bottom: 1rem;">Step 3: Review Order</h3>
+                <div style="background: rgba(0,0,0,0.2); padding: 1.5rem; border-radius: 8px;">
+                    <div style="margin-bottom: 1rem;">
+                        <span style="color: #888; display: block; font-size: 0.85rem;">Product</span>
+                        <div style="font-size: 1.1rem; font-weight: 500;" id="reviewProduct">Yard Sign</div>
+                    </div>
+                    <div style="margin-bottom: 1rem;">
+                        <span style="color: #888; display: block; font-size: 0.85rem;">Material</span>
+                        <div style="font-size: 1.1rem; font-weight: 500;" id="reviewMaterial">Coroplast</div>
+                    </div>
+                    <div style="margin-bottom: 1rem;">
+                        <span style="color: #888; display: block; font-size: 0.85rem;">Size</span>
+                        <div style="font-size: 1.1rem; font-weight: 500;" id="reviewSize">18x24</div>
+                    </div>
+                    <div style="margin-bottom: 1rem;" id="reviewLayoutRow">
+                        <span style="color: #888; display: block; font-size: 0.85rem;">Layout</span>
+                        <div style="font-size: 1.1rem; font-weight: 500;" id="reviewLayout">Standard</div>
+                    </div>
+                    <div style="margin-bottom: 1rem;">
+                        <span style="color: #888; display: block; font-size: 0.85rem;">Color</span>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <div id="reviewColorSwatch" style="width: 20px; height: 20px; border-radius: 50%;"></div>
+                            <span id="reviewColorName" style="font-size: 1.1rem; font-weight: 500;">Blue</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <script>
+                const productTypes = document.querySelectorAll('input[name="product_type"]');
+                const sizeSelect = document.getElementById('sizeSelect');
+                const materialSelect = document.getElementById('materialSelect');
+                const layoutContainer = document.getElementById('layoutContainer');
+                const materialSection = document.getElementById('materialSection');
+                const aluminumOption = materialSelect.querySelector('option[value="aluminum_040"]');
+
+                const OPTIONS = {
+                    yard_sign: [
+                        { val: '12x18', txt: '12" × 18" (Small Yard Sign)' },
+                        { val: '18x24', txt: '18" × 24" (Standard)' },
+                        { val: '24x36', txt: '24" × 36" (Large)' },
+                        { val: '36x24', txt: '36" × 24" (Wide/Landscape)' }
+                    ],
+                    smart_riser: [
+                        { val: '6x24', txt: '6" × 24" (Standard Rider)' },
+                        { val: '6x36', txt: '6" × 36" (Large Rider)' }
+                    ]
+                };
+
+                function updateFormState() {
+                    const type = document.querySelector('input[name="product_type"]:checked').value;
+
+                    // 1. Update Sizes
+                    const currentSize = sizeSelect.value;
+                    sizeSelect.innerHTML = '';
+                    let foundCurrent = false;
+
+                    OPTIONS[type].forEach(opt => {
+                        const option = document.createElement('option');
+                        option.value = opt.val;
+                        option.textContent = opt.txt;
+                        if (opt.val === currentSize) {
+                            option.selected = true;
+                            foundCurrent = true;
+                        }
+                        sizeSelect.appendChild(option);
+                    });
+
+                    // Fallback default
+                    if (!foundCurrent) {
+                        // Default to 18x24 for yard_sign, 6x24 for riser
+                        if (type === 'yard_sign') sizeSelect.value = '18x24';
+                        else sizeSelect.value = '6x24';
+                    }
+
+                    // 2. Toggle Sections and Constraints
+                    if (type === 'smart_riser') {
+                        layoutContainer.style.display = 'none';
+                        // Riders are Aluminum only per spec? Or Coro available?
+                        // User key "smart_riser_6x24" implies a specific product.
+                        // Print catalog says Risers are Aluminum only.
+                        materialSelect.value = 'aluminum_040';
+                        materialSelect.disabled = true; // Lock to Aluminum
+
+                        // Visual update for locked select (optional)
+                        materialSelect.style.opacity = '0.7';
+                    } else {
+                        layoutContainer.style.display = 'block';
+                        materialSelect.disabled = false;
+                        materialSelect.style.opacity = '1';
+
+                        // Re-apply 12x18 constraint
+                        checkMaterialConstraints();
+                    }
+                }
+
+                function checkMaterialConstraints() {
+                    const type = document.querySelector('input[name="product_type"]:checked').value;
+                    if (type !== 'yard_sign') return;
+
+                    const size = sizeSelect.value;
+                    const coroOpt = materialSelect.querySelector('option[value="coroplast_4mm"]');
+
+                    // Reset option states/text
+                    aluminumOption.disabled = false;
+                    aluminumOption.textContent = 'Aluminum (.040) - Premium (+$$)';
+                    coroOpt.disabled = false;
+                    coroOpt.textContent = 'Coroplast (4mm) - Standard';
+
+                    // Matrix enforcement:
+                    // - 12x18: coroplast only
+                    if (size === '12x18') {
+                        materialSelect.value = 'coroplast_4mm';
+                        aluminumOption.disabled = true;
+                        aluminumOption.textContent = 'Aluminum (Not available for 12x18)';
+                        return;
+                    }
+
+                    // - 36x24: aluminum only
+                    if (size === '36x24') {
+                        materialSelect.value = 'aluminum_040';
+                        coroOpt.disabled = true;
+                        coroOpt.textContent = 'Coroplast (Not available for 36x24)';
+                        return;
+                    }
+                }
+
+                function coerceSizeForMaterial() {
+                    const type = document.querySelector('input[name="product_type"]:checked').value;
+                    if (type !== 'yard_sign') return;
+
+                    const mat = materialSelect.value;
+                    const size = sizeSelect.value;
+
+                    if (mat === 'aluminum_040' && size === '12x18') {
+                        sizeSelect.value = '18x24';
+                    }
+                    if (mat === 'coroplast_4mm' && size === '36x24') {
+                        sizeSelect.value = '18x24';
+                    }
+
+                    // Re-apply constraints to update option disable states
+                    checkMaterialConstraints();
+                }
+
+                productTypes.forEach(radio => radio.addEventListener('change', updateFormState));
+                sizeSelect.addEventListener('change', () => {
+                    checkMaterialConstraints();
+                });
+                materialSelect.addEventListener('change', () => {
+                    coerceSizeForMaterial();
+                });
+
+                // Init
+                updateFormState();
+
+                // --- WIZARD LOGIC ---
+                let currentStep = 1;
+                const totalSteps = 3;
+                const prevBtn = document.getElementById('prevBtn');
+                const nextBtn = document.getElementById('nextBtn');
+                const submitBtn = document.getElementById('submitBtn');
+
+                function updateWizardUI() {
+                    // 1. Show/Hide Steps
+                    for (let i = 1; i <= totalSteps; i++) {
+                        document.getElementById('step' + i).style.display = (i === currentStep) ? 'block' : 'none';
+                        const indicator = document.querySelector(`.step-indicator[data-step="${i}"]`);
+                        if (i <= currentStep) indicator.classList.add('active');
+                        else indicator.classList.remove('active');
+                    }
+
+                    // 2. Buttons
+                    prevBtn.disabled = (currentStep === 1);
+                    if (currentStep === 1) prevBtn.style.opacity = '0.5';
+                    else prevBtn.style.opacity = '1';
+
+                    if (currentStep === totalSteps) {
+                        nextBtn.style.display = 'none';
+                        submitBtn.style.display = 'block';
+                        updateReviewData();
+                    } else {
+                        nextBtn.style.display = 'block';
+                        submitBtn.style.display = 'none';
+                    }
+
+                    // Scroll to top
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                }
+
+                function updateReviewData() {
+                    const type = document.querySelector('input[name="product_type"]:checked');
+                    const mat = document.getElementById('materialSelect');
+                    const size = document.getElementById('sizeSelect');
+                    const layout = document.querySelector('input[name="layout_id"]:checked');
+                    const color = document.querySelector('input[name="sign_color"]:checked');
+
+                    // Product
+                    document.getElementById('reviewProduct').textContent = type.value === 'yard_sign' ? 'Yard Sign' : 'Smart Rider';
+
+                    // Material
+                    document.getElementById('reviewMaterial').textContent = mat.options[mat.selectedIndex].text;
+
+                    // Size
+                    document.getElementById('reviewSize').textContent = size.options[size.selectedIndex].text;
+
+                    // Layout
+                    const layoutRow = document.getElementById('reviewLayoutRow');
+                    if (type.value === 'yard_sign') {
+                        layoutRow.style.display = 'block';
+                        const layoutName = layout.closest('.layout-card').querySelector('.layout-name').textContent;
+                        document.getElementById('reviewLayout').textContent = layoutName;
+                    } else {
+                        layoutRow.style.display = 'none';
+                    }
+
+                    // Color
+                    const colorLabel = color.closest('.color-option').querySelector('.color-label').textContent;
+                    document.getElementById('reviewColorName').textContent = colorLabel;
+                    document.getElementById('reviewColorSwatch').style.background = color.value;
+                }
+
+                nextBtn.addEventListener('click', () => {
+                    if (currentStep < totalSteps) {
+                        currentStep++;
+                        updateWizardUI();
+                    }
+                });
+
+                prevBtn.addEventListener('click', () => {
+                    if (currentStep > 1) {
+                        currentStep--;
+                        updateWizardUI();
+                    }
+                });
+
+                // Init Wizard
+                updateWizardUI();
+
+            </script>
+
+            <div class="wizard-actions">
+                <button type="button" class="glass-button secondary" id="prevBtn">Back</button>
+                <button type="button" class="glass-button accent" id="nextBtn" style="min-width: 120px;">Next
+                    Step</button>
+                <button type="submit" class="glass-button accent generate-btn" id="submitBtn"
+                    style="display: none; min-width: 150px; background: #22c55e; border-color: #22c55e;">
+                    Proceed to Payment
+                </button>
+            </div>
         </form>
     </div>
 </div>
@@ -328,7 +530,7 @@
     document.getElementById('orderSignForm').addEventListener('submit', async function (e) {
         e.preventDefault();
 
-        const btn = this.querySelector('button[type="submit"]');
+        const btn = document.getElementById('submitBtn');
         const originalText = btn.textContent;
         btn.textContent = 'Processing...';
         btn.disabled = true;
