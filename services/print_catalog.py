@@ -40,7 +40,10 @@ SMART_SIGN_LAYOUTS = (
 YARD_SIGN_LAYOUTS = (
     'yard_standard',
     'yard_photo',
-    'yard_agent_brand'
+    'yard_agent_brand',
+    'listing_standard',
+    'listing_v2_phone_qr_premium',
+    'listing_v2_address_qr_premium'
 )
 
 # Strict Color Palette (ID -> Hex)
@@ -63,13 +66,13 @@ def get_lookup_key(print_product: str, print_size: str, material: str = None) ->
     Format:
       SmartSign: smart_sign_print_{size}
       SmartRiser: smart_riser_{size}
-      Listing Sign: listing_sign_{material_short}_{size}  (WAIT - User spec says 'listing_sign_coroplast_18x24')
+      Yard Sign: yard_sign_{material_short}_{size}  (WAIT - User spec says 'yard_sign_coroplast_18x24')
     
     User Schema:
       SmartSign (Alum): smart_sign_print_18x24
       SmartRiser (Alum): smart_riser_6x24
-      Listing (Coro): yard_sign_coroplast_18x24
-      Listing (Alum): yard_sign_aluminum_18x24
+      Yard Sign (Coro): yard_sign_coroplast_18x24
+      Yard Sign (Alum): yard_sign_aluminum_18x24
 
     Returns:
         str: Lookup key (e.g. "smart_sign_18x24", "yard_sign_coroplast_18x24")

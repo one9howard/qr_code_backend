@@ -16,7 +16,7 @@ from services.specs import (
     GLOBAL_PRINT_RULES,
     SMARTSIGN_LAYOUT_IDS,
     SMARTSIGN_V1_MINIMAL_SPECS,
-    LISTING_SIGN_CONSTRAINTS,
+    LISTING_SIGN_CONSTRAINTS: YARD_SIGN_CONSTRAINTS,
 )
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -109,7 +109,7 @@ def generate_specs_md() -> str:
     sizes_table = md_table([
         ["Product", "Allowed Sizes"],
         ["SmartSign", ", ".join(PRODUCT_SIZE_MATRIX["smart_sign"])],
-        ["Listing Sign", ", ".join(PRODUCT_SIZE_MATRIX["listing_sign"])],
+        ["Yard Sign", ", ".join(PRODUCT_SIZE_MATRIX["yard_sign"])],
     ])
 
     safe_table = md_table([
@@ -181,12 +181,12 @@ Accent rule default: {SMARTSIGN_V1_MINIMAL_SPECS["accent_rule_default_hex"]}
 
 {minimal_block}
 
-4) Listing Sign (Product Constraints)
-Supported sizes: {", ".join(LISTING_SIGN_CONSTRAINTS["sizes"])}
+4) Yard Sign (Product Constraints)
+Supported sizes: {", ".join(YARD_SIGN_CONSTRAINTS["sizes"])}
 
-Content hierarchy: {", ".join(LISTING_SIGN_CONSTRAINTS["content_hierarchy"])}
+Content hierarchy: {", ".join(YARD_SIGN_CONSTRAINTS["content_hierarchy"])}
 
-Rule: {LISTING_SIGN_CONSTRAINTS["agent_contact_min_readability_rule"]}
+Rule: {YARD_SIGN_CONSTRAINTS["agent_contact_min_readability_rule"]}
 
 Appendix: Machine-Readable Signature (DO NOT EDIT BY HAND)
 {sig_block}

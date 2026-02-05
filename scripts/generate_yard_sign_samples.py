@@ -7,15 +7,15 @@ from unittest.mock import MagicMock
 # Add project root to path
 sys.path.append(os.getcwd())
 
-from services.printing.listing_sign import generate_listing_sign_pdf
+from services.printing.yard_sign import generate_yard_sign_pdf
 
 # Mock DB
 mock_db = MagicMock()
 mock_conn = MagicMock()
 mock_cursor = MagicMock()
 
-@unittest.mock.patch('services.printing.listing_sign.get_db')
-@unittest.mock.patch('services.printing.listing_sign.get_storage')
+@unittest.mock.patch('services.printing.yard_sign.get_db')
+@unittest.mock.patch('services.printing.yard_sign.get_storage')
 def run_test(mock_get_storage, mock_get_db):
     mock_get_db.return_value = mock_conn
     mock_storage = MagicMock()
@@ -61,6 +61,7 @@ def run_test(mock_get_storage, mock_get_db):
     mock_storage.put_file = MagicMock()
 
     # Layouts to test
+    # (Checking listing_ variants as they are currently used in yard_sign.py)
     layouts = [
         'listing_standard',
         'listing_v2_phone_qr_premium',
@@ -69,10 +70,10 @@ def run_test(mock_get_storage, mock_get_db):
     
     sizes = ['18x24', '36x24']
     
-    output_dir = "pdfs/samples_listing"
+    output_dir = "pdfs/samples_yard"
     os.makedirs(output_dir, exist_ok=True)
     
-    print("Generating Listing Sign Samples...")
+    print("Generating Yard Sign Samples...")
     
     for layout_id in layouts:
         for size in sizes:
@@ -87,7 +88,7 @@ def run_test(mock_get_storage, mock_get_db):
             }
             
             try:
-                generate_listing_sign_pdf(order)
+                generate_yard_sign_pdf(order)
                 
                 # Retrieve buffer from mock call
                 if mock_storage.put_file.call_count > 0:

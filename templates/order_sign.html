@@ -94,7 +94,7 @@
                 <div
                     style="display: flex; gap: 10px; margin-bottom: 1.5rem; background: rgba(0,0,0,0.3); padding: 4px; border-radius: 8px;">
                     <label style="flex: 1; cursor: pointer;">
-                        <input type="radio" name="product_type" value="listing_sign" checked style="display: none;">
+                        <input type="radio" name="product_type" value="yard_sign" checked style="display: none;">
                         <div class="type-tab active"
                             style="text-align: center; padding: 10px; border-radius: 6px; font-weight: 500; color: #aaa; transition: all 0.2s;">
                             Main Sign
@@ -209,7 +209,7 @@
                     const aluminumOption = materialSelect.querySelector('option[value="aluminum_040"]');
 
                     const OPTIONS = {
-                        listing_sign: [
+                        yard_sign: [
                             { val: '12x18', txt: '12" × 18" (Small Yard Sign)' },
                             { val: '18x24', txt: '18" × 24" (Standard)' },
                             { val: '24x36', txt: '24" × 36" (Large)' },
@@ -257,7 +257,7 @@
 
                     function checkMaterialConstraints() {
                         const type = document.querySelector('input[name="product_type"]:checked').value;
-                        if (type !== 'listing_sign') return;
+                        if (type !== 'yard_sign') return;
 
                         const size = sizeSelect.value;
                         const coroOpt = materialSelect.querySelector('option[value="coroplast_4mm"]');
@@ -288,7 +288,7 @@
 
                     function coerceSizeForMaterial() {
                         const type = document.querySelector('input[name="product_type"]:checked').value;
-                        if (type !== 'listing_sign') return;
+                        if (type !== 'yard_sign') return;
 
                         const mat = materialSelect.value;
                         const size = sizeSelect.value;
@@ -336,7 +336,7 @@
         const formData = new FormData(this);
         const data = {
             property_id: formData.get('property_id'),
-            print_product: formData.get('product_type'), // NEW: listing_sign or smart_riser
+            print_product: formData.get('product_type'), // NEW: yard_sign or smart_riser
             color: formData.get('sign_color'),
             size: formData.get('sign_size'),
             layout_id: formData.get('layout_id'),

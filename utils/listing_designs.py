@@ -1,5 +1,5 @@
 """
-Premium Listing Sign Layouts (V2)
+Premium Yard Sign Layouts (V2)
 Uses standard typography (Bodoni, Allura) and components.
 """
 from reportlab.lib.units import inch

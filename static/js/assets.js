@@ -26,7 +26,7 @@ function getConfig() {
 
 
 function getAllowedSizesForMaterial(material) {
-    // Listing sign matrix
+    // Yard sign matrix
     if (material === 'aluminum_040') {
         return ['18x24', '24x36', '36x24'];
     }

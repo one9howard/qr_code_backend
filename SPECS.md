@@ -16,7 +16,7 @@ commit the updated SPECS.md
 | Product | Allowed Sizes |
 | --- | --- |
 | SmartSign | 18x24, 24x36, 36x24 |
-| Listing Sign | 12x18, 18x24, 24x36, 36x24 |
+| Yard Sign | 12x18, 18x24, 24x36, 36x24 |
 
 2) Global Print Rules
 Units: 1 inch = 72 pt
@@ -178,7 +178,7 @@ Accent rule default: #007AFF
 - CTA text: `Price + Photos + 3D Tour`
 
 
-4) Listing Sign (Product Constraints)
+4) Yard Sign (Product Constraints)
 Supported sizes: 12x18, 18x24, 24x36, 36x24
 
 Content hierarchy: address_or_title, price_if_present, qr, agent_contact

@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 """
-Smoke test for listing sign PDF generation.
+Smoke test for yard sign PDF generation.
 
 Usage:
-    ORDER_ID=<id> python scripts/smoke_listing_pdf.py
+    ORDER_ID=<id> python scripts/smoke_yard_sign_pdf.py
 
 Loads a real order row from the database and generates both PDF and preview.
 """
@@ -19,7 +19,7 @@ def main():
     order_id = os.environ.get("ORDER_ID")
     if not order_id:
         print("ERROR: ORDER_ID environment variable is required.")
-        print("Usage: ORDER_ID=<id> python scripts/smoke_listing_pdf.py")
+        print("Usage: ORDER_ID=<id> python scripts/smoke_yard_sign_pdf.py")
         return 1
     
     try:
@@ -51,9 +51,9 @@ def main():
         print(f"Loaded order: id={order_id}, type={order_row.get('order_type')}, size={order_row.get('print_size')}")
         
         # Generate PDF
-        from services.printing.listing_sign import generate_listing_sign_pdf_from_order_row
-        pdf_key = generate_listing_sign_pdf_from_order_row(order_row, db=db)
-        print(f"OK listing pdf generated: {pdf_key}")
+        from services.printing.yard_sign import generate_yard_sign_pdf_from_order_row
+        pdf_key = generate_yard_sign_pdf_from_order_row(order_row, db=db)
+        print(f"OK yard sign pdf generated: {pdf_key}")
         
         # Generate preview
         from utils.pdf_preview import render_pdf_to_web_preview

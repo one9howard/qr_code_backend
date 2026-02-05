@@ -85,13 +85,13 @@ def simulate_flow():
         print(f"Property 2 Created: ID {prop2_id} ({prop2['address']})")
 
         # 6. Create Listing Sign Order (for Prop 2)
-        print("\n--- Creating Listing Sign Order for Property 2 ---")
+        print("\n--- Creating Yard Sign Order for Property 2 ---")
         db.execute("""
             INSERT INTO orders (user_id, property_id, status, order_type, print_product, material, sides, print_size, created_at, updated_at)
-            VALUES (%s, %s, 'paid', 'listing_sign', 'listing_sign', 'coroplast_4mm', 'double', '18x24', NOW(), NOW())
+            VALUES (%s, %s, 'paid', 'yard_sign', 'yard_sign', 'coroplast_4mm', 'double', '18x24', NOW(), NOW())
         """, (user_id, prop2_id))
         db.commit()
-        print(f"Listing Sign ordered for Property {prop2_id}")
+        print(f"Yard Sign ordered for Property {prop2_id}")
 
         # 7. Create Property 3
         print("\n--- Creating Property 3 ---")
