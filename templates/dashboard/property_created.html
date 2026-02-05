@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block title %}Property Created | InSite Signs{% endblock %}
+{% block body_class %}dashboard-saas-body{% endblock %}
+
+{% block content %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/pages/dashboard_saas.css') }}">
+
+<div class="app-layout">
+    {% include "includes/dashboard_sidebar.html" %}
+
+    <main class="app-main">
+        <header class="app-header" style="position: relative; justify-content: center;">
+            <h1 class="page-title">Property Created</h1>
+        </header>
+
+        <div class="content-wrapper"
+            style="display: flex; justify-content: center; align-items: center; min-height: 60vh;">
+            <div class="card"
+                style="max-width: 520px; text-align: center; padding: 48px 40px; background: linear-gradient(135deg, rgba(76,175,80,0.08) 0%, rgba(129,199,132,0.03) 100%); border: 1px solid rgba(76,175,80,0.25);">
+
+                <!-- Success Icon -->
+                <div style="font-size: 3rem; margin-bottom: 16px;">🎉</div>
+
+                <!-- Title -->
+                <h2 style="margin: 0 0 12px 0; font-size: 1.6rem; color: var(--text-main);">Property Created!</h2>
+
+                <!-- Property Address -->
+                <p style="color: var(--accent-cyan); font-size: 1.1rem; margin-bottom: 8px; font-weight: 500;">
+                    {{ property.address }}
+                </p>
+
+                <!-- Subtitle -->
+                <p style="color: var(--text-muted); font-size: 1rem; line-height: 1.6; margin-bottom: 32px;">
+                    Your property page is live. Now add a SmartSign to start capturing buyer leads when they scan your
+                    yard sign.
+                </p>
+
+                <!-- Primary CTA -->
+                <a href="{{ url_for('smart_signs.order_start') }}{% if property %}?property_id={{ property.id }}{% endif %}"
+                    class="glass-button accent"
+                    style="padding: 16px 32px; font-size: 1.05rem; display: inline-block; margin-bottom: 16px;">
+                    Order SmartSign for This Property →
+                </a>
+
+                <!-- Secondary CTAs -->
+                <div style="display: flex; justify-content: center; gap: 24px; margin-top: 8px;">
+                    <a href="{{ url_for('properties.property_page', slug=property.slug) }}" target="_blank"
+                        style="color: var(--accent-cyan); font-size: 0.9rem;">
+                        View Property Page →
+                    </a>
+                    <a href="{{ url_for('dashboard.index') }}" style="color: var(--text-muted); font-size: 0.9rem;">
+                        Go to Dashboard
+                    </a>
+                </div>
+
+                <!-- Already have SmartSign hint -->
+                {% if has_unassigned_sign %}
+                <div
+                    style="margin-top: 24px; padding: 12px 16px; background: rgba(255,152,0,0.1); border-radius: 8px; border: 1px solid rgba(255,152,0,0.2);">
+                    <p style="margin: 0; color: var(--text-main); font-size: 0.9rem;">
+                        💡 You already have an unassigned SmartSign!
+                        <a href="{{ url_for('dashboard.index', highlight_asset_id=first_unassigned_sign_id) }}#smart-signs-section"
+                            style="color: var(--accent-cyan);">Assign it to this property →</a>
+                    </p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </main>
+</div>
+{% endblock %}

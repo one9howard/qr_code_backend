@@ -88,16 +88,63 @@
             <div class="col-span-12"
                 style="display: flex; justify-content: center; align-items: center; min-height: 60vh;">
                 <div class="card"
-                    style="max-width: 480px; text-align: center; padding: 48px 40px; background: linear-gradient(135deg, rgba(79,172,254,0.08) 0%, rgba(0,242,254,0.03) 100%); border: 1px solid rgba(79,172,254,0.25);"
+                    style="max-width: 520px; text-align: center; padding: 48px 40px; background: linear-gradient(135deg, rgba(79,172,254,0.08) 0%, rgba(0,242,254,0.03) 100%); border: 1px solid rgba(79,172,254,0.25);"
                     data-testid="activation-card">
-                    <h2 style="margin: 0 0 16px 0; font-size: 1.6rem; color: var(--text-main);">Get your first buyer
-                        lead</h2>
-                    <p style="color: var(--text-muted); font-size: 1rem; line-height: 1.6; margin-bottom: 28px;">
-                        SmartSigns turn sign scans into direct buyer inquiries.<br>
-                        Create one, place it at a listing, and leads appear here.
+
+                    <!-- Welcome Header -->
+                    <h2 style="margin: 0 0 8px 0; font-size: 1.6rem; color: var(--text-main);">Welcome to InSite Signs!
+                        🎉</h2>
+                    <p style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 32px;">
+                        Follow these steps to start capturing buyer leads.
                     </p>
+
+                    <!-- Onboarding Checklist -->
+                    <div style="text-align: left; margin-bottom: 32px;">
+                        <!-- Step 1: Create Property -->
+                        <div
+                            style="display: flex; align-items: flex-start; gap: 12px; padding: 14px 16px; background: rgba(255,255,255,0.03); border-radius: 8px; margin-bottom: 8px; border-left: 3px solid {% if property_count > 0 %}#4CAF50{% else %}rgba(255,255,255,0.2){% endif %};">
+                            <span style="font-size: 1.1rem;">{% if property_count > 0 %}✅{% else %}1️⃣{% endif %}</span>
+                            <div>
+                                <div style="font-weight: 500; color: var(--text-main);">Create a property</div>
+                                <div style="font-size: 0.85rem; color: var(--text-muted);">Add your listing to generate
+                                    a property page</div>
+                            </div>
+                        </div>
+
+                        <!-- Step 2: Order SmartSign -->
+                        <div
+                            style="display: flex; align-items: flex-start; gap: 12px; padding: 14px 16px; background: rgba(255,255,255,0.03); border-radius: 8px; margin-bottom: 8px; border-left: 3px solid {% if smart_sign_count > 0 %}#4CAF50{% else %}rgba(255,255,255,0.2){% endif %};">
+                            <span style="font-size: 1.1rem;">{% if smart_sign_count > 0 %}✅{% else %}2️⃣{% endif
+                                %}</span>
+                            <div>
+                                <div style="font-weight: 500; color: var(--text-main);">Order a SmartSign</div>
+                                <div style="font-size: 0.85rem; color: var(--text-muted);">Get a QR sign that turns
+                                    viewers into leads</div>
+                            </div>
+                        </div>
+
+                        <!-- Step 3: Place & Start Getting Leads -->
+                        <div
+                            style="display: flex; align-items: flex-start; gap: 12px; padding: 14px 16px; background: rgba(255,255,255,0.03); border-radius: 8px; border-left: 3px solid rgba(255,255,255,0.2);">
+                            <span style="font-size: 1.1rem;">3️⃣</span>
+                            <div>
+                                <div style="font-weight: 500; color: var(--text-main);">Place the sign & get leads</div>
+                                <div style="font-size: 0.85rem; color: var(--text-muted);">Buyers scan, submit info, and
+                                    you get notified</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Primary CTA -->
+                    {% if property_count == 0 %}
+                    <a href="{{ url_for('dashboard.new_property') }}" class="glass-button accent"
+                        style="padding: 16px 32px; font-size: 1.05rem; display: inline-block;">Create Your First
+                        Property →</a>
+                    {% else %}
                     <a href="{{ url_for('smart_signs.order_start') }}" class="glass-button accent"
-                        style="padding: 16px 32px; font-size: 1.05rem; display: inline-block;">Create SmartSign</a>
+                        style="padding: 16px 32px; font-size: 1.05rem; display: inline-block;">Create SmartSign →</a>
+                    {% endif %}
+
                     <p style="margin-top: 12px; color: var(--text-muted); font-size: 0.85rem;">Takes about 2 minutes</p>
                 </div>
             </div>

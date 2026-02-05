@@ -385,8 +385,13 @@ def index():
         metrics.get('leads', {}).get('lifetime', 0) > 0 or
         metrics.get('ctas', {}).get('7d', 0) > 0
     )
+    
+    # 9. New User Detection (for enhanced onboarding)
+    # True if user has 0 properties AND 0 SmartSigns
+    property_count = len(properties)
+    is_new_user = (property_count == 0 and smart_sign_count == 0)
 
-    # 9. Chart Data (Lead Timeseries)
+    # 10. Chart Data (Lead Timeseries)
     chart_data = get_agent_lead_timeseries(current_user.id, days=30)
 
     return render_template(
@@ -417,7 +422,8 @@ def index():
         next_step_url=next_step_url,
         has_any_activity=has_any_activity,
         first_unassigned_sign_id=first_unassigned_sign_id,
-        # Legacy compat
+        is_new_user=is_new_user,
+        property_count=property_count,
         # Legacy compat
         has_assigned_smartsigns=has_assigned_sign,
         highlight_asset_id=request.args.get("highlight_asset_id", type=int),
@@ -838,21 +844,48 @@ def new_property():
         
         flash("Property created successfully.", "success")
         
-        # Highlight logic: Find first unassigned asset
-        # (Replicated from index logic but simplified)
-        asset_check = db.execute("""
-            SELECT sa.id FROM sign_assets sa
-            WHERE sa.user_id = %s AND sa.active_property_id IS NULL
-            ORDER BY sa.created_at ASC LIMIT 1
-        """, (current_user.id,)).fetchone()
-        
-        target_url = url_for('dashboard.index')
-        if asset_check:
-            # Append params for highlighting
-            return redirect(url_for('dashboard.index', highlight_asset_id=asset_check['id']) + '#smart-signs-section')
-            
-        return redirect(target_url + '#smart-signs-section')
+        # Redirect to success page with SmartSign CTA
+        return redirect(url_for('dashboard.property_created', property_id=pid))
         
     return render_template("dashboard/property_new.html")
+
+
+@dashboard_bp.route("/properties/<int:property_id>/success")
+@login_required
+def property_created(property_id):
+    """
+    Success page after property creation.
+    Prompts user to order a SmartSign for the new property.
+    """
+    db = get_db()
+    
+    # Verify ownership
+    property_row = db.execute(
+        """
+        SELECT p.* 
+        FROM properties p
+        JOIN agents a ON p.agent_id = a.id
+        WHERE p.id = %s AND a.user_id = %s
+        """, 
+        (property_id, current_user.id)
+    ).fetchone()
+    
+    if not property_row:
+        flash("Property not found.", "error")
+        return redirect(url_for('dashboard.index'))
+    
+    # Check for unassigned SmartSigns
+    unassigned_sign = db.execute("""
+        SELECT id FROM sign_assets 
+        WHERE user_id = %s AND active_property_id IS NULL
+        ORDER BY created_at ASC LIMIT 1
+    """, (current_user.id,)).fetchone()
+    
+    return render_template(
+        "dashboard/property_created.html",
+        property=property_row,
+        has_unassigned_sign=bool(unassigned_sign),
+        first_unassigned_sign_id=unassigned_sign['id'] if unassigned_sign else None
+    )
 
 
