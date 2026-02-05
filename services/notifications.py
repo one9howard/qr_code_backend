@@ -119,8 +119,10 @@ def send_verification_email(to_email, code):
     """
     Send verification code email.
     """
-    # Debug Helper: Log code only in non-production
-    if not IS_PRODUCTION:
+    # Debug Helper: Log code in non-production OR staging
+    # Check APP_STAGE for staging environment
+    app_stage = os.environ.get("APP_STAGE", "").lower()
+    if not IS_PRODUCTION or app_stage == "staging":
         logger.warning(f"[Notifications] DEBUG MODE: Verification Code for {to_email} is: {code}")
 
     smtp_host = os.environ.get("SMTP_HOST")
