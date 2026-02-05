@@ -54,14 +54,15 @@ def generate_sign(address, beds, baths, sqft, price, agent_name, brokerage, agen
         font_banner_main = ImageFont.truetype(font_path, int(170 * scale))
         font_banner_sub = ImageFont.truetype(font_path, int(130 * scale))
     except IOError:
-        print("Warning: Montserrat font not found, falling back to Arial/Default.")
+        print("Warning: Montserrat font not found, falling back to Inter.")
         try:
-            font_address = ImageFont.truetype("arial.ttf", int(360 * scale))
-            font_details = ImageFont.truetype("arial.ttf", int(220 * scale))
-            font_agent = ImageFont.truetype("arial.ttf", int(170 * scale))
-            font_price = ImageFont.truetype("arial.ttf", int(700 * scale))
-            font_banner_main = ImageFont.truetype("arial.ttf", int(170 * scale))
-            font_banner_sub = ImageFont.truetype("arial.ttf", int(130 * scale))
+            inter_path = os.path.join("static", "fonts", "Inter-Regular.ttf")
+            font_address = ImageFont.truetype(inter_path, int(360 * scale))
+            font_details = ImageFont.truetype(inter_path, int(220 * scale))
+            font_agent = ImageFont.truetype(inter_path, int(170 * scale))
+            font_price = ImageFont.truetype(inter_path, int(700 * scale))
+            font_banner_main = ImageFont.truetype(inter_path, int(170 * scale))
+            font_banner_sub = ImageFont.truetype(inter_path, int(130 * scale))
         except IOError:
             font_address = ImageFont.load_default()
             font_details = ImageFont.load_default()

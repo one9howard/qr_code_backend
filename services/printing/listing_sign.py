@@ -14,7 +14,7 @@ from utils.storage import get_storage
 from utils.pdf_generator import LayoutSpec, SIGN_SIZES, DEFAULT_SIGN_SIZE, _draw_standard_layout, _draw_landscape_split_layout, hex_to_rgb
 from utils.listing_designs import _draw_listing_v2_phone_qr_premium, _draw_listing_v2_address_qr_premium
 from services.printing.layout_utils import register_fonts
-from config import BASE_URL
+from config import PUBLIC_BASE_URL
 from utils.qr_urls import property_scan_url
 
 logger = logging.getLogger(__name__)
@@ -167,7 +167,7 @@ def generate_listing_sign_pdf(order, output_path=None):
              # Critical Failure for Phase 1
              raise ValueError(f"Property {prop_row['id']} has no qr_code. Cannot generate valid Listing Sign.")
     
-    qr_url = property_scan_url(BASE_URL, qr_code)
+    qr_url = property_scan_url(PUBLIC_BASE_URL, qr_code)
     
     # Layout config
     if sign_size not in SIGN_SIZES:
@@ -232,3 +232,30 @@ def generate_listing_sign_pdf(order, output_path=None):
     storage.put_file(pdf_buffer, pdf_key, content_type="application/pdf")
     
     return pdf_key
+
+
+def generate_listing_sign_pdf_from_order_row(order_row, *, storage=None, db=None):
+    """
+    Unified wrapper for listing sign PDF generation.
+    
+    This is the SINGLE source of truth for listing-sign PDFs, used by:
+    - Preview/resize regeneration (routes/orders.py)
+    - Fulfillment print generation (services/fulfillment.py)
+    
+    Args:
+        order_row: DB row dict from orders table
+        storage: Optional storage instance (will get default if not provided)
+        db: Optional db connection (will get default if not provided)
+        
+    Returns:
+        str: Storage key for generated PDF
+    """
+    # Get defaults if not provided
+    if storage is None:
+        storage = get_storage()
+    if db is None:
+        db = get_db()
+    
+    # Delegate to the main generator
+    # generate_listing_sign_pdf already handles dict-like order objects
+    return generate_listing_sign_pdf(order_row, output_path=None)

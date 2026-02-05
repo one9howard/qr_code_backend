@@ -242,12 +242,20 @@ def _generate_smartsign_pdf(db, order, storage):
 
 def _generate_listing_sign_pdf(db, order, storage):
     """Generate Listing Sign PDF and store in storage."""
-    # STRICT: Delegate to canonical generator
-    from services.printing.listing_sign import generate_listing_sign_pdf
+    # STRICT: Delegate to canonical unified wrapper
+    from services.printing.listing_sign import generate_listing_sign_pdf_from_order_row
     
     try:
-        # Pass the full order object (dict-like)
-        pdf_key = generate_listing_sign_pdf(order)
+        # Convert to dict if needed
+        if hasattr(order, '_asdict'):
+            order_row = order._asdict()
+        elif not isinstance(order, dict):
+            order_row = dict(order)
+        else:
+            order_row = order
+            
+        # Use unified wrapper
+        pdf_key = generate_listing_sign_pdf_from_order_row(order_row, storage=storage, db=db)
         print(f"[Fulfillment] Generated listing sign PDF: {pdf_key}")
         return pdf_key
     except Exception as e:

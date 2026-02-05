@@ -51,6 +51,7 @@ Supported Layout IDs
 - smart_v1_photo_banner
 - smart_v1_minimal
 - smart_v1_agent_brand
+- smart_v2_vertical_banner
 
 smart_v1_minimal (Agent-First Minimal)
 Background: white

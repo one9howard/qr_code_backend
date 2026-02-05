@@ -65,16 +65,16 @@ def generate_smart_riser_pdf(order, output_path=None):
     
     # Fetch QR URL
     from utils.pdf_generator import draw_qr
-    from config import BASE_URL
+    from config import PUBLIC_BASE_URL
     
-    qr_url = f"{BASE_URL}" 
+    qr_url = f"{PUBLIC_BASE_URL}" 
     asset_id = payload.get('sign_asset_id')
     
     if asset_id:
         db = get_db()
         asset = db.execute("SELECT code FROM sign_assets WHERE id = %s", (asset_id,)).fetchone()
         if asset:
-            qr_url = f"{BASE_URL}/r/{asset['code']}"
+            qr_url = f"{PUBLIC_BASE_URL}/r/{asset['code']}"
 
     # Generate PDF in memory
     pdf_buffer = io.BytesIO()

@@ -251,12 +251,10 @@ def resize_order():
     Resize an existing order.
     Guest Supported.
     """
-    from database import get_db, get_agent_data_for_order
-    from utils.pdf_generator import generate_pdf_sign
+    from database import get_db
+    from services.printing.listing_sign import generate_listing_sign_pdf_from_order_row
     from utils.pdf_preview import render_pdf_to_web_preview
-    from utils.qr_urls import property_scan_url
-    from constants import SIGN_SIZES, DEFAULT_SIGN_COLOR
-    from config import BASE_URL
+    from constants import SIGN_SIZES
     from services.order_access import get_order_for_request
     
     data = request.get_json()
@@ -281,41 +279,29 @@ def resize_order():
         
     db = get_db()
     try:
-        prop = db.execute("SELECT * FROM properties WHERE id = %s", (order.property_id,)).fetchone()
-        if not prop: return jsonify({'success': False, 'error': 'property_not_found'}), 404
+        # Update size in order first, then reload as dict row
+        db.execute("""
+            UPDATE orders 
+            SET sign_size = %s,
+                print_size = %s,
+                updated_at = NOW()
+            WHERE id = %s
+        """, (normalized_size, normalized_size, order_id))
+        db.commit()
         
-        agent = get_agent_data_for_order(order_id)
-        if not agent: return jsonify({'success': False, 'error': 'agent_not_found'}), 404
+        # Load full order row as dict for the unified generator
+        order_row = db.execute("SELECT * FROM orders WHERE id = %s", (order_id,)).fetchone()
+        if not order_row:
+            return jsonify({'success': False, 'error': 'order_not_found'}), 404
         
-        qr_code = prop.get('qr_code')
-        if not qr_code: return jsonify({'success': False, 'error': 'missing_qr_code'}), 500
-        qr_url = property_scan_url(BASE_URL, qr_code)
+        # Convert to dict if needed
+        if hasattr(order_row, '_asdict'):
+            order_row = order_row._asdict()
+        elif not isinstance(order_row, dict):
+            order_row = dict(order_row)
         
-        sign_color = order.sign_color or DEFAULT_SIGN_COLOR
-        
-        # NOTE: If we persisted logo/headshot choice in order/agent snapshot, we'd pull it here.
-        # Currently assuming snapshot has correct keys.
-        
-        pdf_key = generate_pdf_sign(
-            address=prop.get('address', ''),
-            beds=prop.get('beds', ''),
-            baths=prop.get('baths', ''),
-            sqft=prop.get('sqft', ''),
-            price=prop.get('price', ''),
-            agent_name=agent.get('name', ''),
-            brokerage=agent.get('brokerage', ''),
-            agent_email=agent.get('email', ''),
-            agent_phone=agent.get('phone', ''),
-            qr_key=None,
-            agent_photo_key=agent.get('photo_filename'),
-            sign_color=sign_color,
-            sign_size=normalized_size,
-            order_id=order_id,
-            qr_value=qr_url,
-            # Pass logo only if column exists in snapshot or we fetch from agent (Snapshot update needed for full fidelity)
-            logo_key=agent.get('logo_filename') if 'logo_filename' in agent else None,
-            user_id=order.user_id # NEW: Pass owner ID for QR logo rendering
-        )
+        # Generate PDF using unified wrapper
+        pdf_key = generate_listing_sign_pdf_from_order_row(order_row, db=db)
         
         # Regenerate preview (Returns Key)
         preview_key = render_pdf_to_web_preview(
@@ -324,29 +310,23 @@ def resize_order():
             sign_size=normalized_size,
         )
         
-        # Update DB (including preview_key)
-        # Check if preview_key column exists before writing (safety)
-        # Using Safe Update
+        # Update DB with new keys
         try:
              db.execute("""
                 UPDATE orders 
-                SET sign_size = %s,
-                    print_size = %s,
-                    sign_pdf_path = %s,
+                SET sign_pdf_path = %s,
                     preview_key = %s,
                     updated_at = NOW()
                 WHERE id = %s
-            """, (normalized_size, normalized_size, pdf_key, preview_key, order_id))
+            """, (pdf_key, preview_key, order_id))
         except Exception as e:
             # Fallback for schema lag
              db.execute("""
                 UPDATE orders 
-                SET sign_size = %s,
-                    print_size = %s,
-                    sign_pdf_path = %s,
+                SET sign_pdf_path = %s,
                     updated_at = NOW()
                 WHERE id = %s
-            """, (normalized_size, normalized_size, pdf_key, order_id))
+            """, (pdf_key, order_id))
             
         db.commit()
         

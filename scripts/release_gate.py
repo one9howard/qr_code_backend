@@ -60,12 +60,30 @@ def check_config():
             return False
     return True
 
+def check_specs_sync():
+    """Run SPECS sync check via subprocess."""
+    import subprocess
+    result = subprocess.run(
+        ["python", "scripts/check_specs_sync.py"],
+        capture_output=True,
+        text=True,
+        cwd=os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    )
+    if result.returncode != 0:
+        print("CRITICAL FAILURE: SPECS.md is out of sync.")
+        print(result.stdout)
+        print(result.stderr)
+        return False
+    print(result.stdout.strip())
+    return True
+
 if __name__ == "__main__":
     print("[Release Gate] Running safety checks...")
     success = True
     if not check_forbidden_files(): success = False
     if not check_fonts(): success = False
     if not check_config(): success = False
+    if not check_specs_sync(): success = False
     
     if not success:
         print("[Release Gate] FAILED.")

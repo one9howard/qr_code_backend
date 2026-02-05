@@ -8,7 +8,7 @@ from reportlab.lib.pagesizes import letter, inch
 from PIL import Image, ImageDraw, ImageFont
 from database import get_db
 from utils.storage import get_storage
-from config import BASE_URL
+from config import PUBLIC_BASE_URL
 from utils.pdf_generator import generate_pdf_sign
 
 def create_or_get_kit(user_id, property_id):
@@ -115,10 +115,9 @@ def generate_kit(kit_id):
             # Generate deterministically
             try:
                 # from utils.pdf_generator import generate_pdf_sign (Moved to top)
-                from config import BASE_URL
                 
                 # Gather args
-                full_url = f"{BASE_URL}/r/{prop['qr_code']}" if prop['qr_code'] else f"{BASE_URL}/p/{prop['slug']}"
+                full_url = f"{PUBLIC_BASE_URL}/r/{prop['qr_code']}" if prop['qr_code'] else f"{PUBLIC_BASE_URL}/p/{prop['slug']}"
                 
                 # Generate using output_key (Non-Legacy Mode)
                 temp_pdf_key = f"{prefix}/temp_sign.pdf"
@@ -230,7 +229,7 @@ def _generate_flyer(prop):
         c.drawString(margin, height - 140, f"${prop['price']}")
         
     # QR Code
-    qr_url = f"{BASE_URL}/r/{prop['qr_code']}" if prop['qr_code'] else f"{BASE_URL}/p/{prop['slug']}"
+    qr_url = f"{PUBLIC_BASE_URL}/r/{prop['qr_code']}" if prop['qr_code'] else f"{PUBLIC_BASE_URL}/p/{prop['slug']}"
     from utils.pdf_generator import draw_qr
     
     # Draw QR at bottom right
@@ -271,9 +270,10 @@ def _generate_image(prop, w, h):
     # or rely on system fonts? Pillow default font is tiny.
     # Let's try to load a basic font or generic.
     try:
-        # Try typical linux path or font
-        font_large = ImageFont.truetype("arial.ttf", 60)
-        font_med = ImageFont.truetype("arial.ttf", 40)
+        # Use Inter font (open source, already shipped)
+        font_path = os.path.join(os.path.dirname(__file__), '..', 'static', 'fonts', 'Inter-Regular.ttf')
+        font_large = ImageFont.truetype(font_path, 60)
+        font_med = ImageFont.truetype(font_path, 40)
     except IOError:
         # Fallback to default (ugly but works)
         font_large = ImageFont.load_default()
