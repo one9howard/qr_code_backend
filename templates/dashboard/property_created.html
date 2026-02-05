@@ -32,24 +32,24 @@
 
                 <!-- Subtitle -->
                 <p style="color: var(--text-muted); font-size: 1rem; line-height: 1.6; margin-bottom: 32px;">
-                    Your property page is live. Now add a SmartSign to start capturing buyer leads when they scan your
-                    yard sign.
+                    Your property page is live. Order a custom Yard Sign or Smart Rider to start capturing leads
+                    immediately.
                 </p>
 
                 <!-- Primary CTA -->
-                <a href="{{ url_for('smart_signs.order_start') }}{% if property %}?property_id={{ property.id }}{% endif %}"
-                    class="glass-button accent"
+                <a href="{{ url_for('orders.order_sign_start', property_id=property.id) }}" class="glass-button accent"
                     style="padding: 16px 32px; font-size: 1.05rem; display: inline-block; margin-bottom: 16px;">
-                    Order SmartSign for This Property →
+                    Order Sign →
                 </a>
 
                 <!-- Secondary CTAs -->
                 <div style="display: flex; justify-content: center; gap: 24px; margin-top: 8px;">
                     <a href="{{ url_for('properties.property_page', slug=property.slug) }}" target="_blank"
-                        style="color: var(--accent-cyan); font-size: 0.9rem;">
+                        class="text-link" style="color: var(--accent-cyan); font-size: 0.9rem;">
                         View Property Page →
                     </a>
-                    <a href="{{ url_for('dashboard.index') }}" style="color: var(--text-muted); font-size: 0.9rem;">
+                    <a href="{{ url_for('dashboard.index') }}" class="text-link"
+                        style="color: var(--text-muted); font-size: 0.9rem;">
                         Go to Dashboard
                     </a>
                 </div>
@@ -59,7 +59,7 @@
                 <div
                     style="margin-top: 24px; padding: 12px 16px; background: rgba(255,152,0,0.1); border-radius: 8px; border: 1px solid rgba(255,152,0,0.2);">
                     <p style="margin: 0; color: var(--text-main); font-size: 0.9rem;">
-                        💡 You already have an unassigned SmartSign!
+                        💡 You already have an unassigned Smart Rider!
                         <a href="{{ url_for('dashboard.index', highlight_asset_id=first_unassigned_sign_id) }}#smart-signs-section"
                             style="color: var(--accent-cyan);">Assign it to this property →</a>
                     </p>
