@@ -1,7 +1,7 @@
 import pytest
 import json
 from models import Order, Property, User
-from app import create_app, db
+from app import create_app
 
 @pytest.fixture
 def app():
