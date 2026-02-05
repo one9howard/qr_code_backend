@@ -179,8 +179,8 @@ def _ensure_pdf_in_storage(db, order, storage):
     if print_product == 'smart_sign' or order_type == 'smart_sign':
         pdf_key = _generate_smartsign_pdf(db, order, storage)
         
-    elif (print_product and print_product.startswith('listing_sign')) or order_type == 'sign':
-        pdf_key = _generate_listing_sign_pdf(db, order, storage)
+    elif (print_product and print_product.startswith('yard_sign')) or order_type == 'sign':
+        pdf_key = _generate_yard_sign_pdf(db, order, storage)
         
     elif print_product == 'smart_riser':
         pdf_key = _generate_smart_riser_pdf(db, order, storage)
@@ -277,26 +277,30 @@ def _generate_smartsign_pdf(db, order, storage):
         return None
 
 
-def _generate_listing_sign_pdf(db, order, storage):
-    """Generate Listing Sign PDF and store in storage."""
-    # STRICT: Delegate to canonical unified wrapper
-    from services.printing.listing_sign import generate_listing_sign_pdf_from_order_row
+def _generate_yard_sign_pdf(db, order, storage):
+    """
+    Generate Yard Sign PDF (formerly listing sign) using the standard generator.
+    Returns: pdf_key (str)
+    """
+    from services.printing.yard_sign import generate_yard_sign_pdf_from_order_row
+
+    # Reuse the same logic
+    order_id = order['id']
     
+    # We need a Row-like object for generate_yard_sign_pdf_from_order_row
+    # We can fetch the row or just construct a dict (the helper supports dicts).
+    # It's cleaner to fetch the actual row for consistent behavior.
+    order_row = db.execute("SELECT * FROM orders WHERE id = %s", (order_id,)).fetchone()
+    
+    if not order_row:
+         raise ValueError(f"Order {order_id} not found during PDF gen")
+         
     try:
-        # Convert to dict if needed
-        if hasattr(order, '_asdict'):
-            order_row = order._asdict()
-        elif not isinstance(order, dict):
-            order_row = dict(order)
-        else:
-            order_row = order
-            
-        # Use unified wrapper
-        pdf_key = generate_listing_sign_pdf_from_order_row(order_row, storage=storage, db=db)
-        print(f"[Fulfillment] Generated listing sign PDF: {pdf_key}")
+        pdf_key = generate_yard_sign_pdf_from_order_row(order_row, storage=storage, db=db)
+        print(f"[Fulfillment] Generated yard sign PDF: {pdf_key}")
         return pdf_key
     except Exception as e:
-        logger.error(f"[Fulfillment] Listing sign PDF generation failed: {e}")
+        logger.error(f"[Fulfillment] Yard sign PDF generation failed: {e}")
         return None
 
 

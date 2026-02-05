@@ -16,11 +16,13 @@ INCH = 72.0
 # ---- 1) Product size matrices (Reality A) ----
 
 SMARTSIGN_SIZES: List[str] = ["18x24", "24x36", "36x24"]  # purchasable
-LISTING_SIGN_SIZES: List[str] = ["12x18", "18x24", "24x36", "36x24"]
+YARD_SIGN_SIZES: List[str] = ["12x18", "18x24", "24x36", "36x24"]
+SMART_RISER_SIZES: List[str] = ["18x24", "24x36"] # purchasable
 
 PRODUCT_SIZE_MATRIX: Dict[str, List[str]] = {
     "smart_sign": SMARTSIGN_SIZES,
-    "listing_sign": LISTING_SIGN_SIZES,
+    "yard_sign": YARD_SIGN_SIZES,
+    "smart_riser": SMART_RISER_SIZES,
 }
 
 # ---- 2) Global rules ----
@@ -194,11 +196,11 @@ SMARTSIGN_V1_MINIMAL_SPECS: Dict[str, Any] = {
     },
 }
 
-# ---- 5) Listing Sign: product-level constraints only (layout-specific specs may live elsewhere) ----
+# ---- 5) Yard Sign: product-level constraints only (layout-specific specs may live elsewhere) ----
 
-LISTING_SIGN_CONSTRAINTS: Dict[str, Any] = {
-    "product": "listing_sign",
-    "sizes": LISTING_SIGN_SIZES,
+YARD_SIGN_CONSTRAINTS: Dict[str, Any] = {
+    "product": "yard_sign",
+    "sizes": YARD_SIGN_SIZES,
     "content_hierarchy": [
         "address_or_title",
         "price_if_present",
@@ -223,7 +225,7 @@ def _signature() -> Dict[str, Any]:
         },
         "smartsign_layout_ids": SMARTSIGN_LAYOUT_IDS,
         "smartsign_v1_minimal": SMARTSIGN_V1_MINIMAL_SPECS,
-        "listing_sign_sizes": LISTING_SIGN_SIZES,
+        "yard_sign_sizes": YARD_SIGN_SIZES,
     }
 
 SPECS_SIGNATURE: Dict[str, Any] = _signature()

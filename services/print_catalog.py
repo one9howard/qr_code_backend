@@ -8,7 +8,7 @@ Single source of truth for:
 """
 import logging
 from services import stripe_price_resolver
-from services.specs import PRODUCT_SIZE_MATRIX, SMARTSIGN_SIZES, LISTING_SIGN_SIZES
+from services.specs import PRODUCT_SIZE_MATRIX, SMARTSIGN_SIZES, YARD_SIGN_SIZES
 
 logger = logging.getLogger(__name__)
 
@@ -17,13 +17,13 @@ logger = logging.getLogger(__name__)
 # Valid Materials per Product
 SMARTSIGN_MATERIALS = ('aluminum_040',)
 SMART_RISER_MATERIALS = ('aluminum_040',)
-LISTING_SIGN_MATERIALS = ('coroplast_4mm', 'aluminum_040')
+YARD_SIGN_MATERIALS = ('coroplast_4mm', 'aluminum_040')
 
 # SIZES (Sourced from Canonical Specs)
 SMART_SIGN_VALID_SIZES = tuple(SMARTSIGN_SIZES)
 SMART_RISER_VALID_SIZES = ('6x24', '6x36') # Riser specs not in canonical matrix yet? Or just use hardcoded for now.
 
-LISTING_SIGN_VALID_SIZES = {
+YARD_SIGN_VALID_SIZES = {
     # Coroplast does not support 36x24
     'coroplast_4mm': ('12x18', '18x24', '24x36'),
     # Aluminum does not support 12x18
@@ -37,10 +37,10 @@ SMART_SIGN_LAYOUTS = (
     'smart_v2_vertical_banner'
 )
 
-LISTING_SIGN_LAYOUTS = (
-    'listing_standard',
-    'listing_v2_phone_qr_premium',
-    'listing_v2_address_qr_premium'
+YARD_SIGN_LAYOUTS = (
+    'yard_standard',
+    'yard_photo',
+    'yard_agent_brand'
 )
 
 # Strict Color Palette (ID -> Hex)
@@ -68,26 +68,31 @@ def get_lookup_key(print_product: str, print_size: str, material: str = None) ->
     User Schema:
       SmartSign (Alum): smart_sign_print_18x24
       SmartRiser (Alum): smart_riser_6x24
-      Listing (Coro): listing_sign_coroplast_18x24
-      Listing (Alum): listing_sign_aluminum_18x24
+      Listing (Coro): yard_sign_coroplast_18x24
+      Listing (Alum): yard_sign_aluminum_18x24
+
+    Returns:
+        str: Lookup key (e.g. "smart_sign_18x24", "yard_sign_coroplast_18x24")
     """
     if print_product == 'smart_sign':
-        # Material is always aluminum, not in key
+        # Smart signs imply material based on premium nature (mock logic)
+        # We just need size.
         return f"smart_sign_print_{print_size}"
         
     elif print_product == 'smart_riser':
         # Material is always aluminum, not in key
         return f"smart_riser_{print_size}"
         
-    elif print_product == 'listing_sign':
+    elif print_product == 'yard_sign':
+        # "listing_sign" logic requires material
         if not material:
-            raise ValueError("Material required for listing sign key")
+            raise ValueError("Material required for yard_sign lookup")
         
-        # Mappings for material part of key
-        # User defined: listing_sign_coroplast_12x18 -> 'coroplast'
-        # User defined: listing_sign_aluminum_18x24 -> 'aluminum'
+        # Map nice names to key fragments
+        # User defined: yard_sign_coroplast_12x18 -> 'coroplast'
+        # User defined: yard_sign_aluminum_18x24 -> 'aluminum'
         mat_key = 'coroplast' if 'coroplast' in material else 'aluminum'
-        return f"listing_sign_{mat_key}_{print_size}"
+        return f"yard_sign_{mat_key}_{print_size}"
         
     raise ValueError(f"Unknown product for lookup key: {print_product}")
 
@@ -113,12 +118,12 @@ def validate_sku_strict(print_product, print_size, material):
         if print_size not in SMART_RISER_VALID_SIZES:
             return False, "invalid_size"
             
-    elif print_product == 'listing_sign':
-        if material not in LISTING_SIGN_MATERIALS:
+    elif print_product == 'yard_sign':
+        if material not in YARD_SIGN_MATERIALS:
              return False, "invalid_material"
         
         # Dependent sizing
-        allowed = LISTING_SIGN_VALID_SIZES.get(material, ())
+        allowed = YARD_SIGN_VALID_SIZES.get(material, ())
         if print_size not in allowed:
             return False, f"invalid_size_for_material"
             
@@ -162,11 +167,11 @@ def get_all_required_lookup_keys() -> list[str]:
     for size in SMART_RISER_VALID_SIZES:
         keys.append(get_lookup_key('smart_riser', size, 'aluminum_040'))
         
-    # Listing Signs
-    for mat in LISTING_SIGN_MATERIALS:
-        sizes = LISTING_SIGN_VALID_SIZES.get(mat, [])
+    # Yard Signs
+    for mat in YARD_SIGN_MATERIALS:
+        sizes = YARD_SIGN_VALID_SIZES.get(mat, [])
         for size in sizes:
-            keys.append(get_lookup_key('listing_sign', size, mat))
+            keys.append(get_lookup_key('yard_sign', size, mat))
             
     return keys
 
@@ -177,11 +182,11 @@ def validate_layout(print_product, layout_id):
         if layout_id not in SMART_SIGN_LAYOUTS:
             return False, f"Invalid SmartSign layout: {layout_id}"
         return True, ""
-    elif print_product == 'listing_sign':
+    elif print_product == 'yard_sign':
         if not layout_id:
             return False, "Layout ID required"
-        if layout_id not in LISTING_SIGN_LAYOUTS:
-             return False, f"Invalid Listing Sign layout: {layout_id}"
+        if layout_id not in YARD_SIGN_LAYOUTS:
+             return False, f"Invalid Yard Sign layout: {layout_id}"
         return True, ""
     elif print_product == 'smart_riser':
         # Risers might not have layouts yet? Assuming generic or none required.

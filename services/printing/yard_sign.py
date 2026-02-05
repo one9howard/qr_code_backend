@@ -60,21 +60,21 @@ def _format_price(price_val):
             # No digits found, return original
             return price_str
     except (ValueError, OverflowError):
-        # Parsing failed, return original cleaned string
-        return price_str
+        # Yard Sign Constants (derived from specs usually, but internal to this generator)
+# Note: specs.py has YARD_SIGN_SIZES, but we handle specific logic here.
+        pass
 
 
-def generate_listing_sign_pdf(order, output_path=None):
+def generate_yard_sign_pdf(order, output_path=None):
     """
-    Generate the high-res PDF for a Listing Sign.
-    Enforces Phase 6 rules: Always Double Sided (2 pages).
+    Generate the print-ready PDF for a standard Yard Sign.
     
     Args:
-        order: Order dict/row object with order data
-        output_path: Deprecated - ignored. Returns storage key.
-    
+        order (dict): Order details (address, QR data, agent info)
+        output_path (str, optional): Local path to save. If None, saves to tmp.
+        
     Returns:
-        str: Storage key for generated PDF
+        str: Storage key of the generated PDF (e.g. "pdfs/.../yard_sign_18x24.pdf")
     """
     register_fonts()
     db = get_db()
@@ -226,19 +226,23 @@ def generate_listing_sign_pdf(order, output_path=None):
     pdf_buffer.seek(0)
     
     # Save to storage
+    # ----------------
     folder = f"pdfs/order_{order_id}"
-    pdf_key = f"{folder}/listing_sign_{sign_size}.pdf"
+    # Filename: yard_sign_{SIZE}.pdf  (e.g. yard_sign_18x24.pdf)
+    # If we have multiple signs? This generator is usually 1-to-1 with an order item.
+    pdf_key = f"{folder}/yard_sign_{sign_size}.pdf"
     
     storage.put_file(pdf_buffer, pdf_key, content_type="application/pdf")
     
     return pdf_key
 
 
-def generate_listing_sign_pdf_from_order_row(order_row, *, storage=None, db=None):
+def generate_yard_sign_pdf_from_order_row(order_row, *, storage=None, db=None):
     """
-    Unified wrapper for listing sign PDF generation.
+    Wrapper to generate yard sign PDF from a database Order row (dictionary or Row).
+    Fetches missing logical relations like Agent, Property if needed.
     
-    This is the SINGLE source of truth for listing-sign PDFs, used by:
+    This is the SINGLE source of truth for yard-sign PDFs, used by:
     - Preview/resize regeneration (routes/orders.py)
     - Fulfillment print generation (services/fulfillment.py)
     
@@ -257,5 +261,5 @@ def generate_listing_sign_pdf_from_order_row(order_row, *, storage=None, db=None
         db = get_db()
     
     # Delegate to the main generator
-    # generate_listing_sign_pdf already handles dict-like order objects
-    return generate_listing_sign_pdf(order_row, output_path=None)
+    # generate_yard_sign_pdf already handles dict-like order objects
+    return generate_yard_sign_pdf(order_row, output_path=None)

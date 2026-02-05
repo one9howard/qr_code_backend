@@ -288,7 +288,7 @@ def submit():
                 (
                     user_id, guest_email, property_id, ORDER_STATUS_PENDING_PAYMENT, 
                     guest_token, token_created_at, sign_color, sign_size, sign_size,
-                    'listing_sign', 'coroplast_4mm', 'single'  # Canonical print_product/material/sides
+                    'yard_sign', 'coroplast_4mm', 'single'  # Canonical print_product/material/sides
                 )
             )
             order_id = cursor.fetchone()['id']

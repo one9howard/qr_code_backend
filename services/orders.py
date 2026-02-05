@@ -124,7 +124,7 @@ def process_paid_order(db, session):
         target_type = 'sign'
     
     final_type = current_type
-    if current_type == 'listing_sign':
+    if current_type == 'yard_sign':
         final_type = 'sign'
     elif current_type not in ('sign', 'listing_unlock', 'smart_sign', 'listing_kit'):
         final_type = target_type

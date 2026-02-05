@@ -188,7 +188,7 @@ def order_sign():
     
     from services.print_catalog import get_price_id
     try:
-        price_id = get_price_id('listing_sign', sign_size, material)
+        price_id = get_price_id('yard_sign', sign_size, material)
     except ValueError as e:
         return jsonify({"success": False, "error": str(e)}), 400
         
@@ -196,7 +196,7 @@ def order_sign():
         UPDATE orders 
         SET print_product = %s, material = %s, sides = %s, print_size = %s, layout_id = %s, updated_at = NOW()
         WHERE id = %s
-    """, ('listing_sign', material, sides, sign_size, data.get('layout_id', order.layout_id or 'listing_standard'), order.id))
+    """, ('yard_sign', material, sides, sign_size, data.get('layout_id', order.layout_id or 'yard_standard'), order.id))
     db_conn.commit()
     
     try:
@@ -213,7 +213,7 @@ def order_sign():
                 'order_id': str(order.id),
                 'property_id': str(order.property_id),
                 'user_id': curr_user_id,
-                'sign_type': 'listing_sign', # Keep for analytics/reference? Or change to 'sign'? Leaving as descriptive 'listing_sign' is fine for metadata.
+                'sign_type': 'yard_sign', # Keep for analytics/reference? Or change to 'sign'? Leaving as descriptive 'yard_sign' is fine for metadata.
                 'material': material,
                 'sides': sides,
                 'size': sign_size
@@ -252,7 +252,7 @@ def resize_order():
     Guest Supported.
     """
     from database import get_db
-    from services.printing.listing_sign import generate_listing_sign_pdf_from_order_row
+    from services.printing.yard_sign import generate_yard_sign_pdf_from_order_row
     from utils.pdf_preview import render_pdf_to_web_preview
     from constants import SIGN_SIZES
     from services.order_access import get_order_for_request
@@ -300,8 +300,11 @@ def resize_order():
         elif not isinstance(order_row, dict):
             order_row = dict(order_row)
         
-        # Generate PDF using unified wrapper
-        pdf_key = generate_listing_sign_pdf_from_order_row(order_row, db=db)
+        # For yard signs, we generate immediately (if we have data)
+        # But usually we wait for webhook. However, if we want preview?
+        # Preview logic is separate. This route is for re-generation? 
+        # Actually this route seems to be "fulfill_pdf"?
+        pdf_key = generate_yard_sign_pdf_from_order_row(order_row, db=db)
         
         # Regenerate preview (Returns Key)
         preview_key = render_pdf_to_web_preview(

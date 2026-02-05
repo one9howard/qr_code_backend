@@ -100,7 +100,7 @@ def generate_kit(kit_id):
         order = db.execute(
             """
             SELECT sign_pdf_path FROM orders 
-            WHERE property_id = %s AND order_type IN ('listing_sign', 'sign') AND sign_pdf_path IS NOT NULL
+            WHERE property_id = %s AND order_type IN ('yard_sign', 'sign') AND sign_pdf_path IS NOT NULL
             ORDER BY created_at DESC LIMIT 1
             """,
             (prop_id,)
