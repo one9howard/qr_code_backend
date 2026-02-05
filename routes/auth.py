@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash
+from flask import Blueprint, render_template, request, redirect, url_for, flash, current_app
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import login_user, login_required, logout_user, current_user
 from database import get_db
@@ -9,6 +9,11 @@ from datetime import datetime, timedelta
 from services.notifications import send_verification_email
 
 auth_bp = Blueprint('auth', __name__)
+
+
+def get_limiter():
+    """Get limiter from current app - handles blueprint access."""
+    return getattr(current_app, 'limiter', None)
 
 def is_safe_url(target):
     ref_url = urlparse(request.host_url)
@@ -21,6 +26,15 @@ def generate_verification_code():
 
 @auth_bp.route("/register", methods=["GET", "POST"])
 def register():
+    # Apply rate limit for POST requests only (registration attempts)
+    if request.method == "POST":
+        limiter = get_limiter()
+        if limiter:
+            try:
+                limiter.limit("5 per minute")(lambda: None)()
+            except Exception:
+                flash("Too many registration attempts. Please wait a moment.", "error")
+                return redirect(url_for("auth.register"))
     # Get next param from either args (GET) or form (POST)
     next_url = request.args.get('next') or request.form.get('next')
     
@@ -152,6 +166,15 @@ def register():
 
 @auth_bp.route("/login", methods=["GET", "POST"])
 def login():
+    # Apply rate limit for POST requests only (login attempts)
+    if request.method == "POST":
+        limiter = get_limiter()
+        if limiter:
+            try:
+                limiter.limit("5 per minute", key_func=lambda: request.form.get('email', 'unknown'))(lambda: None)()
+            except Exception:
+                flash("Too many login attempts. Please wait a moment.", "error")
+                return redirect(url_for("auth.login"))
     # Get next param from either args (GET) or form (POST)
     next_url = request.args.get('next') or request.form.get('next')
 

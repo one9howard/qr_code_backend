@@ -1,6 +1,8 @@
 from flask import Flask, request, redirect, url_for
 from flask_login import LoginManager
 from flask_wtf.csrf import CSRFProtect
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 from config import UPLOAD_DIR, PROPERTY_PHOTOS_DIR, SECRET_KEY, MAX_CONTENT_LENGTH, TRUST_PROXY_HEADERS, PROXY_FIX_NUM_PROXIES, IS_PRODUCTION, STRIPE_PRICE_MONTHLY, STRIPE_PRICE_ANNUAL, STRIPE_PUBLISHABLE_KEY, STRIPE_SECRET_KEY, APP_STAGE, SESSION_COOKIE_HTTPONLY, SESSION_COOKIE_SAMESITE, SESSION_COOKIE_SECURE, REMEMBER_COOKIE_HTTPONLY, REMEMBER_COOKIE_SECURE, PREFERRED_URL_SCHEME, STORAGE_BACKEND, INSTANCE_DIR
 from database import close_connection
 from models import User
@@ -69,6 +71,15 @@ def create_app(test_config=None):
     csrf = CSRFProtect(app)
     app.config["WTF_CSRF_HEADERS"] = ["X-CSRFToken", "X-CSRF-Token"]
     app.config["WTF_CSRF_TIME_LIMIT"] = 3600
+
+    # Rate Limiting (P1 Security)
+    limiter = Limiter(
+        get_remote_address,
+        app=app,
+        default_limits=["200 per day", "50 per hour"],
+        storage_uri="memory://",  # Upgrade to Redis in production for distributed rate limiting
+    )
+    app.limiter = limiter  # Store for blueprint access
 
     # Stripe Config
     app.config['STRIPE_PRICE_MONTHLY'] = STRIPE_PRICE_MONTHLY

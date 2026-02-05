@@ -1,6 +1,7 @@
 flask
 flask-login
 flask-wtf
+flask-limiter
 psycopg2-binary
 stripe
 reportlab

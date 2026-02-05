@@ -25,17 +25,28 @@ def fulfill_order(order_id):
     Generate/validate PDF and enqueue to print_jobs.
     Idempotent: safe to call multiple times.
     
+    HARDENED VERSION:
+    - Uses SELECT ... FOR UPDATE for atomic job creation
+    - Gates on paid_at timestamp, not just status string
+    - Persists failure status to DB instead of silent return
+    
     Returns:
         True on success (or if already fulfilled)
-        False on error
+        False on error (failure persisted to DB)
     """
     db = get_db()
     storage = get_storage()
     
-    # 1. Load order via raw SQL
-    order = db.execute(
-        "SELECT * FROM orders WHERE id = %s", (order_id,)
-    ).fetchone()
+    # 1. Load order with row lock (prevents concurrent fulfillment)
+    # FOR UPDATE ensures no other transaction can modify this order until we commit
+    try:
+        order = db.execute(
+            "SELECT * FROM orders WHERE id = %s FOR UPDATE NOWAIT", (order_id,)
+        ).fetchone()
+    except Exception as lock_err:
+        # Another process holds the lock - likely already being fulfilled
+        logger.warning(f"[Fulfillment] Order {order_id} locked by another process: {lock_err}")
+        return False
     
     if not order:
         logger.error(f"[Fulfillment] Order {order_id} not found")
@@ -43,14 +54,12 @@ def fulfill_order(order_id):
     
     order_type = order['order_type']
     status = order['status']
+    paid_at = order.get('paid_at')
     
-    print(f"[Fulfillment] Processing Order {order_id} (type={order_type}, status={status})")
+    print(f"[Fulfillment] Processing Order {order_id} (type={order_type}, status={status}, paid_at={paid_at})")
     
-    # 2. Validate status - only process 'paid' orders
-    # If already 'submitted_to_printer', check idempotency
-    
-    # STRICT IDEMPOTENCY CHECK
-    # Always check if a print_job already exists for this order, regardless of status.
+    # 2. STRICT IDEMPOTENCY CHECK
+    # Always check if a print_job already exists for this order
     idempotency_key = f"order_{order_id}"
     existing_job = db.execute(
         "SELECT job_id FROM print_jobs WHERE idempotency_key = %s",
@@ -68,33 +77,39 @@ def fulfill_order(order_id):
              db.commit()
         return True
 
-    if status == 'submitted_to_printer':
-        # If we are here, no print_job was found (maybe manual DB update?), but status says submitted.
-        # We should proceed to re-submit or fail?
-        # Safe bet: Retry submission if job is missing.
-        print(f"[Fulfillment] Order {order_id} is 'submitted_to_printer' but no job found. Retrying.")
+    # 3. GATE ON paid_at TIMESTAMP (not just status string)
+    # This is stricter than checking status == 'paid'
+    if not paid_at:
+        error_msg = f"Order {order_id} has no paid_at timestamp - cannot fulfill"
+        logger.error(f"[Fulfillment] {error_msg}")
+        _persist_fulfillment_error(db, order_id, error_msg)
+        return False
     
+    # Also check status for defense-in-depth
+    if status not in ('paid', 'submitted_to_printer'):
+        error_msg = f"Order {order_id} status '{status}' is not valid for fulfillment"
+        logger.warning(f"[Fulfillment] {error_msg}")
+        # Don't persist error for wrong status - might be intentional (e.g., cancelled)
+        return False
     
-    if status != 'paid':
-        logger.warning(f"[Fulfillment] Order {order_id} status is '{status}', expected 'paid'")
-        # Allow through if already submitted_to_printer for idempotency
-        if status != 'submitted_to_printer':
-            return False
-    
-    # 3. Validate order_type
+    # 4. Validate order_type
     if order_type not in SUPPORTED_ORDER_TYPES:
-        logger.error(f"[Fulfillment] Unsupported order_type: {order_type}")
+        error_msg = f"Unsupported order_type: {order_type}"
+        logger.error(f"[Fulfillment] {error_msg}")
+        _persist_fulfillment_error(db, order_id, error_msg)
         return False
     
     try:
-        # 4. Ensure PDF exists in storage
+        # 5. Ensure PDF exists in storage
         pdf_key = _ensure_pdf_in_storage(db, order, storage)
         
         if not pdf_key:
-            logger.error(f"[Fulfillment] Failed to get/generate PDF for order {order_id}")
+            error_msg = f"Failed to get/generate PDF for order {order_id}"
+            logger.error(f"[Fulfillment] {error_msg}")
+            _persist_fulfillment_error(db, order_id, error_msg)
             return False
         
-        # 5. Enqueue via InternalQueueProvider (handles idempotency)
+        # 6. Enqueue via InternalQueueProvider (handles idempotency)
         from services.fulfillment_providers.internal import InternalQueueProvider
         provider = InternalQueueProvider()
         
@@ -103,11 +118,12 @@ def fulfill_order(order_id):
         
         job_id = provider.submit_order(order_id, shipping_data, pdf_key)
         
-        # 6. Update order status
+        # 7. Update order status (atomic with job creation due to FOR UPDATE lock)
         db.execute("""
             UPDATE orders 
             SET status = 'submitted_to_printer',
                 provider_job_id = %s,
+                fulfillment_error = NULL,
                 updated_at = NOW()
             WHERE id = %s
         """, (job_id, order_id))
@@ -117,8 +133,29 @@ def fulfill_order(order_id):
         return True
         
     except Exception as e:
+        error_msg = str(e)[:500]
         logger.error(f"[Fulfillment] Failed for order {order_id}: {e}", exc_info=True)
+        _persist_fulfillment_error(db, order_id, error_msg)
         return False
+
+
+def _persist_fulfillment_error(db, order_id, error_msg):
+    """
+    Persist fulfillment failure to DB for retry/alerting.
+    Sets status to 'fulfillment_failed' so it can be retried.
+    """
+    try:
+        db.execute("""
+            UPDATE orders 
+            SET status = 'fulfillment_failed',
+                fulfillment_error = %s,
+                updated_at = NOW()
+            WHERE id = %s
+        """, (error_msg[:500], order_id))
+        db.commit()
+        logger.info(f"[Fulfillment] Persisted error for order {order_id}: {error_msg[:100]}")
+    except Exception as db_err:
+        logger.error(f"[Fulfillment] Failed to persist error for order {order_id}: {db_err}")
 
 
 def _ensure_pdf_in_storage(db, order, storage):

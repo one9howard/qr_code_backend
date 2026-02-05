@@ -275,52 +275,29 @@ def property_page(slug):
     property_row = None
     
     # Find by canonical slug
-    # Note: scheduling_url may not exist in older schemas - handle gracefully
-    try:
-        property_row = db.execute(
-            "SELECT p.*, a.name as agent_name, a.brokerage, a.email as agent_email, "
-            "a.phone as agent_phone, a.photo_filename as agent_photo, a.user_id as agent_user_id, "
-            "a.scheduling_url as agent_scheduling_url "
-            "FROM properties p "
-            "JOIN agents a ON p.agent_id = a.id "
-            "WHERE p.slug = %s",
-            (slug,)
-        ).fetchone()
-    except Exception as e:
-        # Fallback without scheduling_url for unmigrated databases
-        print(f"[Properties] scheduling_url query failed, using fallback: {e}")
-        property_row = db.execute(
-            "SELECT p.*, a.name as agent_name, a.brokerage, a.email as agent_email, "
-            "a.phone as agent_phone, a.photo_filename as agent_photo, a.user_id as agent_user_id "
-            "FROM properties p "
-            "JOIN agents a ON p.agent_id = a.id "
-            "WHERE p.slug = %s",
-            (slug,)
-        ).fetchone()
+    property_row = db.execute(
+        """SELECT p.*, a.name as agent_name, a.brokerage, a.email as agent_email, 
+           a.phone as agent_phone, a.photo_filename as agent_photo, a.user_id as agent_user_id, 
+           a.scheduling_url as agent_scheduling_url 
+           FROM properties p 
+           JOIN agents a ON p.agent_id = a.id 
+           WHERE p.slug = %s""",
+        (slug,)
+    ).fetchone()
     
-    # Fallback: legacy ID-based slug format
+    # Fallback: legacy ID-based slug format (e.g., "123-property-name")
     if not property_row:
         try:
             property_id = int(slug.split('-')[0])
-            try:
-                property_row = db.execute(
-                    "SELECT p.*, a.name as agent_name, a.brokerage, a.email as agent_email, "
-                    "a.phone as agent_phone, a.photo_filename as agent_photo, a.user_id as agent_user_id, "
-                    "a.scheduling_url as agent_scheduling_url "
-                    "FROM properties p "
-                    "JOIN agents a ON p.agent_id = a.id "
-                    "WHERE p.id = %s",
-                    (property_id,)
-                ).fetchone()
-            except Exception:
-                property_row = db.execute(
-                    "SELECT p.*, a.name as agent_name, a.brokerage, a.email as agent_email, "
-                    "a.phone as agent_phone, a.photo_filename as agent_photo, a.user_id as agent_user_id "
-                    "FROM properties p "
-                    "JOIN agents a ON p.agent_id = a.id "
-                    "WHERE p.id = %s",
-                    (property_id,)
-                ).fetchone()
+            property_row = db.execute(
+                """SELECT p.*, a.name as agent_name, a.brokerage, a.email as agent_email, 
+                   a.phone as agent_phone, a.photo_filename as agent_photo, a.user_id as agent_user_id, 
+                   a.scheduling_url as agent_scheduling_url 
+                   FROM properties p 
+                   JOIN agents a ON p.agent_id = a.id 
+                   WHERE p.id = %s""",
+                (property_id,)
+            ).fetchone()
             
             # Redirect to canonical URL if found
             if property_row and property_row['slug']:
