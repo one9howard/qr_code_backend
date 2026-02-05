@@ -196,7 +196,7 @@ def order_sign():
         UPDATE orders 
         SET print_product = %s, material = %s, sides = %s, print_size = %s, layout_id = %s, updated_at = NOW()
         WHERE id = %s
-    """, ('listing_sign', material, sides, sign_size, data.get('layout_id', order.layout_id or 'standard'), order.id))
+    """, ('listing_sign', material, sides, sign_size, data.get('layout_id', order.layout_id or 'listing_standard'), order.id))
     db_conn.commit()
     
     try:

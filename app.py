@@ -198,7 +198,7 @@ def create_app(test_config=None):
     csrf.exempt(events_bp)  # Public pages post client events without CSRF token
 
     # Dev/Admin
-    if not IS_PRODUCTION:
+    if (not IS_PRODUCTION) and os.environ.get("ENABLE_DEV_ROUTES", "").lower() == "true":
         from routes.dev import dev_bp
         app.register_blueprint(dev_bp)
     

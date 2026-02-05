@@ -131,59 +131,56 @@
                         Layout</label>
 
                     <!-- Standardized Grid from SmartSigns -->
+                    <!-- Standardized Grid for Listing Signs -->
                     <div class="layout-grid"
                         style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 2rem;">
-                        <!-- Option 1: Photo Banner -->
+                        <!-- Option 1: Standard -->
                         <label class="layout-card">
-                            <input type="radio" name="layout_id" value="smart_v1_photo_banner" checked>
+                            <input type="radio" name="layout_id" value="listing_standard" checked>
                             <div class="preview-box">
-                                <div class="mini-sign banner-style">
-                                    <div class="mini-content">
-                                        <div class="mini-details">
-                                            <div class="line"></div>
-                                            <div class="line short"></div>
-                                        </div>
-                                        <div class="mini-qr"></div>
-                                    </div>
-                                    <div class="mini-banner">
-                                        <div class="mini-photo"></div>
-                                    </div>
-                                </div>
-                            </div>
-                            <span class="layout-name">Photo Banner</span>
-                            <span class="layout-desc">Professional bottom banner with headshot.</span>
-                        </label>
-
-                        <!-- Option 2: Minimal -->
-                        <label class="layout-card">
-                            <input type="radio" name="layout_id" value="smart_v1_minimal">
-                            <div class="preview-box">
-                                <div class="mini-sign minimal-style">
-                                    <div class="mini-content centered">
-                                        <div class="mini-qr large"></div>
-                                        <div class="line"></div>
-                                        <div class="line short"></div>
-                                    </div>
-                                </div>
-                            </div>
-                            <span class="layout-name">Modern Minimal</span>
-                            <span class="layout-desc">Clean white, focus on QR code.</span>
-                        </label>
-
-                        <!-- Option 3: Agent Brand -->
-                        <label class="layout-card">
-                            <input type="radio" name="layout_id" value="smart_v1_agent_brand">
-                            <div class="preview-box">
-                                <div class="mini-sign brand-style">
+                                <div class="mini-sign standard-style">
                                     <div class="mini-content centered">
                                         <div class="mini-logo">LOGO</div>
-                                        <div class="mini-qr"></div>
-                                        <div class="line"></div>
+                                        <div class="mini-text">FOR SALE</div>
+                                        <div class="mini-phone">555-5555</div>
                                     </div>
                                 </div>
                             </div>
-                            <span class="layout-name">Agent Brand</span>
-                            <span class="layout-desc">Logo-centric with dark footer.</span>
+                            <span class="layout-name">Standard</span>
+                            <span class="layout-desc">Classic brokerage branding.</span>
+                        </label>
+
+                        <!-- Option 2: Premium Phone + QR -->
+                        <label class="layout-card">
+                            <input type="radio" name="layout_id" value="listing_v2_phone_qr_premium">
+                            <div class="preview-box">
+                                <div class="mini-sign modern-style">
+                                    <div class="mini-header">FOR SALE</div>
+                                    <div class="mini-qr-lg"></div>
+                                    <div class="mini-phone-lg">555-0199</div>
+                                </div>
+                            </div>
+                            <span class="layout-name">Premium Phone + QR</span>
+                            <span class="layout-desc">Big phone number & scan code.</span>
+                        </label>
+
+                        <!-- Option 3: Premium Address + QR -->
+                        <label class="layout-card">
+                            <input type="radio" name="layout_id" value="listing_v2_address_qr_premium">
+                            <div class="preview-box">
+                                <div class="mini-sign address-style">
+                                    <div class="mini-header">123 Main St</div>
+                                    <div class="mini-content-row">
+                                        <div class="mini-qr"></div>
+                                        <div class="mini-details-col">
+                                            <div class="line"></div>
+                                            <div class="line"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <span class="layout-name">Address + QR</span>
+                            <span class="layout-desc">Highlight the property address.</span>
                         </label>
                     </div>
                 </span>

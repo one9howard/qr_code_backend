@@ -4,40 +4,40 @@
             "layout_id": "smart_v1_minimal",
             "size": "18x24",
             "agent": {
-                "name": "Sarah Thomas",
-                "phone": "123-456-7890",
-                "email": "sarah@example.com",
-                "brokerage": "Premier Realty"
+                "name": "Agent Name",
+                "phone": "(555) 555-5555",
+                "email": "agent@example.com",
+                "brokerage": "Brokerage Name"
             },
             "status_text": "FOR SALE",
             "cta_key": "scan_for_details",
             "state": "CA",
-            "license_number": "1234567",
-            "show_license_number": true
+            "license_number": "LIC123456",
+            "show_license_option": "auto"
         },
         {
             "layout_id": "smart_v1_minimal",
             "size": "24x36",
             "agent": {
-                "name": "James Luxury",
-                "phone": "555-000-9999",
-                "email": "james@premiumhomes.com",
-                "brokerage": "Luxury Estates"
+                "name": "Agent Name",
+                "phone": "(555) 555-5555",
+                "email": "agent@example.com",
+                "brokerage": "Brokerage Name"
             },
             "status_text": "OPEN HOUSE",
             "cta_key": "scan_to_schedule",
             "state": "NY",
-            "license_number": "999999",
-            "show_license_number": false
+            "license_number": "LIC999999",
+            "show_license_option": "hide"
         },
         {
             "layout_id": "smart_v1_photo_banner",
             "size": "18x24",
             "agent": {
-                "name": "Maria Garcia",
-                "phone": "888-123-4567",
-                "email": "maria@realtyhub.com",
-                "brokerage": "Realty Hub"
+                "name": "Agent Name",
+                "phone": "(555) 555-5555",
+                "email": "agent@example.com",
+                "brokerage": "Brokerage Name"
             },
             "status_text": "JUST LISTED",
             "cta_key": "scan_for_details",
@@ -47,47 +47,47 @@
             "layout_id": "smart_v1_agent_brand",
             "size": "36x24",
             "agent": {
-                "name": "Robert Chen",
-                "phone": "415-555-1234",
-                "email": "robert@bayareahomes.com",
-                "brokerage": "Bay Area Homes"
+                "name": "Agent Name",
+                "phone": "(555) 555-5555",
+                "email": "agent@example.com",
+                "brokerage": "Brokerage Name"
             },
             "status_text": "FOR SALE",
             "cta_key": "scan_for_details",
             "state": "CA",
             "license_number": "DRE02123456",
-            "show_license_number": true,
+            "show_license_option": "show",
             "license_label_override": "CA DRE #"
         },
         {
             "layout_id": "smart_v2_vertical_banner",
             "size": "18x24",
             "agent": {
-                "name": "Amanda Brooks",
-                "phone": "310-555-8000",
-                "email": "amanda@laproperties.com",
-                "brokerage": "LA Properties"
+                "name": "Agent Name",
+                "phone": "(555) 555-5555",
+                "email": "agent@example.com",
+                "brokerage": "Brokerage Name"
             },
             "status_text": "FOR SALE",
             "cta_key": "scan_for_details",
             "state": "CA",
             "license_number": "01987654",
-            "show_license_number": true
+            "show_license_option": "show"
         },
         {
             "layout_id": "smart_v2_vertical_banner",
             "size": "24x36",
             "agent": {
-                "name": "David Martinez",
-                "phone": "619-555-2020",
-                "email": "david@sdrealty.com",
-                "brokerage": "San Diego Realty"
+                "name": "Agent Name",
+                "phone": "(555) 555-5555",
+                "email": "agent@example.com",
+                "brokerage": "Brokerage Name"
             },
             "status_text": "OPEN HOUSE",
             "cta_key": "scan_to_schedule",
             "state": "CA",
             "license_number": "01555888",
-            "show_license_number": true
+            "show_license_option": "auto"
         }
     ]
 }

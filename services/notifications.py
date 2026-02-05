@@ -3,6 +3,7 @@ import logging
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+from config import IS_PRODUCTION
 
 logger = logging.getLogger(__name__)
 
@@ -73,7 +74,7 @@ def send_lead_notification_email(agent_email, lead_payload):
 
     if not smtp_host or not smtp_user:
         # No SMTP configured - skip sending
-        logger.warning(f"[Notifications] SMTP not configured. Skipping email to={agent_email}")
+        logger.warning(f"[Notifications] SMTP not configured. Skipping email to agent.")
         return (False, "SMTP not configured", "skipped")
 
     logger.info(f"[Notifications] Config: Host={smtp_host}, Port={smtp_port}, User={smtp_user}, TLS={use_tls}")
@@ -105,7 +106,7 @@ def send_lead_notification_email(agent_email, lead_payload):
                 server.login(smtp_user, smtp_pass)
                 server.send_message(msg)
         
-        logger.info(f"[Notifications] Email sent to {agent_email} for lead on {lead_payload.get('property_address')}")
+        logger.info(f"[Notifications] Lead notification sent successfully.")
         return (True, None, "sent")
         
     except Exception as e:
@@ -119,11 +120,7 @@ def send_verification_email(to_email, code):
     Send verification code email.
     """
     # Debug Helper: Log code only in non-production
-    # Debug Helper: Log code only in non-production OR if explicitly enabled in non-prod stage
-    is_prod_env = os.environ.get("FLASK_ENV") == "production"
-    is_prod_stage = os.environ.get("APP_STAGE") == "prod"
-    
-    if not is_prod_env or not is_prod_stage:
+    if not IS_PRODUCTION:
         logger.warning(f"[Notifications] DEBUG MODE: Verification Code for {to_email} is: {code}")
 
     smtp_host = os.environ.get("SMTP_HOST")

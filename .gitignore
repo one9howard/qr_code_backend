@@ -49,6 +49,7 @@ var/
 
 __pycache__/
 *.pyc
+*.pyo
 failure_log.txt
 mig_log.txt
 schema_check.txt

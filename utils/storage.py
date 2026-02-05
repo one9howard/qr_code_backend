@@ -152,7 +152,8 @@ class S3Storage(StorageBackend):
                 ExpiresIn=expires_seconds
             )
             # Debug log for S3 URL generation
-            print(f"[S3] Generated URL for key '{full_key}' -> {url[:80]}...")
+            # print(f"[S3] Generated URL for key '{full_key}' -> {url[:80]}...")
+
             return url
         except Exception as e:
             print(f"[S3] ERROR generating presigned URL for '{full_key}': {e}")

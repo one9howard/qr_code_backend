@@ -71,6 +71,28 @@ def validate_smartsign_payload(layout_id, payload):
     if brokerage and len(brokerage) > 50:
         errors.append("brokerage_name exceeds 50 characters")
 
+    # [NEW] V2 Fields Strict Validation
+    # State (2 chars, Alpha)
+    state = payload.get('state')
+    if state:
+        if len(state) != 2 or not state.isalpha():
+             errors.append("state must be 2-letter alphabetic code")
+
+    # License Option (auto/show/hide)
+    show_opt = payload.get('show_license_option')
+    if show_opt and show_opt not in ('auto', 'show', 'hide'):
+         errors.append(f"Invalid show_license_option: {show_opt}")
+
+    # License Number (max 64)
+    lic_num = payload.get('license_number')
+    if lic_num and len(lic_num) > 64:
+         errors.append("license_number exceeds 64 characters")
+
+    # License Label (max 32)
+    lic_lbl = payload.get('license_label_override')
+    if lic_lbl and len(lic_lbl) > 32:
+         errors.append("license_label_override exceeds 32 characters")
+
     # 6. Image Validation
     storage = get_storage()
     

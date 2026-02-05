@@ -9,6 +9,11 @@ logger = logging.getLogger(__name__)
 from dotenv import load_dotenv
 load_dotenv()
 
+# Environment Stage
+APP_STAGE = os.environ.get("APP_STAGE", "dev") # dev, staging, prod
+FLASK_ENV = os.environ.get("FLASK_ENV", "development")
+IS_PRODUCTION = (FLASK_ENV == "production" or os.environ.get("RAILWAY_ENVIRONMENT") == "production")
+
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 # Instance Directory - All runtime state goes here
@@ -88,7 +93,7 @@ PUBLIC_BASE_URL = get_env_str("PUBLIC_BASE_URL", default=BASE_URL)
 # Security: SECRET_KEY
 SECRET_KEY = os.getenv("SECRET_KEY")
 if not SECRET_KEY:
-    if os.environ.get("FLASK_ENV") == "production":
+    if IS_PRODUCTION:
         raise ValueError("SECRET_KEY must be set in production environment.")
     else:
         SECRET_KEY = "dev-secret-key-change-this"
@@ -100,7 +105,7 @@ MAX_CONTENT_LENGTH = 16 * 1024 * 1024
 # Print Server Security
 PRINT_JOBS_TOKEN = get_env_str("PRINT_JOBS_TOKEN") or get_env_str("PRINT_SERVER_TOKEN")
 if not PRINT_JOBS_TOKEN:
-    if os.environ.get("FLASK_ENV") == "production":
+    if IS_PRODUCTION:
         raise ValueError("PRINT_JOBS_TOKEN (or PRINT_SERVER_TOKEN) must be set in production environment.")
     else:
         PRINT_JOBS_TOKEN = "dev-print-token"
@@ -110,10 +115,7 @@ if not PRINT_JOBS_TOKEN:
 TRUST_PROXY_HEADERS = get_env_bool("TRUST_PROXY_HEADERS", default=False)
 PROXY_FIX_NUM_PROXIES = int(os.environ.get("PROXY_FIX_NUM_PROXIES", "1"))
 
-# Environment Stage
-APP_STAGE = os.environ.get("APP_STAGE", "dev") # dev, staging, prod
-FLASK_ENV = os.environ.get("FLASK_ENV", "development")
-IS_PRODUCTION = (FLASK_ENV == "production" or os.environ.get("RAILWAY_ENVIRONMENT") == "production")
+
 
 # Strict URL Validation for Production
 if IS_PRODUCTION:
@@ -141,7 +143,7 @@ if STRIPE_PUBLISHABLE_KEY:
 
 # Allow running without keys in debug mode, but fail in production if needed
 if not STRIPE_SECRET_KEY:
-    if os.environ.get("FLASK_ENV") == "production":
+    if IS_PRODUCTION:
         raise ValueError("Missing STRIPE_SECRET_KEY in production environment.")
     else:
         STRIPE_SECRET_KEY = "sk_test_placeholder"
@@ -155,7 +157,7 @@ STRIPE_PRICE_ID_PRO = os.environ.get("STRIPE_PRICE_ID_PRO", "price_pro_id")
 STRIPE_PRICE_LISTING_KIT = os.environ.get("STRIPE_PRICE_LISTING_KIT", "price_listing_kit_id")
 
 # Validate Stripe Price IDs in production
-if os.environ.get("FLASK_ENV") == "production":
+if IS_PRODUCTION:
     _placeholder_prices = []
     # Check a few critical ones
     if STRIPE_PRICE_MONTHLY.startswith("price_monthly_id"): _placeholder_prices.append("STRIPE_PRICE_MONTHLY")

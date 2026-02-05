@@ -60,35 +60,40 @@ def generate_sample(sample_data, output_dir, index):
     size = sample_data.get('size', '18x24')
     agent = sample_data.get('agent', {})
     
-    # Build asset dict matching what generate_smartsign_pdf expects
-    asset = {
-        'code': f'SAMPLE{index:03d}',
-        'print_size': size,
-        'layout_id': layout_id,
-        'agent_name': agent.get('name', 'Sample Agent'),
-        'agent_phone': agent.get('phone', '555-555-5555'),
-        'agent_email': agent.get('email', 'agent@example.com'),
-        'brokerage_name': agent.get('brokerage', 'Sample Realty'),
-        'brand_name': agent.get('brokerage', 'Sample Realty'),
-        'phone': agent.get('phone', '555-555-5555'),
-        'email': agent.get('email', 'agent@example.com'),
-        'background_style': sample_data.get('background_style', 'navy'),
-        'banner_color_id': sample_data.get('banner_color_id', 'navy'),
-        'cta_key': sample_data.get('cta_key', 'scan_for_details'),
-        'status_text': sample_data.get('status_text', 'FOR SALE'),
-        
-        # License fields
-        'state': sample_data.get('state'),
-        'license_number': sample_data.get('license_number'),
-        'show_license_number': sample_data.get('show_license_number'),
-        'license_label_override': sample_data.get('license_label_override'),
-        
-        # No images for samples (optional)
-        'include_logo': False,
-        'include_headshot': False,
-        'logo_key': None,
-        'headshot_key': None,
-    }
+    # Validated strict extraction (no defaults)
+    try:
+        asset = {
+            'code': f'SAMPLE{index:03d}',
+            'print_size': sample_data['size'],
+            'layout_id': sample_data['layout_id'],
+            'agent_name': sample_data['agent']['name'],
+            'agent_phone': sample_data['agent']['phone'],
+            'agent_email': sample_data['agent']['email'],
+            'brokerage_name': sample_data['agent']['brokerage'],
+            'brand_name': sample_data['agent']['brokerage'], # Legacy compat
+            'phone': sample_data['agent']['phone'],          # Legacy compat
+            'email': sample_data['agent']['email'],          # Legacy compat
+            
+            'background_style': sample_data.get('background_style', 'navy'),
+            'banner_color_id': sample_data.get('banner_color_id', 'navy'),
+            'cta_key': sample_data.get('cta_key', 'scan_for_details'),
+            'status_text': sample_data.get('status_text', 'FOR SALE'),
+            
+            # License fields (V2 strict)
+            'state': sample_data.get('state'),
+            'license_number': sample_data.get('license_number'),
+            'show_license_option': sample_data.get('show_license_option'), 
+            'license_label_override': sample_data.get('license_label_override'),
+            
+            # No images for samples
+            'include_logo': False,
+            'include_headshot': False,
+            'logo_key': None,
+            'headshot_key': None,
+        }
+    except KeyError as e:
+        print(f"  [ERROR] Fixture missing required field: {e}")
+        return None
     
     # Generate filename
     filename = f"sample_{layout_id}_{size.replace('x', '_')}.pdf"
