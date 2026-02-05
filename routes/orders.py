@@ -228,7 +228,9 @@ def order_sign():
         
     except Exception as e:
         logger.error(f"Stripe setup failed: {e}")
-        return jsonify({"success": False, "error": str(e)}), 500
+        import traceback
+        traceback.print_exc()
+        return jsonify({"success": False, "error": f"Stripe Setup Error: {str(e)}", "details": str(e)}), 500
 
 @orders_bp.route('/order/success')
 def order_success():

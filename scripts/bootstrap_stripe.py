@@ -136,32 +136,53 @@ PRINT_ITEMS = [
     # SmartRiser (Aluminum)
     ("SmartRiser 6x24", "smart_riser_6x24"),
     ("SmartRiser 6x36", "smart_riser_6x36"),
+
+    # Yard Sign - Coroplast (New Standard)
+    ("Yard Sign Coroplast 12x18", "yard_sign_coroplast_12x18"),
+    ("Yard Sign Coroplast 18x24", "yard_sign_coroplast_18x24"),
+    ("Yard Sign Coroplast 24x36", "yard_sign_coroplast_24x36"),
+
+    # Yard Sign - Aluminum (New Premium)
+    ("Yard Sign Aluminum 18x24", "yard_sign_aluminum_18x24"),
+    ("Yard Sign Aluminum 24x36", "yard_sign_aluminum_24x36"),
+    ("Yard Sign Aluminum 36x24", "yard_sign_aluminum_36x24"),
 ]
+
 
 # NOTE: amounts are placeholders; set your desired pricing in Stripe directly if needed.
 DEFAULT_PRINT_AMOUNT_CENTS = 6900
 
 print("\n--- Ensuring Subscription Products/Prices ---")
 env_lines = []
-for item in SUBSCRIPTION_ITEMS:
-    prod = get_or_create_product(item["name"], description="")
-    price = get_or_create_price(product_id=prod.id, unit_amount=item["amount"], interval=item["interval"], lookup_key=None)
-    env_lines.append(f"{item['env_var']}={price.id}")
-    print(f"OK: {item['name']} -> {price.id}")
+try:
+    for item in SUBSCRIPTION_ITEMS:
+        prod = get_or_create_product(item["name"], description="")
+        price = get_or_create_price(product_id=prod.id, unit_amount=item["amount"], interval=item["interval"], lookup_key=None)
+        env_lines.append(f"{item['env_var']}={price.id}")
+        print(f"OK: {item['name']} -> {price.id}")
+except Exception as e:
+    print(f"FAILED Subscription Init: {e}")
+
 
 print("\n--- Ensuring Print Products/Prices (lookup keys) ---")
 created = 0
 for name, key in PRINT_ITEMS:
-    prod = get_or_create_product(name, description="Print product")
-    price = get_or_create_price(product_id=prod.id, unit_amount=DEFAULT_PRINT_AMOUNT_CENTS, interval=None, lookup_key=key)
-    # Ensure product is active
-    if hasattr(prod, 'active') and not prod.active:
-        stripe.Product.modify(prod.id, active=True)
-    # Ensure price is active
-    if hasattr(price, 'active') and not price.active:
-        stripe.Price.modify(price.id, active=True)
-    print(f"OK: {key} -> {price.id} (product={prod.id})")
-    created += 1
+    try:
+        prod = get_or_create_product(name, description="Print product")
+        price = get_or_create_price(product_id=prod.id, unit_amount=DEFAULT_PRINT_AMOUNT_CENTS, interval=None, lookup_key=key)
+        # Ensure product is active
+        if hasattr(prod, 'active') and not prod.active:
+            stripe.Product.modify(prod.id, active=True)
+        # Ensure price is active
+        if hasattr(price, 'active') and not price.active:
+            stripe.Price.modify(price.id, active=True)
+        print(f"OK: {key} -> {price.id} (product={prod.id})")
+        created += 1
+    except Exception as e:
+        print(f"FAILED for {name} / {key}: {str(e)}")
+        import traceback
+        traceback.print_exc()
+
 
 print("\n" + "="*70)
 print("Copy these subscription lines into your .env (prints use lookup keys only):")

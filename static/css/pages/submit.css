@@ -317,9 +317,18 @@
 /* Specific Override for Agent Brand */
 .brand-style .mini-qr {
     width: 34px;
-    /* Match Modern Minimal */
-    height: 34px;
-    margin-top: 0;
-    margin-bottom: 15px;
-    /* Move it up */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    border: 1px solid #eee;
+}
+
+.address-style {
+    background: white;
+    padding-top: 4px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    border: 1px solid #eee;
 }
