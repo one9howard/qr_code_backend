@@ -75,7 +75,7 @@ class TestPhase1Dashboard:
         
         # Verify Normal Dashboard
         assert 'Buyer Activity' in html
-        assert 'Active Listings' in html
+        assert 'Properties' in html
         
         # Verify gating elements NOT present
         assert 'Get your first buyer lead' not in html

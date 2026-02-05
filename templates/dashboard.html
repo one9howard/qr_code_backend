@@ -325,7 +325,7 @@
         <!-- TABS NAVIGATION -->
         <div class="col-span-12 dashboard-tabs">
             <button class="tab-btn active" onclick="switchTab('today')">Buyer Activity</button>
-            <button class="tab-btn" onclick="switchTab('listings')">Active Listings</button>
+            <button class="tab-btn" onclick="switchTab('listings')">Properties</button>
             <button class="tab-btn" onclick="switchTab('smart')">Your SmartSigns</button>
             {% if has_scan %}
             <button class="tab-btn" onclick="switchTab('analytics')">Analytics</button>
@@ -439,7 +439,7 @@
             <!-- Analytics Listings Table -->
             <div class="card col-span-12" id="listings-section">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                    <h3 style="margin: 0; font-size: 1.1rem;">Your Listings</h3>
+                    <h3 style="margin: 0; font-size: 1.1rem;">Your Properties</h3>
                     <a href="{{ url_for('dashboard.new_property') }}" class="glass-button secondary">+ Create Property
                         (Free)</a>
                 </div>
@@ -450,6 +450,7 @@
                         <thead>
                             <tr>
                                 <th>Address</th>
+                                <th>Sign Type</th>
                                 <th>7d Scans</th>
                                 <th>7d Views</th>
                                 <th>7d Leads</th>
@@ -469,6 +470,9 @@
                                     {% if p.insights %}
                                     <div style="font-size: 0.75rem; color: #ff9800;">💡 {{ p.insights[0] }}</div>
                                     {% endif %}
+                                </td>
+                                <td>
+                                    {{ p.sign_type }}
                                 </td>
                                 <td>
                                     {{ p.scans_7d }}
