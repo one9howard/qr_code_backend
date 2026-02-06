@@ -77,7 +77,7 @@ def send_lead_notification_email(agent_email, lead_payload):
         logger.warning(f"[Notifications] SMTP not configured. Skipping email to agent.")
         return (False, "SMTP not configured", "skipped")
 
-    logger.info(f"[Notifications] SMTP configured: Host={smtp_host}, Port={smtp_port}, TLS={use_tls}")
+    logger.info(f"[Notifications] Config: Host={smtp_host}, Port={smtp_port}, User={smtp_user}, TLS={use_tls}")
     
     # Force IPv4 resolution - DISABLED (causes SSL Host verify fail)
     effective_host = smtp_host
@@ -119,18 +119,11 @@ def send_verification_email(to_email, code):
     """
     Send verification code email.
     """
-    # Never log verification codes by default.
-    # If you absolutely need local debugging, set LOG_VERIFICATION_CODES=true
-    # and ensure IS_PRODUCTION is False.
-    # Always log verification code in dev/test (per user request)
-    # Always log verification code in dev/test (per user request)
-    # Using print() to guarantee stdout visibility in case logger is silenced
-    if not IS_PRODUCTION:
-        print(f"!!! DEBUG VERIFICATION CODE: {code} !!!", flush=True)
-        logger.warning(f"[Notifications] DEBUG: Verification Code is: {code}")
-    else:
-        # Debug why it thinks it's prod if it shouldn't be
-        pass
+    # Debug Helper: Log code in non-production OR staging
+    # Check APP_STAGE for staging environment
+    app_stage = os.environ.get("APP_STAGE", "").lower()
+    if not IS_PRODUCTION or app_stage == "staging":
+        logger.warning(f"[Notifications] DEBUG MODE: Verification Code for {to_email} is: {code}")
 
     smtp_host = os.environ.get("SMTP_HOST")
     smtp_port = int(os.environ.get("SMTP_PORT", "587"))
