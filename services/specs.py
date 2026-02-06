@@ -17,7 +17,7 @@ INCH = 72.0
 
 SMARTSIGN_SIZES: List[str] = ["18x24", "24x36", "36x24"]  # purchasable
 YARD_SIGN_SIZES: List[str] = ["12x18", "18x24", "24x36", "36x24"]
-SMART_RISER_SIZES: List[str] = ["18x24", "24x36"] # purchasable
+SMART_RISER_SIZES: List[str] = ["6x24", "6x36"] # purchasable
 
 PRODUCT_SIZE_MATRIX: Dict[str, List[str]] = {
     "smart_sign": SMARTSIGN_SIZES,
@@ -34,6 +34,8 @@ GLOBAL_PRINT_RULES: Dict[str, Any] = {
         "18x24": 0.50,
         "24x36": 0.50,
         "36x24": 0.60,
+        "6x24": 0.25,
+        "6x36": 0.25,
     },
     "qr_rules": {
         "min_quiet_zone_in": 0.25,  # minimum padding around QR modules

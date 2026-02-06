@@ -8,7 +8,7 @@ Single source of truth for:
 """
 import logging
 from services import stripe_price_resolver
-from services.specs import PRODUCT_SIZE_MATRIX, SMARTSIGN_SIZES, YARD_SIGN_SIZES
+from services.specs import PRODUCT_SIZE_MATRIX, SMARTSIGN_SIZES, YARD_SIGN_SIZES, SMART_RISER_SIZES
 
 logger = logging.getLogger(__name__)
 
@@ -21,7 +21,7 @@ YARD_SIGN_MATERIALS = ('coroplast_4mm', 'aluminum_040')
 
 # SIZES (Sourced from Canonical Specs)
 SMART_SIGN_VALID_SIZES = tuple(SMARTSIGN_SIZES)
-SMART_RISER_VALID_SIZES = ('6x24', '6x36') # Riser specs not in canonical matrix yet? Or just use hardcoded for now.
+SMART_RISER_VALID_SIZES = tuple(SMART_RISER_SIZES)
 
 YARD_SIGN_VALID_SIZES = {
     # Coroplast does not support 36x24
