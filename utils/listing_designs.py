@@ -120,6 +120,7 @@ def _draw_yard_phone_qr_premium(c, layout, address, beds, baths, sqft, price,
         url = _resolve_qr_url(qr_value, qr_key)
         _draw_qr_safe(c, url, qr_x, qr_y, qr_size, user_id)
         
+        # CTA
         c.setFont(lu.FONT_SCRIPT, h * 0.06)
         c.setFillColorRGB(*COLOR_TEXT)
         c.drawCentredString(qr_x + qr_size/2, qr_y - (h * 0.08), "Scan for details")
@@ -252,6 +253,99 @@ def _draw_yard_address_qr_premium(c, layout, address, beds, baths, sqft, price,
     if license_number:
         # Place above strip
         _draw_license_line(c, w/2, strip_h + 10, license_number, state, align='center')
+
+    c.restoreState()
+
+
+def _draw_open_house_gold(c, layout, address, beds, baths, sqft, price,
+                         agent_name, brokerage, agent_email, agent_phone,
+                         qr_key, agent_photo_key, sign_color, qr_value=None,
+                         agent_photo_path=None, user_id=None, logo_key=None,
+                         license_number=None, state=None, **kwargs):
+    """
+    Layout L3: Open House / Gold Event Style.
+    Based on Design #2: Gold/Black/White, "OPEN HOUSE" header.
+    """
+    w = layout.width
+    h = layout.height
+    is_landscape = w > h
+    
+    # Colors
+    GOLD = (0.85, 0.65, 0.13) # Gold-ish
+    BLACK = (0, 0, 0)
+    WHITE = (1, 1, 1)
+    
+    c.saveState()
+    
+    # 1. Header Bar (Gold) - "OPEN HOUSE"
+    header_h = h * 0.22
+    c.setFillColorRGB(*GOLD)
+    c.rect(0, h - header_h, w, header_h, fill=1, stroke=0)
+    
+    # Header Text (White, Bold, Boxed?)
+    # Image 2 had a box. Let's do a Black Box inside the Gold strip.
+    box_margin = header_h * 0.15
+    # Fix: Ensure box isn't too wide if w is small
+    c.setFillColorRGB(*BLACK)
+    c.rect(w * 0.1, h - header_h + box_margin, w * 0.8, header_h - (2*box_margin), fill=1, stroke=0)
+    
+    c.setFillColorRGB(*WHITE)
+    c.setFont(lu.FONT_BOLD, header_h * 0.5)
+    c.drawCentredString(w/2, h - header_h * 0.65 + box_margin, "OPEN HOUSE")
+    
+    # 2. Main Body
+    if is_landscape:
+        # Left Strip (Black): "FOR SALE"
+        strip_w = w * 0.35
+        c.setFillColorRGB(*BLACK)
+        c.rect(0, 0, strip_w, h - header_h, fill=1, stroke=0)
+        
+        # QR Code (White Box inside Black Strip)
+        qr_size = strip_w * 0.7
+        qr_x = (strip_w - qr_size)/2
+        qr_y = (h - header_h) * 0.55
+        
+        # White backing for QR
+        c.setFillColorRGB(*WHITE)
+        c.rect(qr_x - 5, qr_y - 5, qr_size + 10, qr_size + 10, fill=1, stroke=0)
+        
+        url = _resolve_qr_url(qr_value, qr_key)
+        _draw_qr_safe(c, url, qr_x, qr_y, qr_size, user_id)
+        
+        # "FOR SALE" Text below QR in Yellow/Gold
+        c.setFillColorRGB(*GOLD)
+        c.setFont(lu.FONT_BOLD, strip_w * 0.22)
+        # Stacked "FOR" "SALE"
+        c.drawCentredString(strip_w/2, qr_y - (strip_w * 0.3), "FOR")
+        c.drawCentredString(strip_w/2, qr_y - (strip_w * 0.55), "SALE")
+
+        # Right Area (Gold background)
+        right_x = strip_w
+        right_w = w - strip_w
+        
+        c.setFillColorRGB(*GOLD)
+        c.rect(right_x, 0, right_w, h - header_h, fill=1, stroke=0)
+        
+        # Phone Number (Huge, Black)
+        phone_fmt = lu.format_phone(agent_phone)
+        c.setFillColorRGB(*BLACK)
+        
+        # Fit phone
+        # Ensure we have lu available or passed
+        p_size = lu.fit_text_one_line(c, phone_fmt, lu.FONT_BOLD, right_w * 0.9, (h-header_h)*0.3, (h-header_h)*0.15)
+        c.setFont(lu.FONT_BOLD, p_size)
+        c.drawCentredString(right_x + right_w/2, (h-header_h) * 0.2, phone_fmt)
+        
+        # Agent Name / Email (Small above phone)
+        c.setFillColorRGB(*BLACK)
+        c.setFont(lu.FONT_MED, right_w * 0.05)
+        c.drawCentredString(right_x + right_w/2, (h-header_h) * 0.55, agent_name.upper())
+
+    else:
+        # Portrait fallback
+        c.setFillColorRGB(*BLACK)
+        c.setFont(lu.FONT_BOLD, w*0.1)
+        c.drawCentredString(w/2, h/2, "Landscape Only")
 
     c.restoreState()
 
