@@ -172,7 +172,12 @@ class SmartSignsService:
         return db.execute("""
             SELECT sa.*, 
                    p.address as property_address,
-                   (SELECT COUNT(*) FROM qr_scans qs WHERE qs.sign_asset_id = sa.id) as scan_count
+                   (
+                       (SELECT COUNT(*) FROM qr_scans qs WHERE qs.sign_asset_id = sa.id) +
+                       (SELECT COUNT(*) FROM app_events ae 
+                        WHERE ae.event_type = 'smart_sign_scan' 
+                        AND (ae.payload->>'sign_asset_id')::int = sa.id)
+                   ) as scan_count
             FROM sign_assets sa
             LEFT JOIN properties p ON sa.active_property_id = p.id
             WHERE sa.user_id = %s
