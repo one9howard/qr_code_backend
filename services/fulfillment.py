@@ -51,6 +51,7 @@ def fulfill_order(order_id):
     
     if not order:
         logger.error(f"[Fulfillment] Order {order_id} not found")
+        db.rollback() # CLEANUP: Ensure connection is reset
         return False
     
     order_type = order['order_type']
