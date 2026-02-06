@@ -6,7 +6,7 @@ import os
 import time
 from models import Order, Property, db
 from config import STRIPE_SIGN_SUCCESS_URL, STRIPE_SIGN_CANCEL_URL, PRIVATE_PDF_DIR, PRIVATE_PREVIEW_DIR
-from utils.sign_options import normalize_sign_size
+from utils.sign_options import normalize_sign_size, validate_sign_color
 
 # Order Blueprint
 orders_bp = Blueprint('orders', __name__)
@@ -159,7 +159,7 @@ def order_sign():
             params.append(normalize_sign_size(req_size))
         if req_color:
             updates.append("sign_color = %s")
-            params.append(req_color)
+            params.append(validate_sign_color(req_color))
             
         params.append(order.id)
         db_conn.execute(f"UPDATE orders SET {', '.join(updates)} WHERE id = %s", tuple(params))

@@ -23,7 +23,7 @@ from utils.qr_urls import property_scan_url
 from services.printing.yard_sign import generate_yard_sign_pdf, generate_yard_sign_pdf_from_order_row
 from utils.uploads import save_image_upload
 from utils.pdf_preview import render_pdf_to_web_preview
-from utils.sign_options import normalize_sign_size
+from utils.sign_options import normalize_sign_size, validate_sign_color
 from utils.storage import get_storage
 
 agent_bp = Blueprint("agent", __name__)
@@ -71,8 +71,7 @@ def submit():
             sign_size = normalize_sign_size(raw_sign_size)
 
             # Strict hex color validation (fallback to default)
-            if not re.match(r"^#[0-9a-fA-F]{6}$", sign_color or ""):
-                sign_color = DEFAULT_SIGN_COLOR
+            sign_color = validate_sign_color(sign_color)
 
             # Extract toggle flags (default to False if not checked)
             include_headshot = request.form.get("include_headshot") == "1"
