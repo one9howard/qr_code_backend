@@ -376,7 +376,7 @@ def create_smart_order():
         # We DO NOT create sign_assets row yet.
         # We generate a code and store it in the order.
         from utils.qr_codes import generate_unique_code
-        asset_code = generate_unique_code(db, length=8)
+        asset_code = generate_unique_code(db, length=12)
         
         # Store code in payload for preview generation & later activation
         payload['code'] = asset_code
