@@ -86,7 +86,7 @@ def submit():
                 file = request.files["agent_photo"]
                 if file and file.filename != "":
                     try:
-                        base_name = f"agent_{agent_email.split('@')[0]}_head"
+                        base_name = "agent_headshot"
                         agent_photo_key = save_image_upload(file, AGENT_PHOTOS_KEY_PREFIX, base_name, validate_image=True)
                     except ValueError as e:
                         flash(f"Agent photo upload error: {str(e)}", "error")
@@ -98,7 +98,7 @@ def submit():
                 file = request.files["logo_file"]
                 if file and file.filename != "":
                     try:
-                        base_name = f"agent_{agent_email.split('@')[0]}_logo"
+                        base_name = "agent_logo"
                         logo_key = save_image_upload(file, AGENT_PHOTOS_KEY_PREFIX, base_name, validate_image=True)
                     except ValueError as e:
                         flash(f"Logo upload error: {str(e)}", "error")

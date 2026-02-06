@@ -61,7 +61,7 @@ def _handle_profile_update(db, agent):
         file = request.files["photo"]
         if file and file.filename != "":
             try:
-                base_name = f"agent_{current_user.email.split('@')[0]}"
+                base_name = f"agent_{current_user.id}_photo"
                 photo_key = save_image_upload(
                     file,
                     AGENT_PHOTOS_KEY_PREFIX,

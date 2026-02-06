@@ -48,7 +48,7 @@ def resolve_user_id(db, session):
     if email:
         user = db.execute("SELECT id FROM users WHERE email = %s", (email,)).fetchone()
         if user:
-            logger.info(f"[Orders] Resolved user {user['id']} via email {email}")
+            logger.info(f"[Orders] Resolved user {user['id']} via email match")
             return user['id']
             
     logger.warning(f"[Orders] Failed to resolve user for session {session.get('id')}")

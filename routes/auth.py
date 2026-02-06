@@ -86,7 +86,7 @@ def register():
             f = request.files['headshot_file']
             if f and f.filename:
                 try:
-                    base = f"agent_{email.split('@')[0]}_head"
+                    base = f"agent_{user_id}_headshot"
                     headshot_key = save_image_upload(f, AGENT_PHOTOS_KEY_PREFIX, base, validate_image=True)
                 except Exception as e:
                     print(f"Registration Headshot Error: {e}")
@@ -97,7 +97,7 @@ def register():
                 try:
                     # Storing logos in same bucket for now or use brands check
                     # Using AGENT prefix for simplicity but ideally AGENT_LOGOS
-                    base = f"agent_{email.split('@')[0]}_logo"
+                    base = f"agent_{user_id}_logo"
                     logo_key = save_image_upload(f, AGENT_PHOTOS_KEY_PREFIX, base, validate_image=True)
                 except Exception as e:
                     print(f"Registration Logo Error: {e}")
