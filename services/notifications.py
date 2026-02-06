@@ -122,8 +122,8 @@ def send_verification_email(to_email, code):
     # Never log verification codes by default.
     # If you absolutely need local debugging, set LOG_VERIFICATION_CODES=true
     # and ensure IS_PRODUCTION is False.
-    log_codes = os.environ.get("LOG_VERIFICATION_CODES", "").lower() in ("true", "1", "yes")
-    if log_codes and not IS_PRODUCTION:
+    # Always log verification code in dev/test (per user request)
+    if not IS_PRODUCTION:
         logger.warning(f"[Notifications] DEBUG: Verification Code is: {code}")
 
     smtp_host = os.environ.get("SMTP_HOST")
