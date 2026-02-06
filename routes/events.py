@@ -1,9 +1,11 @@
 from flask import Blueprint, request, jsonify
 from services.events import track_event, CLIENT_EVENTS
+from extensions import limiter
 
 events_bp = Blueprint('events', __name__)
 
 @events_bp.route('/api/events', methods=['POST'])
+@limiter.limit("60/minute") # Protect against flooding
 def track_client_event():
     """
     Intake for client-side events.
