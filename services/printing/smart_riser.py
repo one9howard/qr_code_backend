@@ -87,29 +87,41 @@ def generate_smart_riser_pdf(order, output_path=None):
         c.saveState()
         c.translate(bleed, bleed)
         
-        # White background
-        c.setFillColor(colors.white)
+        # 1. Background (Navy #0f172a)
+        c.setFillColorRGB(15/255, 23/255, 42/255)
         c.rect(0, 0, width, height, fill=1, stroke=0)
         
-        # QR Code - Left side
-        qr_size = height * 0.8
-        qr_x = height * 0.1
+        # 2. QR Code (Left Side) - Needs White Card for contrast
+        qr_h_safe = height * 0.8
+        qr_x = height * 0.1 # Padding
         qr_y = height * 0.1
         
-        draw_qr(c, qr_url, x=qr_x, y=qr_y, size=qr_size, user_id=user_id)
+        # White Card
+        c.setFillColor(colors.white)
+        # Rounded rect?
+        c.roundRect(qr_x - (height*0.05), qr_y - (height*0.05), qr_h_safe + (height*0.1), qr_h_safe + (height*0.1), 10, fill=1, stroke=0)
         
-        # Text - Centered in remaining space
-        c.setFillColor(colors.black)
+        draw_qr(c, qr_url, x=qr_x, y=qr_y, size=qr_h_safe, user_id=user_id)
         
-        text_x = (width + qr_x + qr_size) / 2
-        text_y = height / 2 - 10
+        # 3. Typography (White)
+        c.setFillColor(colors.white)
         
-        c.setFont("Helvetica-Bold", 72)
-        c.drawCentredString(text_x, text_y + 20, "SCAN FOR INFO")
+        # Calculate Center of Right Area
+        right_start = qr_x + qr_h_safe + (height*0.1)
+        right_w = width - right_start
+        center_text_x = right_start + (right_w / 2)
+        center_text_y = height / 2
         
-        c.setFont("Helvetica", 24)
-        code_label = f"SmartRiser {size_str}"
-        c.drawCentredString(text_x, text_y - 60, code_label)
+        # Primary CTA
+        c.setFont("Helvetica-Bold", 64)
+        c.drawCentredString(center_text_x, center_text_y + 15, "SCAN FOR INFO")
+        
+        # Secondary Label (Agent or Product)
+        c.setFont("Helvetica", 28)
+        # Fallback to generic if we don't have agent info easily available in this context
+        # Ideally we'd fetch agent name in the future.
+        c.setFillColorRGB(0.8, 0.8, 0.8) # Light Gray
+        c.drawCentredString(center_text_x, center_text_y - 45, "View Photos, Price & More")
         
         c.restoreState()
 

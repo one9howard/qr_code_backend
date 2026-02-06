@@ -201,53 +201,116 @@ def generate_kit(kit_id):
         )
         db.commit()
 
+# Additional imports for modern layout
+import services.printing.layout_utils as lu
+from reportlab.lib.colors import HexColor
+
+NAVY_COLOR = '#0f172a'
+WHITE_COLOR = '#ffffff'
+GRAY_COLOR = '#64748b'
+
 def _generate_flyer(prop):
-    """Generate simple professional flyer PDF."""
+    """
+    Generate Modern Professional Flyer.
+    Style: Navy Header, Clean White Body, Large QR.
+    """
+    # Register Fonts
+    lu.register_fonts()
+    
     buffer = io.BytesIO()
     c = canvas.Canvas(buffer, pagesize=letter)
     width, height = letter
     
-    # Simple Layout
-    margin = 50
+    # --- 1. Header (Navy) ---
+    header_h = 160
+    c.setFillColor(HexColor(NAVY_COLOR))
+    c.rect(0, height - header_h, width, header_h, fill=1, stroke=0)
     
-    # Address
-    c.setFont("Helvetica-Bold", 24)
-    c.drawString(margin, height - 80, (prop['address'] or "Address TBD").upper())
+    # Address (White, Centered in Header)
+    c.setFillColor(HexColor(WHITE_COLOR))
     
-    # Details
-    c.setFont("Helvetica", 14)
+    # Address Line 1
+    addr_text = (prop['address'] or "Address TBD").upper()
+    # Fit text
+    fs = lu.fit_text_one_line(c, addr_text, lu.FONT_BOLD, width * 0.8, 48, 24)
+    c.setFont(lu.FONT_BOLD, fs)
+    c.drawCentredString(width/2, height - (header_h/2) + 10, addr_text)
+    
+    # "FOR SALE" or Status above address
+    c.setFont(lu.FONT_MED, 18)
+    c.setFillColor(HexColor('#94a3b8')) # Light Slate
+    c.drawCentredString(width/2, height - (header_h/2) + fs, "JUST LISTED")
+
+    # --- 2. Body Content ---
+    cursor_y = height - header_h - 60
+    
+    # Price (Large, Navy)
+    if prop['price']:
+        price_text = f"${prop['price']:,}" if isinstance(prop['price'], (int, float)) else str(prop['price'])
+        if '$' not in price_text: price_text = f"${price_text}"
+        
+        c.setFillColor(HexColor(NAVY_COLOR))
+        c.setFont(lu.FONT_BOLD, 60)
+        c.drawCentredString(width/2, cursor_y, price_text)
+        cursor_y -= 80
+        
+    # Features (Row)
+    c.setFillColor(HexColor(GRAY_COLOR))
+    c.setFont(lu.FONT_MED, 24)
+    
     details = []
     if prop['beds']: details.append(f"{prop['beds']} Beds")
     if prop['baths']: details.append(f"{prop['baths']} Baths")
     if prop['sqft']: details.append(f"{prop['sqft']} Sq Ft")
     
-    c.drawString(margin, height - 110, " | ".join(details))
+    details_text = "  |  ".join(details)
+    c.drawCentredString(width/2, cursor_y, details_text)
     
-    # Price
-    if prop['price']:
-        c.setFont("Helvetica-Bold", 18)
-        c.drawString(margin, height - 140, f"${prop['price']}")
-        
-    # QR Code
+    # --- 3. QR Code (Central Feature) ---
+    # Large Vector QR
+    qr_size = 220
+    qr_y = cursor_y - 80 - qr_size
+    qr_x = (width - qr_size) / 2
+    
     qr_url = f"{PUBLIC_BASE_URL}/r/{prop['qr_code']}" if prop['qr_code'] else f"{PUBLIC_BASE_URL}/p/{prop['slug']}"
     from utils.pdf_generator import draw_qr
     
-    # Draw QR at bottom right
-    qr_size = 150
-    qr_x = width - margin - qr_size
-    qr_y = margin
-    draw_qr(c, qr_url, x=qr_x, y=qr_y, size=qr_size, user_id=prop.get('user_id'))
+    draw_qr(c, qr_url, x=qr_x, y=qr_y, size=qr_size, user_id=prop.get('user_id'), ecc_level="H")
     
-    # Footer: Agent Info
-    c.setFont("Helvetica-Bold", 12)
-    c.drawString(margin, margin + 40, (prop['agent_name'] or "Agent").upper())
+    # CTA under QR
+    c.setFillColor(HexColor(NAVY_COLOR))
+    c.setFont(lu.FONT_BOLD, 20)
+    c.drawCentredString(width/2, qr_y - 30, "SCAN FOR PHOTOS & DETAILS")
+    
+    # --- 4. Footer (Agent Identity) ---
+    # Draw line separator
+    footer_y = 120
+    c.setStrokeColor(HexColor('#e2e8f0'))
+    c.setLineWidth(2)
+    c.line(50, footer_y, width-50, footer_y)
+    
+    # Agent Name
+    text_x = width / 2
+    cursor_y = footer_y - 40
+    
+    c.setFillColor(HexColor(NAVY_COLOR))
+    c.setFont(lu.FONT_BOLD, 22)
+    c.drawCentredString(text_x, cursor_y, (prop['agent_name'] or "Agent").upper())
+    
+    # Brokerage
     if prop['brokerage']:
-        c.setFont("Helvetica", 12)
-        c.drawString(margin, margin + 25, prop['brokerage'].upper())
-    
-    c.setFont("Helvetica", 10)
-    c.drawString(margin, margin, f"{prop['agent_email']} | {prop['agent_phone']}")
-    
+        cursor_y -= 25
+        c.setFont(lu.FONT_MED, 16)
+        c.setFillColor(HexColor(GRAY_COLOR))
+        c.drawCentredString(text_x, cursor_y, prop['brokerage'].upper())
+        
+    # Contact
+    cursor_y -= 25
+    c.setFont(lu.FONT_MED, 14)
+    contact_line = f"{prop['agent_phone']}  |  {prop['agent_email']}"
+    c.drawCentredString(text_x, cursor_y, contact_line)
+
+    c.showPage()
     c.save()
     buffer.seek(0)
     return buffer

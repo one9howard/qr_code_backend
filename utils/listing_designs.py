@@ -13,7 +13,7 @@ from utils.storage import get_storage
 from config import BASE_URL
 import os
 
-def _draw_listing_v2_phone_qr_premium(c, layout, address, beds, baths, sqft, price,
+def _draw_yard_phone_qr_premium(c, layout, address, beds, baths, sqft, price,
                                      agent_name, brokerage, agent_email, agent_phone,
                                      qr_key, agent_photo_key, sign_color, qr_value=None,
                                      agent_photo_path=None, user_id=None, logo_key=None,
@@ -168,7 +168,7 @@ def _draw_listing_v2_phone_qr_premium(c, layout, address, beds, baths, sqft, pri
     c.restoreState()
 
 
-def _draw_listing_v2_address_qr_premium(c, layout, address, beds, baths, sqft, price,
+def _draw_yard_address_qr_premium(c, layout, address, beds, baths, sqft, price,
                                      agent_name, brokerage, agent_email, agent_phone,
                                      qr_key, agent_photo_key, sign_color, qr_value=None,
                                      agent_photo_path=None, user_id=None, logo_key=None,

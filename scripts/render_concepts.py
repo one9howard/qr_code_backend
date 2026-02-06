@@ -136,23 +136,25 @@ def draw_modern_round():
     
     center_x = WIDTH / 2
     
-    # Giant Circular QR
-    # We can't warp QR to circle easily in ReportLab, but we can mask it.
+    # Giant Circular Badge (White with Black Border)
+    # Replaces unsafe clipping with a scannable inset QR
     qr_y_center = HEIGHT * 0.55
-    qr_size = 12 * inch
+    badge_dia = 12 * inch
     
-    # Draw QR
-    c.saveState()
-    p = c.beginPath()
-    p.circle(center_x, qr_y_center, qr_size/2)
-    c.clipPath(p, stroke=0)
-    draw_qr(c, "https://insite.co/demo", x=center_x-qr_size/2, y=qr_y_center-qr_size/2, size=qr_size)
-    c.restoreState()
-    
-    # Stroke around QR
+    # Draw Badge Background & Stroke
+    c.setFillColor(colors.white)
     c.setStrokeColor(colors.black)
     c.setLineWidth(5)
-    c.circle(center_x, qr_y_center, qr_size/2, stroke=1, fill=0)
+    c.circle(center_x, qr_y_center, badge_dia/2, stroke=1, fill=1)
+    
+    # Safe QR Size (Inscribed Square)
+    # D * 0.707 = 8.48, using 8.0 for margin
+    qr_size = 8 * inch
+    
+    # Draw QR (Unclipped)
+    # Implicitly H-ECC if we are covering center, though verify draw_qr defaults.
+    # Pass ecc_level='H' to be safe since we put a logo on top.
+    draw_qr(c, "https://insite.co/demo", x=center_x-qr_size/2, y=qr_y_center-qr_size/2, size=qr_size, ecc_level="H")
     
     # Center Logo
     logo_dia = 3 * inch

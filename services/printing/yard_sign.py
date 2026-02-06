@@ -12,7 +12,7 @@ from reportlab.lib.units import inch
 from database import get_db
 from utils.storage import get_storage
 from utils.pdf_generator import LayoutSpec, SIGN_SIZES, DEFAULT_SIGN_SIZE, _draw_standard_layout, _draw_landscape_split_layout, hex_to_rgb
-from utils.listing_designs import _draw_listing_v2_phone_qr_premium, _draw_listing_v2_address_qr_premium
+from utils.listing_designs import _draw_yard_phone_qr_premium, _draw_yard_address_qr_premium
 from services.printing.layout_utils import register_fonts
 from config import PUBLIC_BASE_URL
 from utils.qr_urls import property_scan_url
@@ -181,7 +181,11 @@ def generate_yard_sign_pdf(order, output_path=None):
     layout = LayoutSpec(size_config['width_in'], size_config['height_in'])
     
     # Layout ID Dispatch
-    layout_id = get_val(order, 'layout_id') or 'listing_standard'
+    layout_id = get_val(order, 'layout_id') or 'yard_standard'
+    
+    # Handle legacy 'listing_standard' fallback if passed explicitly
+    if layout_id == 'listing_standard':
+        layout_id = 'yard_standard'
 
     # Generate PDF in memory
     pdf_buffer = io.BytesIO()
@@ -204,11 +208,11 @@ def generate_yard_sign_pdf(order, output_path=None):
             'license_number': None, 'state': prop_row.get('state'), 'city': prop_row.get('city')
         }
 
-        if layout_id == 'listing_v2_phone_qr_premium':
-             _draw_listing_v2_phone_qr_premium(c, layout, **args_v2)
+        if layout_id in ('yard_phone_qr_premium', 'listing_v2_phone_qr_premium'):
+             _draw_yard_phone_qr_premium(c, layout, **args_v2)
              
-        elif layout_id == 'listing_v2_address_qr_premium':
-             _draw_listing_v2_address_qr_premium(c, layout, **args_v2)
+        elif layout_id in ('yard_address_qr_premium', 'listing_v2_address_qr_premium'):
+             _draw_yard_address_qr_premium(c, layout, **args_v2)
 
         else:
             if is_landscape:

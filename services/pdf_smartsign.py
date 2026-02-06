@@ -358,7 +358,7 @@ def generate_smartsign_pdf(asset, order_id=None, user_id=None, override_base_url
     if size_key not in SIGN_SIZES: size_key = DEFAULT_SIGN_SIZE
 
     layout_id = _read(asset, 'layout_id', 'smart_v1_minimal')
-    if layout_id not in ['smart_v1_minimal', 'smart_v1_agent_brand', 'smart_v1_photo_banner', 'smart_v2_vertical_banner']:
+    if layout_id not in ['smart_v1_minimal', 'smart_v1_agent_brand', 'smart_v1_photo_banner', 'smart_v2_vertical_banner', 'smart_v2_modern_round']:
         layout_id = 'smart_v1_minimal'
 
     layout = SmartSignLayout(size_key, layout_id)
@@ -379,6 +379,8 @@ def generate_smartsign_pdf(asset, order_id=None, user_id=None, override_base_url
         _draw_agent_brand(c, layout, asset, user_id, active_base_url)
     elif layout_id == 'smart_v2_vertical_banner':
         _draw_smart_v2_vertical_banner(c, layout, asset, user_id, active_base_url)
+    elif layout_id == 'smart_v2_modern_round':
+        _draw_modern_round(c, layout, asset, user_id, active_base_url)
     else:
         _draw_modern_minimal(c, layout, asset, user_id, active_base_url)
         
@@ -396,6 +398,71 @@ def generate_smartsign_pdf(asset, order_id=None, user_id=None, override_base_url
     storage.put_file(buffer, key, content_type="application/pdf")
     
     return key
+
+
+def _draw_modern_round(c, l, asset, user_id, base_url):
+    """
+    Modern Round: White Circular Badge with inset QR + clean typography.
+    """
+    # 1. Background (White)
+    c.setFillColorRGB(1, 1, 1)
+    c.rect(-l.bleed, -l.bleed, l.width + 2*l.bleed, l.height + 2*l.bleed, fill=1, stroke=0)
+    
+    center_x = l.width / 2
+    
+    # 2. Giant Circular Badge
+    # Top centered roughly in upper 60%
+    badge_dia = l.width * 0.66
+    badge_y_center = l.height * 0.55
+    
+    # White with Black Stroke
+    c.setFillColorRGB(1, 1, 1)
+    c.setStrokeColorRGB(0, 0, 0)
+    c.setLineWidth(5)
+    c.circle(center_x, badge_y_center, badge_dia/2, stroke=1, fill=1)
+    
+    # 3. Safe QR Size (Inscribed Square)
+    # D * 0.707. Using 0.65 for explicit margin.
+    qr_size = badge_dia * 0.65
+    
+    code = _read(asset, 'code')
+    qr_url = f"{base_url.rstrip('/')}/r/{code}"
+    draw_qr(c, qr_url, x=center_x - qr_size/2, y=badge_y_center - qr_size/2, size=qr_size, user_id=user_id, ecc_level="H")
+    
+    # 4. Center Logo/Headshot (Overlay)
+    head_d = badge_dia * 0.25
+    head_key = _read(asset, 'headshot_key') or _read(asset, 'agent_headshot_key')
+    storage = get_storage()
+    
+    # Draw white circle background for logo to clear noise
+    c.setFillColorRGB(1, 1, 1)
+    c.setStrokeColorRGB(1, 1, 1) 
+    c.circle(center_x, badge_y_center, head_d/2 + to_pt(0.1), fill=1, stroke=1) # slightly larger
+    
+    if head_key and storage.exists(head_key):
+        try:
+            c.saveState()
+            p = c.beginPath()
+            p.circle(center_x, badge_y_center, head_d/2)
+            c.clipPath(p, stroke=0)
+            
+            img_data = storage.get_file(head_key)
+            img = ImageReader(img_data)
+            c.drawImage(img, center_x - head_d/2, badge_y_center - head_d/2, width=head_d, height=head_d, mask='auto', preserveAspectRatio=True)
+            c.restoreState()
+        except: pass
+        
+    # 5. Header Text (Top)
+    # "SCAN ME" or CTA
+    cta_text = CTA_MAP.get(_read(asset, 'cta_key'), 'SCAN ME')
+    c.setFillColorRGB(0, 0, 0)
+    c.setFont(lu.FONT_BOLD, 80)
+    c.drawCentredString(center_x, l.height - to_pt(3.0), cta_text)
+    
+    # 6. Bottom Branding
+    # Agent Name / Powered By
+    c.setFont(lu.FONT_MED, 36)
+    c.drawCentredString(center_x, to_pt(2.5), "Powered by InSite")
 
 
 def _draw_modern_minimal(c, l, asset, user_id, base_url):
