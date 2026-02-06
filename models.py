@@ -178,7 +178,11 @@ class Order:
 class AppEvent:
     ALLOWED_COLUMNS = (
         'id', 'event_type', 'source', 'user_id', 'property_id', 'session_id', 
-        'qr_code', 'sign_asset_id', 'payload', 'occurred_at'
+        'qr_code', 'sign_asset_id', 'payload', 'occurred_at',
+        # Added in migration 019/021
+        'order_id', 'request_id', 'ip_hash', 'ua_hash',
+        'event_uuid', 'received_at', 'schema_version', 'environment',
+        'actor_type', 'actor_id', 'subject_type', 'subject_id', 'idempotency_key'
     )
 
     def __init__(self, **kwargs):
