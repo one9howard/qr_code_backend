@@ -700,7 +700,7 @@ body.property-page {
 }
 
 .drawer-menu.open {
-    transform: translateX(0);
+    transform: translateX(0) !important;
 }
 
 .drawer-header {
