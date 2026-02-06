@@ -1,4 +1,5 @@
 from flask import abort, request
+import secrets
 from flask_login import current_user
 from models import Order
 
@@ -41,7 +42,7 @@ def get_order_for_request(order_id):
         if not req_token:
             req_token = request.headers.get('X-Guest-Token')
             
-        if req_token and order.guest_token and req_token == order.guest_token:
+        if req_token and order.guest_token and secrets.compare_digest(req_token, order.guest_token):
             authorized = True
             
     if not authorized:
