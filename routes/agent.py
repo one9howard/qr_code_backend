@@ -19,7 +19,8 @@ from constants import (
     SIGN_SIZES,
 )
 from utils.qr_generator import generate_qr
-from services.printing.yard_sign import generate_yard_sign_pdf
+from utils.qr_urls import property_scan_url
+from services.printing.yard_sign import generate_yard_sign_pdf, generate_yard_sign_pdf_from_order_row
 from utils.uploads import save_image_upload
 from utils.pdf_preview import render_pdf_to_web_preview
 from utils.sign_options import normalize_sign_size
@@ -63,7 +64,7 @@ def submit():
 
             # Extract sign customization options
             sign_color = request.form.get("sign_color", DEFAULT_SIGN_COLOR)
-            layout_id = request.form.get("layout_id", "smart_v1_photo_banner")
+            layout_id = request.form.get("layout_id", "listing_modern_round")
             raw_sign_size = request.form.get("sign_size", DEFAULT_SIGN_SIZE)
 
             # Normalize sign size using canonical function
@@ -252,7 +253,7 @@ def submit():
                             cursor.execute("INSERT INTO property_photos (property_id, filename) VALUES (%s, %s)", (property_id, safe_key))
                          except: pass
 
-            full_url = f"{PUBLIC_BASE_URL}/r/{qr_code}"
+            full_url = property_scan_url(PUBLIC_BASE_URL, qr_code)
             qr_key = generate_qr(full_url, qr_code)
 
             # Determine Final Keys for PDF
@@ -308,17 +309,11 @@ def submit():
             )
 
             # Step 2: Generate PDF
-            # Use unified generator (services/printing/yard_sign.py)
-            # Pass dictionary with required fields
-            pdf_key = generate_yard_sign_pdf({
-                'id': order_id,
-                'property_id': property_id,
-                'user_id': user_id,
-                'sign_color': sign_color, 
-                'sign_size': sign_size,
-                'print_size': sign_size,
-                'layout_id': layout_id
-            })
+            # Unified Path: Fetch full order row from DB (ensure consistency)
+            order_row = db.execute("SELECT * FROM orders WHERE id = %s", (order_id,)).fetchone()
+            
+            # Use unified generator
+            pdf_key = generate_yard_sign_pdf_from_order_row(order_row, db=db)
 
             # Step 3: Generate WebP preview (returns storage key)
             preview_key = render_pdf_to_web_preview(

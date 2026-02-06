@@ -11,7 +11,7 @@ from reportlab.pdfgen import canvas
 from reportlab.lib.units import inch
 from database import get_db
 from utils.storage import get_storage
-from utils.pdf_generator import LayoutSpec, SIGN_SIZES, DEFAULT_SIGN_SIZE, _draw_standard_layout, _draw_landscape_split_layout, hex_to_rgb
+from utils.pdf_generator import LayoutSpec, SIGN_SIZES, DEFAULT_SIGN_SIZE, _draw_standard_layout, _draw_landscape_split_layout, _draw_modern_round_layout, hex_to_rgb
 from utils.listing_designs import _draw_yard_phone_qr_premium, _draw_yard_address_qr_premium
 from services.printing.layout_utils import register_fonts
 from config import PUBLIC_BASE_URL
@@ -65,13 +65,14 @@ def _format_price(price_val):
         pass
 
 
-def generate_yard_sign_pdf(order, output_path=None):
+def generate_yard_sign_pdf(order, output_path=None, output_key=None):
     """
     Generate the print-ready PDF for a standard Yard Sign.
     
     Args:
         order (dict): Order details (address, QR data, agent info)
         output_path (str, optional): Local path to save. If None, saves to tmp.
+        output_key (str, optional): Explicit storage key. If provided, overrides default naming.
         
     Returns:
         str: Storage key of the generated PDF (e.g. "pdfs/.../yard_sign_18x24.pdf")
@@ -181,11 +182,11 @@ def generate_yard_sign_pdf(order, output_path=None):
     layout = LayoutSpec(size_config['width_in'], size_config['height_in'])
     
     # Layout ID Dispatch
-    layout_id = get_val(order, 'layout_id') or 'yard_standard'
+    layout_id = get_val(order, 'layout_id') or 'listing_modern_round'
     
     # Handle legacy 'listing_standard' fallback if passed explicitly
-    if layout_id == 'listing_standard':
-        layout_id = 'yard_standard'
+    if layout_id in ('listing_standard', 'yard_standard', 'smart_v1_photo_banner'):
+        layout_id = 'listing_modern_round'
 
     # Generate PDF in memory
     pdf_buffer = io.BytesIO()
@@ -214,6 +215,14 @@ def generate_yard_sign_pdf(order, output_path=None):
         elif layout_id in ('yard_address_qr_premium', 'listing_v2_address_qr_premium'):
              _draw_yard_address_qr_premium(c, layout, **args_v2)
 
+        elif layout_id == 'listing_modern_round':
+             _draw_modern_round_layout(
+                c, layout, address, beds, baths, sqft, price,
+                agent_name, brokerage, agent_email, agent_phone,
+                None, agent_photo_key, sign_color, qr_value=qr_url,
+                user_id=user_id, logo_key=agent_logo_key
+            )
+
         else:
             if is_landscape:
                 _draw_landscape_split_layout(
@@ -236,10 +245,15 @@ def generate_yard_sign_pdf(order, output_path=None):
     
     # Save to storage
     # ----------------
-    folder = f"pdfs/order_{order_id}"
-    # Filename: yard_sign_{SIZE}.pdf  (e.g. yard_sign_18x24.pdf)
-    # If we have multiple signs? This generator is usually 1-to-1 with an order item.
-    pdf_key = f"{folder}/yard_sign_{sign_size}.pdf"
+    # Save to storage
+    # ----------------
+    if output_key:
+        pdf_key = output_key
+    else:
+        folder = f"pdfs/order_{order_id}" if order_id else "pdfs/misc"
+        # Filename: yard_sign_{SIZE}.pdf  (e.g. yard_sign_18x24.pdf)
+        # If we have multiple signs? This generator is usually 1-to-1 with an order item.
+        pdf_key = f"{folder}/yard_sign_{sign_size}.pdf"
     
     storage.put_file(pdf_buffer, pdf_key, content_type="application/pdf")
     

@@ -9,7 +9,7 @@ from PIL import Image, ImageDraw, ImageFont
 from database import get_db
 from utils.storage import get_storage
 from config import PUBLIC_BASE_URL
-from utils.pdf_generator import generate_pdf_sign
+from services.printing.yard_sign import generate_yard_sign_pdf
 
 def create_or_get_kit(user_id, property_id):
     """
@@ -119,27 +119,21 @@ def generate_kit(kit_id):
                 # Gather args
                 full_url = f"{PUBLIC_BASE_URL}/r/{prop['qr_code']}" if prop['qr_code'] else f"{PUBLIC_BASE_URL}/p/{prop['slug']}"
                 
-                # Generate using output_key (Non-Legacy Mode)
+                # Generate using unified path
                 temp_pdf_key = f"{prefix}/temp_sign.pdf"
                 
-                generated_key = generate_pdf_sign(
-                     address=prop['address'],
-                     beds=prop['beds'],
-                     baths=prop['baths'],
-                     sqft=prop['sqft'],
-                     price=prop['price'],
-                     agent_name=prop['agent_name'],
-                     brokerage=prop['brokerage'],
-                     agent_email=prop['agent_email'],
-                     agent_phone=prop['agent_phone'],
-                     qr_key=None, 
-                     agent_photo_key=prop.get('photo_filename'), 
-                     sign_color=None, 
-                     sign_size=None, 
-                     order_id=None, # output_key overrides this
-                     qr_value=full_url,
-                     user_id=prop['user_id'],
-                     logo_key=prop.get('logo_filename'),
+                # Mock order structure for unified generator
+                mock_order = {
+                    'id': None,
+                    'property_id': prop['id'],
+                    'user_id': prop['user_id'],
+                    'sign_color': '#0077ff', # Default/Brand
+                    'sign_size': '18x24',
+                    'layout_id': 'listing_modern_round'
+                }
+                
+                generated_key = generate_yard_sign_pdf(
+                     mock_order,
                      output_key=temp_pdf_key
                 )
                 

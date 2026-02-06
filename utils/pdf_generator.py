@@ -13,6 +13,7 @@ from constants import SIGN_SIZES, DEFAULT_SIGN_COLOR, DEFAULT_SIGN_SIZE
 from utils.qr_vector import draw_vector_qr
 from utils.storage import get_storage
 from config import PUBLIC_BASE_URL
+from utils.qr_urls import property_scan_url
 from services.printing.layout_utils import (
     register_fonts, 
     draw_identity_block,
@@ -171,7 +172,15 @@ def generate_pdf_sign(address, beds, baths, sqft, price, agent_name, brokerage, 
         c.saveState()
         c.translate(layout.bleed, layout.bleed)
         
-        if is_landscape:
+        if layout_id == 'listing_modern_round':
+             _draw_modern_round_layout(
+                c, layout, address, beds, baths, sqft, price,
+                agent_name, brokerage, agent_email, agent_phone,
+                qr_key, agent_photo_key, sign_color, qr_value=qr_value,
+                agent_photo_path=agent_photo_path, user_id=user_id, logo_key=logo_key
+            )
+
+        elif is_landscape:
             # House Style Landscape
             _draw_landscape_split_layout(
                 c, layout, address, beds, baths, sqft, price,
@@ -259,8 +268,9 @@ def _draw_standard_layout(c, layout, address, beds, baths, sqft, price,
             qr_url = qr_value
         elif qr_key:
             filename = os.path.basename(qr_key)
-            v = os.path.splitext(filename)[0]
-            qr_url = f"{PUBLIC_BASE_URL.rstrip('/')}/r/{v}"
+            code_part = os.path.splitext(filename)[0]
+            # Use canonical helper
+            qr_url = property_scan_url(PUBLIC_BASE_URL, code_part)
         else:
             qr_url = "https://example.com"
 
@@ -337,8 +347,8 @@ def _draw_landscape_split_layout(c, layout, address, beds, baths, sqft, price,
             qr_url = qr_value
         elif qr_key:
             filename = os.path.basename(qr_key)
-            v = os.path.splitext(filename)[0]
-            qr_url = f"{PUBLIC_BASE_URL.rstrip('/')}/r/{v}"
+            code_part = os.path.splitext(filename)[0]
+            qr_url = property_scan_url(PUBLIC_BASE_URL, code_part)
         else:
             qr_url = "https://example.com"
             
@@ -468,8 +478,8 @@ def _draw_minimal_layout(c, layout, address, beds, baths, sqft, price,
         qr_url = qr_value
     elif qr_key:
         filename = os.path.basename(qr_key)
-        v = os.path.splitext(filename)[0]
-        qr_url = f"{PUBLIC_BASE_URL.rstrip('/')}/r/{v}"
+        code_part = os.path.splitext(filename)[0]
+        qr_url = property_scan_url(PUBLIC_BASE_URL, code_part)
     else:
         qr_url = "https://example.com"
 
@@ -642,8 +652,8 @@ def _draw_landscape_minimal(c, layout, address, beds, baths, sqft, price,
     if qr_value: qr_url = qr_value
     elif qr_key:
         filename = os.path.basename(qr_key)
-        v = os.path.splitext(filename)[0]
-        qr_url = f"{PUBLIC_BASE_URL.rstrip('/')}/r/{v}"
+        code_part = os.path.splitext(filename)[0]
+        qr_url = property_scan_url(PUBLIC_BASE_URL, code_part)
     else: qr_url = "https://example.com"
 
     try:
@@ -796,3 +806,128 @@ def _draw_landscape_brand(c, layout, address, beds, baths, sqft, price,
         c.setFont("Helvetica-Bold", layout.features_font)
         c.drawCentredString(qr_x + qr_size/2, qr_y - (layout.features_font * 1.2), "SCAN FOR PHOTOS")
     except: pass
+
+
+def _draw_modern_round_layout(c, layout, address, beds, baths, sqft, price,
+                              agent_name, brokerage, agent_email, agent_phone,
+                              qr_key, agent_photo_key, sign_color, qr_value=None,
+                              agent_photo_path=None, user_id=None, logo_key=None):
+    """
+    Modern Round Layout:
+    - Clean white background
+    - Rounded aesthetics
+    - Brand color accent ring around QR
+    - "SCAN FOR DETAILS" CTA
+    - Inter Typography
+    """
+    # Colors
+    COLOR_ACCENT = hex_to_rgb(sign_color)
+    COLOR_TEXT = (0.1, 0.1, 0.1) # Soft black
+    COLOR_SUBTEXT = (0.4, 0.4, 0.4)
+    COLOR_BG = (1, 1, 1)
+
+    # 1. Background
+    c.setFillColorRGB(*COLOR_BG)
+    c.rect(-layout.bleed, -layout.bleed, 
+           layout.width + 2*layout.bleed, 
+           layout.height + 2*layout.bleed, 
+           fill=1, stroke=0)
+
+    # 2. Header (Address)
+    c.setFont(FONT_BOLD, layout.address_font)
+    c.setFillColorRGB(*COLOR_TEXT)
+    c.drawCentredString(layout.width / 2, layout.header_y, address.upper())
+
+    # 3. Features (Beds/Baths)
+    c.setFont(FONT_MED, layout.features_font)
+    c.setFillColorRGB(*COLOR_SUBTEXT)
+    features_line = f"{beds} BEDS  |  {baths} BATHS"
+    if sqft:
+        features_line += f"  |  {sqft} SQ FT"
+    c.drawCentredString(layout.width / 2, layout.features_y, features_line)
+
+    # 4. QR Code (Central Feature with Accent Ring)
+    
+    # Calculate Center
+    qr_center_y = layout.height * 0.58
+    qr_size = layout.width * 0.55
+    
+    # Draw Accent Ring (Circle)
+    ring_radius = (qr_size / 2) * 1.15
+    c.setFillColorRGB(*COLOR_ACCENT)
+    c.circle(layout.width / 2, qr_center_y, ring_radius, fill=1, stroke=0)
+    
+    # Draw Inner White Circle
+    inner_radius = (qr_size / 2) * 1.05
+    c.setFillColorRGB(1, 1, 1)
+    c.circle(layout.width / 2, qr_center_y, inner_radius, fill=1, stroke=0)
+
+    # Resolve URL
+    if qr_value:
+        qr_url = qr_value
+    elif qr_key:
+        filename = os.path.basename(qr_key)
+        code_part = os.path.splitext(filename)[0]
+        qr_url = property_scan_url(PUBLIC_BASE_URL, code_part)
+    else:
+        qr_url = "https://example.com"
+
+    # Draw QR
+    qr_x = (layout.width - qr_size) / 2
+    qr_y = qr_center_y - (qr_size / 2)
+    
+    try:
+        draw_qr(c, qr_url, qr_x, qr_y, qr_size, user_id=user_id, ecc_level="H")
+    except Exception as e:
+        logger.error(f"QR Error: {e}")
+
+    # 5. Price (Pill Style over QR bottom or just text?)
+    # Design spec: "Sign Color as Brand Accent"
+    # Let's put Price above QR or below Features?
+    # Let's put Price below Features for visibility
+    
+    if price:
+        display_price = price if "$" in str(price) else f"${price}"
+        price_y = layout.features_y - (layout.features_font * 1.5)
+        
+        # Draw Pill Background
+        c.setFont(FONT_BOLD, layout.price_font * 0.8)
+        price_w = c.stringWidth(display_price, FONT_BOLD, layout.price_font * 0.8)
+        pill_pad = layout.price_font * 0.4
+        pill_w = price_w + (pill_pad * 2)
+        pill_h = layout.price_font * 1.2
+        
+        c.setFillColorRGB(*COLOR_ACCENT)
+        # RoundRect centered
+        c.roundRect((layout.width/2) - (pill_w/2), price_y - (pill_h * 0.3), pill_w, pill_h, pill_h/2, fill=1, stroke=0)
+        
+        c.setFillColorRGB(1, 1, 1) # White text
+        c.drawCentredString(layout.width / 2, price_y, display_price)
+
+    # 6. CTA (Bottom of QR)
+    c.setFont(FONT_BOLD, layout.cta_font)
+    c.setFillColorRGB(*COLOR_TEXT)
+    cta_y = qr_y - (layout.cta_font * 2)
+    c.drawCentredString(layout.width / 2, cta_y, "SCAN FOR DETAILS")
+
+    # 7. Identity Block (Footer)
+    # Using shared identity block
+    asset = {
+        'brand_name': agent_name,
+        'brokerage_name': brokerage,
+        'email': agent_email,
+        'phone': agent_phone,
+        'headshot_key': agent_photo_key, 
+        'logo_key': logo_key,
+        'agent_headshot_path': agent_photo_path 
+    }
+    
+    draw_identity_block(
+        c, 
+        0, 0, 
+        layout.width, layout.footer_height, 
+        asset, 
+        get_storage(), 
+        theme='light' # Modern/Clean uses light footer often, or match accent?
+        # Let's stick to 'light' or 'soft' for Modern Round as per "Clean White Body"
+    )
