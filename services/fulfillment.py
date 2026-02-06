@@ -46,6 +46,7 @@ def fulfill_order(order_id):
     except Exception as lock_err:
         # Another process holds the lock - likely already being fulfilled
         logger.warning(f"[Fulfillment] Order {order_id} locked by another process: {lock_err}")
+        db.rollback() # CLEANUP: Ensure connection is reset
         return False
     
     if not order:
@@ -75,6 +76,9 @@ def fulfill_order(order_id):
                 (existing_job['job_id'], order_id)
              )
              db.commit()
+        else:
+             # RELEASE LOCK even if no update needed
+             db.commit()
         return True
 
     # 3. GATE ON paid_at TIMESTAMP (not just status string)
@@ -88,8 +92,10 @@ def fulfill_order(order_id):
     # Also check status for defense-in-depth
     if status not in ('paid', 'submitted_to_printer'):
         error_msg = f"Order {order_id} status '{status}' is not valid for fulfillment"
+        error_msg = f"Order {order_id} status '{status}' is not valid for fulfillment"
         logger.warning(f"[Fulfillment] {error_msg}")
         # Don't persist error for wrong status - might be intentional (e.g., cancelled)
+        db.rollback() # RELEASE LOCK
         return False
     
     # 4. Validate order_type

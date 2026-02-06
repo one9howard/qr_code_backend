@@ -36,10 +36,15 @@ CLIENT_EVENTS = {
     "cta_click"
 }
 
-FORBIDDEN_KEYS = {
+FORBIDDEN_SUBSTRINGS = {
+    "password", "token", "credit_card", "cvc", "secret", "auth"
+}
+
+FORBIDDEN_EXACT_KEYS = {
     "email", "phone", "message", "name", "address", 
-    "lead_message", "password", "token", "credit_card", "cvc",
-    "buyer_name", "buyer_email", "buyer_phone"
+    "lead_message", 
+    "buyer_name", "buyer_email", "buyer_phone",
+    "first_name", "last_name", "full_name"
 }
 
 def _hash_value(value):
@@ -60,7 +65,14 @@ def _clean_payload(payload):
     
     for k, v in payload.items():
         # Check key
-        if any(bad in k.lower() for bad in FORBIDDEN_KEYS):
+        # Check key
+        # 1. Exact Match (Case-insensitive)
+        if k.lower() in FORBIDDEN_EXACT_KEYS:
+            stripped = True
+            continue
+            
+        # 2. Dangerous Substring Match
+        if any(bad in k.lower() for bad in FORBIDDEN_SUBSTRINGS):
             stripped = True
             continue
             

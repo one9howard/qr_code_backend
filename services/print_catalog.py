@@ -34,7 +34,8 @@ SMART_SIGN_LAYOUTS = (
     'smart_v1_photo_banner',
     'smart_v1_minimal',
     'smart_v1_agent_brand',
-    'smart_v2_vertical_banner'
+    'smart_v2_vertical_banner',
+    'smart_v2_modern_round'
 )
 
 YARD_SIGN_LAYOUTS = (
@@ -46,7 +47,8 @@ YARD_SIGN_LAYOUTS = (
     'listing_v2_address_qr_premium',
     # New Standard Names (2026-02-06)
     'yard_phone_qr_premium',
-    'yard_address_qr_premium'
+    'yard_address_qr_premium',
+    'listing_modern_round'
 )
 
 # Strict Color Palette (ID -> Hex)
