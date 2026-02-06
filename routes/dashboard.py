@@ -866,7 +866,7 @@ def new_property():
         flash("Property created successfully.", "success")
         
         # Redirect to success page with SmartSign CTA
-        return redirect(url_for('dashboard.property_created', property_id=pid))
+        return redirect(url_for('dashboard.index', new_property_id=pid))
         
     return render_template("dashboard/property_new.html")
 

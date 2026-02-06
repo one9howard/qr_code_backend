@@ -41,7 +41,7 @@
 
             <div class="input-group" style="margin-bottom: 20px;">
                 <label class="input-label">Property Address</label>
-                <input name="address" class="glass-input" placeholder="123 Main St, City, State" required>
+                <input name="address" class="glass-input" placeholder="123 Main St, City, State" required autofocus>
             </div>
 
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
@@ -60,25 +60,33 @@
                 <input name="price" class="glass-input" placeholder="$500,000">
             </div>
 
-            <div class="input-group" style="margin-bottom: 20px;">
-                <label class="input-label">Tour Scheduling Link (Optional)</label>
-                <input type="url" name="scheduling_url" class="glass-input"
-                    placeholder="https://calendly.com/yourname/showings">
-            </div>
+            <details style="margin-bottom: 20px;">
+                <summary
+                    style="cursor: pointer; color: var(--accent-cyan); margin-bottom: 16px; font-weight: 500; list-style: none;">
+                    <span style="border-bottom: 1px dashed var(--accent-cyan);">Show Optional Details (Links &
+                        Photos)</span>
+                </summary>
 
-            <div class="input-group" style="margin-bottom: 20px;">
-                <label class="input-label">Virtual Tour Link (Optional)</label>
-                <input type="url" name="virtual_tour_url" class="glass-input"
-                    placeholder="https://my.matterport.com/show/...">
-            </div>
+                <div class="input-group" style="margin-bottom: 20px;">
+                    <label class="input-label">Tour Scheduling Link (Optional)</label>
+                    <input type="url" name="scheduling_url" class="glass-input"
+                        placeholder="https://calendly.com/yourname/showings">
+                </div>
 
-            <div class="input-group" style="margin-bottom: 30px;">
-                <label class="input-label">Photos (Optional)</label>
-                <input type="file" name="property_photos" class="glass-input" accept="image/*" multiple>
-                <p style="color: rgba(255,255,255,0.5); font-size: 0.8rem; margin-top: 6px;">
-                    Supported: JPG, PNG. Max 5MB per file.
-                </p>
-            </div>
+                <div class="input-group" style="margin-bottom: 20px;">
+                    <label class="input-label">Virtual Tour Link (Optional)</label>
+                    <input type="url" name="virtual_tour_url" class="glass-input"
+                        placeholder="https://my.matterport.com/show/...">
+                </div>
+
+                <div class="input-group" style="margin-bottom: 30px;">
+                    <label class="input-label">Photos (Optional)</label>
+                    <input type="file" name="property_photos" class="glass-input" accept="image/*" multiple>
+                    <p style="color: rgba(255,255,255,0.5); font-size: 0.8rem; margin-top: 6px;">
+                        Supported: JPG, PNG. Max 5MB per file.
+                    </p>
+                </div>
+            </details>
 
             <div style="display: flex; justify-content: flex-end; gap: 16px; align-items: center;">
                 <button type="submit" class="glass-button accent" style="width: 100%;">
