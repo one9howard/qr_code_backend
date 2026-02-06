@@ -266,6 +266,10 @@ def should_exclude(path: str, exclude_patterns, include_overrides, is_dir: bool 
     path = path.replace("\\", "/")
     basename = os.path.basename(path)
 
+    # HARD EXCLUDE for safety (overrides includes)
+    if basename == "__pycache__" or path.endswith(".pyc"):
+        return True
+
     # Exact include overrides win
     for override in include_overrides:
         if path == override or basename == override:
@@ -290,14 +294,10 @@ def should_exclude(path: str, exclude_patterns, include_overrides, is_dir: bool 
         if fnmatch.fnmatch(basename, pattern):
             return True
 
-        # Prefix directory exclusion
-        if path.startswith(pattern.rstrip("/") + "/"):
-            return True
-    
-    # HARD EXCLUDE for safety (overrides includes)
-    if basename == "__pycache__" or path.endswith(".pyc"):
+    # Prefix directory exclusion
+    if path.startswith(pattern.rstrip("/") + "/"):
         return True
-
+    
     return False
 
 
@@ -351,6 +351,11 @@ def build_release_zip(project_root: str = None, output_dir: str = None, profile:
             i = 0
             while i < len(dirs):
                 d = dirs[i]
+                # Extra safety: Always kill __pycache__ immediately
+                if d == "__pycache__":
+                    del dirs[i]
+                    continue
+                    
                 rel_dir_path = os.path.join(rel_root, d).replace("\\", "/") if rel_root else d
                 if should_exclude(rel_dir_path, exclude_patterns, include_overrides, is_dir=True):
                     del dirs[i]
