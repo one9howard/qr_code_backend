@@ -97,7 +97,8 @@ class Order:
         'status', 'print_product', 'print_size', 'material', 'quantity', 
         'shipping_address', 'sign_pdf_path', 'preview_url', 
         'checkout_session_id', 'order_type', 'sign_asset_id', 'design_payload',
-        'provider_job_id', 'layout_id', 'created_at', 'updated_at'
+        'provider_job_id', 'layout_id', 'created_at', 'updated_at',
+        'sign_size', 'sign_color', 'guest_email', 'guest_token'
     )
 
     def __init__(self, **kwargs):

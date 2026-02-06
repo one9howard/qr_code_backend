@@ -108,6 +108,7 @@ def generate_yard_sign_pdf(order, output_path=None):
     if prop_row['agent_id']:
         agent_row = db.execute("""
             SELECT a.id, a.name as agent_name, a.brokerage, a.phone, a.email as agent_email,
+                   a.photo_filename, a.logo_filename,
                    u.full_name, u.email as user_email
             FROM agents a 
             JOIN users u ON a.user_id = u.id 
@@ -144,6 +145,10 @@ def generate_yard_sign_pdf(order, output_path=None):
     
     price_val = prop_row.get('price')
     price = _format_price(price_val)
+
+    # Agent Assets
+    agent_photo_key = agent_row.get('photo_filename') if agent_row else None
+    agent_logo_key = agent_row.get('logo_filename') if agent_row else None
     
     # Sign config - use order's persisted color and size
     sign_color = get_val(order, 'sign_color') or '#0077ff'  # DEFAULT_SIGN_COLOR fallback
@@ -194,7 +199,7 @@ def generate_yard_sign_pdf(order, output_path=None):
             'address': address, 'beds': beds, 'baths': baths, 'sqft': sqft, 'price': price,
             'agent_name': agent_name, 'brokerage': brokerage, 
             'agent_email': agent_email, 'agent_phone': agent_phone,
-            'qr_key': None, 'agent_photo_key': None,
+            'qr_key': None, 'agent_photo_key': agent_photo_key, 'logo_key': agent_logo_key,
             'sign_color': sign_color, 'qr_value': qr_url, 'user_id': user_id,
             'license_number': None, 'state': prop_row.get('state'), 'city': prop_row.get('city')
         }
@@ -210,13 +215,13 @@ def generate_yard_sign_pdf(order, output_path=None):
                 _draw_landscape_split_layout(
                     c, layout, address, beds, baths, sqft, price,
                     agent_name, brokerage, agent_email, agent_phone,
-                    None, None, sign_color, qr_value=qr_url, user_id=user_id
+                    None, agent_photo_key, sign_color, qr_value=qr_url, user_id=user_id, logo_key=agent_logo_key
                 )
             else:
                 _draw_standard_layout(
                     c, layout, address, beds, baths, sqft, price,
                     agent_name, brokerage, agent_email, agent_phone,
-                    None, None, sign_color, qr_value=qr_url, user_id=user_id
+                    None, agent_photo_key, sign_color, qr_value=qr_url, user_id=user_id, logo_key=agent_logo_key
                 )
         
         c.restoreState()

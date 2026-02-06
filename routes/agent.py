@@ -11,7 +11,7 @@ from flask_login import current_user
 from slugify import slugify
 
 from database import get_db, create_agent_snapshot
-from config import BASE_URL, AGENT_PHOTOS_KEY_PREFIX, PROPERTY_PHOTOS_KEY_PREFIX
+from config import BASE_URL, PUBLIC_BASE_URL, AGENT_PHOTOS_KEY_PREFIX, PROPERTY_PHOTOS_KEY_PREFIX
 from constants import (
     ORDER_STATUS_PENDING_PAYMENT,
     DEFAULT_SIGN_COLOR,
@@ -19,7 +19,7 @@ from constants import (
     SIGN_SIZES,
 )
 from utils.qr_generator import generate_qr
-from utils.pdf_generator import generate_pdf_sign
+from services.printing.yard_sign import generate_yard_sign_pdf
 from utils.uploads import save_image_upload
 from utils.pdf_preview import render_pdf_to_web_preview
 from utils.sign_options import normalize_sign_size
@@ -252,7 +252,7 @@ def submit():
                             cursor.execute("INSERT INTO property_photos (property_id, filename) VALUES (%s, %s)", (property_id, safe_key))
                          except: pass
 
-            full_url = f"{BASE_URL}/r/{qr_code}"
+            full_url = f"{PUBLIC_BASE_URL}/r/{qr_code}"
             qr_key = generate_qr(full_url, qr_code)
 
             # Determine Final Keys for PDF
@@ -308,15 +308,17 @@ def submit():
             )
 
             # Step 2: Generate PDF
-            pdf_key = generate_pdf_sign(
-                address, beds, baths, sqft, price, agent_name, brokerage, agent_email, agent_phone,
-                qr_key, 
-                final_headshot_key, # Respects toggle
-                sign_color, sign_size, order_id=order_id, qr_value=full_url,
-                logo_key=final_logo_key, # NEW: Pass logo key (requires update to pdf_generator signature)
-                user_id=current_user.id if current_user.is_authenticated else None, # NEW: For QR Logo rendering
-                layout_id=layout_id
-            )
+            # Use unified generator (services/printing/yard_sign.py)
+            # Pass dictionary with required fields
+            pdf_key = generate_yard_sign_pdf({
+                'id': order_id,
+                'property_id': property_id,
+                'user_id': user_id,
+                'sign_color': sign_color, 
+                'sign_size': sign_size,
+                'print_size': sign_size,
+                'layout_id': layout_id
+            })
 
             # Step 3: Generate WebP preview (returns storage key)
             preview_key = render_pdf_to_web_preview(

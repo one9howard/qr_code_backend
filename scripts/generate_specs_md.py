@@ -16,7 +16,7 @@ from services.specs import (
     GLOBAL_PRINT_RULES,
     SMARTSIGN_LAYOUT_IDS,
     SMARTSIGN_V1_MINIMAL_SPECS,
-    LISTING_SIGN_CONSTRAINTS: YARD_SIGN_CONSTRAINTS,
+    YARD_SIGN_CONSTRAINTS,
 )
 
 REPO_ROOT = Path(__file__).resolve().parents[1]

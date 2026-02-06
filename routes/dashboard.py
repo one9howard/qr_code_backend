@@ -140,8 +140,8 @@ def index():
             'is_pending_order': True
         })
 
-    # 7. Listing Signs (orders with order_type='sign')
-    listing_signs_raw = db.execute(
+    # 7. Yard Signs (orders with order_type='sign')
+    yard_signs_raw = db.execute(
         """
         SELECT 
             o.id as order_id,
@@ -162,10 +162,10 @@ def index():
     ).fetchall()
     
     # Enrich with status labels for display AND build map
-    listing_signs = []
+    yard_signs = []
     yard_sign_map = set() # Set of property IDs with yard signs
 
-    for row in listing_signs_raw:
+    for row in yard_signs_raw:
         from services.gating import get_property_gating_status
         gating = get_property_gating_status(row['id'])
         
@@ -180,7 +180,7 @@ def index():
             status_label = 'Preview'
             status_color = 'pending'
         
-        listing_signs.append({
+        yard_signs.append({
             'id': row['id'],
             'order_id': row['order_id'],
             'address': row['address'],
@@ -425,7 +425,7 @@ def index():
         leads=leads,
         properties=properties,
         is_pro=current_user.is_pro,
-        listing_signs=listing_signs,
+        yard_signs=yard_signs,
         # Onboarding Activation (Phase 1 Sprint)
         dashboard_mode=dashboard_mode,
         smart_sign_count=smart_sign_count,

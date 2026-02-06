@@ -12,7 +12,12 @@ import io
 from constants import SIGN_SIZES, DEFAULT_SIGN_COLOR, DEFAULT_SIGN_SIZE
 from utils.qr_vector import draw_vector_qr
 from utils.storage import get_storage
-from config import BASE_URL
+from config import PUBLIC_BASE_URL
+from services.printing.layout_utils import (
+    register_fonts, 
+    draw_identity_block,
+    FONT_BODY, FONT_BOLD, FONT_MED
+)
 
 class LayoutSpec:
     """
@@ -24,25 +29,25 @@ class LayoutSpec:
         self.bleed = 0.125 * inch
         self.margin = 0.5 * inch
         
-        # Grid System (Vertical Percentage approx)
-        self.address_y = self.height * 0.90
-        self.features_y = self.height * 0.84
-        self.price_y = self.height * 0.28  # Lowered to make room
-        self.qr_y = self.height * 0.58     # Vertically centered in upper block
+        # Grid System for "House Style" (Vertical standard)
+        self.header_y = self.height * 0.92  # Address
+        self.features_y = self.height * 0.86
+        self.qr_center_y = self.height * 0.60
+        self.footer_height = self.height * 0.18 # Identity Block height
         
         # Font Scaling Factor (Base 18x24)
         scale = min(width_in, height_in) / 18.0
         
-        self.address_font = 85 * scale
-        self.features_font = 42 * scale
-        self.price_font = 110 * scale
-        self.agent_name_font = 38 * scale
-        self.agent_sub_font = 26 * scale
+        self.address_font = 90 * scale
+        self.features_font = 48 * scale
+        self.price_font = 100 * scale
+        self.cta_font = 36 * scale
         
-        # Component Sizes
-        self.banner_height = self.height * 0.22
-        self.photo_size = self.banner_height * 0.85
-        self.qr_size_base = self.width * 0.55
+        self.qr_size_base = self.width * 0.60
+        
+        # Compatibility fields for legacy layouts (if any survive)
+        self.banner_height = self.footer_height
+        self.price_y = self.height * 0.35
 
 # =============================================================================
 # QR Drawing Helper (Switchable Vector/Raster)
@@ -167,53 +172,21 @@ def generate_pdf_sign(address, beds, baths, sqft, price, agent_name, brokerage, 
         c.translate(layout.bleed, layout.bleed)
         
         if is_landscape:
-            # Dispatch based on Layout ID for Landscape
-            if layout_id == 'smart_v1_minimal':
-                _draw_landscape_minimal(
-                    c, layout, address, beds, baths, sqft, price,
-                    agent_name, brokerage, agent_email, agent_phone,
-                    qr_key, agent_photo_key, sign_color, qr_value=qr_value,
-                    agent_photo_path=agent_photo_path, user_id=user_id, logo_key=logo_key
-                )
-            elif layout_id == 'smart_v1_agent_brand':
-                _draw_landscape_brand(
-                    c, layout, address, beds, baths, sqft, price,
-                    agent_name, brokerage, agent_email, agent_phone,
-                    qr_key, agent_photo_key, sign_color, qr_value=qr_value,
-                    agent_photo_path=agent_photo_path, user_id=user_id, logo_key=logo_key
-                )
-            else:
-                # Default / Photo Banner uses Split Layout
-                _draw_landscape_split_layout(
-                    c, layout, address, beds, baths, sqft, price,
-                    agent_name, brokerage, agent_email, agent_phone,
-                    qr_key, agent_photo_key, sign_color, qr_value=qr_value,
-                    agent_photo_path=agent_photo_path, user_id=user_id, logo_key=logo_key
-                )
+            # House Style Landscape
+            _draw_landscape_split_layout(
+                c, layout, address, beds, baths, sqft, price,
+                agent_name, brokerage, agent_email, agent_phone,
+                qr_key, agent_photo_key, sign_color, qr_value=qr_value,
+                agent_photo_path=agent_photo_path, user_id=user_id, logo_key=logo_key
+            )
         else:
-            # Dispatch based on Layout ID
-            if layout_id == 'smart_v1_minimal':
-                _draw_minimal_layout(
-                    c, layout, address, beds, baths, sqft, price,
-                    agent_name, brokerage, agent_email, agent_phone,
-                    qr_key, agent_photo_key, sign_color, qr_value=qr_value,
-                    agent_photo_path=agent_photo_path, user_id=user_id, logo_key=logo_key
-                )
-            elif layout_id == 'smart_v1_agent_brand':
-                _draw_brand_layout(
-                    c, layout, address, beds, baths, sqft, price,
-                    agent_name, brokerage, agent_email, agent_phone,
-                    qr_key, agent_photo_key, sign_color, qr_value=qr_value,
-                    agent_photo_path=agent_photo_path, user_id=user_id, logo_key=logo_key
-                )
-            else:
-                # Default / Photo Banner
-                _draw_standard_layout(
-                    c, layout, address, beds, baths, sqft, price,
-                    agent_name, brokerage, agent_email, agent_phone,
-                    qr_key, agent_photo_key, sign_color, qr_value=qr_value,
-                    agent_photo_path=agent_photo_path, user_id=user_id, logo_key=logo_key
-                )
+            # House Style Standard (Vertical)
+            _draw_standard_layout(
+                c, layout, address, beds, baths, sqft, price,
+                agent_name, brokerage, agent_email, agent_phone,
+                qr_key, agent_photo_key, sign_color, qr_value=qr_value,
+                agent_photo_path=agent_photo_path, user_id=user_id, logo_key=logo_key
+            )
         
         c.restoreState()
         c.showPage()
@@ -252,226 +225,86 @@ def _draw_standard_layout(c, layout, address, beds, baths, sqft, price,
                           agent_name, brokerage, agent_email, agent_phone,
                           qr_key, agent_photo_key, sign_color, qr_value=None,
                           agent_photo_path=None, user_id=None, logo_key=None):
-    """Standard centered layout for vertical/poster signs."""
+    """
+    Standard "House Style" Layout | Vertical (18x24)
+    Clean, whitespace-driven design using Inter fonts.
+    """
     
-    # Colors
-    COLOR_ORANGE = (212/255, 93/255, 18/255)
-    COLOR_BANNER = hex_to_rgb(sign_color)
-    
-    # 1. Address (Top)
-    c.setFont("Helvetica-Bold", layout.address_font)
+    # 1. Header: Address (Top Centered)
+    c.setFont(FONT_BOLD, layout.address_font)
     c.setFillColorRGB(0, 0, 0)
-    c.drawCentredString(layout.width / 2, layout.address_y, address.upper())
+    c.drawCentredString(layout.width / 2, layout.header_y, address.upper())
     
-    # 2. Features line
-    c.setFont("Helvetica", layout.features_font)
-    c.setFillColorRGB(0.5, 0.5, 0.5)
-    features_line = f"{beds} BEDS | {baths} BATHS"
+    # 2. Subheader: Features (Below Address)
+    c.setFont(FONT_MED, layout.features_font)
+    c.setFillColorRGB(0.4, 0.4, 0.4)
+    features_line = f"{beds} BEDS  |  {baths} BATHS"
     if sqft:
-        features_line += f" | {sqft} SQ FT"
+        features_line += f"  |  {sqft} SQ FT"
     c.drawCentredString(layout.width / 2, layout.features_y, features_line)
     
-    # =====================================================
-    # 3. QR Code with Quiet Zone - VECTOR RENDERING
-    # =====================================================
-    # Use vector QR for print-grade sharpness (no raster scaling)
+    # 3. Price (Floating, High Visibility)
+    if price:
+        display_price = price if "$" in str(price) else f"${price}"
+        c.setFont(FONT_BOLD, layout.price_font)
+        c.setFillColorRGB(*hex_to_rgb(sign_color)) # Use accent color
+        # Draw vertically between features and QR
+        price_y = (layout.features_y + layout.qr_center_y + layout.qr_size_base/2) / 2
+        c.drawCentredString(layout.width / 2, price_y, display_price)
+    
+    # 4. QR Code (Central Focal Point)
     try:
-        # Calculate quiet zone (2% of min dimension, at least 0.25")
-        quiet = max(0.02 * min(layout.width, layout.height), 0.25 * inch)
-        
-        # Calculate vertical safe region for QR
-        # Top limit: below features line with quiet zone
-        qr_top_limit = layout.features_y - quiet - (layout.features_font * 1.2)
-        
-        # CTA Font Size
-        cta_font_size = layout.price_font * 0.35
-        cta_height = cta_font_size * 1.2
-        
-        # Bottom limit: above banner with quiet zone, reserve space for price AND CTA
-        price_block_height = (layout.price_font * 1.5 + quiet + cta_height) if price else (quiet + cta_height)
-        qr_bottom_limit = layout.banner_height + quiet + price_block_height
-        
-        # Calculate available space 
-        qr_max_h = qr_top_limit - qr_bottom_limit
-        qr_max_w = layout.width - 2 * (layout.margin + quiet)
-        
-        # Target: 15% larger than base, clamped to available space (Reduced from 25% to fix overlap)
-        qr_target = layout.qr_size_base * 1.15
-        qr_size = max(0.5 * inch, min(qr_target, qr_max_w, qr_max_h))
-        
-        # Position QR centered horizontally
-        qr_x = (layout.width - qr_size) / 2
-        
-        # Position QR vertically: center in available region
-        available_center = (qr_top_limit + qr_bottom_limit) / 2
-        qr_y = available_center - (qr_size / 2)
-        
-        # Clamp to safe bounds
-        qr_y = max(qr_bottom_limit, min(qr_y, qr_top_limit - qr_size))
-        
-        # =====================================================
-        # PREFLIGHT VALIDATION (New)
-        # =====================================================
-        from utils.print_preflight import validate_sign_layout, PreflightError
-        
-        # Validate the specific instance of QR size/quiet zone we just calculated
-        pf_result = validate_sign_layout(layout, "standard", qr_size, quiet)
-        
-        # Log warnings
-        for warn in pf_result.warnings:
-            print(f"[PREFLIGHT WARNING] {warn}")
-            
-        # Hard fail on errors (unless overridden, but we want safe defaults)
-        if not pf_result.ok:
-            print(f"[PREFLIGHT ERROR] Validation failed: {pf_result.errors}")
-            # Raise exception to abort generation - do not print bad signs
-            raise PreflightError(pf_result)
-        
-        # Determine QR URL: prefer qr_value parameter, fallback to extracting from qr_key
+        # Determine URL
         if qr_value:
             qr_url = qr_value
         elif qr_key:
-            # Extract qr_code from path pattern: qr/{qr_code_value}.png or similar
-            # Be robust to full keys like "staging/qr/foo.png" or "qr/foo.png"
             filename = os.path.basename(qr_key)
-            qr_code_value = os.path.splitext(filename)[0]
-            qr_url = f"{BASE_URL.rstrip('/')}/r/{qr_code_value}"
+            v = os.path.splitext(filename)[0]
+            qr_url = f"{PUBLIC_BASE_URL.rstrip('/')}/r/{v}"
         else:
-            qr_url = "https://example.com"  # Fallback
+            qr_url = "https://example.com"
+
+        # Size: 60% of width
+        qr_size = layout.qr_size_base
+        qr_x = (layout.width - qr_size) / 2
+        qr_y = layout.qr_center_y - (qr_size / 2)
         
-        # Draw vector QR (print-grade, no raster scaling)
-        draw_qr(c, qr_url, qr_x, qr_y, qr_size, quiet=quiet, ecc_level="H", user_id=user_id)
+        # 4a. Draw QR (Vector H-ECC)
+        draw_qr(c, qr_url, qr_x, qr_y, qr_size, size=qr_size, ecc_level="H", user_id=user_id)
         
-        # Draw CTA below QR
-        c.setFont("Helvetica-Bold", cta_font_size)
+        # 4b. CTA "SCAN FOR DETAILS" (Below QR)
+        c.setFont(FONT_BOLD, layout.cta_font)
         c.setFillColorRGB(0, 0, 0)
-        cta_y = qr_y - (cta_font_size * 1.2)
-        c.drawCentredString(layout.width / 2, cta_y, "SCAN FOR PHOTOS & DETAILS")
-        
-        # Update price position based on actual QR position - add extra padding
-        dynamic_price_y = cta_y - quiet - (layout.price_font * 0.8)
+        c.drawCentredString(layout.width / 2, qr_y - (layout.cta_font * 1.5), "SCAN FOR PHOTOS & DETAILS")
         
     except Exception as e:
-        # Re-raise preflight errors, swallow others (fallback logic handles others)
-        if "Preflight failed" in str(e):
-            raise
-        print(f"[PDF] Error drawing vector QR code: {e}")
-        qr_y = layout.qr_y  # Fallback
-        dynamic_price_y = layout.price_y
-    else:
-        pass  # qr_y and dynamic_price_y already set
+        logger.error(f"QR Draw Error: {e}")
+
+    # 5. Footer: Identity Block (Shared Component)
+    # Spans full width at bottom
     
-    # 4. Price (Below QR with quiet zone)
-    if price:
-        display_price = price if "$" in str(price) else f"${price}"
-        c.setFont("Helvetica-Bold", layout.price_font)
-        c.setFillColorRGB(*COLOR_ORANGE)
-        # Clamp price_y above banner
-        final_price_y = max(dynamic_price_y, layout.banner_height + 0.1 * inch)
-        c.drawCentredString(layout.width / 2, final_price_y, display_price)
+    # Construct asset dict for shared component
+    asset = {
+        'brand_name': agent_name,
+        'brokerage_name': brokerage,
+        'email': agent_email,
+        'phone': agent_phone,
+        'headshot_key': agent_photo_key, 
+        'logo_key': logo_key,
+        # Legacy compat
+        'agent_headshot_path': agent_photo_path 
+    }
     
-    # 5. Banner (Bottom)
-    c.setFillColorRGB(*COLOR_BANNER)
-    c.rect(-layout.bleed, -layout.bleed, 
-           layout.width + 2 * layout.bleed, 
-           layout.banner_height + layout.bleed, 
-           fill=1, stroke=0)
-    
-    # =====================================================
-    # 6. Agent Info - Headshot positioned further LEFT
-    # =====================================================
-    c.setFillColorRGB(1, 1, 1)  # White text
-    
-    agent_main = agent_name.upper()
-    if brokerage:
-        agent_main += f" | {brokerage.upper()}"
-    agent_sub = f"{agent_email.lower()} | {agent_phone}"
-    
-    # Calculate text positions
-    text_center_y = layout.banner_height / 2
-    
-    # Load Agent Photo - prefer filesystem path (legacy) over storage key (new)
-    storage = get_storage()
-    has_photo = False
-    photo = None
-    
-    # Legacy mode: load from filesystem path
-    if agent_photo_path and os.path.exists(agent_photo_path):
-        try:
-            photo = ImageReader(agent_photo_path)
-            has_photo = True
-        except Exception as e:
-            print(f"[PDF] Error loading agent photo from path: {e}")
-    # New mode: load from storage
-    elif agent_photo_key and storage.exists(agent_photo_key):
-        try:
-            photo_bytes = storage.get_file(agent_photo_key)
-            photo = ImageReader(photo_bytes)
-            has_photo = True
-        except Exception as e:
-            print(f"[PDF] Error loading agent photo from storage: {e}")
-    
-    if has_photo and photo:
-        # Position photo at LEFT margin (not centered)
-        agent_block_left = layout.margin * 0.8  # Anchor to left
-        photo_x = agent_block_left
-        photo_y = (layout.banner_height - layout.photo_size) / 2
-        
-        try:
-            c.drawImage(photo, photo_x, photo_y, 
-                       width=layout.photo_size, height=layout.photo_size, mask='auto')
-            
-            # Text positioned right of photo with consistent gap
-            text_x = photo_x + layout.photo_size + (0.025 * layout.width)
-            
-            # Calculate if text will overflow right edge
-            max_text_width = layout.width - text_x - layout.margin
-            
-            # Measure text width and adjust font if needed
-            name_font_size = layout.agent_name_font
-            sub_font_size = layout.agent_sub_font
-            
-            c.setFont("Helvetica-Bold", name_font_size)
-            name_width = c.stringWidth(agent_main, "Helvetica-Bold", name_font_size)
-            
-            # If text overflows, reduce font by up to 15%
-            if name_width > max_text_width:
-                scale_factor = max(0.85, max_text_width / name_width)
-                name_font_size *= scale_factor
-                sub_font_size *= scale_factor
-            
-            c.setFont("Helvetica-Bold", name_font_size)
-            c.drawString(text_x, text_center_y + (0.05 * layout.banner_height), agent_main)
-            
-            # Handle Logo vs Brokerage Text
-            has_logo = False
-            if logo_key and storage.exists(logo_key):
-                try:
-                    logo_bytes = storage.get_file(logo_key)
-                    logo_img = ImageReader(logo_bytes)
-                    # Draw logo below name
-                    logo_h = layout.agent_sub_font * 1.5
-                    c.drawImage(logo_img, text_x, text_center_y - (0.15 * layout.banner_height) - logo_h/2, 
-                               height=logo_h, width=logo_h, preserveAspectRatio=True, mask='auto')
-                    has_logo = True
-                    
-                    # Contact info to right of logo
-                    c.setFont("Helvetica", sub_font_size)
-                    c.drawString(text_x + logo_h + 5, text_center_y - (0.15 * layout.banner_height), agent_sub)
-                    
-                except Exception as e:
-                    print(f"[PDF] Error drawing logo: {e}")
-            
-            if not has_logo:
-                c.setFont("Helvetica", sub_font_size)
-                c.drawString(text_x, text_center_y - (0.15 * layout.banner_height), agent_sub)
-                
-        except Exception as e:
-            print(f"[PDF] Error drawing agent photo: {e}")
-            has_photo = False
-    
-    if not has_photo:
-        _draw_centered_agent_info(c, layout, agent_main, agent_sub, logo_key)
+    # Draw Footer Band
+    # Standard: Dark Theme
+    draw_identity_block(
+        c, 
+        0, 0,  # x, y (Bottom Left)
+        layout.width, layout.footer_height, # w, h
+        asset, 
+        get_storage(), 
+        theme='dark'
+    )
 
 
 def _draw_landscape_split_layout(c, layout, address, beds, baths, sqft, price,
@@ -479,163 +312,116 @@ def _draw_landscape_split_layout(c, layout, address, beds, baths, sqft, price,
                                  qr_key, agent_photo_key, sign_color, qr_value=None,
                                  agent_photo_path=None, user_id=None, logo_key=None):
     """
-    Split 50/50 Layout for Landscape Signs (36x24).
-    Left: Agent Photo + Property Info + Contact
-    Right: Massive QR Code
+    Landscape "House Style" Layout | Horizontal (24x36)
+    Split 40/60 Layout:
+    Left (40%): Property Info + Agent Identity Block
+    Right (60%): Massive QR Code
     """
     # Dimensions
     w = layout.width
     h = layout.height
     
     # Split
-    mid_x = w * 0.5
+    split_x = w * 0.45
     
-    # Margins for content availability
-    margin_x = w * 0.04  # Slightly reduced for more QR space
-    margin_y = h * 0.06  # Slightly reduced for more QR space
-    
-    # Quiet zone for QR
-    quiet = max(0.02 * h, 0.25 * inch)
-    
-    # Left Column Bounds
-    left_x_start = margin_x
-    left_x_end = mid_x - (margin_x * 0.5)
-    left_w = left_x_end - left_x_start
-    
-    # Right Column Bounds
-    right_x_start = mid_x + (margin_x * 0.5)
-    right_x_end = w - margin_x
-    right_w = right_x_end - right_x_start
-    
-    # Colors - Use sign_color for accents
-    COLOR_ACCENT = hex_to_rgb(sign_color)
-    COLOR_ORANGE = (212/255, 93/255, 18/255)
-    COLOR_TEXT = (0, 0, 0)
-    COLOR_SUBTEXT = (0.4, 0.4, 0.4)
-    
-    # =====================================================
-    # ACCENT 1: Vertical Divider Bar at 50/50 split
-    # =====================================================
-    divider_width = max(3, min(8, 0.012 * w))  # 3-8 pts
-    c.setFillColorRGB(*COLOR_ACCENT)
-    c.rect(mid_x - divider_width/2, margin_y, divider_width, h - 2*margin_y, fill=1, stroke=0)
-    
-    # =====================================================
-    # ACCENT 2: Border stroke around entire sign
-    # =====================================================
-    border_thickness = max(2, min(6, 0.004 * w))  # 2-6 pts
-    c.setStrokeColorRGB(*COLOR_ACCENT)
-    c.setLineWidth(border_thickness)
-    c.rect(0, 0, w, h, fill=0, stroke=1)
+    # Margins
+    margin_x = w * 0.04
+    margin_y = h * 0.08
     
     # =====================================================
     # RIGHT COLUMN: QR with VECTOR RENDERING
     # =====================================================
     try:
-        # Maximize QR in the right column with quiet zone
-        qr_max_w = right_w - 2 * quiet
-        qr_max_h = h - 2 * quiet - margin_y  # Account for label space below
-        qr_size = min(qr_max_w, qr_max_h)
-        
-        # Center QR in right column, slightly higher to leave room for label
-        qr_x = right_x_start + (right_w - qr_size) / 2
-        qr_y = (h - qr_size) / 2 + (0.02 * h)  # Slight upward offset for label
-        
-        # Determine QR URL: prefer qr_value, fallback to extracting from qr_key
+        # Determine URL
         if qr_value:
             qr_url = qr_value
         elif qr_key:
             filename = os.path.basename(qr_key)
-            qr_code_value = os.path.splitext(filename)[0]
-            qr_url = f"{BASE_URL.rstrip('/')}/r/{qr_code_value}"
+            v = os.path.splitext(filename)[0]
+            qr_url = f"{PUBLIC_BASE_URL.rstrip('/')}/r/{v}"
         else:
-            qr_url = "https://example.com"  # Fallback
+            qr_url = "https://example.com"
+            
+        # Maximize QR in the right column with large margins
+        right_w = w - split_x
+        quiet = max(0.02 * h, 0.25 * inch)
         
-        # Draw vector QR (print-grade, no raster scaling)
-        draw_qr(c, qr_url, qr_x, qr_y, qr_size, quiet=quiet, ecc_level="H", user_id=user_id)
+        qr_max_w = right_w - (2 * margin_x)
+        qr_max_h = h - (2 * margin_y)
+        qr_size = min(qr_max_w, qr_max_h)
         
-        # Draw CTA below QR
-        cta_font_size = layout.address_font * 0.4  # Proportional to address font
-        c.setFont("Helvetica-Bold", cta_font_size)
-        c.setFillColorRGB(*COLOR_TEXT)
-        # Position below QR
-        cta_y = qr_y - (cta_font_size * 1.5)
-        c.drawCentredString(qr_x + qr_size/2, cta_y, "SCAN FOR PHOTOS & DETAILS")
+        # Center QR in right column
+        qr_x = split_x + (right_w - qr_size) / 2
+        qr_y = (h - qr_size) / 2 
+        
+        # Draw vector QR
+        draw_qr(c, qr_url, qr_x, qr_y, qr_size, size=qr_size, ecc_level="H", user_id=user_id)
+        
+        # CTA (Below QR)
+        c.setFont(FONT_BOLD, layout.cta_font * 0.9)
+        c.setFillColorRGB(0, 0, 0)
+        c.drawCentredString(qr_x + qr_size/2, qr_y - (layout.cta_font * 1.5), "SCAN FOR PHOTOS & DETAILS")
         
     except Exception as e:
-        print(f"[PDF] Split Layout Vector QR Error: {e}")
+        logger.error(f"[PDF] Split Layout Vector QR Error: {e}")
 
     # =====================================================
     # LEFT COLUMN: INFO
     # =====================================================
+    left_center = split_x / 2
     cursor_y = h - margin_y
-
-    # 1. Agent Headshot (Top Left of Left Col)
-    # Increased by 20% (0.25 -> 0.30)
-    photo_size = h * 0.30 
     
-    storage = get_storage()
-    if agent_photo_key and storage.exists(agent_photo_key):
-        try:
-            photo_bytes = storage.get_file(agent_photo_key)
-            photo = ImageReader(photo_bytes)
-            c.drawImage(photo, left_x_start, cursor_y - photo_size, 
-                       width=photo_size, height=photo_size, mask='auto')
-        except Exception as e:
-            print(f"[PDF] Split Layout Photo Error: {e}")
-            pass
+    # 1. Address
+    c.setFont(FONT_BOLD, layout.address_font * 0.8)
+    c.setFillColorRGB(0, 0, 0)
+    # Wrap address if needed? logic for now: draw centered in left col
+    c.drawCentredString(left_center, cursor_y, address.upper())
     
-    # Text starts to the right of photo
-    text_x_start = left_x_start + photo_size + (w * 0.02)
+    cursor_y -= (layout.address_font * 1.5)
     
-    # Agent Name - Use sign_color
-    c.setFont("Helvetica-Bold", layout.agent_name_font * 1.44)
-    c.setFillColorRGB(*COLOR_ACCENT)  # Use customer-chosen color
-    c.drawString(text_x_start, cursor_y - (photo_size * 0.3), agent_name.upper())
+    # 2. Features
+    c.setFont(FONT_MED, layout.features_font * 0.9)
+    c.setFillColorRGB(0.4, 0.4, 0.4)
+    features_line = f"{beds} BEDS  |  {baths} BATHS"
+    if sqft:
+        features_line += f"  |  {sqft} SQ FT"
+    c.drawCentredString(left_center, cursor_y, features_line)
     
-    # Brokerage
-    c.setFont("Helvetica", layout.agent_sub_font * 1.2)
-    c.setFillColorRGB(*COLOR_TEXT)
-    c.drawString(text_x_start, cursor_y - (photo_size * 0.55), brokerage.upper())
+    cursor_y -= (layout.features_font * 2.0)
     
-    # Phone / Email
-    c.setFont("Helvetica", layout.agent_sub_font * 1.1)
-    c.setFillColorRGB(*COLOR_SUBTEXT)
-    c.drawString(text_x_start, cursor_y - (photo_size * 0.75), agent_phone)
-    c.drawString(text_x_start, cursor_y - (photo_size * 0.90), agent_email.lower())
-
-    cursor_y -= (photo_size + h * 0.05)  # Move down past photo
-
-    # 2. Property Info
-    # Address
-    c.setFont("Helvetica-Bold", layout.address_font * 1.1)
-    c.setFillColorRGB(*COLOR_TEXT)
-    c.drawString(left_x_start, cursor_y, address.upper())
-    
-    cursor_y -= (layout.address_font * 1.8)  # increased spacing
-
-    # Price
+    # 3. Price
     if price:
         display_price = price if "$" in str(price) else f"${price}"
-        c.setFont("Helvetica-Bold", layout.price_font * 1.2)
-        c.setFillColorRGB(*COLOR_ORANGE)
-        c.drawString(left_x_start, cursor_y, display_price)
-        cursor_y -= (layout.price_font * 1.44)
+        c.setFont(FONT_BOLD, layout.price_font * 0.9)
+        c.setFillColorRGB(*hex_to_rgb(sign_color))
+        c.drawCentredString(left_center, cursor_y, display_price)
 
-    # Features
-    c.setFont("Helvetica", layout.features_font * 1.44)
-    c.setFillColorRGB(*COLOR_SUBTEXT)
-    features_line = f"{beds} BEDS | {baths} BATHS"
-    if sqft:
-        features_line += f" | {sqft} SQ FT"
-    c.drawString(left_x_start, cursor_y, features_line)
+    # 4. Identity Block (Bottom Left)
+    # Construct asset
+    asset = {
+        'brand_name': agent_name,
+        'brokerage_name': brokerage,
+        'email': agent_email,
+        'phone': agent_phone,
+        'headshot_key': agent_photo_key,
+        'logo_key': logo_key,
+        'agent_headshot_path': agent_photo_path
+    }
     
-    # =====================================================
-    # ACCENT: Bottom border on agent/property side (left half)
-    # =====================================================
-    bottom_border_height = max(4, min(8, 0.008 * w))  # 4-8 pts
-    c.setFillColorRGB(*COLOR_ACCENT)
-    c.rect(0, 0, mid_x, bottom_border_height, fill=1, stroke=0)
+    draw_identity_block(
+        c, 
+        0, 0, # x, y 
+        split_x - (w*0.01), layout.footer_height, # w (stop before split), h
+        asset, 
+        get_storage(), 
+        theme='dark' # or 'light'
+    )
+    
+    # Divider Line
+    c.setStrokeColorRGB(0.9, 0.9, 0.9)
+    c.setLineWidth(2)
+    c.line(split_x, margin_y, split_x, h - margin_y)
+
 
 
 def _draw_centered_agent_info(c, layout, agent_main, agent_sub, logo_key=None):
@@ -683,7 +469,7 @@ def _draw_minimal_layout(c, layout, address, beds, baths, sqft, price,
     elif qr_key:
         filename = os.path.basename(qr_key)
         v = os.path.splitext(filename)[0]
-        qr_url = f"{BASE_URL.rstrip('/')}/r/{v}"
+        qr_url = f"{PUBLIC_BASE_URL.rstrip('/')}/r/{v}"
     else:
         qr_url = "https://example.com"
 
@@ -857,7 +643,7 @@ def _draw_landscape_minimal(c, layout, address, beds, baths, sqft, price,
     elif qr_key:
         filename = os.path.basename(qr_key)
         v = os.path.splitext(filename)[0]
-        qr_url = f"{BASE_URL.rstrip('/')}/r/{v}"
+        qr_url = f"{PUBLIC_BASE_URL.rstrip('/')}/r/{v}"
     else: qr_url = "https://example.com"
 
     try:
