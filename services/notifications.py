@@ -172,7 +172,16 @@ def send_verification_email(to_email, code):
                 server.login(smtp_user, smtp_pass)
                 server.send_message(msg)
         
-        logger.info(f"[Notifications] Verification email sent to {to_email}")
+        # Mask email for logs
+        masked_email = to_email
+        if "@" in to_email:
+            parts = to_email.split("@")
+            if len(parts[0]) > 1:
+                masked_email = parts[0][:1] + "***@" + parts[1]
+            else:
+                masked_email = "***@" + parts[1]
+
+        logger.info(f"[Notifications] Verification email sent to {masked_email}")
         return True
         
     except Exception as e:
