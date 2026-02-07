@@ -16,14 +16,29 @@ def check_release_clean():
     # Files to ban
     banned_extensions = ['.log', '.sqlite', '.DS_Store']
     
+    # Pre-check cleanup: Auto-remove __pycache__ (ephemeral artifacts)
+    # This ensures the gate doesn't fail just because code was run locally.
+    import shutil
+    for dirpath, dirnames, filenames in os.walk(root):
+        if '__pycache__' in dirnames:
+            try:
+                shutil.rmtree(os.path.join(dirpath, '__pycache__'))
+                dirnames.remove('__pycache__') # Don't traverse into it
+                # print(f"Cleaned: {os.path.join(dirpath, '__pycache__')}")
+            except PermissionError:
+                errors.append(f"Could not clean __pycache__ (Permission Denied): {dirpath}")
+
+    # Re-walk for the actual check since we modified the tree above
     for dirpath, dirnames, filenames in os.walk(root):
         # Skip .git, envs
         if '.git' in dirnames: dirnames.remove('.git')
         if '.venv' in dirnames: dirnames.remove('.venv')
         if 'venv' in dirnames: dirnames.remove('venv')
+        
+        # We already cleaned __pycache__, but if it remains (permission error), it will be caught here.
         if '__pycache__' in dirnames:
-            errors.append(f"Found __pycache__ in {dirpath}")
-            
+             errors.append(f"Found __pycache__ in {dirpath}")
+             
         # Hard fail on instance/ runtime artifacts (but allow the dir itself if empty/gitkeep?)
         if 'instance' in dirpath.split(os.sep):
             # Checking if instance contains files (except maybe .gitignore)
