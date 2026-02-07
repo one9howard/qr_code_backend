@@ -126,7 +126,7 @@ def stripe_webhook():
             
     except Exception as e:
         current_app.logger.error(f"[Webhook] ERROR processing {event_type}: {e}")
-        traceback.print_exc()
+        current_app.logger.exception(f"[Webhook] Exception details:")
         
         # FAILURE - Mark as failed so Stripe retry will reprocess
         try:

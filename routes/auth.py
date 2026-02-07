@@ -89,7 +89,7 @@ def register():
                     base = f"agent_{user_id}_headshot"
                     headshot_key = save_image_upload(f, AGENT_PHOTOS_KEY_PREFIX, base, validate_image=True)
                 except Exception as e:
-                    print(f"Registration Headshot Error: {e}")
+                    current_app.logger.error(f"Registration Headshot Error: {e}")
 
         if 'logo_file' in request.files:
             f = request.files['logo_file']
@@ -100,7 +100,7 @@ def register():
                     base = f"agent_{user_id}_logo"
                     logo_key = save_image_upload(f, AGENT_PHOTOS_KEY_PREFIX, base, validate_image=True)
                 except Exception as e:
-                    print(f"Registration Logo Error: {e}")
+                    current_app.logger.error(f"Registration Logo Error: {e}")
 
         db.execute(
             "INSERT INTO agents (user_id, name, email, brokerage, phone, photo_filename, logo_filename) VALUES (%s, %s, %s, %s, %s, %s, %s)",

@@ -85,7 +85,8 @@ def register_fonts():
     except Exception as e:
         if IS_PRODUCTION:
             raise RuntimeError(f"CRITICAL: Failed to register Inter fonts: {e}")
-        print(f"[PDF Utils] Warning: Failed to register Inter fonts: {e}")
+        import logging
+        logging.getLogger(__name__).warning(f"[PDF Utils] Warning: Failed to register Inter fonts: {e}")
 
 # 1.1 Phone Formatting
 def format_phone(raw):

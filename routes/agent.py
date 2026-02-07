@@ -363,9 +363,8 @@ def submit():
             )
 
         except Exception as e:
-            print(f"Error: {e}")
-            import traceback
-            traceback.print_exc()
+            current_app.logger.error(f"[Agent Submit] Error: {e}")
+            current_app.logger.exception("Full traceback for agent submit error:")
             return f"An error occurred: {str(e)}", 500
 
     # If logged in, pre-fetch agent data

@@ -118,7 +118,7 @@ def edit_smartsign(asset_id):
                         updates.append("logo_key=%s")
                         params.append(key)
                     except Exception as e:
-                        print(f"Logo upload error: {e}")
+                        current_app.logger.error(f"Logo upload error: {e}")
                     
         if 'headshot_file' in request.files:
             f = request.files['headshot_file']
@@ -133,7 +133,7 @@ def edit_smartsign(asset_id):
                         updates.append("headshot_key=%s")
                         params.append(key)
                     except Exception as e:
-                        print(f"Headshot upload error: {e}")
+                        current_app.logger.error(f"Headshot upload error: {e}")
 
         # Property Assignment
         property_id_str = request.form.get('property_id')
@@ -225,7 +225,7 @@ def preview_smartsign(asset_id):
             download_name='preview.pdf'
         )
     except Exception as e:
-        print(f"Preview Error: {e}")
+        current_app.logger.error(f"Preview Error: {e}")
         return "Error generating preview", 500
 
 

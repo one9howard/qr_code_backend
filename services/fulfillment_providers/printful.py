@@ -13,11 +13,13 @@ class PrintfulProvider(FulfillmentProvider):
         # 2. Create Order in Printful
         
         # Placeholder implementation
-        print(f"[Printful] Mock submit for Order {order_id} with {pdf_path}")
+        import logging
+        logging.getLogger(__name__).info(f"[Printful] Mock submit for Order {order_id} with {pdf_path}")
         return f"printful_mock_{order_id}"
 
     def cancel_order(self, provider_job_id: str) -> bool:
-        print(f"[Printful] Mock cancel {provider_job_id}")
+        import logging
+        logging.getLogger(__name__).info(f"[Printful] Mock cancel {provider_job_id}")
         return True
 
     def get_status(self, provider_job_id: str) -> dict:

@@ -28,7 +28,8 @@ class InternalQueueProvider(FulfillmentProvider):
         ).fetchone()
         
         if existing_job:
-            print(f"[InternalProvider] Idempotent: Job {existing_job['job_id']} already exists")
+            import logging
+            logging.getLogger(__name__).info(f"[InternalProvider] Idempotent: Job {existing_job['job_id']} already exists")
             return existing_job['job_id']
 
         # Parse shipping data to JSON

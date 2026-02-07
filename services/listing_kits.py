@@ -146,7 +146,8 @@ def generate_kit(kit_id):
                 except: pass
                 
             except Exception as e:
-                print(f"Failed to generate sign PDF for kit: {e}")
+                import logging
+                logging.getLogger(__name__).error(f"Failed to generate sign PDF for kit: {e}")
 
         # 4. Create ZIP
         zip_buffer = io.BytesIO()
@@ -187,8 +188,8 @@ def generate_kit(kit_id):
         db.commit()
         
     except Exception as e:
-        import traceback
-        traceback.print_exc()
+        import logging
+        logging.getLogger(__name__).exception("Listing Kit Generation Failed")
         db.execute(
             "UPDATE listing_kits SET status='failed', last_error=%s, updated_at=now() WHERE id=%s", 
             (str(e), kit_id)

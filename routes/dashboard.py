@@ -753,7 +753,7 @@ def assign_smart_sign(asset_id):
         flash(f"{e}", "error") # Message already contains "Upgrade required"
     except Exception as e:
         flash("Error assigning SmartSign.", "error")
-        print(f"[SmartSigns] Assign Error: {e}")
+        current_app.logger.error(f"[SmartSigns] Assign Error: {e}")
         
     return redirect(url_for('dashboard.index', _anchor='smart-signs-section'))
 
@@ -860,7 +860,7 @@ def new_property():
                             (pid, safe_key)
                         )
                     except Exception as e:
-                        print(f"Error saving photo: {e}")
+                        current_app.logger.error(f"Error saving photo: {e}")
                         # Continue saving others
 
         db.commit()

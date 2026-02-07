@@ -54,7 +54,8 @@ class PriceCache:
             return data
             
         except Exception as e:
-            print(f"[StripeConfig] Error fetching price {price_id}: {e}")
+            import logging
+            logging.getLogger(__name__).warning(f"[StripeConfig] Error fetching price {price_id}: {e}")
             return None
 
 def get_configured_prices():
