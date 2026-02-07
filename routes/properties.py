@@ -87,7 +87,6 @@ def qr_scan_redirect(code):
                     }
                 )
             except Exception as e:
-            except Exception as e:
                 import logging
                 logging.getLogger(__name__).error(f"[Analytics] Error logging unassigned SmartSign scan: {e}", exc_info=True)
             
@@ -326,6 +325,9 @@ def property_page(slug):
         tier_state = "PAID"
     elif gating.get('is_expired'):
         tier_state = "EXPIRED"
+    else:
+        # Default fallback
+        pass
 
     # --- Log Page View (NOT scan) ---
     try:
@@ -419,7 +421,6 @@ def property_page(slug):
         'agentName': property_row.get('agent_name')
     }
 
-    # Check for Open House Mode
     # Check for Open House Mode
     open_house_mode = request.args.get('mode') == 'open_house'
 

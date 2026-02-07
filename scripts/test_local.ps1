@@ -22,7 +22,7 @@ if ($LASTEXITCODE -ne 0) {
 $env:FLASK_ENV = "testing"
 $env:IS_PRODUCTION = "false"
 $env:DATABASE_URL = "postgresql://user:password@localhost/test_db" # Mock or override in conftest
-$env:STRIPE_SECRET_KEY = "sk_test_mock"
+$env:STRIPE_SECRET_KEY = "mock_stripe_key_safe"
 $env:SECRET_KEY = "dev_secret_key"
 $env:STORAGE_BACKEND = "local"
 
