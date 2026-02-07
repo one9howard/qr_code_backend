@@ -277,7 +277,10 @@ def main():
         print("[LOCK] 1. Checking for repository cleanliness...")
         try:
             # Aggressive clean first
-            subprocess.run(["find", ".", "-type", "d", "-name", "__pycache__", "-exec", "rm", "-rf", "{}", "+"], stderr=subprocess.DEVNULL)
+            for root, dirs, files in os.walk("."):
+                for d in dirs:
+                    if d == "__pycache__":
+                        shutil.rmtree(os.path.join(root, d))
             # Run check script
             subprocess.check_call([sys.executable, "scripts/check_release_clean.py"])
         except Exception as e:
