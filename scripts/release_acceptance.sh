@@ -7,19 +7,26 @@ echo "========================================"
 
 # Detect Python with pytest
 PYTHON_CMD="python3"
-# Check if 'python' exists and has pytest
-if command -v python &> /dev/null && python -m pytest --version &> /dev/null; then
+
+# TRY 1: Check if 'python' (often Windows alias in Git Bash) is valid
+if command -v python &> /dev/null && python -c "import pytest" &> /dev/null; then
     PYTHON_CMD="python"
-# Check if 'python3' exists and has pytest
-elif command -v python3 &> /dev/null && python3 -m pytest --version &> /dev/null; then
+# TRY 2: Check standard 'python3'
+elif command -v python3 &> /dev/null && python3 -c "import pytest" &> /dev/null; then
     PYTHON_CMD="python3"
+# TRY 3: Explicitly look for Windows Python in standard locations (Git Bash common path)
+elif [ -f "/c/Windows/py.exe" ] && /c/Windows/py.exe -m pytest --version &> /dev/null; then
+    PYTHON_CMD="/c/Windows/py.exe"
 else
-    # Fallback/Debug
+    # FAILURE MODE
     echo "❌ CRITICAL: No python found with 'pytest' installed."
     echo "   Checked 'python' and 'python3'."
-    echo "   Please run: pip install pytest"
-    # Allow continuing if purely environmental but warn heavily
-    # exit 1
+    echo "   The release script requires a Python environment with dev dependencies."
+    echo ""
+    echo "   FIX:"
+    echo "   Run 'pip install pytest' in this terminal."
+    # We will attempt to continue with 'python3' to see if it works later or fail hard
+    # exit 1 
 fi
 
 echo "ℹ️  Using Python: $($PYTHON_CMD --version) ($PYTHON_CMD)"
