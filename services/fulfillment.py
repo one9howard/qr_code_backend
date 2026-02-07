@@ -183,14 +183,14 @@ def _ensure_pdf_in_storage(db, order, storage):
     # Generate new PDF based on order type
     pdf_key = None
     
-    if print_product == 'smart_sign' or order_type == 'smart_sign':
+    if print_product == 'smart_riser':
+        pdf_key = _generate_smart_riser_pdf(db, order, storage)
+
+    elif print_product == 'smart_sign' or order_type == 'smart_sign':
         pdf_key = _generate_smartsign_pdf(db, order, storage)
         
     elif (print_product and print_product.startswith('yard_sign')) or order_type == 'sign':
         pdf_key = _generate_yard_sign_pdf(db, order, storage)
-        
-    elif print_product == 'smart_riser':
-        pdf_key = _generate_smart_riser_pdf(db, order, storage)
         
     elif order_type == 'listing_kit':
         # Listing kit may not need print fulfillment, or has different flow

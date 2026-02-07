@@ -232,6 +232,11 @@ def create_app(test_config=None):
             # Serves from INSTANCE_DIR/qr
             return send_from_directory(os.path.join(INSTANCE_DIR, 'qr'), filename)
 
+        @app.route('/previews/<path:filename>')
+        def serve_previews(filename):
+            # Serves from INSTANCE_DIR/previews
+            return send_from_directory(os.path.join(INSTANCE_DIR, 'previews'), filename)
+
     @app.before_request
     def check_verification():
         if request.endpoint and request.endpoint.startswith('static'):
