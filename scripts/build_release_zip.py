@@ -79,8 +79,6 @@ def run_command(cmd, cwd=None, env=None):
         cmd_env = os.environ.copy()
         if env:
             cmd_env.update(env)
-        
-        # Explicitly pass env to check_call
         subprocess.check_call(cmd, shell=True, cwd=cwd, env=cmd_env)
     except subprocess.CalledProcessError as e:
         print(f"❌ Command failed: {cmd}")
@@ -226,17 +224,18 @@ def validate_artifact(zip_path):
         except subprocess.CalledProcessError:
             print("[FAIL] Artifact is not clean (contains banned files).")
             return False
-
         # 3. Key operational files check
-        required_files = ["migrate.py", "alembic.ini", "Procfile", "extensions.py"]
-        missing = []
-        for f in required_files:
-            if not os.path.exists(os.path.join(temp_dir, f)):
-                missing.append(f)
-        
+        # Keep this minimal and environment-agnostic. Railway/Nixpacks may not use a Procfile.
+        required_files = ["app.py", "migrate.py", "alembic.ini", "extensions.py"]
+        missing = [f for f in required_files if not os.path.exists(os.path.join(temp_dir, f))]
+
+        # Require at least one boot entrypoint hint (Procfile OR gunicorn config).
+        if not (os.path.exists(os.path.join(temp_dir, "Procfile")) or os.path.exists(os.path.join(temp_dir, "gunicorn.conf.py"))):
+            missing.append("Procfile or gunicorn.conf.py")
+
         if missing:
-             print(f"[FAIL] Missing required operational files in artifact: {missing}")
-             return False
+            print(f"[FAIL] Missing required operational files in artifact: {missing}")
+            return False
 
         # 4. Syntax Check (compileall)
         print("[LOCK] Running compileall on artifact...")
@@ -270,65 +269,22 @@ def main():
         print("⚠️  WARNING: SKIPPING VALIDATION. THIS IS UNSAFE. DO NOT SHIP THIS.")
     else:
         # 1. Pre-Build Gate
-        # 1. Pre-Build Gate (Native Python Implementation)
         print("[LOCK] Running Pre-Build Gates...")
         
-        # 1.1 Cleanliness
-        print("[LOCK] 1. Checking for repository cleanliness...")
-        try:
-            # Aggressive clean first
-            for root, dirs, files in os.walk("."):
-                for d in dirs:
-                    if d == "__pycache__":
-                        shutil.rmtree(os.path.join(root, d))
-            # Run check script
-            subprocess.check_call([sys.executable, "scripts/check_release_clean.py"])
-        except Exception as e:
-            print(f"[FAIL] Repository not clean: {e}")
-            sys.exit(1)
+        cmd = "bash scripts/release_acceptance.sh"
+        if args.allow_test_failures:
+            print("[WARN] Running with ALLOW_TEST_FAILURES=1 (--allow-test-failures)")
+            # cmd += " --allow-test-failures" # Deprecated strict mode relies on env vars if needed, but we wanted strict.
+            # actually we removed the argument parsing from the script, so passing it does nothing.
+            # But let's leave the logic in build script for now to match strictness later if we re-add it.
+            pass 
+        
+        # Pass current python executable to ensure we use the same environment (with pytests etc)
+        env = os.environ.copy()
+        env['PYTHON_EXEC'] = sys.executable
 
-        # 1.2 No Prints
-        print("[LOCK] 2. Checking for forbidden print() statements...")
-        try:
-            subprocess.check_call([sys.executable, "scripts/check_no_prints.py"])
-        except Exception as e:
-            print(f"[FAIL] Print statement check failed: {e}")
-            sys.exit(1)
-
-        # 1.3 Syntax
-        print("[LOCK] 3. Bytecode Compilation (Syntax Check)...")
-        try:
-             subprocess.check_call([sys.executable, "-m", "compileall", "-q", ".", "-x", r"(\.venv|\.git|__pycache__|tests/fixtures)"])
-             print("   [OK] Syntax OK")
-        except Exception as e:
-            print(f"[FAIL] Syntax check failed: {e}")
-            sys.exit(1)
-
-        # 1.4 Tests
-        print("[TEST] 4. Running Unit Tests...")
-        try:
-            # Check collect
-            proc = subprocess.run([sys.executable, "-m", "pytest", "--collect-only", "-q"], capture_output=True, text=True)
-            if "collected" not in proc.stdout and "collected" not in proc.stderr:
-                 print("[WARN] No tests collected via standard output check (might be silent).")
-            
-            # Run tests
-            subprocess.check_call([sys.executable, "-m", "pytest", "-q", "-m", "not slow"])
-            print("   [OK] Tests Passed")
-        except subprocess.CalledProcessError as e:
-            if args.allow_test_failures:
-                 print(f"[WARN] Tests FAILED (exit code {e.returncode}). ALLOW_TEST_FAILURES=1")
-            else:
-                 print(f"[FAIL] Tests FAILED (exit code {e.returncode}). Preventing release build.")
-                 sys.exit(1)
-
-        # 1.5 Migration Runner
-        print("[TEST] 5. Checking for canonical migration runner...")
-        if os.path.exists("migrate.py") and os.path.exists("alembic.ini"):
-             print("   [OK] migrate.py and alembic.ini found.")
-        else:
-             print("[FAIL] migrate.py or alembic.ini missing!")
-             sys.exit(1)
+        # Assuming script is run from project root
+        run_command(cmd, env=env)
 
     project_root = os.getcwd()
     dist_dir = os.path.join(project_root, args.output_dir)

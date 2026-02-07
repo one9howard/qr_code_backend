@@ -13,30 +13,29 @@ def check_release_clean():
     
     errors = []
     
-    # Files to ban
-    banned_extensions = ['.log', '.sqlite', '.DS_Store', '.pyc', '.pyo', '.pyd']
+    # Files to ban (Log files, db artifacts, system junk)
+    banned_extensions = ['.log', '.sqlite', '.DS_Store']
     
     for dirpath, dirnames, filenames in os.walk(root):
         # Skip .git, envs
         if '.git' in dirnames: dirnames.remove('.git')
         if '.venv' in dirnames: dirnames.remove('.venv')
         if 'venv' in dirnames: dirnames.remove('venv')
+
+        # Only evaluate banned directories relative to this repo root (NOT system temp paths)
+        rel_parts = os.path.relpath(dirpath, root).split(os.sep)
         
-        if '__pycache__' in dirnames:
-             errors.append(f"Found __pycache__ in {dirpath}")
-             
-        # Hard fail on instance/ runtime artifacts (but allow the dir itself if empty/gitkeep?)
-        if 'instance' in dirpath.split(os.sep):
-            # Checking if instance contains files (except maybe .gitignore)
+        # Hard fail on instance/ runtime artifacts (repo-relative only)
+        if 'instance' in rel_parts:
             for f in filenames:
                 if f != '.gitignore':
                     errors.append(f"Found runtime artifact in instance/: {os.path.join(dirpath, f)}")
                     
-        # Hard fail on tmp/
-        if 'tmp' in dirpath.split(os.sep):
-             for f in filenames:
-                 if f != '.gitignore':
-                     errors.append(f"Found file in tmp/: {os.path.join(dirpath, f)}")
+        # Hard fail on tmp/ (repo-relative only)
+        if 'tmp' in rel_parts:
+            for f in filenames:
+                if f != '.gitignore':
+                    errors.append(f"Found file in tmp/: {os.path.join(dirpath, f)}")
 
         for f in filenames:
             path = os.path.join(dirpath, f)

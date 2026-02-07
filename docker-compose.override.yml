@@ -1,6 +1,0 @@
-services:
-  web:
-    build:
-      context: .
-      args:
-        INSTALL_DEV: "true"

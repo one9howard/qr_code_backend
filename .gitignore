@@ -1,126 +1,14 @@
-# =============================================================================
-# QR Code Backend - Git Ignore
-# =============================================================================
-
-# Forbidden Artifacts
-dump.sql
-dump.wkr
-*.dump
-debug_*.json
-debug_*.html
-
-# Environment and secrets
 .env
-.env.local
-.env.test
-.env.test.local
-.env.production
-.env.staging
-# Note: .env.example SHOULD be committed
-
-# Database files
-*.db
-*.db-journal
-*.db-wal
-*.db-shm
-qr.db
-
-# Instance directory (all runtime state - DB, PDFs, print jobs)
-instance/
-
-# Legacy runtime directories (in case someone uses old config paths)
-private/
-print_inbox/
-logs/
-
-# Generated static content
-static/qr/
-static/signs/
-static/pdf/
-static/uploads/
-static/generated/
-
-# Generated PDFs and samples
-pdfs/
-tmp/
-var/
-
-# Python
-
 __pycache__/
 *.pyc
 *.pyo
-failure_log.txt
-mig_log.txt
-schema_check.txt
-[cod]
-*$py.class
-*.so
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-
-# Virtual environments
+*.pyd
+.pytest_cache/
 .venv/
 venv/
-ENV/
-env/
-
-# Testing
-.pytest_cache/
-.coverage
-htmlcov/
-.tox/
-.nox/
-
-# IDE
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
-
-# OS
-.DS_Store
-Thumbs.db
-
-# Release artifacts
+instance/
+tmp/
+pdfs/
 releases/
-release/
-artifacts/
+.DS_Store
 *.zip
-
-# Debug files
-debug_*.py
-*_output*.txt
-landing.png
-
-# Test Artifacts
-verification.log
-test_verify.db
-test_inbox/
-
-# Logs
-*.log
-failures*.txt
-fail_*.txt
-*_log.txt
-
-# Misc local test transcripts
-test_final_check*.txt
-
-# Ignore maintenance folder
-maintenance/
