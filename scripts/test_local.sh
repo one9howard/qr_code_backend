@@ -14,7 +14,7 @@ echo "Waiting for database to be ready..."
 sleep 5
 
 # 2. Set DATABASE_URL for local connection
-export DATABASE_URL="postgresql://postgres:postgres@localhost:5432/qrapp"
+export DATABASE_URL="postgresql://postgres:postgres@localhost:5432/insite_test"
 echo "[2/4] DATABASE_URL set to: $DATABASE_URL"
 
 # 3. Run migrations

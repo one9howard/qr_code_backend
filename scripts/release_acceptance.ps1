@@ -37,8 +37,39 @@ Invoke-Check "python" @("scripts/verify_import_safety.py")
 Write-Host "Building Docker test container..." -ForegroundColor Cyan
 Invoke-Check "docker" @("compose", "build", "--no-cache", "--build-arg", "INSTALL_DEV=true", "web")
 
+Write-Host "Starting database container..." -ForegroundColor Cyan
+Invoke-Check "docker" @("compose", "up", "-d", "db")
+
+Write-Host "Waiting for database to be healthy..." -ForegroundColor Yellow
+$retries = 30
+while ($retries -gt 0) {
+    $result = docker compose exec -T db pg_isready -U postgres 2>$null
+    if ($LASTEXITCODE -eq 0) { break }
+    Start-Sleep -Seconds 1
+    $retries--
+}
+if ($retries -eq 0) {
+    Write-Host "Database did not become healthy in time." -ForegroundColor Red
+    docker compose down
+    exit 1
+}
+
+Write-Host "Resetting and migrating test database..." -ForegroundColor Cyan
+Invoke-Check "docker" @("compose", "run", "--rm", "web", "python", "scripts/reset_test_db.py")
+Invoke-Check "docker" @("compose", "run", "--rm", "web", "python", "migrate.py")
+
 Write-Host "Running tests in Docker..." -ForegroundColor Cyan
-Invoke-Check "docker" @("compose", "run", "--rm", "web", "python", "-m", "pytest", "-q")
+docker compose run --rm web python -m pytest -q
+$testResult = $LASTEXITCODE
+
+Write-Host "Cleaning up containers..." -ForegroundColor Yellow
+docker compose down
+
+if ($testResult -ne 0) {
+    Write-Host "Tests FAILED with exit code $testResult" -ForegroundColor Red
+    exit $testResult
+}
+Write-Host "Tests PASSED" -ForegroundColor Green
 
 # 6. Stripe Key Scan
 Write-Host "Scanning for Stripe Keys..." -ForegroundColor Cyan
