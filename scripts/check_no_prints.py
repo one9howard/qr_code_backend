@@ -57,11 +57,11 @@ def check_no_prints():
                                 violation_count += 1
 
     if violation_count > 0:
-        print(f"\n❌ Found {violation_count} print() statements in runtime code.")
+        print(f"\n[FAIL] Found {violation_count} print() statements in runtime code.")
         print("Please replace them with logging or remove them.")
         sys.exit(1)
     else:
-        print("\n✅ No print() statements found in runtime code.")
+        print("\n[OK] No print() statements found in runtime code.")
         sys.exit(0)
 
 if __name__ == "__main__":
