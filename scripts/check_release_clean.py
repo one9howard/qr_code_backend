@@ -13,34 +13,36 @@ def check_release_clean():
     
     errors = []
     
-    # Files to ban (Log files, db artifacts, system junk)
-    banned_extensions = ['.log', '.sqlite', '.DS_Store']
-    
+    # Banned extensions and patterns
+    banned_extensions = ['.log', '.sqlite', '.DS_Store', '.pyc', '.pyo', '.pyi', '.dump']
+    banned_patterns = ['dump.sql', 'dump.wkr']
+    banned_prefixes = ['debug_']
+    banned_dir_names = ['__pycache__', 'instance', 'tmp']
+
     for dirpath, dirnames, filenames in os.walk(root):
-        # Skip .git, envs
-        if '.git' in dirnames: dirnames.remove('.git')
-        if '.venv' in dirnames: dirnames.remove('.venv')
-        if 'venv' in dirnames: dirnames.remove('venv')
+        # Exclude common dev/system dirs completely from traversal
+        for skip_dir in ['.git', '.venv', 'venv', 'node_modules']:
+            if skip_dir in dirnames:
+                dirnames.remove(skip_dir)
 
-        # Only evaluate banned directories relative to this repo root (NOT system temp paths)
-        rel_parts = os.path.relpath(dirpath, root).split(os.sep)
+        # 1. Check for banned directories by name
+        rel_path = os.path.relpath(dirpath, root)
+        parts = rel_path.split(os.sep)
         
-        # Hard fail on instance/ runtime artifacts (repo-relative only)
-        if 'instance' in rel_parts:
-            for f in filenames:
-                if f != '.gitignore':
-                    errors.append(f"Found runtime artifact in instance/: {os.path.join(dirpath, f)}")
-                    
-        # Hard fail on tmp/ (repo-relative only)
-        if 'tmp' in rel_parts:
-            for f in filenames:
-                if f != '.gitignore':
-                    errors.append(f"Found file in tmp/: {os.path.join(dirpath, f)}")
+        # If any part of the path is in banned_dir_names, check for actual files
+        for part in parts:
+            if part in banned_dir_names:
+                # Ignore .gitignore files in these directories
+                artifacts = [f for f in filenames if f != '.gitignore']
+                if artifacts:
+                    errors.append(f"Forbidden directory '{part}' contains artifacts: {dirpath}")
+                break
 
+        # 2. Check filenames for banned patterns
         for f in filenames:
             path = os.path.join(dirpath, f)
             
-            # Check PDFs
+            # Check PDFs (only allowed in tests/fixtures or tests/data)
             if f.endswith('.pdf'):
                 is_allowed = False
                 for allowed in allowed_pdf_dirs:
@@ -50,10 +52,19 @@ def check_release_clean():
                 if not is_allowed:
                     errors.append(f"Found PDF artifact: {path}")
             
-            # Check Banned
+            # Check Banned Extensions
             for ext in banned_extensions:
                 if f.endswith(ext):
                     errors.append(f"Found banned file ({ext}): {path}")
+            
+            # Check Banned Exact Patterns
+            if f in banned_patterns:
+                errors.append(f"Found banned file (pattern): {path}")
+                
+            # Check Banned Prefixes (debug_*)
+            for prefix in banned_prefixes:
+                if f.startswith(prefix):
+                    errors.append(f"Found debug artifact: {path}")
                     
     if errors:
         print("Release Check FAILED:")

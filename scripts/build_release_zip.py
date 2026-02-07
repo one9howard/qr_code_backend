@@ -196,7 +196,10 @@ def validate_artifact(zip_path):
     """
     print(f"[INFO] Validating artifact: {zip_path}")
     with tempfile.TemporaryDirectory() as temp_dir:
-        # 1. Unzip
+        # Create isolated environment for validation
+        env = os.environ.copy()
+        env['PYTHONPYCACHEPREFIX'] = temp_dir # Keep it inside the temp_dir
+        env['PYTHONDONTWRITEBYTECODE'] = '1'
         try:
             with zipfile.ZipFile(zip_path, 'r') as zf:
                 zf.extractall(temp_dir)
@@ -237,10 +240,24 @@ def validate_artifact(zip_path):
             print(f"[FAIL] Missing required operational files in artifact: {missing}")
             return False
 
-        # 4. Syntax Check (compileall)
-        print("[LOCK] Running compileall on artifact...")
+        # 4. Syntax Check (No Disk Write)
+        print("[LOCK] Running syntax verification on artifact...")
         try:
-            subprocess.check_call(f"{sys.executable} -m compileall -q .", cwd=temp_dir, shell=True)
+            # We check every python file in the extracted tree
+            check_syntax_cmd = [
+                sys.executable, "-c",
+                "import py_compile, os, sys; "
+                "errors = 0; "
+                "root = '.'; "
+                "for r, d, f in os.walk(root): "
+                "  if any(s in r for s in ['.git', '.venv', 'venv', 'node_modules', '__pycache__']): continue; "
+                "  for file in f: "
+                "    if file.endswith('.py'): "
+                "      try: py_compile.compile(os.path.join(r, file), cfile=os.devnull, doraise=True); "
+                "      except Exception as e: print(f'   [FAIL] Syntax error: {os.path.join(r, file)}: {e}'); errors += 1; "
+                "if errors: sys.exit(1);"
+            ]
+            subprocess.check_call(check_syntax_cmd, cwd=temp_dir, env=env)
             print("[OK] Syntax check passed.")
         except subprocess.CalledProcessError:
             print(f"[FAIL] Syntax check failed inside artifact.")
@@ -262,48 +279,68 @@ def run_pre_build_gates(allow_test_failures=False):
     python = sys.executable
     root = os.getcwd()
 
-    # 1. Cleanliness
-    print("[LOCK] 1. Checking for repository cleanliness...")
-    check_clean_path = os.path.join(root, "scripts", "check_release_clean.py")
-    if os.path.exists(check_clean_path):
-        subprocess.check_call([python, check_clean_path], cwd=root)
-    else:
-        print("   [WARN] scripts/check_release_clean.py not found! Skipping...")
+    # Isolate bytecode during gates
+    with tempfile.TemporaryDirectory() as pycache_dir:
+        env = os.environ.copy()
+        env['PYTHONPYCACHEPREFIX'] = pycache_dir
+        env['PYTHONDONTWRITEBYTECODE'] = '1'
 
-    # 2. No Prints
-    print("[LOCK] 2. Checking for forbidden print() statements...")
-    check_prints_path = os.path.join(root, "scripts", "check_no_prints.py")
-    if os.path.exists(check_prints_path):
-        subprocess.check_call([python, check_prints_path], cwd=root)
-    else:
-        print("   [FAIL] scripts/check_no_prints.py not found!")
-        sys.exit(1)
-
-    # 3. Syntax Check
-    print("[LOCK] 3. Bytecode Compilation (Syntax Check)...")
-    subprocess.check_call([python, "-m", "compileall", "-q", ".", "-x", "(\.venv|\.git|__pycache__|tests/fixtures)"], cwd=root)
-    print("   [OK] Syntax OK")
-
-    # 4. Unit Tests
-    print("[TEST] 4. Running Unit Tests...")
-    test_cmd = [python, "-m", "pytest", "-q", "-m", "not slow"]
-    try:
-        subprocess.check_call(test_cmd, cwd=root)
-    except subprocess.CalledProcessError as e:
-        if not allow_test_failures:
-            print(f"   [FAIL] Tests FAILED (exit code {e.returncode}). Preventing release build.")
-            sys.exit(e.returncode)
+        # 1. Cleanliness
+        print("[LOCK] 1. Checking for repository cleanliness...")
+        check_clean_path = os.path.join(root, "scripts", "check_release_clean.py")
+        if os.path.exists(check_clean_path):
+            subprocess.check_call([python, check_clean_path], cwd=root, env=env)
         else:
-            print("   [WARN] Tests FAILED, but but continuing anyway (--allow-test-failures)")
-    print("   [OK] Tests Passed")
+            print("   [WARN] scripts/check_release_clean.py not found! Skipping...")
 
-    # 5. Migration Check
-    print("[TEST] 5. Checking for canonical migration runner...")
-    if os.path.exists(os.path.join(root, "migrate.py")) and os.path.exists(os.path.join(root, "alembic.ini")):
-        print("   [OK] migrate.py and alembic.ini found.")
-    else:
-        print("   [FAIL] Canonical migration runner (migrate.py) or config (alembic.ini) missing!")
-        sys.exit(1)
+        # 2. No Prints
+        print("[LOCK] 2. Checking for forbidden print() statements...")
+        check_prints_path = os.path.join(root, "scripts", "check_no_prints.py")
+        if os.path.exists(check_prints_path):
+            subprocess.check_call([python, check_prints_path], cwd=root, env=env)
+        else:
+            print("   [FAIL] scripts/check_no_prints.py not found!")
+            sys.exit(1)
+
+        # 3. Syntax Check
+        print("[LOCK] 3. Syntax Verification (No Disk Write)...")
+        # We check every python file in the repo for syntax errors using py_compile to os.devnull
+        check_syntax_cmd = [
+            python, "-c",
+            "import py_compile, os, sys; "
+            "errors = 0; "
+            "root = '.'; "
+            "for r, d, f in os.walk(root): "
+            "  if any(s in r for s in ['.git', '.venv', 'venv', 'node_modules', '__pycache__']): continue; "
+            "  for file in f: "
+            "    if file.endswith('.py'): "
+            "      try: py_compile.compile(os.path.join(r, file), cfile=os.devnull, doraise=True); "
+            "      except Exception as e: print(f'   [FAIL] Syntax error: {os.path.join(r, file)}: {e}'); errors += 1; "
+            "if errors: sys.exit(1);"
+        ]
+        subprocess.check_call(check_syntax_cmd, cwd=root, env=env)
+        print("   [OK] Syntax Verification Passed")
+
+        # 4. Unit Tests
+        print("[TEST] 4. Running Unit Tests...")
+        test_cmd = [python, "-m", "pytest", "-q", "-m", "not slow"]
+        try:
+            subprocess.check_call(test_cmd, cwd=root, env=env)
+        except subprocess.CalledProcessError as e:
+            if not allow_test_failures:
+                print(f"   [FAIL] Tests FAILED (exit code {e.returncode}). Preventing release build.")
+                sys.exit(e.returncode)
+            else:
+                print("   [WARN] Tests FAILED, but but continuing anyway (--allow-test-failures)")
+        print("   [OK] Tests Passed")
+
+        # 5. Migration Check
+        print("[TEST] 5. Checking for canonical migration runner...")
+        if os.path.exists(os.path.join(root, "migrate.py")) and os.path.exists(os.path.join(root, "alembic.ini")):
+            print("   [OK] migrate.py and alembic.ini found.")
+        else:
+            print("   [FAIL] Canonical migration runner (migrate.py) or config (alembic.ini) missing!")
+            sys.exit(1)
 
     print("========================================")
     print("[OK] ALL ACCEPTANCE CHECKS PASSED")
@@ -324,6 +361,15 @@ def main():
             sys.exit(1)
         print("⚠️  WARNING: SKIPPING VALIDATION. THIS IS UNSAFE. DO NOT SHIP THIS.")
     else:
+        # FIREWALL BROKEN BUILDS
+        if args.allow_test_failures:
+            confirm_env = os.environ.get("I_UNDERSTAND_THIS_SHIPS_BROKEN")
+            if confirm_env != "1":
+                print("❌ ERROR: --allow-test-failures requires environment variable I_UNDERSTAND_THIS_SHIPS_BROKEN=1")
+                print("   This is to prevent accidental shipment of failing code.")
+                sys.exit(1)
+            print("⚠️  WARNING: Allowing test failures as requested.")
+
         # 1. Pre-Build Gate
         run_pre_build_gates(allow_test_failures=args.allow_test_failures)
 
