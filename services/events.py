@@ -195,4 +195,5 @@ def track_event(event_type, *, source="server", schema_version=1, environment=No
         if has_request_context():
             current_app.logger.warning(f"[Events] Failed to track {event_type}: {e}")
         else:
-            print(f"[Events] Failed to track {event_type}: {e}")
+            import logging
+            logging.getLogger(__name__).warning(f"[Events] Failed to track {event_type}: {e}")

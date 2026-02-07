@@ -87,7 +87,9 @@ def qr_scan_redirect(code):
                     }
                 )
             except Exception as e:
-                print(f"[Analytics] Error logging unassigned SmartSign scan: {e}")
+            except Exception as e:
+                import logging
+                logging.getLogger(__name__).error(f"[Analytics] Error logging unassigned SmartSign scan: {e}", exc_info=True)
             
             return render_template("sign_asset_unassigned.html", asset=asset)
         
@@ -184,7 +186,8 @@ def qr_scan_redirect(code):
         )
         db.commit()
     except Exception as e:
-        print(f"[Analytics] Error logging QR scan: {e}")
+        import logging
+        logging.getLogger(__name__).error(f"[Analytics] Error logging QR scan: {e}", exc_info=True)
     
     # Create redirect response
     response = make_response(
@@ -333,8 +336,19 @@ def property_page(slug):
         user_agent = request.headers.get('User-Agent', '')[:500]
         referrer = (request.referrer or '')[:500]
         
-        # Check for internal view cookie
-        is_internal = 1 if request.cookies.get(INTERNAL_VIEW_COOKIE) == '1' else 0
+        # Check for internal view (Cookie AND Ownership Backstop)
+        is_internal = False
+        
+        # 1. Cookie Check (Fast Path)
+        if request.cookies.get(INTERNAL_VIEW_COOKIE) == '1':
+            is_internal = True
+            
+        # 2. Ownership Check (Backstop)
+        # If logged in and owning the property, it is ALWAYS internal.
+        if not is_internal and current_user.is_authenticated:
+            if property_row['agent_user_id'] == current_user.id:
+                is_internal = True
+                
         source = 'dashboard' if is_internal else 'public'
         
         # 1. Legacy Logging
@@ -364,7 +378,8 @@ def property_page(slug):
         )
         
     except Exception as e:
-        print(f"[Analytics] Error logging page view: {e}")
+        import logging
+        logging.getLogger(__name__).error(f"[Analytics] Error logging page view: {e}", exc_info=True)
     
     # Expired and unpaid -> 410 Gone
     if gating['is_expired'] and not gating['is_paid']:

@@ -58,7 +58,7 @@ def fulfill_order(order_id):
     status = order['status']
     paid_at = order.get('paid_at')
     
-    print(f"[Fulfillment] Processing Order {order_id} (type={order_type}, status={status}, paid_at={paid_at})")
+    logger.info(f"[Fulfillment] Processing Order {order_id} (type={order_type}, status={status}, paid_at={paid_at})")
     
     # 2. STRICT IDEMPOTENCY CHECK
     # Always check if a print_job already exists for this order
@@ -69,7 +69,7 @@ def fulfill_order(order_id):
     ).fetchone()
     
     if existing_job:
-        print(f"[Fulfillment] Idempotency hit: Print job {existing_job['job_id']} already exists for order {order_id}")
+        logger.info(f"[Fulfillment] Idempotency hit: Print job {existing_job['job_id']} already exists for order {order_id}")
         # Ensure order status is consistent
         if status != 'submitted_to_printer':
              db.execute(
@@ -136,7 +136,7 @@ def fulfill_order(order_id):
         """, (job_id, order_id))
         db.commit()
         
-        print(f"[Fulfillment] Success: order {order_id} -> job {job_id}")
+        logger.info(f"[Fulfillment] Success: order {order_id} -> job {job_id}")
         return True
         
     except Exception as e:
@@ -177,7 +177,7 @@ def _ensure_pdf_in_storage(db, order, storage):
     
     # Check if we already have a valid PDF in storage
     if sign_pdf_path and storage.exists(sign_pdf_path):
-        print(f"[Fulfillment] Using existing PDF: {sign_pdf_path}")
+        logger.info(f"[Fulfillment] Using existing PDF: {sign_pdf_path}")
         return sign_pdf_path
     
     # Generate new PDF based on order type
@@ -277,7 +277,7 @@ def _generate_smartsign_pdf(db, order, storage):
     # generate_smartsign_pdf returns storage key
     try:
         pdf_key = generate_smartsign_pdf(asset, order_id)
-        print(f"[Fulfillment] Generated SmartSign PDF: {pdf_key}")
+        logger.info(f"[Fulfillment] Generated SmartSign PDF: {pdf_key}")
         return pdf_key
     except Exception as e:
         logger.error(f"[Fulfillment] SmartSign PDF generation failed: {e}")
@@ -304,7 +304,7 @@ def _generate_yard_sign_pdf(db, order, storage):
          
     try:
         pdf_key = generate_yard_sign_pdf_from_order_row(order_row, storage=storage, db=db)
-        print(f"[Fulfillment] Generated yard sign PDF: {pdf_key}")
+        logger.info(f"[Fulfillment] Generated yard sign PDF: {pdf_key}")
         return pdf_key
     except Exception as e:
         logger.error(f"[Fulfillment] Yard sign PDF generation failed: {e}")
@@ -317,7 +317,7 @@ def _generate_smart_riser_pdf(db, order, storage):
     
     try:
         pdf_key = generate_smart_riser_pdf(order)
-        print(f"[Fulfillment] Generated SmartRiser PDF: {pdf_key}")
+        logger.info(f"[Fulfillment] Generated SmartRiser PDF: {pdf_key}")
         return pdf_key
     except Exception as e:
         logger.error(f"[Fulfillment] SmartRiser PDF generation failed: {e}")
