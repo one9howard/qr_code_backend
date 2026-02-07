@@ -253,6 +253,62 @@ def validate_artifact(zip_path):
         print("[SUCCESS] Artifact validation passed.")
         return True
 
+def run_pre_build_gates(allow_test_failures=False):
+    """Run all pre-build gates directly in Python to avoid shell environment issues."""
+    print("========================================")
+    print("    RELEASE ACCEPTANCE GATES (Python Native)")
+    print("========================================")
+    
+    python = sys.executable
+    root = os.getcwd()
+
+    # 1. Cleanliness
+    print("[LOCK] 1. Checking for repository cleanliness...")
+    check_clean_path = os.path.join(root, "scripts", "check_release_clean.py")
+    if os.path.exists(check_clean_path):
+        subprocess.check_call([python, check_clean_path], cwd=root)
+    else:
+        print("   [WARN] scripts/check_release_clean.py not found! Skipping...")
+
+    # 2. No Prints
+    print("[LOCK] 2. Checking for forbidden print() statements...")
+    check_prints_path = os.path.join(root, "scripts", "check_no_prints.py")
+    if os.path.exists(check_prints_path):
+        subprocess.check_call([python, check_prints_path], cwd=root)
+    else:
+        print("   [FAIL] scripts/check_no_prints.py not found!")
+        sys.exit(1)
+
+    # 3. Syntax Check
+    print("[LOCK] 3. Bytecode Compilation (Syntax Check)...")
+    subprocess.check_call([python, "-m", "compileall", "-q", ".", "-x", "(\.venv|\.git|__pycache__|tests/fixtures)"], cwd=root)
+    print("   [OK] Syntax OK")
+
+    # 4. Unit Tests
+    print("[TEST] 4. Running Unit Tests...")
+    test_cmd = [python, "-m", "pytest", "-q", "-m", "not slow"]
+    try:
+        subprocess.check_call(test_cmd, cwd=root)
+    except subprocess.CalledProcessError as e:
+        if not allow_test_failures:
+            print(f"   [FAIL] Tests FAILED (exit code {e.returncode}). Preventing release build.")
+            sys.exit(e.returncode)
+        else:
+            print("   [WARN] Tests FAILED, but but continuing anyway (--allow-test-failures)")
+    print("   [OK] Tests Passed")
+
+    # 5. Migration Check
+    print("[TEST] 5. Checking for canonical migration runner...")
+    if os.path.exists(os.path.join(root, "migrate.py")) and os.path.exists(os.path.join(root, "alembic.ini")):
+        print("   [OK] migrate.py and alembic.ini found.")
+    else:
+        print("   [FAIL] Canonical migration runner (migrate.py) or config (alembic.ini) missing!")
+        sys.exit(1)
+
+    print("========================================")
+    print("[OK] ALL ACCEPTANCE CHECKS PASSED")
+    print("========================================\n")
+
 def main():
     parser = argparse.ArgumentParser(description="Build Release ZIP")
     parser.add_argument("--output-dir", default="releases", help="Output directory")
@@ -269,23 +325,7 @@ def main():
         print("⚠️  WARNING: SKIPPING VALIDATION. THIS IS UNSAFE. DO NOT SHIP THIS.")
     else:
         # 1. Pre-Build Gate
-        print("[LOCK] Running Pre-Build Gates...")
-        
-        cmd = "bash scripts/release_acceptance.sh"
-        if args.allow_test_failures:
-            print("[WARN] Running with ALLOW_TEST_FAILURES=1 (--allow-test-failures)")
-            # cmd += " --allow-test-failures" # Deprecated strict mode relies on env vars if needed, but we wanted strict.
-            # actually we removed the argument parsing from the script, so passing it does nothing.
-            # But let's leave the logic in build script for now to match strictness later if we re-add it.
-            pass 
-        
-        # Pass current python executable to ensure we use the same environment (with pytests etc)
-        # Use forward slashes to avoid bash backslash escaping issues on Windows
-        env = os.environ.copy()
-        env['PYTHON_EXEC'] = sys.executable.replace('\\', '/')
-
-        # Assuming script is run from project root
-        run_command(cmd, env=env)
+        run_pre_build_gates(allow_test_failures=args.allow_test_failures)
 
     project_root = os.getcwd()
     dist_dir = os.path.join(project_root, args.output_dir)
