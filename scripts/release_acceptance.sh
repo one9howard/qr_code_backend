@@ -70,6 +70,13 @@ echo "   [OK] Syntax Verification Passed"
 
 # 5. Unit Tests (Strict)
 echo "[TEST] 4. Running Unit Tests..."
+# Check if pytest is installed
+if ! "$PYTHON" -c "import pytest" 2>/dev/null; then
+    echo "   [FAIL] pytest NOT FOUND in current environment."
+    echo "          Please run: pip install -r requirements-test.txt"
+    exit 1
+fi
+
 PYTHONPYCACHEPREFIX="$PYCACHE_TMP" "$PYTHON" -m pytest -q -m "not slow" || {
     RET=$?
     echo "   [FAIL] Tests FAILED (exit code $RET). Preventing release build."

@@ -270,6 +270,11 @@ def validate_artifact(zip_path):
         if not verify_import(temp_dir):
             return False
 
+        # 6. Test Runner Availability (Inside Artifact)
+        # We don't necessarily need pytest inside the artifact for it to be valid, 
+        # but we check it here if we want to run tests as part of validation.
+        # For now, validation is mostly about structure and syntax.
+
         print("[SUCCESS] Artifact validation passed.")
         return True
 
@@ -329,6 +334,15 @@ def run_pre_build_gates(allow_test_failures=False):
 
         # 4. Unit Tests
         print("[TEST] 4. Running Unit Tests...")
+        # First check if pytest is installed
+        check_pytest_cmd = [python, "-c", "import pytest"]
+        try:
+            subprocess.check_call(check_pytest_cmd, cwd=root, env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        except subprocess.CalledProcessError:
+            print("   [FAIL] pytest NOT FOUND in current environment.")
+            print("          Please run: pip install -r requirements-test.txt")
+            sys.exit(1)
+
         test_cmd = [python, "-m", "pytest", "-q", "-m", "not slow"]
         try:
             subprocess.check_call(test_cmd, cwd=root, env=env)
