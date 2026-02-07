@@ -6,27 +6,36 @@ echo "    RELEASE ACCEPTANCE GATES"
 echo "========================================"
 
 # Detect Python with pytest
-PYTHON_CMD="python3"
+PYTHON_CMD=""
 
-# TRY 1: Check if 'python' (often Windows alias in Git Bash) is valid
-if command -v python &> /dev/null && python -c "import pytest" &> /dev/null; then
+# DEBUG: Print what we see
+echo "🔍 Debugging Python Environment..."
+echo "   - python: $(command -v python || echo 'not found')"
+echo "   - python3: $(command -v python3 || echo 'not found')"
+echo "   - pip: $(command -v pip || echo 'not found')"
+
+# STRATEGY 1: Check for Windows Python via 'py.exe' (most reliable on Windows)
+if command -v py &> /dev/null && py -c "import pytest" &> /dev/null; then
+    PYTHON_CMD="py"
+# STRATEGY 2: Check for 'python.exe' in the current venv (if we are in one)
+elif [ -f ".venv/Scripts/python.exe" ] && .venv/Scripts/python.exe -c "import pytest" &> /dev/null; then
+    PYTHON_CMD=".venv/Scripts/python.exe"
+# STRATEGY 3: Check for standard 'python' (if mapped to Windows python)
+elif command -v python &> /dev/null && python -c "import pytest" &> /dev/null; then
     PYTHON_CMD="python"
-# TRY 2: Check standard 'python3'
+# STRATEGY 4: Fallback to 'python3' (last resort)
 elif command -v python3 &> /dev/null && python3 -c "import pytest" &> /dev/null; then
     PYTHON_CMD="python3"
-# TRY 3: Explicitly look for Windows Python in standard locations (Git Bash common path)
-elif [ -f "/c/Windows/py.exe" ] && /c/Windows/py.exe -m pytest --version &> /dev/null; then
-    PYTHON_CMD="/c/Windows/py.exe"
 else
-    # FAILURE MODE
-    echo "❌ CRITICAL: No python found with 'pytest' installed."
-    echo "   Checked 'python' and 'python3'."
-    echo "   The release script requires a Python environment with dev dependencies."
+    echo "❌ CRITICAL: Could not find a Python executable with 'pytest' installed."
+    echo "   I checked: py, .venv/Scripts/python.exe, python, python3"
     echo ""
-    echo "   FIX:"
-    echo "   Run 'pip install pytest' in this terminal."
-    # We will attempt to continue with 'python3' to see if it works later or fail hard
-    # exit 1 
+    echo "   If you believe you installed it, you might be running this script"
+    echo "   from a shell (Bash) that sees a different Python than your PowerShell."
+    echo ""
+    echo "   TRY: Explicitly installing it in this shell:"
+    echo "   $ pip install pytest"
+    exit 1
 fi
 
 echo "ℹ️  Using Python: $($PYTHON_CMD --version) ($PYTHON_CMD)"
