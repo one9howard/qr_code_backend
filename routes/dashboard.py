@@ -28,6 +28,16 @@ dashboard_bp = Blueprint('dashboard', __name__, url_prefix='/dashboard')
 FREE_LEAD_LIMIT = 2
 
 
+@dashboard_bp.route("/assets/<int:asset_id>/")
+@login_required
+def legacy_asset_redirect(asset_id):
+    """
+    Handle old links to /dashboard/assets/<id>/ by redirecting to the canonical SmartSign editor.
+    This prevents 404s for users with cached or bookmarked links.
+    """
+    return redirect(url_for('smart_signs.edit_smartsign', asset_id=asset_id))
+
+
 @dashboard_bp.route("/")
 @login_required
 def index():
@@ -340,13 +350,10 @@ def index():
         is_first_lead_recent = (now - latest_lead_at) < timedelta(hours=24)
     
     # Dashboard Mode: determines overall state
-    # - "no_signs": hard gate, user has 0 SmartSigns
-    # - "needs_assignment": semi-hard gate, has SmartSigns but none assigned
-    # - "active": normal dashboard
+    # - "no_signs": semi-hard gate, user has 0 SmartSigns (Shows welcome checklist)
+    # - "active": normal dashboard (Properties always visible)
     if smart_sign_count == 0:
         dashboard_mode = "no_signs"
-    elif assigned_sign_count == 0:
-        dashboard_mode = "needs_assignment"
     else:
         dashboard_mode = "active"
     

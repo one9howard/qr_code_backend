@@ -1,0 +1,76 @@
+<div class="onboarding-checklist-sidebar"
+    style="padding: 16px; margin-top: 24px; background: rgba(255,255,255,0.03); border-radius: 12px; border: 1px solid rgba(255,255,255,0.05);">
+    <h4
+        style="margin: 0 0 16px 0; font-size: 0.85rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600;">
+        Getting Started
+    </h4>
+
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+        <!-- Step 1: Create Property -->
+        <div
+            style="display: flex; align-items: center; gap: 10px; opacity: {% if property_count > 0 %}1{% else %}0.6{% endif %};">
+            <span
+                style="font-size: 1rem; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; border-radius: 50%; background: {% if property_count > 0 %}var(--accent-green){% else %}rgba(255,255,255,0.1){% endif %}; color: white; font-size: 0.75rem;">
+                {% if property_count > 0 %}✓{% else %}1{% endif %}
+            </span>
+            <span
+                style="font-size: 0.85rem; color: {% if property_count > 0 %}var(--text-main){% else %}var(--text-muted){% endif %}; {% if property_count > 0 %}text-decoration: line-through; opacity: 0.5;{% endif %}">
+                Create a property
+            </span>
+        </div>
+
+        <!-- Step 2: Order SmartSign -->
+        <div
+            style="display: flex; align-items: center; gap: 10px; opacity: {% if smart_sign_count > 0 %}1{% else %}0.6{% endif %};">
+            <span
+                style="font-size: 1rem; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; border-radius: 50%; background: {% if smart_sign_count > 0 %}var(--accent-green){% else %}rgba(255,255,255,0.1){% endif %}; color: white; font-size: 0.75rem;">
+                {% if smart_sign_count > 0 %}✓{% else %}2{% endif %}
+            </span>
+            <span
+                style="font-size: 0.85rem; color: {% if smart_sign_count > 0 %}var(--text-main){% else %}var(--text-muted){% endif %}; {% if smart_sign_count > 0 %}text-decoration: line-through; opacity: 0.5;{% endif %}">
+                Order a SmartSign
+            </span>
+        </div>
+
+        <!-- Step 3: Assign to Property -->
+        <div
+            style="display: flex; align-items: center; gap: 10px; opacity: {% if assigned_sign_count > 0 %}1{% else %}0.6{% endif %};">
+            <span
+                style="font-size: 1rem; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; border-radius: 50%; background: {% if assigned_sign_count > 0 %}var(--accent-green){% else %}rgba(255,255,255,0.1){% endif %}; color: white; font-size: 0.75rem;">
+                {% if assigned_sign_count > 0 %}✓{% else %}3{% endif %}
+            </span>
+            <span
+                style="font-size: 0.85rem; color: {% if assigned_sign_count > 0 %}var(--text-main){% else %}var(--text-muted){% endif %}; {% if assigned_sign_count > 0 %}text-decoration: line-through; opacity: 0.5;{% endif %}">
+                Assign to property
+            </span>
+        </div>
+
+        <!-- Step 4: Get Leads -->
+        <div
+            style="display: flex; align-items: center; gap: 10px; opacity: {% if lead_count_total > 0 %}1{% else %}0.6{% endif %};">
+            <span
+                style="font-size: 1rem; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; border-radius: 50%; background: {% if lead_count_total > 0 %}var(--accent-green){% else %}rgba(255,255,255,0.1){% endif %}; color: white; font-size: 0.75rem;">
+                {% if lead_count_total > 0 %}✓{% else %}4{% endif %}
+            </span>
+            <span
+                style="font-size: 0.85rem; color: {% if lead_count_total > 0 %}var(--text-main){% else %}var(--text-muted){% endif %};">
+                Receive first lead
+            </span>
+        </div>
+    </div>
+
+    {% if progress_percent < 100 %} <div
+        style="margin-top: 20px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.1);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <span style="font-size: 0.75rem; color: var(--text-muted);">Setup Progress</span>
+            <span style="font-size: 0.75rem; color: var(--accent-blue); font-weight: 600;">{{ progress_percent
+                }}%</span>
+        </div>
+        <div style="height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; overflow: hidden;">
+            <div
+                style="width: {{ progress_percent }}%; height: 100%; background: var(--accent-blue); transition: width 0.5s ease;">
+            </div>
+        </div>
+</div>
+{% endif %}
+</div>

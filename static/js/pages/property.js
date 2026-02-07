@@ -505,29 +505,31 @@
     function initGatedContent() {
         if (DATA.tier === 'paid') return;
 
-        // Continue reading trigger
-        const continueBtn = document.querySelector('.continue-reading');
-        if (continueBtn) {
-            continueBtn.addEventListener('click', () => {
+        // Continue reading triggers
+        document.querySelectorAll('.continue-reading').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
                 sendEvent('gated_content_attempt', {
                     content_type: 'description',
                     trigger: 'continue_reading'
                 });
                 showUpsellSheet('continue_reading');
             });
-        }
+        });
 
-        // Gallery locked click
-        const galleryLocked = document.querySelector('.gallery-locked');
-        if (galleryLocked) {
-            galleryLocked.addEventListener('click', () => {
+        // Gallery/Tour locked click (Target container OR explicit unlock button)
+        document.querySelectorAll('.gallery-locked, .btn-unlock').forEach(el => {
+            el.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const trigger = el.dataset.trigger || 'click_gallery';
                 sendEvent('gated_content_attempt', {
                     content_type: 'photos',
-                    trigger: 'click_gallery'
+                    trigger: trigger
                 });
-                showUpsellSheet('click_gallery');
+                showUpsellSheet(trigger);
             });
-        }
+        });
     }
 
     // ============================================================

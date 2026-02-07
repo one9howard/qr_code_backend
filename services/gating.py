@@ -264,14 +264,15 @@ def can_create_property(user_id):
     # 2. Free tier - check property count
     free_limit = int(os.environ.get("FREE_TIER_MAX_ACTIVE_PROPERTIES", "1"))
     
-    # Count all properties owned by user (active = exists in DB)
-    # Properties are considered "active" if they exist - simple MVP definition
+    # Count all properties owned by user that are NOT expired
+    # Active = hasn't expired yet or is a permanent/pro listing
     count_result = db.execute(
         """
         SELECT COUNT(*) as cnt
         FROM properties p
         JOIN agents a ON p.agent_id = a.id
         WHERE a.user_id = %s
+        AND (p.expires_at IS NULL OR p.expires_at > NOW())
         """,
         (user_id,)
     ).fetchone()
