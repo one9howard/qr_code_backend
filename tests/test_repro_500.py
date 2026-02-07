@@ -27,8 +27,8 @@ def test_dashboard_new_property_page_loads(client, app):
         
         # Create agent for this user (needed for some dashboard logic)
         db.execute(
-            "INSERT INTO agents (user_id, name, email) VALUES (%s, %s, %s)",
-            (u.id, "Test Agent", "test_repro@example.com")
+            "INSERT INTO agents (user_id, name, email, brokerage) VALUES (%s, %s, %s, %s)",
+            (u.id, "Test Agent", "test_repro@example.com", "Test Brokerage")
         )
         db.commit()
         

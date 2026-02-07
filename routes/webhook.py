@@ -13,6 +13,7 @@ from constants import (
     ORDER_STATUS_PAID, 
     ORDER_STATUS_PENDING_PRODUCTION
 )
+from utils.qr_codes import generate_unique_code  # Exposed for test patching
 
 webhook_bp = Blueprint('webhook', __name__)
 # stripe.api_key handled in app.py

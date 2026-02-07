@@ -339,28 +339,35 @@ def property_page(slug):
         referrer = (request.referrer or '')[:500]
         
         # Check for internal view (Cookie AND Ownership Backstop)
-        is_internal = False
+        is_internal_bool = False
         
         # 1. Cookie Check (Fast Path)
         if request.cookies.get(INTERNAL_VIEW_COOKIE) == '1':
-            is_internal = True
+            is_internal_bool = True
             
         # 2. Ownership Check (Backstop)
         # If logged in and owning the property, it is ALWAYS internal.
-        if not is_internal and current_user.is_authenticated:
+        if not is_internal_bool and current_user.is_authenticated:
             if property_row['agent_user_id'] == current_user.id:
-                is_internal = True
-                
-        source = 'dashboard' if is_internal else 'public'
+                is_internal_bool = True
         
-        # 1. Legacy Logging
-        db.execute(
-            """INSERT INTO property_views 
-               (property_id, ip_address, user_agent, referrer, is_internal, source) 
-               VALUES (%s, %s, %s, %s, %s, %s)""",
-            (property_id, ip_address, user_agent, referrer or None, is_internal, source)
-        )
-        db.commit()
+        # Store as integer for database compatibility
+        is_internal = 1 if is_internal_bool else 0
+        source = 'dashboard' if is_internal_bool else 'public'
+        
+        # 1. Legacy Logging (wrapped in its own try/except to prevent poisoning)
+        try:
+            db.execute(
+                """INSERT INTO property_views 
+                   (property_id, ip_address, user_agent, referrer, is_internal, source) 
+                   VALUES (%s, %s, %s, %s, %s, %s)""",
+                (property_id, ip_address, user_agent, referrer or None, is_internal, source)
+            )
+            db.commit()
+        except Exception as db_err:
+            db.rollback()
+            import logging
+            logging.getLogger(__name__).exception(f"[Analytics] DB error logging page view: {db_err}")
         
         # 2. Canonical App Event
         track_event(
@@ -375,7 +382,7 @@ def property_page(slug):
                 "utm_source": request.args.get('utm_source'),
                 "utm_medium": request.args.get('utm_medium'),
                 "is_mobile": "Mobile" in user_agent,
-                "is_internal": bool(is_internal)
+                "is_internal": bool(is_internal_bool)
             }
         )
         

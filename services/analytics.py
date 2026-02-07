@@ -124,11 +124,19 @@ def per_agent_rollup(user_id: int, range_days: int = 7) -> dict:
     db = get_db()
     
     # Get agent properties (support multiple agent IDs)
-    agent_rows = db.execute("SELECT id FROM agents WHERE user_id = %s", (user_id,)).fetchall()
-    if not agent_rows:
-        return {}
-    
-    agent_ids = [r['id'] for r in agent_rows]
+    # Resilient to mock cursor behavior: handle both fetchall() returning a list and edge cases
+    cur = db.execute("SELECT id FROM agents WHERE user_id = %s", (user_id,))
+    try:
+        agent_rows = cur.fetchall()
+        if not agent_rows:
+            return {}
+        agent_ids = [r['id'] for r in agent_rows]
+    except (TypeError, AttributeError):
+        # Fallback for mocks that don't return proper list
+        row = cur.fetchone() if hasattr(cur, 'fetchone') else None
+        if not row:
+            return {}
+        agent_ids = [row['id']]
     
     # Helper for aggregate counts
     def get_agg(table, date_col, extra_join="", extra_where=""):

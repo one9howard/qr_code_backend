@@ -34,7 +34,16 @@ def setup_test_data(app):
     with app.app_context():
         db = get_db()
         
-        # Create test user
+        # Cleanup existing test data first (proper FK order: orders -> properties -> agents -> users)
+        db.execute("DELETE FROM orders WHERE property_id IN (SELECT id FROM properties WHERE slug IN ('test-paid-property', 'test-expired-property', 'test-free-property'))")
+        db.execute("DELETE FROM qr_scans WHERE property_id IN (SELECT id FROM properties WHERE slug IN ('test-paid-property', 'test-expired-property', 'test-free-property'))")
+        db.execute("DELETE FROM property_views WHERE property_id IN (SELECT id FROM properties WHERE slug IN ('test-paid-property', 'test-expired-property', 'test-free-property'))")
+        db.execute("DELETE FROM leads WHERE property_id IN (SELECT id FROM properties WHERE slug IN ('test-paid-property', 'test-expired-property', 'test-free-property'))")
+        db.execute("DELETE FROM properties WHERE slug IN ('test-paid-property', 'test-expired-property', 'test-free-property')")
+        db.execute("DELETE FROM agents WHERE email = 'test@example.com'")
+        # Don't delete user since email has unique constraint and we want to reuse
+        
+        # Create test user (upsert)
         db.execute("""
             INSERT INTO users (email, password_hash, subscription_status)
             VALUES ('test@example.com', 'hash', 'active')
@@ -44,17 +53,15 @@ def setup_test_data(app):
         
         # Create test agent
         db.execute("""
-            INSERT INTO agents (user_id, name, email)
-            VALUES (%s, 'Test Agent', 'test@example.com')
-            ON CONFLICT DO NOTHING
+            INSERT INTO agents (user_id, name, email, brokerage)
+            VALUES (%s, 'Test Agent', 'test@example.com', 'Test Brokerage')
         """, (user['id'],))
         agent = db.execute("SELECT id FROM agents WHERE user_id = %s", (user['id'],)).fetchone()
         
-        # Create paid property (has order with paid status)
+        # Create paid property
         db.execute("""
             INSERT INTO properties (agent_id, address, slug, qr_code, created_at)
             VALUES (%s, '123 Test St', 'test-paid-property', 'TESTPAID001', NOW())
-            ON CONFLICT (slug) DO UPDATE SET address = '123 Test St'
         """, (agent['id'],))
         paid_prop = db.execute("SELECT id FROM properties WHERE slug = 'test-paid-property'").fetchone()
         
@@ -62,21 +69,18 @@ def setup_test_data(app):
         db.execute("""
             INSERT INTO orders (property_id, user_id, status, order_type, paid_at, created_at)
             VALUES (%s, %s, 'paid', 'sign', NOW(), NOW())
-            ON CONFLICT DO NOTHING
         """, (paid_prop['id'], user['id']))
         
-        # Create expired property (has expires_at in past)
+        # Create expired property
         db.execute("""
             INSERT INTO properties (agent_id, address, slug, qr_code, created_at, expires_at)
             VALUES (%s, '456 Expired Ave', 'test-expired-property', 'TESTEXP001', NOW(), NOW() - INTERVAL '1 day')
-            ON CONFLICT (slug) DO UPDATE SET expires_at = NOW() - INTERVAL '1 day'
         """, (agent['id'],))
         
-        # Create free property (no expires_at, no paid order)
+        # Create free property
         db.execute("""
             INSERT INTO properties (agent_id, address, slug, qr_code, created_at)
             VALUES (%s, '789 Free Blvd', 'test-free-property', 'TESTFREE01', NOW())
-            ON CONFLICT (slug) DO NOTHING
         """, (agent['id'],))
         
         db.commit()

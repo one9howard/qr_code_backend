@@ -8,7 +8,7 @@ class TestPropertyCreationFlow:
     def test_user(self, app):
         with app.app_context():
             db = get_db()
-            ur = db.execute("INSERT INTO users (email, password_hash, is_pro) VALUES ('prop_flow@test.com', 'x', true) RETURNING id").fetchone()
+            ur = db.execute("INSERT INTO users (email, password_hash, subscription_status) VALUES ('prop_flow@test.com', 'x', 'active') RETURNING id").fetchone()
             # Create agent to simplify flow
             db.execute("INSERT INTO agents (user_id, name, email, brokerage, phone) VALUES (%s, 'Test Agent', 'prop_flow@test.com', 'Test Brokerage', '555-0199')", (ur['id'],))
             db.commit()
@@ -96,7 +96,7 @@ class TestPropertyCreationFlow:
         # Create separate user
         with app.app_context():
             db = get_db()
-            ur = db.execute("INSERT INTO users (email, password_hash, is_pro) VALUES ('std_flow@test.com', 'x', true) RETURNING id").fetchone()
+            ur = db.execute("INSERT INTO users (email, password_hash, subscription_status) VALUES ('std_flow@test.com', 'x', 'active') RETURNING id").fetchone()
             db.commit()
             
         with client.session_transaction() as sess:
