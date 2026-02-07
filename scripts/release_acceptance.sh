@@ -27,7 +27,7 @@ echo "[LOCK] 1. Checking for repository cleanliness..."
 PYTHON=${PYTHON_EXEC:-python}
 
 if [ -f "scripts/check_release_clean.py" ]; then
-    $PYTHON scripts/check_release_clean.py
+    "$PYTHON" scripts/check_release_clean.py
 else
     echo "   [WARN] scripts/check_release_clean.py not found! Skipping..."
 fi
@@ -35,7 +35,7 @@ fi
 # 2. Code Hygiene (No Prints)
 echo "[LOCK] 2. Checking for forbidden print() statements..."
 if [ -f "scripts/check_no_prints.py" ]; then
-    $PYTHON scripts/check_no_prints.py
+    "$PYTHON" scripts/check_no_prints.py
 else
     echo "   [FAIL] scripts/check_no_prints.py not found!"
     exit 1
@@ -44,12 +44,12 @@ fi
 # 3. Syntax Check (Fast Fail)
 echo "[LOCK] 3. Bytecode Compilation (Syntax Check)..."
 # Exclude known large dirs or artifacts to keep it fast
-$PYTHON -m compileall -q . -x "(\.venv|\.git|__pycache__|tests/fixtures)"
+"$PYTHON" -m compileall -q . -x "(\.venv|\.git|__pycache__|tests/fixtures)"
 echo "   [OK] Syntax OK"
 
 # 4. Unit Tests (Strict)
 echo "[TEST] 4. Running Unit Tests..."
-$PYTHON -m pytest -q -m "not slow" || {
+"$PYTHON" -m pytest -q -m "not slow" || {
     RET=$?
     echo "   [FAIL] Tests FAILED (exit code $RET). Preventing release build."
     exit $RET
