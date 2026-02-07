@@ -77,7 +77,7 @@ def send_lead_notification_email(agent_email, lead_payload):
         logger.warning(f"[Notifications] SMTP not configured. Skipping email to agent.")
         return (False, "SMTP not configured", "skipped")
 
-    logger.info(f"[Notifications] Config: Host={smtp_host}, Port={smtp_port}, User={smtp_user}, TLS={use_tls}")
+    logger.info(f"[Notifications] Config: Host={smtp_host}, Port={smtp_port}, User={'***' if smtp_user else 'None'}, TLS={use_tls}")
     
     # Force IPv4 resolution - DISABLED (causes SSL Host verify fail)
     effective_host = smtp_host
@@ -119,12 +119,9 @@ def send_verification_email(to_email, code):
     """
     Send verification code email.
     """
-    # Debug Helper: Log code in non-production OR staging
-    # Check APP_STAGE for staging environment
-    app_stage = os.environ.get("APP_STAGE", "").lower()
-    if not IS_PRODUCTION or app_stage == "staging":
-        logger.warning(f"[Notifications] DEBUG MODE: Verification Code for {to_email} is: {code}")
-
+    # Debug Helper: REMOVED for Security
+    # Verification codes are NEVER logged in production/staging anymore.
+    
     smtp_host = os.environ.get("SMTP_HOST")
     smtp_port = int(os.environ.get("SMTP_PORT", "587"))
     smtp_user = os.environ.get("SMTP_USER")
@@ -145,7 +142,8 @@ def send_verification_email(to_email, code):
     InSite Signs
     """
 
-    logger.warning(f"[Notifications] Config: Host={smtp_host}, Port={smtp_port}, User={smtp_user}, TLS={use_tls}")
+    # Redact user/pass in logs
+    logger.info(f"[Notifications] Config: Host={smtp_host}, Port={smtp_port}, User={'***' if smtp_user else 'None'}, TLS={use_tls}")
 
     # Force IPv4 resolution - DISABLED (causes SSL Host verify fail)
     effective_host = smtp_host

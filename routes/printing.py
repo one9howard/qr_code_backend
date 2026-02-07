@@ -235,12 +235,18 @@ def mark_printed(job_id):
         (job_id,)
     )
     
-    # 3. Update Order Reference
+    # 3. Update Order Reference (Resilient Lookup)
+    # Don't rely on provider_job_id, use the order_id from the job record we already verified.
+    # row['order_id'] is not currently selected, let's select it or just rely on the job_id FK if it exists?
+    # Print jobs have order_id column.
+    
+    order_id = db.execute("SELECT order_id FROM print_jobs WHERE job_id = %s", (job_id,)).fetchone()['order_id']
+    
     db.execute('''
         UPDATE orders 
         SET status = %s, fulfilled_at = CURRENT_TIMESTAMP 
-        WHERE provider_job_id = %s
-    ''', (ORDER_STATUS_FULFILLED, job_id))
+        WHERE id = %s
+    ''', (ORDER_STATUS_FULFILLED, order_id))
     
     db.commit()
     return jsonify({"success": True})

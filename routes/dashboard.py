@@ -251,7 +251,7 @@ def index():
                     'title': 'Zero Visibility',
                     'message': f"{p['address']} has 0 scans in the last 7 days.",
                     'action': 'Check Sign Placement',
-                    'link': url_for('properties.property_page', slug=p['slug'])
+                    'link': url_for('properties.internal_agent_redirect', property_id=p['id'])
                 })
 
             if p['scans_trend'] > 50 and p['scans_7d'] > 5:
@@ -389,11 +389,12 @@ def index():
         first_assigned_property = None
         for a in sign_assets:
             if a.get('active_property_id'):
-                prop = db.execute("SELECT slug FROM properties WHERE id = %s", (a['active_property_id'],)).fetchone()
+                # Need property ID for internal redirect
+                prop = db.execute("SELECT id FROM properties WHERE id = %s", (a['active_property_id'],)).fetchone()
                 if prop:
-                    first_assigned_property = prop['slug']
+                    first_assigned_property_id = prop['id']
                     break
-        next_step_url = url_for('properties.property_page', slug=first_assigned_property) if first_assigned_property else None
+        next_step_url = url_for('properties.internal_agent_redirect', property_id=first_assigned_property_id) if first_assigned_property_id else None
     else:
         next_step_label = "Wait for a buyer inquiry (or test the form)"
         next_step_cta = "View Leads"
@@ -646,7 +647,8 @@ def today():
                 'title': 'Zero Visibility',
                 'message': f"{p['address']} has 0 scans in the last 7 days.",
                 'action': 'Check Sign Placement',
-                'link': url_for('properties.property_page', slug=p['slug'])
+                'action': 'Check Sign Placement',
+                'link': url_for('properties.internal_agent_redirect', property_id=p['id'])
             })
             
         # 2. Momentum

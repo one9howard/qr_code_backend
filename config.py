@@ -57,6 +57,9 @@ if DATABASE_URL.startswith("postgres://"):
 
 # Storage Configuration
 STORAGE_BACKEND = get_env_str("STORAGE_BACKEND", default="local")
+if IS_PRODUCTION and STORAGE_BACKEND != 's3':
+    raise RuntimeError("CRITICAL: STORAGE_BACKEND must be 's3' in production.")
+
 S3_BUCKET = get_env_str("S3_BUCKET")
 
 # Validate output region to avoid crashes if user provides garbage

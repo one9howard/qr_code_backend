@@ -219,7 +219,8 @@ def create_app(test_config=None):
         print(f"Deleted {count} expired properties.")
 
     # Local Storage Serving (Only for Local Backend)
-    if STORAGE_BACKEND != 's3':
+    # STRICT GUARD: Never serve local files in production even if misconfigured
+    if (not IS_PRODUCTION) and STORAGE_BACKEND != 's3':
         from flask import send_from_directory
         
         @app.route('/uploads/<path:filename>')

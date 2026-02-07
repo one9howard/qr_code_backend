@@ -123,24 +123,25 @@ def per_agent_rollup(user_id: int, range_days: int = 7) -> dict:
     """
     db = get_db()
     
-    # Get agent properties
-    agent_id = db.execute("SELECT id FROM agents WHERE user_id = %s", (user_id,)).fetchone()
-    if not agent_id:
+    # Get agent properties (support multiple agent IDs)
+    agent_rows = db.execute("SELECT id FROM agents WHERE user_id = %s", (user_id,)).fetchall()
+    if not agent_rows:
         return {}
-    agent_id = agent_id['id']
+    
+    agent_ids = [r['id'] for r in agent_rows]
     
     # Helper for aggregate counts
     def get_agg(table, date_col, extra_join="", extra_where=""):
-        # Count rows where property belongs to agent
+        # Count rows where property belongs to ANY of the user's agents
         query = f"""
             SELECT COUNT(t.id) 
             FROM {table} t
             JOIN properties p ON t.property_id = p.id
             {extra_join}
-            WHERE p.agent_id = %s
+            WHERE p.agent_id = ANY(%s)
             {extra_where}
         """
-        return db.execute(query, (agent_id,)).fetchone()[0]
+        return db.execute(query, (agent_ids,)).fetchone()[0]
 
     def get_agg_range(table, date_col, days_offset=0, days_span=7, extra_join="", extra_where=""):
         query = f"""
@@ -148,12 +149,12 @@ def per_agent_rollup(user_id: int, range_days: int = 7) -> dict:
             FROM {table} t
             JOIN properties p ON t.property_id = p.id
             {extra_join}
-            WHERE p.agent_id = %s
+            WHERE p.agent_id = ANY(%s)
             AND t.{date_col} >= NOW() - INTERVAL '{days_offset + days_span} days'
             AND t.{date_col} < NOW() - INTERVAL '{days_offset} days'
             {extra_where}
         """
-        return db.execute(query, (agent_id,)).fetchone()[0]
+        return db.execute(query, (agent_ids,)).fetchone()[0]
 
     # 1. Total Scans (Lifetime)
     scans_lifetime = get_agg('qr_scans', 'scanned_at')
