@@ -24,6 +24,12 @@ def terms():
     """Display the Terms of Service page."""
     return render_template("terms.html")
 
+@public_bp.route("/pricing")
+def pricing():
+    """Redirect to the landing page pricing section."""
+    from flask import redirect
+    return redirect("/#plans")
+
 
 
 @public_bp.route("/select-sign")

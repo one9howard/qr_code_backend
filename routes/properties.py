@@ -319,6 +319,26 @@ def property_page(slug):
     from services.gating import get_property_gating_status
     gating = get_property_gating_status(property_id)
     
+    # --- OWNER BYPASS: Owners should ALWAYS see their own content unlocked ---
+    from flask_login import current_user
+    if current_user.is_authenticated:
+        # Check if current user owns this property (through their agent)
+        owner_check = db.execute("""
+            SELECT 1 FROM properties p
+            JOIN agents a ON p.agent_id = a.id
+            WHERE p.id = %s AND a.user_id = %s
+        """, (property_id, current_user.id)).fetchone()
+        
+        if owner_check:
+            # Owner viewing their own property - unlock everything
+            gating = dict(gating)  # Make a mutable copy
+            gating['is_paid'] = True
+            gating['is_expired'] = False
+            gating['locked_reason'] = None
+            gating['max_photos'] = 50
+            gating['show_gallery'] = True
+            gating['paid_via'] = 'owner_view'
+    
     # Determine Tier State
     tier_state = "FREE"
     if gating.get('is_paid'):

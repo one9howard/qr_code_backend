@@ -10,6 +10,7 @@
         <div class="tabs">
             <button class="glass-button tab-btn active" onclick="showTab('profile', this)">Profile</button>
             <button class="glass-button tab-btn" onclick="showTab('security', this)">Security</button>
+            <button class="glass-button tab-btn" onclick="showTab('billing', this)">Billing</button>
         </div>
 
         <!-- PROFILE TAB -->
@@ -103,6 +104,70 @@
 
                 <button type="submit" class="glass-button full-width">Update Security</button>
             </form>
+        </div>
+
+        <!-- BILLING TAB -->
+        <div id="billing" class="tab-content" style="display: none;">
+            <div class="billing-section">
+                <!-- Current Plan -->
+                <div class="form-group">
+                    <label class="form-label">Current Plan</label>
+                    <div class="plan-badge"
+                        style="display: inline-flex; align-items: center; gap: 8px; padding: 12px 20px; border-radius: 8px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);">
+                        {% if current_user.is_pro %}
+                        <span style="color: #4facfe; font-weight: 600; font-size: 1.1rem;">✓ Pro</span>
+                        <span style="color: rgba(255,255,255,0.6);">Active Subscription</span>
+                        {% else %}
+                        <span style="color: rgba(255,255,255,0.8); font-weight: 600; font-size: 1.1rem;">Free</span>
+                        <span style="color: rgba(255,255,255,0.5);">Limited to 1 property</span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Usage Stats -->
+                <div class="form-group">
+                    <label class="form-label">Usage</label>
+                    <div style="background: rgba(255,255,255,0.03); border-radius: 8px; padding: 16px;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                            <span style="color: rgba(255,255,255,0.7);">Properties</span>
+                            <span style="color: #4facfe; font-weight: 500;">
+                                {% if current_user.is_pro %}Unlimited{% else %}1 / 1 max{% endif %}
+                            </span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between;">
+                            <span style="color: rgba(255,255,255,0.7);">SmartSigns</span>
+                            <span style="color: #4facfe; font-weight: 500;">
+                                {% if current_user.is_pro %}Reassignable{% else %}Purchase Only{% endif %}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="form-group" style="margin-top: 24px;">
+                    {% if current_user.is_pro %}
+                    <a href="{{ url_for('billing.portal') }}" class="glass-button full-width"
+                        style="text-align: center; text-decoration: none; display: block; margin-bottom: 12px;">
+                        Manage Subscription
+                    </a>
+                    <p style="text-align: center; font-size: 0.85rem; color: rgba(255,255,255,0.5);">
+                        Update payment method, download invoices, or cancel.
+                    </p>
+                    {% else %}
+                    <a href="{{ url_for('billing.start', plan='monthly') }}" class="glass-button accent full-width"
+                        style="text-align: center; text-decoration: none; display: block; margin-bottom: 12px;">
+                        🚀 Upgrade to Pro - $24.99/mo
+                    </a>
+                    <a href="{{ url_for('billing.start', plan='annual') }}" class="glass-button secondary full-width"
+                        style="text-align: center; text-decoration: none; display: block;">
+                        Save 20% with Annual ($239.88/yr)
+                    </a>
+                    <p style="text-align: center; font-size: 0.85rem; color: rgba(255,255,255,0.5); margin-top: 12px;">
+                        Unlock unlimited properties, SmartSign reassignment, and advanced analytics.
+                    </p>
+                    {% endif %}
+                </div>
+            </div>
         </div>
     </div>
 </div>
