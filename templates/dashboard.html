@@ -198,8 +198,8 @@
                             <td onclick="event.stopPropagation();">
                                 <a href="{{ url_for('dashboard.edit_property', property_id=p.id) }}"
                                     style="color: var(--text-muted); margin-right: 10px;">Edit</a>
-                                <a href="{{ url_for('properties.property_page', slug=p.slug) }}" target="_blank"
-                                    style="color: var(--accent-blue);">View Page</a>
+                                <a href="{{ url_for('properties.internal_agent_redirect', property_id=p.id) }}"
+                                    target="_blank" style="color: var(--accent-blue);">View Page</a>
                             </td>
                         </tr>
                         {% endfor %}
@@ -550,8 +550,8 @@
                         <td onclick="event.stopPropagation();">
                             <a href="{{ url_for('dashboard.edit_property', property_id=p.id) }}"
                                 style="color: var(--text-muted); margin-right: 10px;">Edit</a>
-                            <a href="{{ url_for('properties.property_page', slug=p.slug) }}" target="_blank"
-                                style="color: var(--accent-blue);">View</a>
+                            <a href="{{ url_for('properties.internal_agent_redirect', property_id=p.id) }}"
+                                target="_blank" style="color: var(--accent-blue);">View</a>
                         </td>
                     </tr>
                     {% endfor %}

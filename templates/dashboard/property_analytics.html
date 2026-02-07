@@ -10,7 +10,7 @@
             <h2 style="margin: 0;">{{ property.address }}</h2>
         </div>
         <div>
-            <a href="{{ url_for('properties.property_page', slug=property.slug) }}" target="_blank"
+            <a href="{{ url_for('properties.internal_agent_redirect', property_id=property.id) }}" target="_blank"
                 class="glass-button">View Live Page</a>
             <a href="{{ url_for('dashboard.index') }}" class="glass-button" style="margin-left: 10px;">Back to
                 Dashboard</a>

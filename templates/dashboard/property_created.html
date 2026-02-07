@@ -44,8 +44,8 @@
 
                 <!-- Secondary CTAs -->
                 <div style="display: flex; justify-content: center; gap: 24px; margin-top: 8px;">
-                    <a href="{{ url_for('properties.property_page', slug=property.slug) }}" target="_blank"
-                        class="text-link" style="color: var(--accent-cyan); font-size: 0.9rem;">
+                    <a href="{{ url_for('properties.internal_agent_redirect', property_id=property.id) }}"
+                        target="_blank" class="text-link" style="color: var(--accent-cyan); font-size: 0.9rem;">
                         View Property Page →
                     </a>
                     <a href="{{ url_for('dashboard.index') }}" class="text-link"
