@@ -21,6 +21,10 @@ echo "========================================"
 # 1. Release Cleanliness (Repo level)
 # MUST RUN FIRST before compileall creates __pycache__
 echo "[LOCK] 1. Checking for repository cleanliness..."
+
+# FIX: Aggressively clean __pycache__ which might be created by the calling python process
+find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
+
 if [ -f "scripts/check_release_clean.py" ]; then
     python3 scripts/check_release_clean.py
 else
