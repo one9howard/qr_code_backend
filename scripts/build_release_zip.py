@@ -280,8 +280,9 @@ def main():
             pass 
         
         # Pass current python executable to ensure we use the same environment (with pytests etc)
+        # Use forward slashes to avoid bash backslash escaping issues on Windows
         env = os.environ.copy()
-        env['PYTHON_EXEC'] = sys.executable
+        env['PYTHON_EXEC'] = sys.executable.replace('\\', '/')
 
         # Assuming script is run from project root
         run_command(cmd, env=env)
