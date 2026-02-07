@@ -50,7 +50,7 @@ echo "[LOCK] 3. Syntax Verification (No Disk Write)..."
 # We check every python file in the repo for syntax errors.
 # We redirect output to os.devnull to ensure no __pycache__ or .pyc files are created.
 "$PYTHON" -c "
-import py_compile, os, sys
+import ast, os, sys
 root = '.' 
 errors = 0
 for r, d, f in os.walk(root):
@@ -58,8 +58,9 @@ for r, d, f in os.walk(root):
     for file in f:
         if file.endswith('.py'):
             try:
-                # Compile to devnull to check syntax without artifacts
-                py_compile.compile(os.path.join(r, file), cfile=os.devnull, doraise=True)
+                # Use ast.parse to check syntax without artifacts
+                with open(os.path.join(r, file), 'rb') as f_in:
+                    ast.parse(f_in.read())
             except Exception as e:
                 print(f'   [FAIL] Syntax error in {os.path.join(r, file)}: {e}')
                 errors += 1

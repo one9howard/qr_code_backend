@@ -243,21 +243,24 @@ def validate_artifact(zip_path):
         # 4. Syntax Check (No Disk Write)
         print("[LOCK] Running syntax verification on artifact...")
         try:
-            # We check every python file in the extracted tree
-            check_syntax_cmd = [
-                sys.executable, "-c",
-                "import py_compile, os, sys; "
-                "errors = 0; "
-                "root = '.'; "
-                "for r, d, f in os.walk(root): "
-                "  if any(s in r for s in ['.git', '.venv', 'venv', 'node_modules', '__pycache__']): continue; "
-                "  for file in f: "
-                "    if file.endswith('.py'): "
-                "      try: py_compile.compile(os.path.join(r, file), cfile=os.devnull, doraise=True); "
-                "      except Exception as e: print(f'   [FAIL] Syntax error: {os.path.join(r, file)}: {e}'); errors += 1; "
-                "if errors: sys.exit(1);"
-            ]
-            subprocess.check_call(check_syntax_cmd, cwd=temp_dir, env=env)
+            # Using ast.parse to check syntax without writing any artifacts to disk
+            check_syntax_script = (
+                "import ast, os, sys\n"
+                "errors = 0\n"
+                "root = '.'\n"
+                "for r, d, f in os.walk(root):\n"
+                "  if any(s in r for s in ['.git', '.venv', 'venv', 'node_modules', '__pycache__']): continue\n"
+                "  for file in f:\n"
+                "    if file.endswith('.py'):\n"
+                "      try:\n"
+                "        with open(os.path.join(r, file), 'rb') as f_in:\n"
+                "          ast.parse(f_in.read())\n"
+                "      except Exception as e:\n"
+                "        print(f'   [FAIL] Syntax error: {os.path.join(r, file)}: {e}')\n"
+                "        errors += 1\n"
+                "if errors: sys.exit(1)"
+            )
+            subprocess.check_call([sys.executable, "-c", check_syntax_script], cwd=temp_dir, env=env)
             print("[OK] Syntax check passed.")
         except subprocess.CalledProcessError:
             print(f"[FAIL] Syntax check failed inside artifact.")
@@ -304,21 +307,24 @@ def run_pre_build_gates(allow_test_failures=False):
 
         # 3. Syntax Check
         print("[LOCK] 3. Syntax Verification (No Disk Write)...")
-        # We check every python file in the repo for syntax errors using py_compile to os.devnull
-        check_syntax_cmd = [
-            python, "-c",
-            "import py_compile, os, sys; "
-            "errors = 0; "
-            "root = '.'; "
-            "for r, d, f in os.walk(root): "
-            "  if any(s in r for s in ['.git', '.venv', 'venv', 'node_modules', '__pycache__']): continue; "
-            "  for file in f: "
-            "    if file.endswith('.py'): "
-            "      try: py_compile.compile(os.path.join(r, file), cfile=os.devnull, doraise=True); "
-            "      except Exception as e: print(f'   [FAIL] Syntax error: {os.path.join(r, file)}: {e}'); errors += 1; "
-            "if errors: sys.exit(1);"
-        ]
-        subprocess.check_call(check_syntax_cmd, cwd=root, env=env)
+        # Using ast.parse to check syntax without writing any artifacts to disk
+        check_syntax_script = (
+            "import ast, os, sys\n"
+            "errors = 0\n"
+            "root = '.'\n"
+            "for r, d, f in os.walk(root):\n"
+            "  if any(s in r for s in ['.git', '.venv', 'venv', 'node_modules', '__pycache__']): continue\n"
+            "  for file in f:\n"
+            "    if file.endswith('.py'):\n"
+            "      try:\n"
+            "        with open(os.path.join(r, file), 'rb') as f_in:\n"
+            "          ast.parse(f_in.read())\n"
+            "      except Exception as e:\n"
+            "        print(f'   [FAIL] Syntax error: {os.path.join(r, file)}: {e}')\n"
+            "        errors += 1\n"
+            "if errors: sys.exit(1)"
+        )
+        subprocess.check_call([python, "-c", check_syntax_script], cwd=root, env=env)
         print("   [OK] Syntax Verification Passed")
 
         # 4. Unit Tests
