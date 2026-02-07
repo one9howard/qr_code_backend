@@ -74,16 +74,22 @@ Write-Host "Tests PASSED" -ForegroundColor Green
 # 6. Stripe Key Scan
 Write-Host "Scanning for Stripe Keys..." -ForegroundColor Cyan
 # Select-String doesn't have -Recurse, must use Get-ChildItem
-# Exclude docker-compose.yml and .github directory (as CI check contains the pattern)
-$StripeMatches = Get-ChildItem -Recurse -File | Where-Object { $_.FullName -notmatch "\\.github\\" -and $_.Name -ne "docker-compose.yml" } | Select-String -Pattern 'stripe\.api_key\s*='
+# Exclude: .venv, docker-compose.yml, .github, and scripts that CHECK for stripe keys
+$StripeMatches = Get-ChildItem -Recurse -File | Where-Object { 
+    $_.FullName -notmatch "\\.venv\\" -and
+    $_.FullName -notmatch "\\.github\\" -and
+    $_.Name -ne "docker-compose.yml" -and
+    $_.Name -ne "check_stripe_key_assignments.py"
+} | Select-String -Pattern 'stripe\.api_key\s*='
 
 $Failed = $false
 foreach ($Match in $StripeMatches) {
     # Match object from pipeline has Path property
     $RelPath = $Match.Path.Substring($RepoRoot.Path.Length + 1).Replace("\", "/")
     
-    # Strict Allowlist: ONLY services/stripe_client.py
-    if ($RelPath -ne "services/stripe_client.py") {
+    # Strict Allowlist: ONLY services/stripe_client.py and scripts/reconcile_stuck_orders.py (reads, not sets)
+    $Allowlist = @("services/stripe_client.py", "scripts/reconcile_stuck_orders.py")
+    if ($RelPath -notin $Allowlist) {
         Write-Host "FORBIDDEN: stripe.api_key set in $RelPath" -ForegroundColor Red
         $Failed = $true
     }
