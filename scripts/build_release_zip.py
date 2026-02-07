@@ -41,10 +41,10 @@ INCLUDE_DIRS = [
 # Root files (glob patterns) to include
 ROOT_PATTERNS = [
     "*.py",          # All python files (app.py, config.py, extensions.py, etc)
-    "alembic.ini",   # Essential for migrations
-    "requirements.txt",
-    "Procfile",
-    "runtime.txt"
+    "migrate.py",      # Canonical migration runner
+    "Procfile",        # Heroku/Railway entrypoint
+    "alembic.ini",     # DB Config
+    "requirements.txt", # Depencies
 ]
 
 # Patterns to ALWAYS EXCLUDE (even if in allowlist)
@@ -79,6 +79,8 @@ def run_command(cmd, cwd=None, env=None):
         cmd_env = os.environ.copy()
         if env:
             cmd_env.update(env)
+        
+        # Explicitly pass env to check_call
         subprocess.check_call(cmd, shell=True, cwd=cwd, env=cmd_env)
     except subprocess.CalledProcessError as e:
         print(f"❌ Command failed: {cmd}")
@@ -192,6 +194,7 @@ def validate_artifact(zip_path):
     1. Scan for forbidden patterns.
     2. Bytecode compile check.
     3. Import check.
+    4. Run check_release_clean.py on the extracted content.
     """
     print(f"[INFO] Validating artifact: {zip_path}")
     with tempfile.TemporaryDirectory() as temp_dir:
@@ -203,29 +206,48 @@ def validate_artifact(zip_path):
             print(f"[FAIL] Failed to extract zip: {e}")
             return False
 
-        # 2. Scan for forbidden
-        failure = False
-        for root, dirs, files in os.walk(temp_dir):
-            for item in dirs + files:
-                for pat in GLOBAL_EXCLUDES:
-                    # Strip * for simple substring checks if needed, but fnmatch is best
-                    if fnmatch.fnmatch(item, pat):
-                        # Some patterns like __pycache__ might sneak in if copytree failed
-                        print(f"[FAIL] FORBIDDEN FILE FOUND IN ARTIFACT: {item} (Matches {pat})")
-                        failure = True
+        # 2. Strict Cleanliness Check (using the script itself)
+        # We need to copy the check script into the temp dir OR run it from source against target path
+        # But check_release_clean.py checks CWD. So we change dir.
+        print("[LOCK] Running check_release_clean.py on artifact content...")
+        
+        # Copy the check script from source to temp_dir/scripts/check_release_clean.py
+        # because the artifact might not have scripts/ (depending on allowlist, actually we do include scripts/check_*.py)
+        # Let's ensure it's there or use the source one.
+        check_script_path = os.path.join(temp_dir, "scripts", "check_release_clean.py")
+        if not os.path.exists(check_script_path):
+             # Ensure scripts dir exists
+             os.makedirs(os.path.join(temp_dir, "scripts"), exist_ok=True)
+             shutil.copy("scripts/check_release_clean.py", check_script_path)
 
-        if failure:
+        try:
+            subprocess.check_call([sys.executable, check_script_path], cwd=temp_dir)
+            print("[OK] Cleanliness check passed.")
+        except subprocess.CalledProcessError:
+            print("[FAIL] Artifact is not clean (contains banned files).")
             return False
 
-        # 3. Syntax Check (compileall)
-        print("running compileall on artifact...")
+        # 3. Key operational files check
+        required_files = ["migrate.py", "alembic.ini", "Procfile", "extensions.py"]
+        missing = []
+        for f in required_files:
+            if not os.path.exists(os.path.join(temp_dir, f)):
+                missing.append(f)
+        
+        if missing:
+             print(f"[FAIL] Missing required operational files in artifact: {missing}")
+             return False
+
+        # 4. Syntax Check (compileall)
+        print("[LOCK] Running compileall on artifact...")
         try:
             subprocess.check_call(f"{sys.executable} -m compileall -q .", cwd=temp_dir, shell=True)
+            print("[OK] Syntax check passed.")
         except subprocess.CalledProcessError:
             print(f"[FAIL] Syntax check failed inside artifact.")
             return False
 
-        # 4. Import Check
+        # 5. Import Check
         if not verify_import(temp_dir):
             return False
 
@@ -248,15 +270,62 @@ def main():
         print("⚠️  WARNING: SKIPPING VALIDATION. THIS IS UNSAFE. DO NOT SHIP THIS.")
     else:
         # 1. Pre-Build Gate
+        # 1. Pre-Build Gate (Native Python Implementation)
         print("[LOCK] Running Pre-Build Gates...")
         
-        cmd = "bash scripts/release_acceptance.sh"
-        if args.allow_test_failures:
-            print("[WARN] Running with ALLOW_TEST_FAILURES=1 (--allow-test-failures)")
-            cmd += " --allow-test-failures"
-        
-        # Assuming script is run from project root
-        run_command(cmd)
+        # 1.1 Cleanliness
+        print("[LOCK] 1. Checking for repository cleanliness...")
+        try:
+            # Aggressive clean first
+            subprocess.run(["find", ".", "-type", "d", "-name", "__pycache__", "-exec", "rm", "-rf", "{}", "+"], stderr=subprocess.DEVNULL)
+            # Run check script
+            subprocess.check_call([sys.executable, "scripts/check_release_clean.py"])
+        except Exception as e:
+            print(f"[FAIL] Repository not clean: {e}")
+            sys.exit(1)
+
+        # 1.2 No Prints
+        print("[LOCK] 2. Checking for forbidden print() statements...")
+        try:
+            subprocess.check_call([sys.executable, "scripts/check_no_prints.py"])
+        except Exception as e:
+            print(f"[FAIL] Print statement check failed: {e}")
+            sys.exit(1)
+
+        # 1.3 Syntax
+        print("[LOCK] 3. Bytecode Compilation (Syntax Check)...")
+        try:
+             subprocess.check_call([sys.executable, "-m", "compileall", "-q", ".", "-x", r"(\.venv|\.git|__pycache__|tests/fixtures)"])
+             print("   [OK] Syntax OK")
+        except Exception as e:
+            print(f"[FAIL] Syntax check failed: {e}")
+            sys.exit(1)
+
+        # 1.4 Tests
+        print("[TEST] 4. Running Unit Tests...")
+        try:
+            # Check collect
+            proc = subprocess.run([sys.executable, "-m", "pytest", "--collect-only", "-q"], capture_output=True, text=True)
+            if "collected" not in proc.stdout and "collected" not in proc.stderr:
+                 print("[WARN] No tests collected via standard output check (might be silent).")
+            
+            # Run tests
+            subprocess.check_call([sys.executable, "-m", "pytest", "-q", "-m", "not slow"])
+            print("   [OK] Tests Passed")
+        except subprocess.CalledProcessError as e:
+            if args.allow_test_failures:
+                 print(f"[WARN] Tests FAILED (exit code {e.returncode}). ALLOW_TEST_FAILURES=1")
+            else:
+                 print(f"[FAIL] Tests FAILED (exit code {e.returncode}). Preventing release build.")
+                 sys.exit(1)
+
+        # 1.5 Migration Runner
+        print("[TEST] 5. Checking for canonical migration runner...")
+        if os.path.exists("migrate.py") and os.path.exists("alembic.ini"):
+             print("   [OK] migrate.py and alembic.ini found.")
+        else:
+             print("[FAIL] migrate.py or alembic.ini missing!")
+             sys.exit(1)
 
     project_root = os.getcwd()
     dist_dir = os.path.join(project_root, args.output_dir)

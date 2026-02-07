@@ -14,7 +14,7 @@ def check_release_clean():
     errors = []
     
     # Files to ban
-    banned_extensions = ['.log', '.sqlite', '.DS_Store']
+    banned_extensions = ['.log', '.sqlite', '.DS_Store', '.pyc', '.pyo', '.pyd']
     
     for dirpath, dirnames, filenames in os.walk(root):
         # Skip .git, envs
