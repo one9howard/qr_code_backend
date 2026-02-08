@@ -10,9 +10,11 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Environment Stage
-APP_STAGE = os.environ.get("APP_STAGE", "dev") # dev, staging, prod
+APP_STAGE = os.environ.get("APP_STAGE", "dev")  # dev, staging, prod
 FLASK_ENV = os.environ.get("FLASK_ENV", "development")
-IS_PRODUCTION = (FLASK_ENV == "production" or os.environ.get("RAILWAY_ENVIRONMENT") == "production")
+
+IS_DEPLOYED = (FLASK_ENV == "production")
+IS_LIVE_PROD = (APP_STAGE == "prod" or os.environ.get("RAILWAY_ENVIRONMENT") == "production")
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
