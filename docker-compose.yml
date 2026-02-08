@@ -14,6 +14,7 @@ services:
       - PUBLIC_BASE_URL=http://localhost:8080
       - STORAGE_BACKEND=local
       - SERVER_DOMAIN=localhost
+      - RUN_MIGRATIONS_ON_STARTUP=true
     volumes:
       - .:/app
     depends_on:
