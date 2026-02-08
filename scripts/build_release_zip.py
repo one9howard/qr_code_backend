@@ -279,89 +279,37 @@ def validate_artifact(zip_path):
         return True
 
 def run_pre_build_gates(allow_test_failures=False):
-    """Run all pre-build gates directly in Python to avoid shell environment issues."""
+    """Run all pre-build gates via the canonical acceptance runner."""
     print("========================================")
-    print("    RELEASE ACCEPTANCE GATES (Python Native)")
+    print("    RELEASE ACCEPTANCE GATES")
     print("========================================")
     
-    python = sys.executable
-    root = os.getcwd()
-
-    # Isolate bytecode during gates
-    with tempfile.TemporaryDirectory() as pycache_dir:
-        env = os.environ.copy()
-        env['PYTHONPYCACHEPREFIX'] = pycache_dir
-        env['PYTHONDONTWRITEBYTECODE'] = '1'
-
-        # 1. Cleanliness
-        print("[LOCK] 1. Checking for repository cleanliness...")
-        check_clean_path = os.path.join(root, "scripts", "check_release_clean.py")
-        if os.path.exists(check_clean_path):
-            subprocess.check_call([python, check_clean_path], cwd=root, env=env)
+    from pathlib import Path
+    
+    # The canonical runner is the ONLY place that defines the test sequence
+    acceptance_script = Path(__file__).resolve().parent / "release_acceptance.sh"
+    
+    if not acceptance_script.exists():
+        print(f"❌ CRITICAL: Canonical runner not found: {acceptance_script}")
+        sys.exit(1)
+    
+    try:
+        # Call the canonical runner - it handles everything
+        # Convert Windows path to Unix-style for bash (e.g., C:\foo\bar -> /c/foo/bar)
+        script_path = str(acceptance_script)
+        if os.name == 'nt':
+            # Convert 'C:\path\to\script' -> '/c/path/to/script'
+            script_path = script_path.replace('\\', '/')
+            if len(script_path) >= 2 and script_path[1] == ':':
+                script_path = '/' + script_path[0].lower() + script_path[2:]
+        subprocess.check_call(["bash", script_path], cwd=os.getcwd())
+    except subprocess.CalledProcessError as e:
+        if allow_test_failures:
+            print(f"   [WARN] Acceptance FAILED (exit code {e.returncode}), but continuing anyway (--allow-test-failures)")
         else:
-            print("   [WARN] scripts/check_release_clean.py not found! Skipping...")
-
-        # 2. No Prints
-        print("[LOCK] 2. Checking for forbidden print() statements...")
-        check_prints_path = os.path.join(root, "scripts", "check_no_prints.py")
-        if os.path.exists(check_prints_path):
-            subprocess.check_call([python, check_prints_path], cwd=root, env=env)
-        else:
-            print("   [FAIL] scripts/check_no_prints.py not found!")
-            sys.exit(1)
-
-        # 3. Syntax Check
-        print("[LOCK] 3. Syntax Verification (No Disk Write)...")
-        # Using ast.parse to check syntax without writing any artifacts to disk
-        check_syntax_script = (
-            "import ast, os, sys\n"
-            "errors = 0\n"
-            "root = '.'\n"
-            "for r, d, f in os.walk(root):\n"
-            "  if any(s in r for s in ['.git', '.venv', 'venv', 'node_modules', '__pycache__']): continue\n"
-            "  for file in f:\n"
-            "    if file.endswith('.py'):\n"
-            "      try:\n"
-            "        with open(os.path.join(r, file), 'rb') as f_in:\n"
-            "          ast.parse(f_in.read())\n"
-            "      except Exception as e:\n"
-            "        print(f'   [FAIL] Syntax error: {os.path.join(r, file)}: {e}')\n"
-            "        errors += 1\n"
-            "if errors: sys.exit(1)"
-        )
-        subprocess.check_call([python, "-c", check_syntax_script], cwd=root, env=env)
-        print("   [OK] Syntax Verification Passed")
-
-        # 4. Unit Tests
-        print("[TEST] 4. Running Unit Tests...")
-        # First check if pytest is installed
-        check_pytest_cmd = [python, "-c", "import pytest"]
-        try:
-            subprocess.check_call(check_pytest_cmd, cwd=root, env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        except subprocess.CalledProcessError:
-            print("   [FAIL] pytest NOT FOUND in current environment.")
-            print("          Please run: pip install -r requirements-test.txt")
-            sys.exit(1)
-
-        test_cmd = [python, "-m", "pytest", "-q", "-m", "not slow"]
-        try:
-            subprocess.check_call(test_cmd, cwd=root, env=env)
-        except subprocess.CalledProcessError as e:
-            if not allow_test_failures:
-                print(f"   [FAIL] Tests FAILED (exit code {e.returncode}). Preventing release build.")
-                sys.exit(e.returncode)
-            else:
-                print("   [WARN] Tests FAILED, but but continuing anyway (--allow-test-failures)")
-        print("   [OK] Tests Passed")
-
-        # 5. Migration Check
-        print("[TEST] 5. Checking for canonical migration runner...")
-        if os.path.exists(os.path.join(root, "migrate.py")) and os.path.exists(os.path.join(root, "alembic.ini")):
-            print("   [OK] migrate.py and alembic.ini found.")
-        else:
-            print("   [FAIL] Canonical migration runner (migrate.py) or config (alembic.ini) missing!")
-            sys.exit(1)
-
+            print(f"   [FAIL] Acceptance FAILED (exit code {e.returncode}). Preventing release build.")
+            sys.exit(e.returncode)
+    
     print("========================================")
     print("[OK] ALL ACCEPTANCE CHECKS PASSED")
     print("========================================\n")

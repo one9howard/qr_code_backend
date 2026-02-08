@@ -79,6 +79,26 @@ def check_specs_sync():
 
 if __name__ == "__main__":
     print("[Release Gate] Running safety checks...")
+    
+    # First, run the canonical acceptance tests
+    print("[Release Gate] Running acceptance tests...")
+    import subprocess
+    from pathlib import Path
+    acceptance_script = Path(__file__).resolve().parent / "release_acceptance.sh"
+    if acceptance_script.exists():
+        # Convert Windows path to Unix-style for bash
+        script_path = str(acceptance_script)
+        if os.name == 'nt':
+            script_path = script_path.replace('\\', '/')
+            if len(script_path) >= 2 and script_path[1] == ':':
+                script_path = '/' + script_path[0].lower() + script_path[2:]
+        result = subprocess.run(["bash", script_path], cwd=os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        if result.returncode != 0:
+            print("[Release Gate] FAILED: Acceptance tests did not pass.")
+            sys.exit(1)
+    else:
+        print(f"[Release Gate] WARNING: Canonical runner not found: {acceptance_script}")
+    
     success = True
     if not check_forbidden_files(): success = False
     if not check_fonts(): success = False

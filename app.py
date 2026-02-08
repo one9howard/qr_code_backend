@@ -127,7 +127,7 @@ def create_app(test_config=None):
             else:
                 logger.critical(f"[Startup] CRITICAL (Dev Ignored): {e}")
 
-    # Runtime migration removed - use 'python migrate_v2.py' instead
+    # Runtime migration removed - use 'python migrate.py' instead
     # with app.app_context():
     #     try:
     #         from services.migration import ensure_agent_columns

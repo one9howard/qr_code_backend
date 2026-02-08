@@ -1,60 +1,46 @@
-#!/bin/bash
-# Canonical Docker-based test runner for release acceptance.
-# This is the ONE source of truth for running tests in a reproducible environment.
-
+﻿#!/usr/bin/env bash
 set -euo pipefail
 
-echo "========================================"
-echo "  CANONICAL DOCKER TEST RUNNER"
-echo "========================================"
+# Canonical, un-bypassable acceptance runner.
+# This is the ONLY place that defines the release test sequence.
 
-# 1. Build web container with test dependencies
-echo "[1/4] Building web container with INSTALL_DEV=true..."
-docker compose build --no-cache --build-arg INSTALL_DEV=true web
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$ROOT_DIR"
 
-# 2. Start the database
-echo "[2/4] Starting database container..."
-docker compose up -d db
+WEB_SERVICE="${WEB_SERVICE:-web}"
+DB_SERVICE="${DB_SERVICE:-db}"
 
-# Wait for db to be healthy
-echo "      Waiting for database to be healthy..."
-RETRIES=30
-until docker compose exec -T db pg_isready -U postgres > /dev/null 2>&1 || [ $RETRIES -eq 0 ]; do
-  echo "      Waiting for postgres... ($RETRIES retries left)"
-  RETRIES=$((RETRIES-1))
-  sleep 1
-done
+# Prefer explicit TEST_DATABASE_URL; otherwise fall back to DATABASE_URL.
+# Keep this deterministic: we want the same DB name everywhere.
+TEST_DB_NAME="${TEST_DB_NAME:-insite_test}"
+TEST_DATABASE_URL="${TEST_DATABASE_URL:-${DATABASE_URL:-}}"
 
-if [ $RETRIES -eq 0 ]; then
-  echo "[FAIL] Database did not become healthy in time."
-  docker compose down
+if [[ -z "${TEST_DATABASE_URL}" ]]; then
+  echo "[Acceptance] ERROR: TEST_DATABASE_URL (or DATABASE_URL) is required."
+  echo "  Example: export TEST_DATABASE_URL=postgresql://postgres:postgres@localhost:5432/${TEST_DB_NAME}"
   exit 1
 fi
-echo "      Database is healthy."
 
-# 3. Reset and migrate test database
-echo "[3/4] Resetting and migrating test database..."
-docker compose run --rm web python scripts/reset_test_db.py
-docker compose run --rm web python migrate.py
+echo "[Acceptance] Building ${WEB_SERVICE} with dev deps..."
+docker compose build --no-cache --build-arg INSTALL_DEV=true "${WEB_SERVICE}"
 
-# 4. Run tests
-echo "[4/4] Running pytest..."
-docker compose run --rm web python -m pytest -q
-
-TEST_EXIT_CODE=$?
-
-# Cleanup
-echo "Cleaning up containers..."
-docker compose down
-
-if [ $TEST_EXIT_CODE -ne 0 ]; then
-  echo "========================================"
-  echo "[FAIL] Tests failed with exit code $TEST_EXIT_CODE"
-  echo "========================================"
-  exit $TEST_EXIT_CODE
+echo "[Acceptance] Starting ${DB_SERVICE}..."
+# --wait exists on newer compose; don't hard-require it.
+if docker compose up -d --wait "${DB_SERVICE}" 2>/dev/null; then
+  :
+else
+  docker compose up -d "${DB_SERVICE}"
 fi
 
-echo "========================================"
-echo "[OK] All tests passed!"
-echo "========================================"
-exit 0
+echo "[Acceptance] Running reset + migrate + pytest inside ${WEB_SERVICE}..."
+# Run as a single in-container shell so failures stop the whole chain.
+docker compose run --rm \
+  -e DATABASE_URL="${TEST_DATABASE_URL}" \
+  -e TEST_DB_NAME="${TEST_DB_NAME}" \
+  "${WEB_SERVICE}" \
+  bash -lc "set -euo pipefail \
+    && python scripts/reset_test_db.py \
+    && python migrate.py \
+    && python -m pytest -q"
+
+echo "[Acceptance] OK"
