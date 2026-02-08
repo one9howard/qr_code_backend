@@ -18,7 +18,7 @@ import urllib.parse
 
 # Preset CTA texts (Benefit Driven Check)
 CTA_MAP = {
-    'scan_for_details': 'SCAN FOR PHOTOS & PRICE',
+    'scan_for_details': 'SCAN FOR MORE INFO',
     'scan_to_view': 'SCAN TO VIEW LISTING',
     'scan_for_photos': 'SCAN FOR PHOTOS',
     'scan_to_schedule': 'SCAN TO SCHEDULE TOUR',
