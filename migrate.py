@@ -6,7 +6,8 @@ from dotenv import load_dotenv
 # Load .env before reading any environment variables
 # Note: override=False means existing env vars (e.g., from conftest.py) are preserved
 dotenv_path = os.path.join(os.path.dirname(__file__), '.env')
-if os.path.exists(dotenv_path):
+# R2: Enforce Hermeticity - Allow disabling .env loading
+if os.environ.get("DISABLE_DOTENV") != "1" and os.path.exists(dotenv_path):
     load_dotenv(override=False)
     print("[Manage] Loaded .env file")
 
