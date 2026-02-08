@@ -3,7 +3,6 @@ FROM python:3.13-slim
 # Prevent Python from writing pyc files and buffering stdout
 ENV PYTHONDONTWRITEBYTECODE=1 \
   PYTHONUNBUFFERED=1 \
-  FLASK_ENV=production \
   PORT=8080
 
 WORKDIR /app
