@@ -19,6 +19,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    ports:
+      - "5000:8080"
 
   db:
     image: postgres:16-alpine
