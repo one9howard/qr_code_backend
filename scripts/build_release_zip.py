@@ -23,6 +23,11 @@ import subprocess
 import argparse
 import tempfile
 import fnmatch
+import hashlib
+import getpass
+import socket
+import platform
+import json
 from datetime import datetime
 
 # --- CONFIGURATION ---
@@ -219,7 +224,7 @@ def _sha256_file(path: str) -> str:
 
 def write_release_manifest(stage_dir: str, project_root: str, zip_path: str) -> None:
     """Write RELEASE_MANIFEST.json into the staging directory."""
-    built_at_utc = datetime.datetime.utcnow().replace(microsecond=0).isoformat() + "Z"
+    built_at_utc = datetime.utcnow().replace(microsecond=0).isoformat() + "Z"
 
     git_sha = None
     try:
