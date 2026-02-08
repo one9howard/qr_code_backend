@@ -253,7 +253,14 @@ def submit():
                          except: pass
 
             full_url = property_scan_url(PUBLIC_BASE_URL, qr_code)
-            qr_key = generate_qr(full_url, qr_code)
+            
+            # P1.3: Use new QR generator
+            from utils.qr_image import render_qr_png
+            import io
+            qr_bytes = render_qr_png(full_url, size_px=1024)
+            
+            qr_key = f"qr/{qr_code}.png"
+            get_storage().put_file(io.BytesIO(qr_bytes), qr_key, content_type="image/png")
 
             # Determine Final Keys for PDF
             final_headshot_key = snapshot_photo_key if include_headshot else None

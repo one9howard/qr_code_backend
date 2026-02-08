@@ -1,7 +1,7 @@
 from flask import Flask, request, redirect, url_for
 from flask_login import LoginManager
 from flask_wtf.csrf import CSRFProtect
-from config import UPLOAD_DIR, PROPERTY_PHOTOS_DIR, SECRET_KEY, MAX_CONTENT_LENGTH, TRUST_PROXY_HEADERS, PROXY_FIX_NUM_PROXIES, IS_PRODUCTION, STRIPE_PRICE_MONTHLY, STRIPE_PRICE_ANNUAL, STRIPE_PUBLISHABLE_KEY, STRIPE_SECRET_KEY, APP_STAGE, SESSION_COOKIE_HTTPONLY, SESSION_COOKIE_SAMESITE, SESSION_COOKIE_SECURE, REMEMBER_COOKIE_HTTPONLY, REMEMBER_COOKIE_SECURE, PREFERRED_URL_SCHEME, STORAGE_BACKEND, INSTANCE_DIR
+from config import UPLOAD_DIR, PROPERTY_PHOTOS_DIR, SECRET_KEY, MAX_CONTENT_LENGTH, TRUST_PROXY_HEADERS, PROXY_FIX_NUM_PROXIES, IS_PRODUCTION, IS_STAGING, STRIPE_PRICE_MONTHLY, STRIPE_PRICE_ANNUAL, STRIPE_PUBLISHABLE_KEY, STRIPE_SECRET_KEY, APP_STAGE, SESSION_COOKIE_HTTPONLY, SESSION_COOKIE_SAMESITE, SESSION_COOKIE_SECURE, REMEMBER_COOKIE_HTTPONLY, REMEMBER_COOKIE_SECURE, PREFERRED_URL_SCHEME, STORAGE_BACKEND, INSTANCE_DIR
 from database import close_connection
 from models import User
 from extensions import limiter
@@ -91,14 +91,14 @@ def create_app(test_config=None):
             init_stripe(app)
         except Exception as e:
             logger.error(f"[BOOT-FATAL] Stripe Init Failed: {e}")
-            if app.config.get('APP_STAGE') in ('prod', 'staging'):
+            if IS_PRODUCTION or IS_STAGING:
                 raise e
 
     # --- FAIL-FAST PRICING CHECK ---
     with app.app_context():
         try:
             # Pragmatic Boot: Only Strict in Prod/Staging
-            is_strict = app.config.get('APP_STAGE') in ('prod', 'staging')
+            is_strict = IS_PRODUCTION or IS_STAGING
             
             if not app.config.get('STRIPE_SECRET_KEY'):
                 msg = "Missing STRIPE_SECRET_KEY."
@@ -121,7 +121,7 @@ def create_app(test_config=None):
 
         except Exception as e:
             # Fatal boot error
-            if app.config.get('APP_STAGE') in ('prod', 'staging'):
+            if IS_PRODUCTION or IS_STAGING:
                 logger.critical(f"[BOOT-FATAL] Configuration Error: {e}")
                 raise RuntimeError(f"Configuration Error: {e}")
             else:

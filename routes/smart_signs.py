@@ -13,6 +13,7 @@ from services.subscriptions import is_subscription_active
 from utils.storage import get_storage
 from services.events import track_event
 from services.pdf_smartsign import STYLE_MAP, CTA_MAP, generate_smartsign_pdf
+from utils.uploads import save_image_upload
 
 smart_signs_bp = Blueprint('smart_signs', __name__, url_prefix='/smart-signs')
 
@@ -105,35 +106,26 @@ def edit_smartsign(asset_id):
         ALLOWED_EXTS = {'.png', '.jpg', '.jpeg', '.webp'}
         
         # File Uploads with UUID keys
+        # File Uploads with secure utility
         if 'logo_file' in request.files:
             f = request.files['logo_file']
             if f and f.filename:
-                ext = os.path.splitext(f.filename)[1].lower()
-                if ext not in ALLOWED_EXTS:
-                    flash(f"Invalid logo file type: {ext}. Allowed: png, jpg, jpeg, webp", "error")
-                else:
-                    key = f"uploads/smartsign/{current_user.id}/{uuid.uuid4().hex}{ext}"
-                    try:
-                        storage.put_file(f, key)
-                        updates.append("logo_key=%s")
-                        params.append(key)
-                    except Exception as e:
-                        current_app.logger.error(f"Logo upload error: {e}")
+                try:
+                    key = save_image_upload(f, f"uploads/smartsign/{current_user.id}", "logo", validate_image=True)
+                    updates.append("logo_key=%s")
+                    params.append(key)
+                except ValueError as e:
+                    flash(f"Logo upload error: {str(e)}", "error")
                     
         if 'headshot_file' in request.files:
             f = request.files['headshot_file']
             if f and f.filename:
-                ext = os.path.splitext(f.filename)[1].lower()
-                if ext not in ALLOWED_EXTS:
-                    flash(f"Invalid headshot file type: {ext}. Allowed: png, jpg, jpeg, webp", "error")
-                else:
-                    key = f"uploads/smartsign/{current_user.id}/{uuid.uuid4().hex}{ext}"
-                    try:
-                        storage.put_file(f, key)
-                        updates.append("headshot_key=%s")
-                        params.append(key)
-                    except Exception as e:
-                        current_app.logger.error(f"Headshot upload error: {e}")
+                try:
+                    key = save_image_upload(f, f"uploads/smartsign/{current_user.id}", "headshot", validate_image=True)
+                    updates.append("headshot_key=%s")
+                    params.append(key)
+                except ValueError as e:
+                    flash(f"Headshot upload error: {str(e)}", "error")
 
         # Property Assignment
         property_id_str = request.form.get('property_id')
@@ -299,22 +291,20 @@ def create_smart_order():
     if request.files.get('headshot_file'):
         f = request.files['headshot_file']
         if f.filename:
-            ext = os.path.splitext(f.filename)[1].lower()
-            if ext not in ALLOWED_EXTS:
-                flash(f"Invalid headshot file type: {ext}. Allowed: png, jpg, jpeg, webp", "error")
+            try:
+                headshot_key = save_image_upload(f, f"uploads/smartsign/{current_user.id}", "headshot", validate_image=True)
+            except ValueError as e:
+                flash(f"Headshot error: {str(e)}", "error")
                 return redirect(url_for('smart_signs.order_start'))
-            k = f"uploads/smartsign/{current_user.id}/{uuid.uuid4().hex}{ext}"
-            headshot_key = storage.put_file(f, k)
             
     if request.files.get('logo_file'):
         f = request.files['logo_file']
         if f.filename:
-            ext = os.path.splitext(f.filename)[1].lower()
-            if ext not in ALLOWED_EXTS:
-                flash(f"Invalid logo file type: {ext}. Allowed: png, jpg, jpeg, webp", "error")
+            try:
+                logo_key = save_image_upload(f, f"uploads/smartsign/{current_user.id}", "logo", validate_image=True)
+            except ValueError as e:
+                flash(f"Logo error: {str(e)}", "error")
                 return redirect(url_for('smart_signs.order_start'))
-            k = f"uploads/smartsign/{current_user.id}/{uuid.uuid4().hex}{ext}"
-            logo_key = storage.put_file(f, k)
 
     # 3. Design Payload
     # License fields - normalize values

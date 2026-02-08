@@ -146,19 +146,21 @@ def fulfill_order(order_id):
         return False
 
 
+from constants import ORDER_STATUS_PRINT_FAILED
+
 def _persist_fulfillment_error(db, order_id, error_msg):
     """
     Persist fulfillment failure to DB for retry/alerting.
-    Sets status to 'fulfillment_failed' so it can be retried.
+    Sets status to ORDER_STATUS_PRINT_FAILED so it can be retried and remains 'paid'.
     """
     try:
         db.execute("""
             UPDATE orders 
-            SET status = 'fulfillment_failed',
+            SET status = %s,
                 fulfillment_error = %s,
                 updated_at = NOW()
             WHERE id = %s
-        """, (error_msg[:500], order_id))
+        """, (ORDER_STATUS_PRINT_FAILED, error_msg[:500], order_id))
         db.commit()
         logger.info(f"[Fulfillment] Persisted error for order {order_id}: {error_msg[:100]}")
     except Exception as db_err:

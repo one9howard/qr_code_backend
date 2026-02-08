@@ -282,4 +282,6 @@ MAX_CONTENT_LENGTH = 16 * 1024 * 1024
 # Feature Flags
 # -----------------------------------------------------------------------------
 ENABLE_SMART_RISER = get_env_bool("ENABLE_SMART_RISER", default=False)
+if IS_PRODUCTION or IS_STAGING:
+    ENABLE_SMART_RISER = False
 ENABLE_QR_LOGO = get_env_bool("ENABLE_QR_LOGO", default=False)

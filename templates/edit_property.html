@@ -35,6 +35,18 @@
                     style="background: rgba(0,0,0,0.2); border: 1px solid #444; color: white; width: 100%; padding: 10px; border-radius: 4px;">
             </div>
 
+            <div style="margin-top: 10px;">
+                <label style="display: block; color: #aaa; font-size: 0.8rem; margin-bottom: 4px;">Custom Redirection
+                    (Optional)</label>
+                <input type="url" name="custom_url" class="glass-input"
+                    placeholder="Redirect QR scans to external URL (e.g. https://my-site.com)"
+                    value="{{ property.custom_url or '' }}"
+                    style="background: rgba(0,0,0,0.2); border: 1px solid #444; color: white; width: 100%; padding: 10px; border-radius: 4px;">
+                <p style="color: #666; font-size: 0.8rem; margin-top: 2px;">
+                    Analytics will still be tracked in your dashboard.
+                </p>
+            </div>
+
             <!-- Image Management -->
             <div style="margin-top: 1.5rem; text-align: left;">
                 <h3 style="color: white; font-size: 1.1rem; margin-bottom: 1rem;">Property Images</h3>

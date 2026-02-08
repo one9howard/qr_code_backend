@@ -11,6 +11,7 @@ PAID_STATUSES = frozenset({
     ORDER_STATUS_PAID,
     ORDER_STATUS_SUBMITTED_TO_PRINTER,
     ORDER_STATUS_FULFILLED,
+    ORDER_STATUS_PRINT_FAILED,
 })
 
 # Sign Size Presets (inches to pixels for rendering)

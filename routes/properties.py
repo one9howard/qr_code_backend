@@ -13,7 +13,7 @@ from datetime import date
 from flask import Blueprint, render_template, abort, request, redirect, url_for, make_response
 from flask_login import login_required, current_user
 from database import get_db
-from config import IS_PRODUCTION
+from config import IS_PRODUCTION, IS_SECURE_ENV
 
 properties_bp = Blueprint('properties', __name__)
 
@@ -174,12 +174,15 @@ def qr_scan_redirect(code):
         referrer = (request.referrer or '')[:500]
         visitor_hash = compute_visitor_hash(ip_address, user_agent)
         
+        # Privacy: Redact raw PII (P1.2)
+        # We still compute hash for unique visitor counting.
+        
         db.execute(
             """INSERT INTO qr_scans 
                (property_id, ip_address, user_agent, utm_source, utm_medium, 
                 utm_campaign, referrer, visitor_hash, qr_variant_id, campaign_id, sign_asset_id) 
                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""",
-            (property_id, ip_address, user_agent, utm_source or None, 
+            (property_id, None, None, utm_source or None, 
              utm_medium or None, utm_campaign or None, referrer or None, 
              visitor_hash, variant_id, campaign_id, sign_asset_id)
         )
@@ -188,10 +191,17 @@ def qr_scan_redirect(code):
         import logging
         logging.getLogger(__name__).error(f"[Analytics] Error logging QR scan: {e}", exc_info=True)
     
-    # Create redirect response
-    response = make_response(
-        redirect(url_for('properties.property_page', slug=property_row['slug']))
-    )
+    # 4. Check for Custom URL Redirection
+    if property_row.get('custom_url'):
+        # Redirect to the custom URL
+        response = make_response(
+            redirect(property_row['custom_url'])
+        )
+    else:
+        # Default: Redirect to internal property page
+        response = make_response(
+            redirect(url_for('properties.property_page', slug=property_row['slug']))
+        )
     
     # Set signed attribution cookie ONLY for assigned SmartSign assets
     if sign_asset_id:
@@ -206,7 +216,7 @@ def qr_scan_redirect(code):
             max_age=SMART_ATTRIB_MAX_AGE,
             httponly=True,
             samesite='Lax',
-            secure=IS_PRODUCTION,
+            secure=IS_SECURE_ENV,
             path='/'
         )
     
@@ -254,7 +264,7 @@ def internal_agent_redirect(property_id):
         max_age=INTERNAL_VIEW_MAX_AGE,
         httponly=True,
         samesite='Lax',
-        secure=IS_PRODUCTION
+        secure=IS_SECURE_ENV
     )
     
     return response
@@ -381,7 +391,7 @@ def property_page(slug):
                 """INSERT INTO property_views 
                    (property_id, ip_address, user_agent, referrer, is_internal, source) 
                    VALUES (%s, %s, %s, %s, %s, %s)""",
-                (property_id, ip_address, user_agent, referrer or None, is_internal, source)
+                (property_id, None, None, referrer or None, is_internal, source)
             )
             db.commit()
         except Exception as db_err:

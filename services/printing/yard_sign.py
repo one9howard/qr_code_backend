@@ -60,9 +60,7 @@ def _format_price(price_val):
             # No digits found, return original
             return price_str
     except (ValueError, OverflowError):
-        # Yard Sign Constants (derived from specs usually, but internal to this generator)
-# Note: specs.py has YARD_SIGN_SIZES, but we handle specific logic here.
-        pass
+        return price_str
 
 
 def generate_yard_sign_pdf(order, output_path=None, output_key=None):
