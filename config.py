@@ -15,6 +15,7 @@ FLASK_ENV = os.environ.get("FLASK_ENV", "development")
 
 IS_DEPLOYED = (FLASK_ENV == "production")
 IS_LIVE_PROD = (APP_STAGE == "prod" or os.environ.get("RAILWAY_ENVIRONMENT") == "production")
+IS_PRODUCTION = IS_DEPLOYED  # Backward compatibility alias
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
