@@ -183,7 +183,7 @@ def mark_downloaded(job_id):
     db = get_db()
     
     # Check current status
-    row = db.execute("SELECT status FROM print_jobs WHERE job_id = %s", (job_id,)).fetchone()
+    row = db.execute("SELECT status, order_id FROM print_jobs WHERE job_id = %s", (job_id,)).fetchone()
     if not row:
         return jsonify({"error": "Job not found"}), 404
         
@@ -212,41 +212,60 @@ def mark_printed(job_id):
     """Mark job as printed (complete)."""
     if not check_auth():
         return jsonify({"error": "Unauthorized"}), 401
-        
+
     db = get_db()
-    
-    # 1. Verify current status (Transition Guard)
-    row = db.execute("SELECT status FROM print_jobs WHERE job_id = %s", (job_id,)).fetchone()
+
+    # 1. Load current state
+    row = db.execute(
+        "SELECT status, order_id FROM print_jobs WHERE job_id = %s",
+        (job_id,)
+    ).fetchone()
     if not row:
         return jsonify({"error": "Job not found"}), 404
-        
-    current_status = row['status']
-    
-    if current_status == 'printed':
-        return jsonify({"success": True, "note": "already_printed"})
-    
-    # Strict flow: should come from downloaded, but we allow claimed/queued for manual overrides
-    if current_status not in ('queued', 'claimed', 'downloaded'):
-        return jsonify({"error": f"Invalid transition from {current_status}"}), 400
 
-    # 2. Update Print Job
-    db.execute(
-        "UPDATE print_jobs SET status = 'printed', next_retry_at = NULL, printed_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP WHERE job_id = %s",
-        (job_id,)
-    )
-    
-    # 3. Update Order Reference (Resilient Lookup)
-    # Don't rely on provider_job_id, use the order_id from the job record we already verified.
-    # row['order_id'] is not currently selected, let's select it or just rely on the job_id FK if it exists?
-    # Print jobs have order_id column.
-    
-    order_id = db.execute("SELECT order_id FROM print_jobs WHERE job_id = %s", (job_id,)).fetchone()['order_id']
-    
-    db.execute('''
-        UPDATE orders 
-        SET status = %s, fulfilled_at = CURRENT_TIMESTAMP 
-        WHERE id = %s
-    ''', (ORDER_STATUS_FULFILLED, order_id))
-    
+    current_status = row["status"]
+    order_id = row["order_id"]
+    already_printed = (current_status == "printed")
+
+    # 2. Transition guard + idempotent update
+    if not already_printed:
+        # Strict flow: should come from downloaded, but we allow claimed/queued for manual overrides
+        if current_status not in ("queued", "claimed", "downloaded"):
+            return jsonify({
+                "error": "Invalid status transition",
+                "current_status": current_status,
+                "allowed_from": ["queued", "claimed", "downloaded"]
+            }), 400
+
+        db.execute(
+            "UPDATE print_jobs SET status = 'printed', printed_at = CURRENT_TIMESTAMP WHERE job_id = %s",
+            (job_id,)
+        )
+
+    # 3. Only mark the order fulfilled when ALL jobs are printed
+    remaining = db.execute(
+        "SELECT COUNT(*) AS remaining FROM print_jobs WHERE order_id = %s AND status != 'printed'",
+        (order_id,)
+    ).fetchone()["remaining"]
+
+    order_fulfilled = False
+    if remaining == 0:
+        db.execute(
+            "UPDATE orders SET status = %s, fulfilled_at = CURRENT_TIMESTAMP WHERE id = %s",
+            (ORDER_STATUS_FULFILLED, order_id)
+        )
+        order_fulfilled = True
+
     db.commit()
-    return jsonify({"success": True})
+
+    resp = {
+        "success": True,
+        "order_id": order_id,
+        "order_fulfilled": order_fulfilled,
+        "unprinted_remaining": int(remaining),
+    }
+    if already_printed:
+        resp["note"] = "already_printed"
+
+    return jsonify(resp)
+

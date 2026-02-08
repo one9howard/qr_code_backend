@@ -3,7 +3,7 @@ import logging
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-from config import IS_PRODUCTION
+from config import IS_PRODUCTION, IS_STAGING
 
 logger = logging.getLogger(__name__)
 
@@ -119,11 +119,17 @@ def send_verification_email(to_email, code):
     """
     Send verification code email.
     """
-    # Debug Helper: Log code in non-production OR staging
-    # Check APP_STAGE for staging environment
-    app_stage = os.environ.get("APP_STAGE", "").lower()
-    if not IS_PRODUCTION or app_stage == "staging":
-        logger.warning(f"[Notifications] DEBUG MODE: Verification Code for {to_email} is: {code}")
+    # Optional DEV-ONLY escape hatch while you wire SMTP.
+    #
+    # By default, verification codes are NEVER logged (including staging/prod).
+    # To enable locally, set: LOG_VERIFICATION_CODES=1
+    # To also allow in staging (not recommended), additionally set: LOG_VERIFICATION_CODES_ALLOW_STAGING=1
+    log_codes = os.environ.get("LOG_VERIFICATION_CODES") == "1"
+    if log_codes and not IS_PRODUCTION:
+        allow_staging = os.environ.get("LOG_VERIFICATION_CODES_ALLOW_STAGING") == "1"
+        if (not IS_STAGING) or allow_staging:
+            # Do not log the destination email (PII).
+            logger.warning("[Notifications] INSECURE DEV-ONLY OTP: %s", code)
 
     smtp_host = os.environ.get("SMTP_HOST")
     smtp_port = int(os.environ.get("SMTP_PORT", "587"))

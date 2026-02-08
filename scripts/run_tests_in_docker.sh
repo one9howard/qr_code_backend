@@ -39,11 +39,15 @@ echo "[Acceptance] Running reset + migrate + pytest inside ${WEB_SERVICE}..."
 docker compose run --rm \
   -e DATABASE_URL="${TEST_DATABASE_URL}" \
   -e TEST_DB_NAME="${TEST_DB_NAME}" \
-  -e DISABLE_DOTENV=1 \
   "${WEB_SERVICE}" \
   bash -lc "set -euo pipefail \
     && python scripts/reset_test_db.py \
-    && python migrate.py \
+    # Hermeticity check: ensure migrate.py does NOT load .env unless LOAD_DOTENV=1 \
+    && echo 'DATABASE_URL=postgresql://should_not_use' > .env \
+    && MIGRATE_LOG=$(python migrate.py 2>&1) \
+    && echo \"$MIGRATE_LOG\" \
+    && (echo \"$MIGRATE_LOG\" | grep -q \"Loaded .env file\" && echo \"[Acceptance] ERROR: migrate.py loaded .env unexpectedly\" && exit 1 || true) \
+    && rm -f .env \
     && python -m pytest -q"
 
 echo "[Acceptance] OK"

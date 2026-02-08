@@ -3,13 +3,18 @@ import sys
 import os
 from dotenv import load_dotenv
 
-# Load .env before reading any environment variables
-# Note: override=False means existing env vars (e.g., from conftest.py) are preserved
+# Optional .env loading (LOCAL DEV ONLY).
+#
+# By default, this script is hermetic and will NOT load .env.
+# For local development convenience, set: LOAD_DOTENV=1
+# Note: override=False preserves any explicitly-set environment variables.
 dotenv_path = os.path.join(os.path.dirname(__file__), '.env')
-# R2: Enforce Hermeticity - Allow disabling .env loading
-if os.environ.get("DISABLE_DOTENV") != "1" and os.path.exists(dotenv_path):
-    load_dotenv(override=False)
-    print("[Manage] Loaded .env file")
+if os.environ.get("LOAD_DOTENV") == "1":
+    if os.path.exists(dotenv_path):
+        load_dotenv(dotenv_path, override=False)
+        print("[Manage] Loaded .env file (LOAD_DOTENV=1)")
+    else:
+        print("[Manage] LOAD_DOTENV=1 but no .env file found")
 
 # Put this script in the root so it can import local modules
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))

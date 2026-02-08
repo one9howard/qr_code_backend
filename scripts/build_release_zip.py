@@ -186,6 +186,85 @@ except Exception as e:
             os.remove(script_path)
 
 
+
+
+FORBIDDEN_STAGE_DIRS = {"__pycache__", ".pytest_cache"}
+FORBIDDEN_STAGE_SUFFIXES = {".pyc", ".pyo"}
+
+def assert_hard_hygiene(stage_dir: str) -> None:
+    """Fail the build if any forbidden transient artifacts exist in the staged tree."""
+    offenders = []
+    for root, dirs, files in os.walk(stage_dir):
+        for d in dirs:
+            if d in FORBIDDEN_STAGE_DIRS:
+                offenders.append(os.path.join(root, d))
+        for f in files:
+            if any(f.endswith(s) for s in FORBIDDEN_STAGE_SUFFIXES):
+                offenders.append(os.path.join(root, f))
+    if offenders:
+        offenders = sorted({os.path.relpath(p, stage_dir) for p in offenders})
+        preview = "\n".join(offenders[:50])
+        raise RuntimeError(
+            "[HARD HYGIENE] Forbidden build artifacts found in staging dir:\n"
+            + preview
+            + ("\n..." if len(offenders) > 50 else "")
+        )
+
+def _sha256_file(path: str) -> str:
+    h = hashlib.sha256()
+    with open(path, "rb") as f:
+        for chunk in iter(lambda: f.read(1024 * 1024), b""):
+            h.update(chunk)
+    return h.hexdigest()
+
+def write_release_manifest(stage_dir: str, project_root: str, zip_path: str) -> None:
+    """Write RELEASE_MANIFEST.json into the staging directory."""
+    built_at_utc = datetime.datetime.utcnow().replace(microsecond=0).isoformat() + "Z"
+
+    git_sha = None
+    try:
+        git_sha = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=project_root).decode("utf-8").strip()
+    except Exception:
+        git_sha = None
+
+    files = []
+    total_bytes = 0
+    for root, _, fs in os.walk(stage_dir):
+        for name in fs:
+            full = os.path.join(root, name)
+            rel = os.path.relpath(full, stage_dir).replace("\\", "/")
+            size = os.path.getsize(full)
+            total_bytes += size
+            files.append({"path": rel, "size": size, "sha256": _sha256_file(full)})
+
+    files.sort(key=lambda x: x["path"])
+
+    tree_hash = hashlib.sha256()
+    for entry in files:
+        tree_hash.update(entry["path"].encode("utf-8") + b"\0" + entry["sha256"].encode("ascii") + b"\0")
+
+    manifest = {
+        "artifact_path": os.path.abspath(zip_path),
+        "built_at_utc": built_at_utc,
+        "source_git_sha": git_sha,
+        "builder": {
+            "user": getpass.getuser(),
+            "host": socket.gethostname(),
+            "platform": platform.platform(),
+            "python": sys.version.split()[0],
+        },
+        "staged_tree": {
+            "file_count": len(files),
+            "total_bytes": total_bytes,
+            "sha256": tree_hash.hexdigest(),
+        },
+        "files": files,
+    }
+
+    out_path = os.path.join(stage_dir, "RELEASE_MANIFEST.json")
+    with open(out_path, "w", encoding="utf-8") as f:
+        json.dump(manifest, f, indent=2, sort_keys=True)
+        f.write("\n")
 def validate_artifact(zip_path):
     """
     Unzips the artifact to a temp dir and performs strict validation.
@@ -380,6 +459,8 @@ def main():
     with tempfile.TemporaryDirectory() as staging_dir:
         print(f"[INFO] Staging files to {staging_dir}...")
         clean_tree(project_root, staging_dir)
+        assert_hard_hygiene(staging_dir)
+        write_release_manifest(staging_dir, project_root, zip_path)
         
         print(f"[INFO] Zipping to {zip_path}...")
         create_zip(staging_dir, zip_path)
