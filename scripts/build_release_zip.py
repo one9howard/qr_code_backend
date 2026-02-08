@@ -279,36 +279,63 @@ def validate_artifact(zip_path):
         return True
 
 def run_pre_build_gates(allow_test_failures=False):
-    """Run all pre-build gates via the canonical acceptance runner."""
+    """Run all pre-build gates via Docker."""
     print("========================================")
     print("    RELEASE ACCEPTANCE GATES")
     print("========================================")
     
-    from pathlib import Path
+    root = os.getcwd()
     
-    # The canonical runner is the ONLY place that defines the test sequence
-    acceptance_script = Path(__file__).resolve().parent / "release_acceptance.sh"
-    
-    if not acceptance_script.exists():
-        print(f"❌ CRITICAL: Canonical runner not found: {acceptance_script}")
-        sys.exit(1)
+    # Get settings from environment
+    web_service = os.environ.get('WEB_SERVICE', 'web')
+    db_service = os.environ.get('DB_SERVICE', 'db')
+    test_db_name = os.environ.get('TEST_DB_NAME', 'insite_test')
+    test_db_url = os.environ.get('TEST_DATABASE_URL') or os.environ.get('DATABASE_URL')
+    if not test_db_url:
+        test_db_url = f"postgresql://postgres:postgres@{db_service}:5432/{test_db_name}"
     
     try:
-        # Call the canonical runner - it handles everything
-        # Convert Windows path to Unix-style for bash (e.g., C:\foo\bar -> /c/foo/bar)
-        script_path = str(acceptance_script)
-        if os.name == 'nt':
-            # Convert 'C:\path\to\script' -> '/c/path/to/script'
-            script_path = script_path.replace('\\', '/')
-            if len(script_path) >= 2 and script_path[1] == ':':
-                script_path = '/' + script_path[0].lower() + script_path[2:]
-        subprocess.check_call(["bash", script_path], cwd=os.getcwd())
+        # Build with dev deps
+        print(f"[GATE] Building {web_service} with dev deps...")
+        subprocess.check_call(["docker", "compose", "build", "--build-arg", "INSTALL_DEV=true", web_service], cwd=root)
+        
+        # Start DB
+        print(f"[GATE] Starting {db_service}...")
+        subprocess.check_call(["docker", "compose", "up", "-d", db_service], cwd=root)
+        
+        # Wait for DB
+        print("[GATE] Waiting for database...")
+        import time
+        for _ in range(30):
+            result = subprocess.run(["docker", "compose", "exec", "-T", db_service, "pg_isready", "-U", "postgres"], 
+                                   cwd=root, capture_output=True)
+            if result.returncode == 0:
+                break
+            time.sleep(1)
+        
+        # Run tests in container
+        print("[GATE] Running reset + migrate + pytest...")
+        cmd = [
+            "docker", "compose", "run", "--rm",
+            "-e", f"DATABASE_URL={test_db_url}",
+            "-e", f"TEST_DB_NAME={test_db_name}",
+            web_service,
+            "bash", "-lc", "set -euo pipefail && python scripts/reset_test_db.py && python migrate.py && python -m pytest -q"
+        ]
+        subprocess.check_call(cmd, cwd=root)
+        
     except subprocess.CalledProcessError as e:
         if allow_test_failures:
             print(f"   [WARN] Acceptance FAILED (exit code {e.returncode}), but continuing anyway (--allow-test-failures)")
         else:
             print(f"   [FAIL] Acceptance FAILED (exit code {e.returncode}). Preventing release build.")
+            # Cleanup
+            subprocess.run(["docker", "compose", "down"], cwd=root, capture_output=True)
             sys.exit(e.returncode)
+    finally:
+        # Cleanup
+        print("[GATE] Cleaning up...")
+        subprocess.run(["docker", "compose", "down"], cwd=root, capture_output=True)
     
     print("========================================")
     print("[OK] ALL ACCEPTANCE CHECKS PASSED")
