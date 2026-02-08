@@ -124,7 +124,7 @@ PROXY_FIX_NUM_PROXIES = int(os.environ.get("PROXY_FIX_NUM_PROXIES", "1"))
 
 
 # Strict URL Validation for Production
-if IS_PRODUCTION:
+if IS_LIVE_PROD:
     if not os.getenv("PUBLIC_BASE_URL"):
          raise RuntimeError("CRITICAL: PUBLIC_BASE_URL environment variable is required in production.")
     
