@@ -10,7 +10,8 @@ services:
       - APP_STAGE=test
       - SECRET_KEY=test-secret-key
       - STRIPE_SECRET_KEY=sk_test_mock
-      - PUBLIC_BASE_URL=http://localhost:5000
+      - BASE_URL=http://localhost:8080
+      - PUBLIC_BASE_URL=http://localhost:8080
       - STORAGE_BACKEND=local
       - SERVER_DOMAIN=localhost
     volumes:
