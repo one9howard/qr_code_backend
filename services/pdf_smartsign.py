@@ -662,8 +662,13 @@ def _draw_elegant_serif(c, l, asset, user_id, base_url):
     c.drawCentredString(center_x, status_y, status_text)
     
     # 3. QR Code with Gold Border
-    qr_size = spec.get('qr_size', to_pt(5.0))
-    qr_y = l.height * 0.40
+    # User Request: Double the size
+    original_qr = spec.get('qr_size', to_pt(5.0))
+    qr_size = original_qr * 2.0
+    
+    # Re-center QR vertically since it's bigger now
+    # Center of layout roughly
+    qr_y = l.height * 0.45
     
     # Box Border
     pad = to_pt(0.2)
@@ -690,10 +695,17 @@ def _draw_elegant_serif(c, l, asset, user_id, base_url):
     c.drawCentredString(center_x, name_y, name_text)
     
     # CTA tiny below QR
-    cta_text = CTA_MAP.get(_read(asset, 'cta_key'), 'Scan for details')
+    cta_key = _read(asset, 'cta_key')
+    cta_text = CTA_MAP.get(cta_key, 'SCAN FOE DETAILS')
+    
     font_cta = spec['fonts']['cta']
     c.setFont(lu.FONT_SERIF, font_cta[0])
-    c.drawCentredString(center_x, qr_y - (box_size/2) - to_pt(0.4), cta_text)
+    
+    # Push further down from box
+    cta_padding = to_pt(0.8) 
+    cta_y = qr_y - (box_size/2) - cta_padding
+    
+    c.drawCentredString(center_x, cta_y, cta_text)
 
 
 def _draw_bold_frame(c, l, asset, user_id, base_url):

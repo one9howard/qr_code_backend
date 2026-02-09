@@ -16,7 +16,7 @@ MOCK_ASSET = {
     'agent_phone': '555-0199',
     'brokerage': 'Luxury Real Estate',
     'status_text': 'JUST LISTED',
-    'cta_key': 'scan_for_photos',
+    # 'cta_key': 'scan_for_photos', # Commented out to test defaults (e.g. "Scan for Details")
     'banner_color_id': 'navy',
     # 'headshot_key': ... (will fail gracefully if missing, which is fine for layout test)
 }
