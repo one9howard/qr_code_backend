@@ -61,6 +61,90 @@ import io
 
 logger = logging.getLogger(__name__)
 
+
+# =============================================================================
+# Text Fitting Utilities
+# =============================================================================
+
+def fit_text_single_line(c, text: str, max_width_pts: float, font_name: str, 
+                          max_font_size: float, min_font_size: float = 8) -> float:
+    """
+    Find the largest font size that fits text within max_width.
+    
+    Args:
+        c: ReportLab canvas (for stringWidth calculation)
+        text: Text to measure
+        max_width_pts: Maximum width in points
+        font_name: Font to use for measurement
+        max_font_size: Starting (maximum) font size
+        min_font_size: Minimum acceptable font size
+        
+    Returns:
+        The largest font size that fits, or min_font_size if text is too long.
+    """
+    from reportlab.pdfbase.pdfmetrics import stringWidth
+    
+    font_size = max_font_size
+    while font_size >= min_font_size:
+        width = stringWidth(text, font_name, font_size)
+        if width <= max_width_pts:
+            return font_size
+        font_size -= 1
+    return min_font_size
+
+
+def wrap_text_to_width(text: str, max_width_pts: float, font_name: str, 
+                        font_size: float, max_lines: int = 2) -> list[str]:
+    """
+    Wrap text to fit within a maximum width, returning a list of lines.
+    
+    Args:
+        text: Text to wrap
+        max_width_pts: Maximum width in points per line
+        font_name: Font name for measurement
+        font_size: Font size for measurement
+        max_lines: Maximum number of lines to return
+        
+    Returns:
+        List of text lines (capped at max_lines). 
+        Last line is truncated with "..." if text overflows.
+    """
+    from reportlab.pdfbase.pdfmetrics import stringWidth
+    
+    words = text.split()
+    if not words:
+        return []
+    
+    lines = []
+    current_line = []
+    
+    for word in words:
+        test_line = ' '.join(current_line + [word])
+        if stringWidth(test_line, font_name, font_size) <= max_width_pts:
+            current_line.append(word)
+        else:
+            if current_line:
+                lines.append(' '.join(current_line))
+                if len(lines) >= max_lines:
+                    # Truncate with ellipsis
+                    last = lines[-1]
+                    while stringWidth(last + '...', font_name, font_size) > max_width_pts and len(last) > 5:
+                        last = last[:-1].rstrip()
+                    lines[-1] = last + '...'
+                    return lines
+                current_line = [word]
+            else:
+                # Single word too long, just add it (will overflow)
+                lines.append(word)
+                if len(lines) >= max_lines:
+                    return lines
+                current_line = []
+    
+    if current_line and len(lines) < max_lines:
+        lines.append(' '.join(current_line))
+    
+    return lines
+
 def draw_qr(c, qr_value: str, x, y, size, *, user_id: int | None = None, **kwargs):
     """
     Draw a QR code at (x, y) with dimension `size` x `size`.

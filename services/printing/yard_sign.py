@@ -1,9 +1,15 @@
 """
-Listing Sign PDF Generator
+Yard Sign PDF Generator
 
-Generates print-ready PDFs for listing signs.
+Generates print-ready PDFs for yard signs.
 Always produces 2 pages (front/back) for double-sided printing.
 Returns storage key (not local path).
+
+Layout ID Mapping (legacy -> canonical):
+  - listing_v2_phone_qr_premium -> yard_phone_qr_premium
+  - listing_v2_address_qr_premium -> yard_address_qr_premium  
+  - listing_modern_round -> yard_modern_round
+  - listing_standard -> yard_standard
 """
 import io
 import logging
@@ -180,11 +186,19 @@ def generate_yard_sign_pdf(order, output_path=None, output_key=None):
     layout = LayoutSpec(size_config['width_in'], size_config['height_in'])
     
     # Layout ID Dispatch
-    layout_id = get_val(order, 'layout_id') or 'listing_modern_round'
+    layout_id = get_val(order, 'layout_id') or 'yard_modern_round'
     
-    # Handle legacy 'listing_standard' fallback if passed explicitly
-    if layout_id in ('listing_standard', 'yard_standard', 'smart_v1_photo_banner'):
-        layout_id = 'listing_modern_round'
+    # Canonical Layout ID Mapping (accept legacy names, use canonical internally)
+    LAYOUT_ALIASES = {
+        'listing_standard': 'yard_modern_round',
+        'yard_standard': 'yard_modern_round',
+        'smart_v1_photo_banner': 'yard_modern_round',
+        'listing_modern_round': 'yard_modern_round',
+        'yard_modern_round': 'yard_modern_round',
+    }
+    
+    if layout_id in LAYOUT_ALIASES:
+        layout_id = LAYOUT_ALIASES[layout_id]
 
     # Generate PDF in memory
     pdf_buffer = io.BytesIO()
@@ -213,7 +227,7 @@ def generate_yard_sign_pdf(order, output_path=None, output_key=None):
         elif layout_id in ('yard_address_qr_premium', 'listing_v2_address_qr_premium'):
              _draw_yard_address_qr_premium(c, layout, **args_v2)
 
-        elif layout_id == 'listing_modern_round':
+        elif layout_id == 'yard_modern_round':
              _draw_modern_round_layout(
                 c, layout, address, beds, baths, sqft, price,
                 agent_name, brokerage, agent_email, agent_phone,

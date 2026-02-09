@@ -41,15 +41,14 @@ SMART_SIGN_LAYOUTS = (
 
 YARD_SIGN_LAYOUTS = (
     'yard_standard',
-    'yard_photo',
-    'yard_agent_brand',
-    'listing_standard',
-    'listing_v2_phone_qr_premium',
-    'listing_v2_address_qr_premium',
-    # New Standard Names (2026-02-06)
+    'yard_modern_round',
     'yard_phone_qr_premium',
     'yard_address_qr_premium',
-    'listing_modern_round'
+    # Legacy aliases (accepted for backward compatibility)
+    'listing_standard',
+    'listing_modern_round',
+    'listing_v2_phone_qr_premium',
+    'listing_v2_address_qr_premium',
 )
 
 # Strict Color Palette (ID -> Hex)

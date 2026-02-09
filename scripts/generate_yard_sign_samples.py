@@ -60,12 +60,11 @@ def run_test(mock_get_storage, mock_get_db):
     mock_conn.execute.side_effect = side_effect_execute
     mock_storage.put_file = MagicMock()
 
-    # Layouts to test
-    # (Checking listing_ variants as they are currently used in yard_sign.py)
+    # Layouts to test (using canonical yard_* naming)
     layouts = [
-        'listing_standard',
-        'listing_v2_phone_qr_premium',
-        'listing_v2_address_qr_premium'
+        'yard_standard',
+        'yard_phone_qr_premium',
+        'yard_address_qr_premium'
     ]
     
     sizes = ['18x24', '36x24']

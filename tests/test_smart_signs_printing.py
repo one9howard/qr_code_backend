@@ -51,6 +51,24 @@ class TestSmartSignsPrinting(unittest.TestCase):
             (self.pro_id,)
         ).fetchone()
         self.order_id = order_row['id']
+        
+        # Create second order for frozen asset
+        order_row2 = db.execute(
+            """INSERT INTO orders (user_id, status, order_type, created_at)
+               VALUES (%s, 'paid', 'sign', NOW())
+               RETURNING id""",
+            (self.pro_id,)
+        ).fetchone()
+        self.order_id_2 = order_row2['id']
+        
+        # Create third order for basic asset
+        order_row3 = db.execute(
+            """INSERT INTO orders (user_id, status, order_type, created_at)
+               VALUES (%s, 'paid', 'sign', NOW())
+               RETURNING id""",
+            (self.pro_id,)
+        ).fetchone()
+        self.order_id_3 = order_row3['id']
 
         # Create Assets
         # 1. Active Pro Asset
@@ -62,21 +80,21 @@ class TestSmartSignsPrinting(unittest.TestCase):
         ).fetchone()
         self.active_asset_id = row['id']
         
-        # 2. Frozen Asset
+        # 2. Frozen Asset (now with order_id)
         row = db.execute(
-            """INSERT INTO sign_assets (user_id, code, label, created_at, activated_at, is_frozen)
-               VALUES (%s, 'FRZtest', 'Frozen Asset', NOW(), NOW(), TRUE)
+            """INSERT INTO sign_assets (user_id, code, label, created_at, activated_at, is_frozen, order_id)
+               VALUES (%s, 'FRZtest', 'Frozen Asset', NOW(), NOW(), TRUE, %s)
                RETURNING id""",
-            (self.pro_id,)
+            (self.pro_id, self.order_id_2)
         ).fetchone()
         self.frozen_asset_id = row['id']
         
-        # 3. Basic Asset (Same user, but we will mock accessing as basic user)
+        # 3. Basic Asset (now with order_id)
         row = db.execute(
-            """INSERT INTO sign_assets (user_id, code, label, created_at, activated_at, is_frozen)
-               VALUES (%s, 'BSCtest', 'Basic Asset', NOW(), NOW(), FALSE)
+            """INSERT INTO sign_assets (user_id, code, label, created_at, activated_at, is_frozen, order_id)
+               VALUES (%s, 'BSCtest', 'Basic Asset', NOW(), NOW(), FALSE, %s)
                RETURNING id""",
-            (self.pro_id,)
+            (self.pro_id, self.order_id_3)
         ).fetchone()
         self.basic_asset_id = row['id']
         

@@ -24,6 +24,7 @@ def test_tour_scheduling_link_render(client, app):
         # Setup data
         # 1. Create User
         db.execute("INSERT INTO users (email, password_hash, subscription_status) VALUES ('agent@test.com', 'hash', 'active')")
+        db.commit()
         user = db.execute("SELECT * FROM users WHERE email='agent@test.com'").fetchone()
         
         # 2. Create Agent with Scheduling URL
@@ -31,6 +32,7 @@ def test_tour_scheduling_link_render(client, app):
             "INSERT INTO agents (user_id, name, email, scheduling_url, brokerage) VALUES (%s, 'Test Agent', 'agent@test.com', 'https://calendly.com/test', 'Test Brokerage')",
             (user['id'],)
         )
+        db.commit()
         agent = db.execute("SELECT * FROM agents WHERE user_id=%s", (user['id'],)).fetchone()
         
         # 3. Create Property
@@ -38,6 +40,7 @@ def test_tour_scheduling_link_render(client, app):
             "INSERT INTO properties (agent_id, address, slug, created_at, virtual_tour_url) VALUES (%s, '123 Test St', 'test-prop', '2025-01-01', 'https://matterport.com/test')",
             (agent['id'],)
         )
+        db.commit()
         
     # Request page
     response = client.get('/p/test-prop')
@@ -59,6 +62,7 @@ def test_free_tier_hides_virtual_tour(client, app):
         db = get_db()
         # 1. Create Free User
         db.execute("INSERT INTO users (email, password_hash, subscription_status) VALUES ('free@test.com', 'hash', 'free')")
+        db.commit()
         user = db.execute("SELECT * FROM users WHERE email='free@test.com'").fetchone()
         
         # 2. Create Agent
@@ -71,6 +75,7 @@ def test_free_tier_hides_virtual_tour(client, app):
             "INSERT INTO properties (agent_id, address, slug, created_at, virtual_tour_url) VALUES (%s, '456 Free St', 'free-prop', '2025-01-01', 'https://matterport.com/secret')",
             (agent['id'],)
         )
+        db.commit()
         
     response = client.get('/p/free-prop')
     assert response.status_code == 200
