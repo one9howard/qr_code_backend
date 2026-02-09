@@ -14,6 +14,7 @@ from utils.qr_vector import draw_vector_qr
 from utils.storage import get_storage
 from config import PUBLIC_BASE_URL
 from utils.qr_urls import property_scan_url
+import utils.pdf_text as pdf_text
 from services.printing.layout_utils import (
     register_fonts, 
     draw_identity_block,
@@ -918,17 +919,28 @@ def _draw_modern_round_layout(c, layout, address, beds, baths, sqft, price,
            fill=1, stroke=0)
 
     # 2. Header (Address)
-    c.setFont(FONT_BOLD, layout.address_font)
+    # Use robust fitting
     c.setFillColorRGB(*COLOR_TEXT)
-    c.drawCentredString(layout.width / 2, layout.header_y, address.upper())
+    pdf_text.draw_fitted_block(
+        c, address.upper(), 
+        0, layout.header_y - (layout.address_font/2), 
+        layout.width, layout.address_font * 1.5,
+        FONT_BOLD, layout.address_font, min_font_size=12,
+        max_lines=2
+    )
 
     # 3. Features (Beds/Baths)
-    c.setFont(FONT_MED, layout.features_font)
     c.setFillColorRGB(*COLOR_SUBTEXT)
     features_line = f"{beds} BEDS  |  {baths} BATHS"
     if sqft:
         features_line += f"  |  {sqft} SQ FT"
-    c.drawCentredString(layout.width / 2, layout.features_y, features_line)
+    
+    pdf_text.draw_single_line_fitted(
+        c, features_line, 
+        layout.width / 2, layout.features_y, 
+        layout.width * 0.9,
+        FONT_MED, layout.features_font, min_font_size=10
+    )
 
     # 4. QR Code (Central Feature with Accent Ring)
     
@@ -974,25 +986,35 @@ def _draw_modern_round_layout(c, layout, address, beds, baths, sqft, price,
         display_price = price if "$" in str(price) else f"${price}"
         price_y = layout.features_y - (layout.features_font * 1.5)
         
+        # Calculate fit first
+        price_font_size = pdf_text.fit_font_size_single_line(
+            display_price, FONT_BOLD, 
+            layout.width * 0.6, layout.price_font * 0.8, min_font_size=16
+        )
+        
         # Draw Pill Background
-        c.setFont(FONT_BOLD, layout.price_font * 0.8)
-        price_w = c.stringWidth(display_price, FONT_BOLD, layout.price_font * 0.8)
-        pill_pad = layout.price_font * 0.4
+        c.setFont(FONT_BOLD, price_font_size)
+        price_w = c.stringWidth(display_price, FONT_BOLD, price_font_size)
+        pill_pad = price_font_size * 0.6
         pill_w = price_w + (pill_pad * 2)
-        pill_h = layout.price_font * 1.2
+        pill_h = price_font_size * 1.6
         
         c.setFillColorRGB(*COLOR_ACCENT)
         # RoundRect centered
-        c.roundRect((layout.width/2) - (pill_w/2), price_y - (pill_h * 0.3), pill_w, pill_h, pill_h/2, fill=1, stroke=0)
+        c.roundRect((layout.width/2) - (pill_w/2), price_y - (pill_h * 0.35), pill_w, pill_h, pill_h/2, fill=1, stroke=0)
         
         c.setFillColorRGB(1, 1, 1) # White text
         c.drawCentredString(layout.width / 2, price_y, display_price)
 
     # 6. CTA (Bottom of QR)
-    c.setFont(FONT_BOLD, layout.cta_font)
     c.setFillColorRGB(*COLOR_TEXT)
     cta_y = qr_y - (layout.cta_font * 2)
-    c.drawCentredString(layout.width / 2, cta_y, "SCAN FOR DETAILS")
+    pdf_text.draw_single_line_fitted(
+        c, "SCAN FOR DETAILS",
+        layout.width / 2, cta_y,
+        layout.width * 0.8,
+        FONT_BOLD, layout.cta_font, min_font_size=12
+    )
 
     # 7. Identity Block (Footer)
     # Using shared identity block

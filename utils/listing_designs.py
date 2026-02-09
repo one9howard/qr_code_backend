@@ -8,6 +8,7 @@ from reportlab.lib.utils import ImageReader
 from reportlab.lib.colors import HexColor
 
 import services.printing.layout_utils as lu
+import utils.pdf_text as pdf_text
 from utils.pdf_generator import hex_to_rgb, draw_qr, LayoutSpec
 from utils.storage import get_storage
 from config import BASE_URL
@@ -64,19 +65,26 @@ def _draw_yard_phone_qr_premium(c, layout, address, beds, baths, sqft, price,
         _draw_qr_safe(c, url, qr_x, qr_y, qr_size, user_id)
         
         # CTA
-        c.setFont(lu.FONT_SCRIPT, w * 0.08)
         c.setFillColorRGB(*COLOR_TEXT)
-        c.drawCentredString(w/2, qr_y - (w * 0.08), "Scan for details")
+        pdf_text.draw_single_line_fitted(
+            c, "Scan for details", 
+            w/2, qr_y - (w * 0.08), 
+            w * 0.8,
+            lu.FONT_SCRIPT, w * 0.08, min_font_size=12
+        )
         
         # 3. Giant Phone (Lower Middle)
         phone_y_center = h * 0.35
         phone_fmt = lu.format_phone(agent_phone)
         
         # Fits HUGE
-        phone_size = lu.fit_text_one_line(c, phone_fmt, lu.FONT_BOLD, w * 0.9, w * 0.18, w * 0.10)
-        c.setFont(lu.FONT_BOLD, phone_size)
-        c.setFillColorRGB(*accent_rgb) # Use accent for phone? Or Black? User said "Giant Sans Bold".
-        c.drawCentredString(w/2, phone_y_center, phone_fmt)
+        c.setFillColorRGB(*accent_rgb)
+        pdf_text.draw_single_line_fitted(
+            c, phone_fmt, 
+            w/2, phone_y_center, 
+            w * 0.95,
+            lu.FONT_BOLD, w * 0.18, min_font_size=24
+        )
         
         # 4. Agent Identity (Bottom)
         # Use Identity Block
@@ -121,9 +129,13 @@ def _draw_yard_phone_qr_premium(c, layout, address, beds, baths, sqft, price,
         _draw_qr_safe(c, url, qr_x, qr_y, qr_size, user_id)
         
         # CTA
-        c.setFont(lu.FONT_SCRIPT, h * 0.06)
         c.setFillColorRGB(*COLOR_TEXT)
-        c.drawCentredString(qr_x + qr_size/2, qr_y - (h * 0.08), "Scan for details")
+        pdf_text.draw_single_line_fitted(
+            c, "Scan for details",
+            qr_x + qr_size/2, qr_y - (h * 0.08),
+            col_w * 0.9,
+            lu.FONT_SCRIPT, h * 0.06, min_font_size=12
+        )
         
         # Col 2: Status + Phone
         c.setFillColorRGB(*accent_rgb)
@@ -131,9 +143,12 @@ def _draw_yard_phone_qr_premium(c, layout, address, beds, baths, sqft, price,
         c.drawCentredString(w/2, h * 0.7, status_text.upper())
         
         phone_fmt = lu.format_phone(agent_phone)
-        p_size = lu.fit_text_one_line(c, phone_fmt, lu.FONT_BOLD, col_w * 0.95, h * 0.12, h * 0.08)
-        c.setFont(lu.FONT_BOLD, p_size)
-        c.drawCentredString(w/2, h * 0.5, phone_fmt)
+        pdf_text.draw_single_line_fitted(
+            c, phone_fmt,
+            w/2, h * 0.5,
+            col_w * 1.2, # Use more space since it's centered
+            lu.FONT_BOLD, h * 0.12, min_font_size=20
+        )
         
         # License line?
         if license_number:
@@ -152,12 +167,20 @@ def _draw_yard_phone_qr_premium(c, layout, address, beds, baths, sqft, price,
         
         # Name
         c.setFillColorRGB(*COLOR_TEXT)
-        c.setFont(lu.FONT_SCRIPT, h * 0.07) # User said "Script name"
-        c.drawCentredString(col_w/2, photo_y - (h*0.06), agent_name)
+        pdf_text.draw_single_line_fitted(
+            c, agent_name,
+            col_w/2, photo_y - (h*0.06),
+            col_w * 0.9,
+            lu.FONT_SCRIPT, h * 0.07, min_font_size=14
+        )
         
         # Brokerage below
-        c.setFont(lu.FONT_MED, h * 0.03)
-        c.drawCentredString(col_w/2, photo_y - (h*0.10), brokerage.upper())
+        pdf_text.draw_single_line_fitted(
+            c, brokerage.upper(),
+            col_w/2, photo_y - (h*0.12),
+            col_w * 0.9,
+            lu.FONT_MED, h * 0.035, min_font_size=10
+        )
         
         # Separators
         c.setStrokeColorRGB(0.9, 0.9, 0.9)
@@ -205,35 +228,40 @@ def _draw_yard_address_qr_premium(c, layout, address, beds, baths, sqft, price,
     # Top 30% of body
     addr_y = body_h * 0.85
     
-    # Parse city/state/zip from address string? 
-    # Usually `address` arg is just street line.
-    # Property row has city/state. `listing_sign.py` only passes `address`.
-    # User said "Address giant... city/state smaller".
-    # We might not have city/state passed in args!
-    # Update `listing_sign.py` to pass them? Or extract from address if it contains it?
-    # Usually `address` = "123 Main St".
-    # I'll check kwargs or assume address string might be full.
-    # If not available, just draw address.
-    
     city = kwargs.get('city', '')
     state_val = kwargs.get('state', '') # This is property state
     
     c.setFillColorRGB(*COLOR_TEXT)
     
     # Fit Address (Serif)
-    addr_size = lu.fit_text_one_line(c, address.upper(), lu.FONT_SERIF, w * 0.9, body_h * 0.15, body_h * 0.08)
-    c.setFont(lu.FONT_SERIF, addr_size)
-    c.drawCentredString(w/2, addr_y, address.upper())
+    # Allow 2 lines if needed using draw_fitted_block?
+    # User said "Giant Address".
+    # draw_fitted_block calculates Y from center, so we need to be careful with positioning.
+    # Let's define a box
+    
+    addr_box_h = body_h * 0.25
+    addr_box_y = body_h - addr_box_h - (body_h * 0.05)
+    
+    pdf_text.draw_fitted_block(
+        c, address.upper(),
+        w * 0.05, addr_box_y, w * 0.9, addr_box_h,
+        lu.FONT_SERIF, body_h * 0.15, min_font_size=24,
+        max_lines=2
+    )
     
     # City/State
-    sub_y = addr_y - addr_size * 1.2
+    sub_y = addr_box_y - (body_h * 0.02)
     if city and state_val:
         sub_txt = f"{city}, {state_val}"
-        c.setFont(lu.FONT_MED, addr_size * 0.4)
-        c.drawCentredString(w/2, sub_y, sub_txt.upper())
+        pdf_text.draw_single_line_fitted(
+            c, sub_txt.upper(),
+            w/2, sub_y,
+            w * 0.8,
+            lu.FONT_MED, body_h * 0.05, min_font_size=12
+        )
     
     # QR Code (Center of remaining space)
-    remaining_top = sub_y - (addr_size * 0.5)
+    remaining_top = sub_y - (body_h * 0.05)
     remaining_h = remaining_top
     
     qr_size = min(w * 0.5, remaining_h * 0.7)
@@ -246,8 +274,13 @@ def _draw_yard_address_qr_premium(c, layout, address, beds, baths, sqft, price,
     _draw_qr_safe(c, url, qr_x, qr_y, qr_size, user_id)
     
     # CTA
-    c.setFont(lu.FONT_SCRIPT, qr_size * 0.15)
-    c.drawCentredString(w/2, qr_y - (qr_size * 0.15), "Scan for details")
+    c.setFillColorRGB(*COLOR_TEXT)
+    pdf_text.draw_single_line_fitted(
+        c, "Scan for details",
+        w/2, qr_y - (qr_size * 0.15),
+        w * 0.8,
+        lu.FONT_SCRIPT, qr_size * 0.15, min_font_size=12
+    )
     
     # License Line
     if license_number:
