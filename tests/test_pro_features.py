@@ -73,25 +73,24 @@ class TestAnalyticsService(unittest.TestCase):
     def test_analytics_module_exists(self):
         """Analytics module should be importable."""
         try:
-            from services.analytics import get_dashboard_analytics
-            self.assertIsNotNone(get_dashboard_analytics)
+            from services.analytics import per_agent_rollup
+            self.assertIsNotNone(per_agent_rollup)
         except ImportError:
             self.fail("Could not import analytics service")
     
     def test_analytics_returns_expected_keys(self):
         """Analytics should return expected data structure."""
-        from services.analytics import get_dashboard_analytics
+        from services.analytics import per_agent_rollup
         from app import app
         
         with app.app_context():
             # Call with agent_id that may not exist - should not crash
-            result = get_dashboard_analytics(99999)
+            result = per_agent_rollup(99999)
             
-            self.assertIn('leads_over_time', result)
-            self.assertIn('conversion_rate', result)
-            self.assertIn('top_properties', result)
-            self.assertIn('total_leads_30d', result)
-            self.assertIn('total_views_30d', result)
+            self.assertIn('scans', result)
+            self.assertIn('views', result)
+            self.assertIn('leads', result)
+            self.assertIn('ctas', result)
 
 
 if __name__ == "__main__":

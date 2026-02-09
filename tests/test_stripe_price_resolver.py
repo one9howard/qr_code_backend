@@ -17,7 +17,7 @@ def test_resolve_price_id_calls_fail_if_no_cache_and_no_patch(block_stripe):
     """
     # Assuming app is in test mode (APP_STAGE=test set by pytest usually? Need to be sure)
     # The code checks APP_STAGE or FLASK_ENV.
-    with patch.dict('os.environ', {'APP_STAGE': 'test'}):
+    with patch('services.stripe_price_resolver.APP_STAGE', 'test'):
         with pytest.raises(RuntimeError, match="Stripe network call attempted in TEST mode"):
             resolve_price_id("missing_key")
 

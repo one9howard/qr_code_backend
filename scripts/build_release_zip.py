@@ -403,63 +403,28 @@ def validate_artifact(zip_path, project_root):
         return True
 
 def run_pre_build_gates(project_root: str, allow_test_failures: bool = False):
-    """Run all pre-build gates via Docker."""
+    """Run all pre-build gates via Docker using the canonical shell script."""
     print("========================================")
     print("    RELEASE ACCEPTANCE GATES")
     print("========================================")
     
-    root = project_root
-    
-    # Get settings from environment
-    web_service = os.environ.get('WEB_SERVICE', 'web')
-    db_service = os.environ.get('DB_SERVICE', 'db')
-    test_db_name = os.environ.get('TEST_DB_NAME', 'insite_test')
-    test_db_url = os.environ.get('TEST_DATABASE_URL') or os.environ.get('DATABASE_URL')
-    if not test_db_url:
-        test_db_url = f"postgresql://postgres:postgres@{db_service}:5432/{test_db_name}"
+    # Use the canonical shell script
+    # This ensures that what we test in CI/Dev is EXACTLY what gates the release.
+    # We use a relative path with forward slashes to ensure compatibility with bash on Windows.
+    script_path = "scripts/run_tests_in_docker.sh"
     
     try:
-        # Build with dev deps
-        print(f"[GATE] Building {web_service} with dev deps...")
-        subprocess.check_call(["docker", "compose", "build", "--build-arg", "INSTALL_DEV=true", web_service], cwd=root)
-        
-        # Start DB
-        print(f"[GATE] Starting {db_service}...")
-        subprocess.check_call(["docker", "compose", "up", "-d", db_service], cwd=root)
-        
-        # Wait for DB
-        print("[GATE] Waiting for database...")
-        import time
-        for _ in range(30):
-            result = subprocess.run(["docker", "compose", "exec", "-T", db_service, "pg_isready", "-U", "postgres"], 
-                                   cwd=root, capture_output=True)
-            if result.returncode == 0:
-                break
-            time.sleep(1)
-        
-        # Run tests in container
-        print("[GATE] Running reset + migrate + pytest...")
-        cmd = [
-            "docker", "compose", "run", "--rm",
-            "-e", f"DATABASE_URL={test_db_url}",
-            "-e", f"TEST_DB_NAME={test_db_name}",
-            web_service,
-            "bash", "-lc", "set -euo pipefail && python scripts/reset_test_db.py && python migrate.py && python -m pytest -q"
-        ]
-        subprocess.check_call(cmd, cwd=root)
+        # We invoke via bash to ensure it runs even if +x is missing on Windows/host
+        print(f"[GATE] Executing canonical test runner: {script_path}")
+        subprocess.check_call(["bash", script_path], cwd=project_root)
         
     except subprocess.CalledProcessError as e:
         if allow_test_failures:
             print(f"   [WARN] Acceptance FAILED (exit code {e.returncode}), but continuing anyway (--allow-test-failures)")
         else:
             print(f"   [FAIL] Acceptance FAILED (exit code {e.returncode}). Preventing release build.")
-            # Cleanup
-            subprocess.run(["docker", "compose", "down"], cwd=root, capture_output=True)
+            # The script cleanup should have handled itself, but just in case we exit hard.
             sys.exit(e.returncode)
-    finally:
-        # Cleanup
-        print("[GATE] Cleaning up...")
-        subprocess.run(["docker", "compose", "down"], cwd=root, capture_output=True)
     
     print("========================================")
     print("[OK] ALL ACCEPTANCE CHECKS PASSED")

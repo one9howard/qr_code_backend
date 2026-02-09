@@ -43,13 +43,22 @@ class TestSmartSignsPrinting(unittest.TestCase):
         
         db.commit()
         
+        # Create Dummy Order for Active Asset
+        order_row = db.execute(
+            """INSERT INTO orders (user_id, status, order_type, created_at)
+               VALUES (%s, 'paid', 'sign', NOW())
+               RETURNING id""",
+            (self.pro_id,)
+        ).fetchone()
+        self.order_id = order_row['id']
+
         # Create Assets
         # 1. Active Pro Asset
         row = db.execute(
-            """INSERT INTO sign_assets (user_id, code, label, created_at, activated_at, is_frozen, brand_name)
-               VALUES (%s, 'PROtest', 'Active Asset', NOW(), NOW(), FALSE, 'Old Brand')
+            """INSERT INTO sign_assets (user_id, code, label, created_at, activated_at, is_frozen, brand_name, order_id)
+               VALUES (%s, 'PROtest', 'Active Asset', NOW(), NOW(), FALSE, 'Old Brand', %s)
                RETURNING id""",
-            (self.pro_id,)
+            (self.pro_id, self.order_id)
         ).fetchone()
         self.active_asset_id = row['id']
         
@@ -75,8 +84,10 @@ class TestSmartSignsPrinting(unittest.TestCase):
 
     def tearDown(self):
         db = get_db()
-        db.execute("DELETE FROM sign_assets WHERE user_id = %s", (self.pro_id,))
+        # Delete agents first to satisfy FK
         db.execute("DELETE FROM agents WHERE user_id = %s", (self.pro_id,))
+        db.execute("DELETE FROM orders WHERE user_id = %s", (self.pro_id,))
+        db.execute("DELETE FROM sign_assets WHERE user_id = %s", (self.pro_id,))
         db.execute("DELETE FROM users WHERE id = %s", (self.pro_id,))
         db.commit()
         self.app_context.pop()
@@ -136,6 +147,7 @@ class TestSmartSignsPrinting(unittest.TestCase):
         
         # Verify DB update in Real DB
         db = get_db()
+        # Use fetchall to clear results
         asset = db.execute(
             "SELECT * FROM sign_assets WHERE id=%s", (self.active_asset_id,)
         ).fetchone()

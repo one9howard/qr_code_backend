@@ -23,6 +23,7 @@ def app():
     from app import app as flask_app
     flask_app.config['TESTING'] = True
     flask_app.config['WTF_CSRF_ENABLED'] = False
+    flask_app.config['SERVER_NAME'] = 'localhost:8080'
     return flask_app
 
 

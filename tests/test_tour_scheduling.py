@@ -28,7 +28,7 @@ def test_tour_scheduling_link_render(client, app):
         
         # 2. Create Agent with Scheduling URL
         db.execute(
-            "INSERT INTO agents (user_id, name, email, scheduling_url) VALUES (%s, 'Test Agent', 'agent@test.com', 'https://calendly.com/test')",
+            "INSERT INTO agents (user_id, name, email, scheduling_url, brokerage) VALUES (%s, 'Test Agent', 'agent@test.com', 'https://calendly.com/test', 'Test Brokerage')",
             (user['id'],)
         )
         agent = db.execute("SELECT * FROM agents WHERE user_id=%s", (user['id'],)).fetchone()

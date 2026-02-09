@@ -34,6 +34,9 @@ else
   docker compose up -d "${DB_SERVICE}"
 fi
 
+# Ensure .env exists so docker compose doesn't fail mounting it
+touch .env
+
 echo "[Acceptance] Running reset + migrate + pytest inside ${WEB_SERVICE}..."
 # Run as a single in-container shell so failures stop the whole chain.
 docker compose run --rm \

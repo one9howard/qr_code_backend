@@ -98,46 +98,60 @@ def test_pdf_with_agent_photo_has_one_image():
     from utils.pdf_generator import generate_pdf_sign
     import tempfile
     from PIL import Image
+    from unittest.mock import patch, MagicMock
+    import io
     
     with tempfile.TemporaryDirectory() as tmpdir:
-        # Create a dummy agent photo
-        photo_path = os.path.join(tmpdir, "agent.jpg")
+        # Create a dummy agent photo in memory
         img = Image.new('RGB', (200, 200), color='blue')
-        img.save(photo_path, 'JPEG')
+        img_bytes = io.BytesIO()
+        img.save(img_bytes, format='JPEG')
+        img_bytes.seek(0)
         
-        pdf_path = generate_pdf_sign(
-            address="789 Photo Test Blvd",
-            beds="5",
-            baths="4",
-            sqft="3000",
-            price="$1,200,000",
-            agent_name="Photo Test Agent",
-            brokerage="Photo Test Brokerage",
-            agent_email="photo@example.com",
-            agent_phone="555-9999",
-            qr_path=None,
-            agent_photo_path=photo_path,  # Include agent photo
-            sign_color="#1F6FEB",
-            sign_size="18x24",
-            order_id=None,
-            qr_value="https://example.com/r/phototest",
-        )
-        
-        assert pdf_path is not None
-        assert os.path.exists(pdf_path)
-        
-        import fitz
-        doc = fitz.open(pdf_path)
-        
-        total_images = 0
-        for page in doc:
-            total_images += len(page.get_images(full=True))
-        
-        doc.close()
-        
-        # Should have exactly 1 image (the agent photo)
-        # QR should NOT add any images
-        assert total_images == 1, (
-            f"Expected 1 image (agent photo), got {total_images}. "
-            "QR should be vector, not adding to image count."
-        )
+        # Mock storage to return this image
+        with patch('utils.pdf_generator.get_storage') as mock_get_storage:
+            mock_storage = MagicMock()
+            mock_get_storage.return_value = mock_storage
+            
+            # When PDF generator calls storage.get_file('mock_headshot_key')
+            mock_storage.exists.return_value = True
+            mock_storage.get_file.return_value = img_bytes
+            
+            pdf_path = generate_pdf_sign(
+                address="789 Photo Test Blvd",
+                beds="5",
+                baths="4",
+                sqft="3000",
+                price="$1,200,000",
+                agent_name="Photo Test Agent",
+                brokerage="Photo Test Brokerage",
+                agent_email="photo@example.com",
+                agent_phone="555-9999",
+                qr_path=None,
+                # Pass mocked key instead of path
+                agent_photo_key="mock_headshot_key",
+                return_path=True, # Force return path (legacy mode trigger)
+                sign_color="#1F6FEB",
+                sign_size="18x24",
+                order_id=None,
+                qr_value="https://example.com/r/phototest",
+            )
+            
+            assert pdf_path is not None
+            assert os.path.exists(pdf_path)
+            
+            import fitz
+            doc = fitz.open(pdf_path)
+            
+            total_images = 0
+            for page in doc:
+                total_images += len(page.get_images(full=True))
+            
+            doc.close()
+            
+            # Should have exactly 1 image (the agent photo)
+            # QR should NOT add any images
+            assert total_images == 1, (
+                f"Expected 1 image (agent photo), got {total_images}. "
+                "QR should be vector, not adding to image count."
+            )
