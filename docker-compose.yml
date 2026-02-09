@@ -4,12 +4,13 @@ services:
       context: .
       args:
         - INSTALL_DEV=true
+    env_file:
+      - .env
+      - .env.local
     environment:
       - DATABASE_URL=postgresql://postgres:postgres@db:5432/insite_test
       - FLASK_ENV=testing
       - APP_STAGE=test
-      - SECRET_KEY=test-secret-key
-      - STRIPE_SECRET_KEY=sk_test_mock
       - BASE_URL=http://localhost:8080
       - PUBLIC_BASE_URL=http://localhost:8080
       - STORAGE_BACKEND=local
