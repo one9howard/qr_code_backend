@@ -47,7 +47,8 @@ def test_smartsign_pdf_generation(app):
         # The function returns the STORAGE KEY, not the bytes
         pdf_key = generate_smartsign_pdf(payload)
         assert isinstance(pdf_key, str)
-        assert pdf_key.endswith('_smart.pdf')
+        # Defaults to 'smart_v1_minimal' layout
+        assert pdf_key.endswith('_smart_v1_minimal.pdf')
         
         # Verify what was put into storage
         args, kwargs = mock_storage.put_file.call_args
