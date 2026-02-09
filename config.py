@@ -126,7 +126,11 @@ if IS_STAGING or IS_PRODUCTION:
 # -----------------------------------------------------------------------------
 DATABASE_URL = os.getenv("DATABASE_URL")
 if not DATABASE_URL:
-    raise RuntimeError("DATABASE_URL environment variable is required.")
+    if os.environ.get("ALLOW_MISSING_DB"):
+        logger.warning("DATABASE_URL missing but ALLOW_MISSING_DB set. Using dummy.")
+        DATABASE_URL = "sqlite:///:memory:"
+    else:
+        raise RuntimeError("DATABASE_URL environment variable is required.")
 
 # Normalize postgres:// -> postgresql://
 if DATABASE_URL.startswith("postgres://"):

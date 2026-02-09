@@ -20,6 +20,9 @@ import json
 from pathlib import Path
 from datetime import datetime
 
+# Allow running without DB config
+os.environ["ALLOW_MISSING_DB"] = "1"
+
 # Add project root to path
 PROJECT_ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
@@ -282,6 +285,7 @@ def render_yard_sign(layout_id: str, size: str, sample: dict) -> bytes:
         )
         
     elif layout_id in ('yard_phone_qr_premium', 'yard_address_qr_premium'):
+
         from utils.listing_designs import _draw_yard_phone_qr_premium, _draw_yard_address_qr_premium
         from utils.pdf_generator import LayoutSpec
         layout = LayoutSpec(width_in, height_in)

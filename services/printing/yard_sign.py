@@ -175,7 +175,7 @@ def generate_yard_sign_pdf(order, output_path=None, output_key=None):
         qr_code = prop_row.get('qr_code')
         if not qr_code:
              # Critical Failure for Phase 1
-             raise ValueError(f"Property {prop_row['id']} has no qr_code. Cannot generate valid Listing Sign.")
+             raise ValueError(f"Property {prop_row['id']} has no qr_code. Cannot generate valid Yard Sign.")
     
     qr_url = property_scan_url(PUBLIC_BASE_URL, qr_code)
     
