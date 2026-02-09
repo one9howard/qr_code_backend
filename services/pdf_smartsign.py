@@ -950,6 +950,11 @@ def _draw_agent_brand(c, l, asset, user_id, base_url):
 def _draw_photo_banner(c, l, asset, user_id, base_url):
     """Legacy Photo Banner - Updated to use Fonts/PublicURL but keep layout."""
     spec = l.layout_spec
+    # Fallback: if spec is None, get from SPECS directly with 18x24 default
+    if spec is None:
+        spec = SPECS.get(l.size_key, SPECS['18x24']).get('smart_v1_photo_banner')
+        if spec is None:
+            spec = SPECS['18x24']['smart_v1_photo_banner']
     margin = l.safe_margin
 
     # Top Band Color
