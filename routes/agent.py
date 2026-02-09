@@ -62,6 +62,14 @@ def submit():
                 flash("Invalid virtual tour URL. Must be a valid HTTPS URL.", "error")
                 return render_template("submit.html", agent_data=None), 400
 
+            # Custom URL (QR redirect override)
+            raw_custom_url = request.form.get("custom_url", "")
+            custom_url = normalize_https_url(raw_custom_url) if raw_custom_url else None
+            
+            if raw_custom_url and not custom_url:
+                flash("Invalid Custom URL. Must be a valid HTTPS URL.", "error")
+                return render_template("submit.html", agent_data=None), 400
+
             # Extract sign customization options
             sign_color = request.form.get("sign_color", DEFAULT_SIGN_COLOR)
             layout_id = request.form.get("layout_id", "listing_modern_round")
@@ -218,11 +226,11 @@ def submit():
             
             cursor.execute(
                 """
-                INSERT INTO properties (agent_id, address, beds, baths, sqft, price, description, created_at, expires_at, virtual_tour_url)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                INSERT INTO properties (agent_id, address, beds, baths, sqft, price, description, created_at, expires_at, virtual_tour_url, custom_url)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 RETURNING id
                 """,
-                (agent_id, address, beds, baths, sqft, price, description, current_time, expires_at, virtual_tour_url),
+                (agent_id, address, beds, baths, sqft, price, description, current_time, expires_at, virtual_tour_url, custom_url),
             )
             property_id = cursor.fetchone()['id']
 
