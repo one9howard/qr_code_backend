@@ -15,6 +15,7 @@ from utils.storage import get_storage
 from config import PUBLIC_BASE_URL
 from utils.qr_urls import property_scan_url
 import utils.pdf_text as pdf_text
+from utils.yard_tokens import SAFE_MARGIN, BLEED, TYPE_SCALE_MODERN, SPACING, QR_MIN_SIZE, QR_QUIET_ZONE_FACTOR
 from services.printing.layout_utils import (
     register_fonts, 
     draw_identity_block,
@@ -894,20 +895,35 @@ def _draw_landscape_brand(c, layout, address, beds, baths, sqft, price,
 
 
 def _draw_modern_round_layout(c, layout, address, beds, baths, sqft, price,
-                              agent_name, brokerage, agent_email, agent_phone,
-                              qr_key, agent_photo_key, sign_color, qr_value=None,
-                              agent_photo_path=None, user_id=None, logo_key=None):
+                                  agent_name, brokerage, agent_email, agent_phone,
+                                  qr_key, agent_photo_key, sign_color, qr_value=None,
+                                  agent_photo_path=None, user_id=None, logo_key=None):
     """
-    Modern Round Layout:
-    - Clean white background
-    - Rounded aesthetics
-    - Brand color accent ring around QR
-    - "SCAN FOR DETAILS" CTA
-    - Inter Typography
+    Dispatcher for Modern Round Layout (Portrait vs Landscape).
+    Ensures deliberate composition for each orientation.
     """
-    # Colors
+    if layout.width > layout.height:
+        _draw_modern_round_landscape(c, layout, address, beds, baths, sqft, price,
+                                     agent_name, brokerage, agent_email, agent_phone,
+                                     qr_key, agent_photo_key, sign_color, qr_value,
+                                     agent_photo_path, user_id, logo_key)
+    else:
+        _draw_modern_round_portrait(c, layout, address, beds, baths, sqft, price,
+                                    agent_name, brokerage, agent_email, agent_phone,
+                                    qr_key, agent_photo_key, sign_color, qr_value,
+                                    agent_photo_path, user_id, logo_key)
+
+def _draw_modern_round_portrait(c, layout, address, beds, baths, sqft, price,
+                                agent_name, brokerage, agent_email, agent_phone,
+                                qr_key, agent_photo_key, sign_color, qr_value=None,
+                                agent_photo_path=None, user_id=None, logo_key=None):
+    """
+    Portrait Implementation:
+    - Stacked Hierarchy: Address > Features > Price > QR > Identity
+    - Safe Margins preserved
+    """
     COLOR_ACCENT = hex_to_rgb(sign_color)
-    COLOR_TEXT = (0.1, 0.1, 0.1) # Soft black
+    COLOR_TEXT = (0.1, 0.1, 0.1)
     COLOR_SUBTEXT = (0.4, 0.4, 0.4)
     COLOR_BG = (1, 1, 1)
 
@@ -918,122 +934,269 @@ def _draw_modern_round_layout(c, layout, address, beds, baths, sqft, price,
            layout.height + 2*layout.bleed, 
            fill=1, stroke=0)
 
-    # 2. Header (Address)
-    # Use robust fitting
+    # 2. Header (Address) - Hero
     c.setFillColorRGB(*COLOR_TEXT)
+    
+    # Calculate usable width
+    content_width = layout.width - (2 * SAFE_MARGIN)
+    
+    # Address at top (10% padding from top margin)
+    addr_y = layout.height - SAFE_MARGIN - SPACING['md']
+    
+    # Measure and draw address (Max 2 lines)
     pdf_text.draw_fitted_block(
-        c, address.upper(), 
-        0, layout.header_y - (layout.address_font/2), 
-        layout.width, layout.address_font * 1.5,
-        FONT_BOLD, layout.address_font, min_font_size=12,
-        max_lines=2
+        c, address.upper(),
+        SAFE_MARGIN, addr_y - (layout.address_font * 2), # Approx height
+        content_width, layout.address_font * 2.5,
+        FONT_BOLD, layout.address_font, min_font_size=TYPE_SCALE_MODERN['address']['min'],
+        align='center', max_lines=2
     )
 
-    # 3. Features (Beds/Baths)
-    c.setFillColorRGB(*COLOR_SUBTEXT)
-    features_line = f"{beds} BEDS  |  {baths} BATHS"
-    if sqft:
-        features_line += f"  |  {sqft} SQ FT"
+    # 3. Features (Below Address)
+    features_y = addr_y - (layout.address_font * 2.5) - SPACING['sm']
+    features_parts = []
+    if beds: features_parts.append(f"{beds} BEDS")
+    if baths: features_parts.append(f"{baths} BATHS")
+    if sqft: features_parts.append(f"{sqft} SQ FT")
     
-    pdf_text.draw_single_line_fitted(
-        c, features_line, 
-        layout.width / 2, layout.features_y, 
-        layout.width * 0.9,
-        FONT_MED, layout.features_font, min_font_size=10
-    )
+    if features_parts:
+        features_line = "  •  ".join(features_parts)
+        c.setFillColorRGB(*COLOR_SUBTEXT)
+        pdf_text.draw_single_line_fitted(
+            c, features_line,
+            layout.width / 2, features_y,
+            content_width,
+            FONT_MED, layout.features_font, min_font_size=TYPE_SCALE_MODERN['features']['min']
+        )
 
-    # 4. QR Code (Central Feature with Accent Ring)
-    
-    # Calculate Center
-    qr_center_y = layout.height * 0.58
-    qr_size = layout.width * 0.55
-    
-    # Draw Accent Ring (Circle)
-    ring_radius = (qr_size / 2) * 1.15
-    c.setFillColorRGB(*COLOR_ACCENT)
-    c.circle(layout.width / 2, qr_center_y, ring_radius, fill=1, stroke=0)
-    
-    # Draw Inner White Circle
-    inner_radius = (qr_size / 2) * 1.05
-    c.setFillColorRGB(1, 1, 1)
-    c.circle(layout.width / 2, qr_center_y, inner_radius, fill=1, stroke=0)
-
-    # Resolve URL
-    if qr_value:
-        qr_url = qr_value
-    elif qr_key:
-        filename = os.path.basename(qr_key)
-        code_part = os.path.splitext(filename)[0]
-        qr_url = property_scan_url(PUBLIC_BASE_URL, code_part)
-    else:
-        qr_url = "https://example.com"
-
-    # Draw QR
-    qr_x = (layout.width - qr_size) / 2
-    qr_y = qr_center_y - (qr_size / 2)
-    
-    try:
-        draw_qr(c, qr_url, qr_x, qr_y, qr_size, user_id=user_id, ecc_level="H")
-    except Exception as e:
-        logger.error(f"QR Error: {e}")
-
-    # 5. Price (Pill Style over QR bottom or just text?)
-    # Design spec: "Sign Color as Brand Accent"
-    # Let's put Price above QR or below Features?
-    # Let's put Price below Features for visibility
-    
+    # 4. Price (Pill below features)
+    price_y = features_y - layout.features_font - SPACING['md']
     if price:
         display_price = price if "$" in str(price) else f"${price}"
-        price_y = layout.features_y - (layout.features_font * 1.5)
         
-        # Calculate fit first
-        price_font_size = pdf_text.fit_font_size_single_line(
+        # Calculate fit
+        font_sz = pdf_text.fit_font_size_single_line(
             display_price, FONT_BOLD, 
-            layout.width * 0.6, layout.price_font * 0.8, min_font_size=16
+            content_width * 0.6, TYPE_SCALE_MODERN['price']['max'], 
+            min_font_size=TYPE_SCALE_MODERN['price']['min']
         )
         
-        # Draw Pill Background
-        c.setFont(FONT_BOLD, price_font_size)
-        price_w = c.stringWidth(display_price, FONT_BOLD, price_font_size)
-        pill_pad = price_font_size * 0.6
-        pill_w = price_w + (pill_pad * 2)
-        pill_h = price_font_size * 1.6
+        # Pill Dimensions
+        c.setFont(FONT_BOLD, font_sz)
+        p_w = c.stringWidth(display_price, FONT_BOLD, font_sz)
+        pill_pad_x = SPACING['sm'] * 2
+        pill_pad_y = SPACING['xs'] * 1.5
+        pill_w = p_w + (pill_pad_x * 2)
+        pill_h = font_sz + (pill_pad_y * 2)
         
+        # Background
         c.setFillColorRGB(*COLOR_ACCENT)
-        # RoundRect centered
-        c.roundRect((layout.width/2) - (pill_w/2), price_y - (pill_h * 0.35), pill_w, pill_h, pill_h/2, fill=1, stroke=0)
+        # Center pill
+        pill_x = (layout.width - pill_w) / 2
+        pill_y_bottom = price_y - (pill_h / 2)
+        c.roundRect(pill_x, pill_y_bottom, pill_w, pill_h, pill_h/2, fill=1, stroke=0)
         
-        c.setFillColorRGB(1, 1, 1) # White text
-        c.drawCentredString(layout.width / 2, price_y, display_price)
+        # Text
+        c.setFillColorRGB(1, 1, 1)
+        c.drawCentredString(layout.width / 2, price_y - (font_sz * 0.35), display_price)
 
-    # 6. CTA (Bottom of QR)
+    # 5. QR Code (Center-Bottom)
+    # Available vertical space: Price bottom to Footer top
+    footer_top = layout.footer_height + SAFE_MARGIN
+    qr_area_top = price_y - SPACING['lg']
+    qr_center_y = (qr_area_top + footer_top) / 2
+    
+    # Ensure min size and safe margins
+    max_qr_h = qr_area_top - footer_top - SPACING['md']
+    qr_size = min(layout.width * 0.6, max_qr_h, QR_MIN_SIZE * 2.0) # Cap at decent size
+    
+    # Ring
+    c.setFillColorRGB(*COLOR_ACCENT)
+    c.circle(layout.width / 2, qr_center_y, (qr_size/2) * 1.15, fill=1, stroke=0)
+    c.setFillColorRGB(1, 1, 1)
+    c.circle(layout.width / 2, qr_center_y, (qr_size/2) * 1.05, fill=1, stroke=0)
+    
+    qr_url = resolve_qr_url(qr_value, qr_key)
+    qr_x = (layout.width - qr_size) / 2
+    qr_y_pos = qr_center_y - (qr_size / 2)
+    
+    safe_draw_qr(c, qr_url, qr_x, qr_y_pos, qr_size, user_id)
+    
+    # CTA (Below QR, overlaying ring slightly or just below?)
+    # "SCAN FOR DETAILS"
     c.setFillColorRGB(*COLOR_TEXT)
-    cta_y = qr_y - (layout.cta_font * 2)
+    cta_y = qr_y_pos - SPACING['md']
     pdf_text.draw_single_line_fitted(
         c, "SCAN FOR DETAILS",
         layout.width / 2, cta_y,
-        layout.width * 0.8,
+        content_width * 0.8,
+        FONT_BOLD, layout.cta_font, min_font_size=TYPE_SCALE_MODERN['cta']['min']
+    )
+
+    # 6. Identity Footer
+    _draw_modern_footer(c, layout, agent_name, brokerage, agent_phone, sign_color)
+
+def _draw_modern_round_landscape(c, layout, address, beds, baths, sqft, price,
+                                 agent_name, brokerage, agent_email, agent_phone,
+                                 qr_key, agent_photo_key, sign_color, qr_value=None,
+                                 agent_photo_path=None, user_id=None, logo_key=None):
+    """
+    Landscape Implementation:
+    - 2-Column Grid
+    - Left (60%): Address, Features, Price, Agent info
+    - Right (40%): Massive QR, CTA
+    """
+    COLOR_ACCENT = hex_to_rgb(sign_color)
+    COLOR_TEXT = (0.1, 0.1, 0.1)
+    COLOR_BG = (1, 1, 1)
+    
+    c.setFillColorRGB(*COLOR_BG)
+    c.rect(-layout.bleed, -layout.bleed, 
+           layout.width + 2*layout.bleed, 
+           layout.height + 2*layout.bleed, fill=1, stroke=0)
+           
+    content_w = layout.width - (2 * SAFE_MARGIN)
+    content_h = layout.height - (2 * SAFE_MARGIN)
+    
+    col_gap = SPACING['lg']
+    left_col_w = (content_w * 0.6) - (col_gap / 2)
+    right_col_w = (content_w * 0.4) - (col_gap / 2)
+    
+    left_x = SAFE_MARGIN
+    right_x = SAFE_MARGIN + left_col_w + col_gap
+    
+    # --- Left Column (Info) ---
+    c.setFillColorRGB(*COLOR_TEXT)
+    
+    # Address (Top Left)
+    addr_y = layout.height - SAFE_MARGIN - SPACING['sm']
+    pdf_text.draw_fitted_block(
+        c, address.upper(),
+        left_x, addr_y - (layout.address_font * 2.5),
+        left_col_w, layout.address_font * 3.0,
+        FONT_BOLD, layout.address_font * 1.2, min_font_size=TYPE_SCALE_MODERN['address']['min'],
+        align='left', max_lines=2
+    )
+    
+    # Features (Below Address)
+    features_y = addr_y - (layout.address_font * 2.5)
+    features_parts = []
+    if beds: features_parts.append(f"{beds} BEDS")
+    if baths: features_parts.append(f"{baths} BATHS")
+    if sqft: features_parts.append(f"{sqft} SQ FT")
+    
+    if features_parts:
+        features_line = "  •  ".join(features_parts)
+        c.setFillColorRGB(*hex_to_rgb(sign_color)) # Accent color for features in landscape
+        pdf_text.draw_fitted_block(
+            c, features_line,
+            left_x, features_y - layout.features_font,
+            left_col_w, layout.features_font * 1.5,
+            FONT_MED, layout.features_font, min_font_size=TYPE_SCALE_MODERN['features']['min'],
+            align='left', max_lines=1
+        )
+
+    # Price (Below Features)
+    price_y = features_y - (layout.features_font * 2)
+    if price:
+        display_price = price if "$" in str(price) else f"${price}"
+        c.setFillColorRGB(*COLOR_TEXT)
+        # Just text, large and bold
+        pdf_text.draw_fitted_block(
+            c, display_price,
+            left_x, price_y - layout.price_font,
+            left_col_w, layout.price_font * 1.5,
+            FONT_BOLD, layout.price_font, min_font_size=TYPE_SCALE_MODERN['price']['min'],
+            align='left', max_lines=1
+        )
+
+    # Identity (Bottom Left)
+    _draw_modern_footer_landscape(c, layout, agent_name, brokerage, agent_phone, left_x, left_col_w)
+
+    # --- Right Column (QR Focus) ---
+    # Center QR vertically in available space
+    qr_center_x = right_x + (right_col_w / 2)
+    qr_center_y = layout.height / 2
+    
+    qr_size = min(right_col_w, content_h * 0.7)
+    
+    # Accent Ring
+    c.setFillColorRGB(*COLOR_ACCENT)
+    c.circle(qr_center_x, qr_center_y, (qr_size/2)*1.1, fill=1, stroke=0)
+    c.setFillColorRGB(1, 1, 1)
+    c.circle(qr_center_x, qr_center_y, (qr_size/2)*1.02, fill=1, stroke=0)
+    
+    qr_url = resolve_qr_url(qr_value, qr_key)
+    safe_draw_qr(c, qr_url, qr_center_x - qr_size/2, qr_center_y - qr_size/2, qr_size, user_id)
+    
+    # CTA
+    c.setFillColorRGB(*COLOR_TEXT)
+    pdf_text.draw_single_line_fitted(
+        c, "SCAN FOR DETAILS",
+        qr_center_x, qr_center_y - (qr_size/2) - SPACING['md'],
+        right_col_w,
         FONT_BOLD, layout.cta_font, min_font_size=12
     )
 
-    # 7. Identity Block (Footer)
-    # Using shared identity block
-    asset = {
-        'brand_name': agent_name,
-        'brokerage_name': brokerage,
-        'email': agent_email,
-        'phone': agent_phone,
-        'headshot_key': agent_photo_key, 
-        'logo_key': logo_key,
-        'agent_headshot_path': agent_photo_path 
-    }
+def _draw_modern_footer(c, layout, agent, brokerage, phone, color_hex):
+    """Standard Portrait Footer"""
+    x = SAFE_MARGIN
+    w = layout.width - (2 * SAFE_MARGIN)
+    y_top = layout.footer_height
+    y_line = y_top - SPACING['sm']
     
-    draw_identity_block(
-        c, 
-        0, 0, 
-        layout.width, layout.footer_height, 
-        asset, 
-        get_storage(), 
-        theme='light' # Modern/Clean uses light footer often, or match accent?
-        # Let's stick to 'light' or 'soft' for Modern Round as per "Clean White Body"
+    # Divisor line
+    c.setStrokeColorRGB(0.8, 0.8, 0.8)
+    c.setLineWidth(1)
+    c.line(x, y_line, x+w, y_line)
+    
+    # Text
+    c.setFillColorRGB(0.2, 0.2, 0.2)
+    # Stacked: Agent Name (Bold), Brokerage (Reg), Phone (Small)?
+    # Or Agent (Left), Brokerage (Right)
+    
+    # Left: Agent
+    pdf_text.draw_fitted_block(
+        c, agent.upper(),
+        x, 0, w * 0.5, y_line - SPACING['xs'],
+        FONT_BOLD, 36, min_font_size=12, align='left', max_lines=1
     )
+    
+    # Right: Brokerage
+    pdf_text.draw_fitted_block(
+        c, brokerage.upper(),
+        x + w*0.5, 0, w * 0.5, y_line - SPACING['xs'],
+        FONT_BODY, 24, min_font_size=10, align='right', max_lines=1
+    )
+
+def _draw_modern_footer_landscape(c, layout, agent, brokerage, phone, x, w):
+    """Landscape Footer (Bottom Left Column)"""
+    y_bottom = SAFE_MARGIN
+    
+    # Agent Name
+    pdf_text.draw_fitted_block(
+        c, agent.upper(),
+        x, y_bottom + 30, w, 40,
+        FONT_BOLD, 32, min_font_size=16, align='left', max_lines=1
+    )
+    
+    # Brokerage
+    pdf_text.draw_fitted_block(
+        c, brokerage.upper(),
+        x, y_bottom, w, 30,
+        FONT_BODY, 24, min_font_size=12, align='left', max_lines=1
+    )
+
+def resolve_qr_url(val, key):
+    if val: return val
+    if key:
+        filename = os.path.basename(key)
+        code = os.path.splitext(filename)[0]
+        return property_scan_url(PUBLIC_BASE_URL, code)
+    return "https://example.com"
+
+def safe_draw_qr(c, url, x, y, size, uid):
+    try:
+        draw_qr(c, url, x, y, size, user_id=uid, ecc_level="H")
+    except Exception as e:
+        logger.error(f"QR Error: {e}")
