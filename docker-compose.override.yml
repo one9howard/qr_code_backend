@@ -1,0 +1,9 @@
+services:
+  web:
+    environment:
+      SMTP_HOST: smtp.gmail.com
+      SMTP_PORT: "465"
+      SMTP_USER: thenameisjoewest@gmail.com
+      SMTP_PASS: bvjyoeczdaiqobwm
+      SMTP_USE_TLS: "false"
+      NOTIFY_EMAIL_FROM: "noreply@insitesigns.com"
