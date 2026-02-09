@@ -29,6 +29,12 @@ import socket
 import platform
 import json
 from datetime import datetime
+from pathlib import Path
+
+# --- PATH RESOLUTION (do not rely on cwd) ---
+SCRIPT_DIR = Path(__file__).resolve().parent
+DEFAULT_PROJECT_ROOT = SCRIPT_DIR.parent
+
 
 # --- CONFIGURATION ---
 
@@ -89,6 +95,39 @@ def run_command(cmd, cwd=None, env=None):
         print(f"❌ Command failed: {cmd}")
         sys.exit(1)
 
+
+
+def assert_repo_root(project_root: str) -> None:
+    """Fail fast if invoked from a non-repo directory.
+
+    This builder used to rely on os.getcwd(). If someone ran it from scripts/,
+    it would stage the wrong tree and produce a broken artifact.
+    """
+    required_paths = [
+        ("app.py", "file"),
+        ("config.py", "file"),
+        ("migrate.py", "file"),
+        ("routes", "dir"),
+        ("services", "dir"),
+        ("templates", "dir"),
+        ("scripts", "dir"),
+    ]
+
+    missing = []
+    for rel, kind in required_paths:
+        full = os.path.join(project_root, rel)
+        if kind == "file" and not os.path.isfile(full):
+            missing.append(rel)
+        if kind == "dir" and not os.path.isdir(full):
+            missing.append(rel)
+
+    if missing:
+        raise RuntimeError(
+            "[REPO ROOT] Refusing to build: not in project root. Missing: "
+            + ", ".join(missing)
+            + "\nResolved project_root="
+            + project_root
+        )
 def clean_tree(src_root, dest_root):
     """Copy allowlisted files from src to dest."""
     if os.path.exists(dest_root):
@@ -270,7 +309,7 @@ def write_release_manifest(stage_dir: str, project_root: str, zip_path: str) -> 
     with open(out_path, "w", encoding="utf-8") as f:
         json.dump(manifest, f, indent=2, sort_keys=True)
         f.write("\n")
-def validate_artifact(zip_path):
+def validate_artifact(zip_path, project_root):
     """
     Unzips the artifact to a temp dir and performs strict validation.
     1. Scan for forbidden patterns.
@@ -303,10 +342,10 @@ def validate_artifact(zip_path):
         if not os.path.exists(check_script_path):
              # Ensure scripts dir exists
              os.makedirs(os.path.join(temp_dir, "scripts"), exist_ok=True)
-             shutil.copy("scripts/check_release_clean.py", check_script_path)
+             shutil.copy(os.path.join(project_root, "scripts", "check_release_clean.py"), check_script_path)
 
         try:
-            subprocess.check_call([sys.executable, check_script_path], cwd=temp_dir)
+            subprocess.check_call([sys.executable, check_script_path, "--root", temp_dir])
             print("[OK] Cleanliness check passed.")
         except subprocess.CalledProcessError:
             print("[FAIL] Artifact is not clean (contains banned files).")
@@ -362,13 +401,13 @@ def validate_artifact(zip_path):
         print("[SUCCESS] Artifact validation passed.")
         return True
 
-def run_pre_build_gates(allow_test_failures=False):
+def run_pre_build_gates(project_root: str, allow_test_failures: bool = False):
     """Run all pre-build gates via Docker."""
     print("========================================")
     print("    RELEASE ACCEPTANCE GATES")
     print("========================================")
     
-    root = os.getcwd()
+    root = project_root
     
     # Get settings from environment
     web_service = os.environ.get('WEB_SERVICE', 'web')
@@ -428,10 +467,16 @@ def run_pre_build_gates(allow_test_failures=False):
 def main():
     parser = argparse.ArgumentParser(description="Build Release ZIP")
     parser.add_argument("--output-dir", default="releases", help="Output directory")
+    parser.add_argument("--project-root", default=None, help="Project root (defaults to repo root resolved from this script)")
     parser.add_argument("--no-validate", action="store_true", help="SKIP VALIDATION (UNSAFE)")
     parser.add_argument("--i-understand-this-is-unsafe", action="store_true", help="Confirm unsafe mode")
     parser.add_argument("--allow-test-failures", action="store_true", help="Allow unit tests to fail (PASSES ALLOW_TEST_FAILURES=1)")
     args = parser.parse_args()
+
+    # Resolve project root deterministically (do not rely on cwd)
+    pr = Path(args.project_root).resolve() if args.project_root else DEFAULT_PROJECT_ROOT
+    project_root = str(pr)
+    assert_repo_root(project_root)
 
     # SAFETY CHECK
     if args.no_validate:
@@ -450,10 +495,13 @@ def main():
             print("⚠️  WARNING: Allowing test failures as requested.")
 
         # 1. Pre-Build Gate
-        run_pre_build_gates(allow_test_failures=args.allow_test_failures)
+        run_pre_build_gates(project_root, allow_test_failures=args.allow_test_failures)
 
-    project_root = os.getcwd()
-    dist_dir = os.path.join(project_root, args.output_dir)
+    out_dir = args.output_dir
+    if os.path.isabs(out_dir):
+        dist_dir = out_dir
+    else:
+        dist_dir = os.path.join(project_root, out_dir)
     os.makedirs(dist_dir, exist_ok=True)
     
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -472,7 +520,7 @@ def main():
 
     # 2. Post-Build Gate (Artifact Validation)
     if not args.no_validate:
-         if not validate_artifact(zip_path):
+         if not validate_artifact(zip_path, project_root):
              print("[FAIL] ARTIFACT VALIDATION FAILED. Deleting invalid artifact.")
              if os.path.exists(zip_path):
                  os.remove(zip_path)
