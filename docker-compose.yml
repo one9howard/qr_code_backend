@@ -2,16 +2,16 @@ services:
   web:
     build:
       context: .
-      args:
-        - INSTALL_DEV=true
     env_file:
       - .env
       - .env.local
+
     environment:
       - DATABASE_URL=postgresql://postgres:postgres@db:5432/insite_test
       - FLASK_ENV=testing
       - APP_STAGE=test
       - BASE_URL=http://localhost:8080
+      - PORT=8080 # Override .env to match Dockerfile/container port
       - PUBLIC_BASE_URL=http://localhost:8080
       - STORAGE_BACKEND=local
       - SERVER_DOMAIN=localhost
