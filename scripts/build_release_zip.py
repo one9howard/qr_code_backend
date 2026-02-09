@@ -80,6 +80,7 @@ GLOBAL_EXCLUDES = [
     ".git*",
     ".github*",
     "*.zip",  # Don't include other zips
+    "static/*.pdf", # Generated previews
 ]
 
 def run_command(cmd, cwd=None, env=None):
