@@ -153,6 +153,61 @@ SPECS = {
                  'license': (22, 16)
              }
         }
+    },
+    # --- New Premium Layouts Specs (Phase 3) ---
+    '18x24': {
+        # ... existing ...
+        'smart_v2_modern_split': {
+            'split': 0.5, 'padding': to_pt(0.75),
+            'qr_percent': 0.30,
+            'fonts': {'name':(48,36), 'cta':(60,48)}
+        },
+        'smart_v2_elegant_serif': {
+            'margin': to_pt(1.0), 'border': 2,
+            'qr_size': to_pt(4.0),
+            'fonts': {'status':(96,72), 'cta':(24,18), 'name':(32,24)}
+        },
+        'smart_v2_bold_frame': {
+            'border_in': 1.0, 
+            'qr_percent': 0.50,
+            'fonts': {'status':(110,80), 'cta':(48,36)}
+        }
+    },
+    '24x36': {
+        # ... existing ...
+        'smart_v2_modern_split': {
+            'split': 0.5, 'padding': to_pt(1.0),
+            'qr_percent': 0.30,
+            'fonts': {'name':(72,54), 'cta':(80,64)}
+        },
+        'smart_v2_elegant_serif': {
+            'margin': to_pt(1.5), 'border': 3,
+            'qr_size': to_pt(6.0),
+            'fonts': {'status':(140,100), 'cta':(36,28), 'name':(48,36)}
+        },
+        'smart_v2_bold_frame': {
+            'border_in': 1.5,
+            'qr_percent': 0.50,
+            'fonts': {'status':(150,110), 'cta':(72,54)}
+        }
+    },
+    '36x24': {
+         # ... existing ...
+         'smart_v2_modern_split': {
+            'split': 0.5, 'padding': to_pt(1.0),
+            'qr_percent': 0.30,
+            'fonts': {'name':(64,48), 'cta':(72,56)}
+        },
+        'smart_v2_elegant_serif': {
+             'margin': to_pt(1.2), 'border': 3,
+             'qr_size': to_pt(5.0),
+             'fonts': {'status':(120,90), 'cta':(30,24), 'name':(40,30)}
+        },
+        'smart_v2_bold_frame': {
+             'border_in': 1.25,
+             'qr_percent': 0.45,
+             'fonts': {'status':(130,100), 'cta':(60,48)}
+        }
     }
 }
 
@@ -358,7 +413,12 @@ def generate_smartsign_pdf(asset, order_id=None, user_id=None, override_base_url
     if size_key not in SIGN_SIZES: size_key = DEFAULT_SIGN_SIZE
 
     layout_id = _read(asset, 'layout_id', 'smart_v1_minimal')
-    if layout_id not in ['smart_v1_minimal', 'smart_v1_agent_brand', 'smart_v1_photo_banner', 'smart_v2_vertical_banner', 'smart_v2_modern_round']:
+    valid_layouts = [
+        'smart_v1_minimal', 'smart_v1_agent_brand', 'smart_v1_photo_banner', 
+        'smart_v2_vertical_banner', 'smart_v2_modern_round',
+        'smart_v2_modern_split', 'smart_v2_elegant_serif', 'smart_v2_bold_frame'
+    ]
+    if layout_id not in valid_layouts:
         layout_id = 'smart_v1_minimal'
 
     layout = SmartSignLayout(size_key, layout_id)
@@ -381,6 +441,12 @@ def generate_smartsign_pdf(asset, order_id=None, user_id=None, override_base_url
         _draw_smart_v2_vertical_banner(c, layout, asset, user_id, active_base_url)
     elif layout_id == 'smart_v2_modern_round':
         _draw_modern_round(c, layout, asset, user_id, active_base_url)
+    elif layout_id == 'smart_v2_modern_split':
+        _draw_modern_split(c, layout, asset, user_id, active_base_url)
+    elif layout_id == 'smart_v2_elegant_serif':
+        _draw_elegant_serif(c, layout, asset, user_id, active_base_url)
+    elif layout_id == 'smart_v2_bold_frame':
+        _draw_bold_frame(c, layout, asset, user_id, active_base_url)
     else:
         _draw_modern_minimal(c, layout, asset, user_id, active_base_url)
         
@@ -392,7 +458,11 @@ def generate_smartsign_pdf(asset, order_id=None, user_id=None, override_base_url
     from utils.filenames import make_sign_asset_basename
     basename = make_sign_asset_basename(order_id if order_id else 0, size_key)
     folder = f"pdfs/order_{order_id}" if order_id else "pdfs/tmp_smartsign"
-    key = f"{folder}/{basename}_smart.pdf"
+    
+    # Append layout_id to filename to distinguish variants
+    # Clean layout_id for filename safety just in case
+    safe_layout = layout_id.replace("smart_", "")
+    key = f"{folder}/{basename}_smart_{safe_layout}.pdf"
     
     storage = get_storage()
     storage.put_file(buffer, key, content_type="application/pdf")
@@ -463,6 +533,231 @@ def _draw_modern_round(c, l, asset, user_id, base_url):
     # Agent Name / Powered By
     c.setFont(lu.FONT_MED, 36)
     c.drawCentredString(center_x, to_pt(2.5), "Powered by InSite")
+
+
+def _draw_modern_split(c, l, asset, user_id, base_url):
+    """
+    Modern Split: 50/50 Editorial Layout.
+    Left: Full Bleed Photo (Headshot or Property).
+    Right: Clean Typography & QR.
+    """
+    # 1. Background (White Right)
+    c.setFillColorRGB(1, 1, 1)
+    c.rect(0, 0, l.width, l.height, fill=1, stroke=0)
+    
+    # 2. Left Photo Panel
+    # Determine split info
+    # For now hardcoded 50% split
+    split_x = l.width * 0.5
+    
+    # Draw dark placeholder on left
+    c.setFillColorRGB(0.95, 0.95, 0.95) # Light gray placeholder
+    c.rect(-l.bleed, -l.bleed, split_x + l.bleed, l.height + 2*l.bleed, fill=1, stroke=0)
+    
+    # Try logic: Use property photo if available, else agent headshot
+    # Actually for "SmartSign" usually it's Agent Brand focused.
+    head_key = _read(asset, 'headshot_key') or _read(asset, 'agent_headshot_key')
+    storage = get_storage()
+    
+    if head_key and storage.exists(head_key):
+        try:
+            c.saveState()
+            p = c.beginPath()
+            # Rect clip for left side
+            p.rect(-l.bleed, -l.bleed, split_x + l.bleed, l.height + 2*l.bleed)
+            c.clipPath(p, stroke=0)
+            
+            img_data = storage.get_file(head_key)
+            img = ImageReader(img_data)
+            
+            # center crop logic simplified: draw image covering rect
+            # We use drawImage with preserveAspectRatio=True usually, but here we want FILL.
+            # ReportLab doesn't have "object-fit: cover". 
+            # We draw it large and let clip handle it.
+            iw, ih = img.getSize()
+            aspect = iw / ih
+            target_w = split_x + l.bleed
+            target_h = l.height + 2*l.bleed
+            target_aspect = target_w / target_h
+            
+            if aspect > target_aspect:
+                # Image is wider -> Fit Height
+                draw_h = target_h
+                draw_w = draw_h * aspect
+                offset_x = -l.bleed - ((draw_w - target_w) / 2)
+                offset_y = -l.bleed
+            else:
+                # Image is taller -> Fit Width
+                draw_w = target_w
+                draw_h = draw_w / aspect
+                offset_x = -l.bleed
+                offset_y = -l.bleed - ((draw_h - target_h) / 2)
+                
+            c.drawImage(img, offset_x, offset_y, width=draw_w, height=draw_h)
+            c.restoreState()
+        except Exception as e:
+            # Fallback text
+            c.setFillColorRGB(0.5, 0.5, 0.5)
+            c.drawCentredString(split_x/2, l.height/2, "PHOTO")
+
+    # 3. Right Side Content
+    # Center X of right panel
+    center_rx = split_x + (l.width - split_x)/2
+    
+    spec = SPECS.get(l.size_key, SPECS['18x24']).get('smart_v2_modern_split', {})
+    if not spec: spec = SPECS['18x24']['smart_v2_modern_split'] # fallback
+    
+    # QR Code
+    qr_w = l.width * spec.get('qr_percent', 0.35)
+    qr_y = l.height * 0.50
+    
+    code = _read(asset, 'code')
+    qr_url = f"{base_url.rstrip('/')}/r/{code}"
+    draw_qr(c, qr_url, x=center_rx - qr_w/2, y=qr_y - qr_w/2, size=qr_w, user_id=user_id)
+    
+    # Text Above: Agent Name
+    name_text = _read(asset, 'agent_name') or "Agent Name"
+    font_name = spec['fonts']['name']
+    name_y = qr_y + (qr_w/2) + to_pt(1.0)
+    
+    c.setFillColorRGB(*hex_to_rgb(COLORS['base_text']))
+    fit_name = lu.fit_text_one_line(c, name_text, lu.FONT_BODY, (l.width - split_x) * 0.8, font_name[0], font_name[1])
+    c.setFont(lu.FONT_BODY, fit_name)
+    c.drawCentredString(center_rx, name_y, name_text)
+    
+    # Text Below: CTA
+    cta_text = CTA_MAP.get(_read(asset, 'cta_key'), 'SCAN TO CONNECT')
+    font_cta = spec['fonts']['cta']
+    cta_y = qr_y - (qr_w/2) - to_pt(0.8) - font_cta[0]
+    
+    c.setFillColorRGB(*hex_to_rgb(COLORS['bg_navy']))
+    fit_cta = lu.fit_text_one_line(c, cta_text, lu.FONT_BOLD, (l.width - split_x) * 0.85, font_cta[0], font_cta[1])
+    c.setFont(lu.FONT_BOLD, fit_cta)
+    c.drawCentredString(center_rx, cta_y, cta_text)
+
+
+def _draw_elegant_serif(c, l, asset, user_id, base_url):
+    """
+    Elegant Serif: Minimalist, Serif Typography, Gold Accents.
+    """
+    spec = SPECS.get(l.size_key, SPECS['18x24']).get('smart_v2_elegant_serif', {})
+    
+    # 1. Background (Pure White)
+    c.setFillColorRGB(1, 1, 1)
+    c.rect(-l.bleed, -l.bleed, l.width + 2*l.bleed, l.height + 2*l.bleed, fill=1, stroke=0)
+    
+    center_x = l.width / 2
+    
+    # 2. Main Status Text (Serif)
+    # e.g. "For Sale", "Coming Soon", "Just Listed"
+    status_text = (_read(asset, 'status_text') or "For Sale").upper()
+    font_status_spec = spec['fonts']['status']
+    
+    # Position: Upper 40%
+    status_y = l.height * 0.70
+    
+    c.setFillColorRGB(*hex_to_rgb(COLORS['base_text']))
+    fit_status = lu.fit_text_one_line(c, status_text, lu.FONT_SERIF, l.width * 0.8, font_status_spec[0], font_status_spec[1])
+    c.setFont(lu.FONT_SERIF, fit_status)
+    c.drawCentredString(center_x, status_y, status_text)
+    
+    # 3. QR Code with Gold Border
+    qr_size = spec.get('qr_size', to_pt(5.0))
+    qr_y = l.height * 0.40
+    
+    # Box Border
+    pad = to_pt(0.2)
+    box_size = qr_size + 2*pad
+    
+    c.setStrokeColor(HexColor('#C5A065')) # Gold/Bronze
+    c.setLineWidth(spec.get('border', 2))
+    c.setFillColorRGB(1, 1, 1)
+    
+    c.rect(center_x - box_size/2, qr_y - box_size/2, box_size, box_size, fill=1, stroke=1)
+    
+    code = _read(asset, 'code')
+    qr_url = f"{base_url.rstrip('/')}/r/{code}"
+    draw_qr(c, qr_url, x=center_x - qr_size/2, y=qr_y - qr_size/2, size=qr_size, user_id=user_id)
+    
+    # 4. Footer Info (Minimal)
+    # Agent Name
+    name_text = _read(asset, 'agent_name') or "Agent Name"
+    font_name = spec['fonts']['name']
+    name_y = to_pt(3.0)
+    
+    c.setFillColorRGB(*hex_to_rgb(COLORS['secondary_text']))
+    c.setFont(lu.FONT_BODY, font_name[0]) # Fixed size small
+    c.drawCentredString(center_x, name_y, name_text)
+    
+    # CTA tiny below QR
+    cta_text = CTA_MAP.get(_read(asset, 'cta_key'), 'Scan for details')
+    font_cta = spec['fonts']['cta']
+    c.setFont(lu.FONT_SERIF, font_cta[0])
+    c.drawCentredString(center_x, qr_y - (box_size/2) - to_pt(0.4), cta_text)
+
+
+def _draw_bold_frame(c, l, asset, user_id, base_url):
+    """
+    Bold Frame: Thick colored border, high impact.
+    """
+    spec = SPECS.get(l.size_key, SPECS['18x24']).get('smart_v2_bold_frame', {})
+    
+    # 1. Background (White)
+    c.setFillColorRGB(1, 1, 1)
+    c.rect(-l.bleed, -l.bleed, l.width + 2*l.bleed, l.height + 2*l.bleed, fill=1, stroke=0)
+    
+    # 2. Thick Border (Inset)
+    border_in = spec.get('border_in', 1.0) * inch
+    border_rect_w = l.width - (2*border_in)
+    border_rect_h = l.height - (2*border_in)
+    
+    # Draw huge stroke? Or rect?
+    # Let's draw a rect stroke.
+    color_id = _read(asset, 'banner_color_id')
+    bar_color = BANNER_COLOR_PALETTE.get(color_id, BANNER_COLOR_PALETTE['navy'])
+    
+    # We want the border to BE the frame. 
+    # Logic: Draw outer rect filled with color, inner rect white.
+    c.setFillColorRGB(*hex_to_rgb(bar_color))
+    c.rect(0, 0, l.width, l.height, fill=1, stroke=0) # Base fill color
+    
+    # Inner White
+    c.setFillColorRGB(1, 1, 1)
+    c.rect(border_in, border_in, border_rect_w, border_rect_h, fill=1, stroke=0)
+    
+    # 3. Content Area
+    center_x = l.width / 2
+    center_y = l.height / 2
+    
+    # QR Code (Huge)
+    qr_target = l.width * spec.get('qr_percent', 0.5)
+    # Ensure it fits inside border
+    max_qr = min(qr_target, border_rect_w * 0.8)
+    
+    code = _read(asset, 'code')
+    qr_url = f"{base_url.rstrip('/')}/r/{code}"
+    draw_qr(c, qr_url, x=center_x - max_qr/2, y=center_y - max_qr/2, size=max_qr, user_id=user_id)
+    
+    # 4. Bold Text Top/Bottom
+    # Status Top
+    status_text = (_read(asset, 'status_text') or "FOR SALE").upper()
+    font_status_spec = spec['fonts']['status']
+    
+    status_y = (l.height - border_in) - (border_rect_h * 0.15) # Top inside white area
+    
+    c.setFillColorRGB(*hex_to_rgb(COLORS['base_text']))
+    fit_status = lu.fit_text_one_line(c, status_text, lu.FONT_BOLD, border_rect_w * 0.9, font_status_spec[0], font_status_spec[1])
+    c.setFont(lu.FONT_BOLD, fit_status)
+    c.drawCentredString(center_x, status_y, status_text)
+    
+    # CTA Bottom
+    cta_text = CTA_MAP.get(_read(asset, 'cta_key'), 'SCAN FOR INFO')
+    font_cta = spec['fonts']['cta']
+    
+    cta_y = border_in + (border_rect_h * 0.15)
+    fit_cta = lu.fit_text_one_line(c, cta_text, lu.FONT_BOLD, border_rect_w * 0.8, font_cta[0], font_cta[1])
+    c.setFont(lu.FONT_BOLD, fit_cta)
+    c.drawCentredString(center_x, cta_y, cta_text)
 
 
 def _draw_modern_minimal(c, l, asset, user_id, base_url):
