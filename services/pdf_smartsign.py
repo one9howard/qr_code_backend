@@ -78,6 +78,22 @@ SPECS = {
                  'phone': (42, 32),
                  'license': (20, 16)
              }
+        },
+        # --- Premium Layouts (Phase 3) for 18x24 ---
+        'smart_v2_modern_split': {
+            'split': 0.5, 'padding': to_pt(0.75),
+            'qr_percent': 0.30,
+            'fonts': {'name':(48,36), 'cta':(60,48)}
+        },
+        'smart_v2_elegant_serif': {
+            'margin': to_pt(1.0), 'border': 2,
+            'qr_size': to_pt(4.0),
+            'fonts': {'status':(96,72), 'cta':(24,18), 'name':(32,24)}
+        },
+        'smart_v2_bold_frame': {
+            'border_in': 1.0, 
+            'qr_percent': 0.50,
+            'fonts': {'status':(110,80), 'cta':(48,36)}
         }
     },
     '24x36': {
@@ -115,6 +131,22 @@ SPECS = {
                  'phone': (54, 42),
                  'license': (24, 18)
              }
+        },
+        # --- Premium Layouts (Phase 3) for 24x36 ---
+        'smart_v2_modern_split': {
+            'split': 0.5, 'padding': to_pt(1.0),
+            'qr_percent': 0.30,
+            'fonts': {'name':(72,54), 'cta':(80,64)}
+        },
+        'smart_v2_elegant_serif': {
+            'margin': to_pt(1.5), 'border': 3,
+            'qr_size': to_pt(6.0),
+            'fonts': {'status':(140,100), 'cta':(36,28), 'name':(48,36)}
+        },
+        'smart_v2_bold_frame': {
+            'border_in': 1.5,
+            'qr_percent': 0.50,
+            'fonts': {'status':(150,110), 'cta':(72,54)}
         }
     },
     '36x24': {
@@ -152,51 +184,12 @@ SPECS = {
                  'phone': (48, 36),
                  'license': (22, 16)
              }
-        }
-    },
-    # --- New Premium Layouts Specs (Phase 3) ---
-    '18x24': {
-        # ... existing ...
+        },
+        # --- Premium Layouts (Phase 3) for 36x24 ---
         'smart_v2_modern_split': {
-            'split': 0.5, 'padding': to_pt(0.75),
-            'qr_percent': 0.30,
-            'fonts': {'name':(48,36), 'cta':(60,48)}
-        },
-        'smart_v2_elegant_serif': {
-            'margin': to_pt(1.0), 'border': 2,
-            'qr_size': to_pt(4.0),
-            'fonts': {'status':(96,72), 'cta':(24,18), 'name':(32,24)}
-        },
-        'smart_v2_bold_frame': {
-            'border_in': 1.0, 
-            'qr_percent': 0.50,
-            'fonts': {'status':(110,80), 'cta':(48,36)}
-        }
-    },
-    '24x36': {
-        # ... existing ...
-        'smart_v2_modern_split': {
-            'split': 0.5, 'padding': to_pt(1.0),
-            'qr_percent': 0.30,
-            'fonts': {'name':(72,54), 'cta':(80,64)}
-        },
-        'smart_v2_elegant_serif': {
-            'margin': to_pt(1.5), 'border': 3,
-            'qr_size': to_pt(6.0),
-            'fonts': {'status':(140,100), 'cta':(36,28), 'name':(48,36)}
-        },
-        'smart_v2_bold_frame': {
-            'border_in': 1.5,
-            'qr_percent': 0.50,
-            'fonts': {'status':(150,110), 'cta':(72,54)}
-        }
-    },
-    '36x24': {
-         # ... existing ...
-         'smart_v2_modern_split': {
-            'split': 0.5, 'padding': to_pt(1.0),
-            'qr_percent': 0.30,
-            'fonts': {'name':(64,48), 'cta':(72,56)}
+           'split': 0.5, 'padding': to_pt(1.0),
+           'qr_percent': 0.30,
+           'fonts': {'name':(64,48), 'cta':(72,56)}
         },
         'smart_v2_elegant_serif': {
              'margin': to_pt(1.2), 'border': 3,
