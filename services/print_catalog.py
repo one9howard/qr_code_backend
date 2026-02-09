@@ -35,7 +35,8 @@ SMART_SIGN_LAYOUTS = (
     'smart_v1_minimal',
     'smart_v1_agent_brand',
     'smart_v2_vertical_banner',
-    'smart_v2_modern_round'
+    'smart_v2_modern_round',
+    'smart_v2_elegant_serif'
 )
 
 YARD_SIGN_LAYOUTS = (

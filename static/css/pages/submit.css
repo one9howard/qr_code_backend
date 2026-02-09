@@ -332,3 +332,49 @@
     align-items: center;
     border: 1px solid #eee;
 }
+
+/* Elegant Serif Style */
+.elegant-serif-style {
+    background: #fff;
+    border: 2px solid #d4af37;
+    /* Gold border */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 4px;
+}
+
+.elegant-serif-style .mini-content {
+    width: 100%;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+}
+
+.elegant-serif-style .status-text {
+    font-family: serif;
+    font-size: 6px;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.elegant-serif-style .mini-qr {
+    width: 28px;
+    height: 28px;
+    border: 1px solid #d4af37;
+    padding: 1px;
+    margin-bottom: 4px;
+}
+
+.elegant-serif-style .agent-name {
+    font-family: serif;
+    font-size: 4px;
+    color: #555;
+    margin-top: 2px;
+}

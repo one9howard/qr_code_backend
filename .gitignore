@@ -13,3 +13,5 @@ pdfs/
 releases/
 .DS_Store
 *.zip
+
+static/*.pdf

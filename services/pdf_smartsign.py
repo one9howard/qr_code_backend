@@ -685,14 +685,60 @@ def _draw_elegant_serif(c, l, asset, user_id, base_url):
     draw_qr(c, qr_url, x=center_x - qr_size/2, y=qr_y - qr_size/2, size=qr_size, user_id=user_id)
     
     # 4. Footer Info (Minimal)
+    # Headshot (Centered Above Name)
+    head_key = _read(asset, 'headshot_key') or _read(asset, 'agent_headshot_key')
+    storage = get_storage()
+    
+    name_y = to_pt(3.0)
+    
+    if head_key and storage.exists(head_key):
+        # Draw Headshot in gap between CTA and Name
+        # Start at name_y and go up
+        head_dia = to_pt(2.0)
+        head_y = name_y + to_pt(1.5) 
+        
+        try:
+            c.saveState()
+            p = c.beginPath()
+            p.circle(center_x, head_y, head_dia/2)
+            c.clipPath(p, stroke=0)
+            
+            img_data = storage.get_file(head_key)
+            img = ImageReader(img_data)
+            c.drawImage(img, center_x - head_dia/2, head_y - head_dia/2, width=head_dia, height=head_dia, mask='auto', preserveAspectRatio=True)
+            c.restoreState()
+            
+            # Gold ring border
+            c.setStrokeColor(HexColor('#C5A065'))
+            c.setLineWidth(1)
+            c.circle(center_x, head_y, head_dia/2, stroke=1, fill=0)
+        except Exception as e:
+            pass
+
     # Agent Name
     name_text = _read(asset, 'agent_name') or "Agent Name"
     font_name = spec['fonts']['name']
-    name_y = to_pt(3.0)
     
     c.setFillColorRGB(*hex_to_rgb(COLORS['secondary_text']))
     c.setFont(lu.FONT_BODY, font_name[0]) # Fixed size small
     c.drawCentredString(center_x, name_y, name_text)
+    
+    # Contact Info (Phone / Email)
+    phone_text = _read(asset, 'phone') or _read(asset, 'agent_phone')
+    email_text = _read(asset, 'email') or _read(asset, 'agent_email')
+    
+    contact_y = name_y - font_name[0] - to_pt(0.2)
+    contact_font_size = font_name[0] * 0.6
+    c.setFont(lu.FONT_BODY, contact_font_size)
+    c.setFillColorRGB(*hex_to_rgb(COLORS['secondary_text']))
+    
+    contact_lines = []
+    if phone_text: contact_lines.append(phone_text)
+    if email_text: contact_lines.append(email_text)
+    
+    if contact_lines:
+        contact_str = " | ".join(contact_lines)
+        c.drawCentredString(center_x, contact_y, contact_str)
     
     # CTA tiny below QR
     cta_key = _read(asset, 'cta_key')
