@@ -1,0 +1,1713 @@
+============================= test session starts ==============================
+platform linux -- Python 3.13.11, pytest-9.0.2, pluggy-1.6.0 -- /usr/local/bin/python
+cachedir: .pytest_cache
+rootdir: /app
+plugins: mock-3.15.1, cov-7.0.0, requests-mock-1.12.1
+collecting ... collected 197 items
+
+tests/test_admin_metrics.py::test_admin_metrics_page_loads ERROR         [  0%]
+tests/test_admin_metrics.py::test_non_admin_cannot_access_metrics ERROR  [  1%]
+tests/test_admin_metrics.py::test_metrics_data_display ERROR             [  1%]
+tests/test_agent_claiming_security.py::test_register_does_not_link_agent_before_verification ERROR [  2%]
+tests/test_agent_claiming_security.py::test_login_unverified_does_not_link_agent ERROR [  2%]
+tests/test_agent_claiming_security.py::test_verify_email_links_agent ERROR [  3%]
+tests/test_agent_claiming_security.py::test_submit_cannot_claim_other_email ERROR [  3%]
+tests/test_agent_claiming_security.py::test_submit_blocked_when_agent_claimed_by_other_user ERROR [  4%]
+tests/test_ai_readiness.py::TestAIReadiness::test_action_rejection FAILED [  4%]
+tests/test_ai_readiness.py::TestAIReadiness::test_action_rejection ERROR [  4%]
+tests/test_ai_readiness.py::TestAIReadiness::test_agent_action_lifecycle FAILED [  5%]
+tests/test_ai_readiness.py::TestAIReadiness::test_app_event_schema_and_defaults FAILED [  5%]
+tests/test_ai_readiness.py::TestAIReadiness::test_pii_stripping FAILED   [  6%]
+tests/test_ai_readiness.py::TestAIReadiness::test_request_correlation SKIPPED [  6%]
+tests/test_ai_readiness.py::TestAIReadiness::test_strict_allowlist FAILED [  7%]
+tests/test_analytics.py::test_per_property_metrics_structure PASSED      [  7%]
+tests/test_analytics.py::test_per_agent_rollup_structure PASSED          [  8%]
+tests/test_config_boot.py::TestConfigStagingBoot::test_staging_boot_without_smtp FAILED [  8%]
+tests/test_dashboard_ctas.py::test_progress_assign_next_step_points_to_dashboard_anchor PASSED [  9%]
+tests/test_dashboard_smartsigns_phase1.py::TestSmartSignsPhase1::test_create_asset_always_unactivated ERROR [  9%]
+tests/test_dashboard_smartsigns_phase1.py::TestSmartSignsPhase1::test_pro_user_cant_activate_without_order ERROR [ 10%]
+tests/test_dependency_versions.py::TestDependencyVersions::test_flask_version_is_3x PASSED [ 10%]
+tests/test_dependency_versions.py::TestDependencyVersions::test_werkzeug_version_is_3x PASSED [ 11%]
+tests/test_dependency_versions.py::TestDependencyVersions::test_flask_werkzeug_compatible PASSED [ 11%]
+tests/test_env_sanitization.py::TestGetEnvStr::test_strips_whitespace_by_default PASSED [ 12%]
+tests/test_env_sanitization.py::TestGetEnvStr::test_preserves_whitespace_when_strip_false PASSED [ 12%]
+tests/test_env_sanitization.py::TestGetEnvStr::test_returns_none_when_missing PASSED [ 13%]
+tests/test_env_sanitization.py::TestGetEnvStr::test_returns_default_when_missing PASSED [ 13%]
+tests/test_env_sanitization.py::TestGetEnvStr::test_returns_default_when_empty_after_strip PASSED [ 14%]
+tests/test_env_sanitization.py::TestGetEnvStr::test_required_raises_on_missing PASSED [ 14%]
+tests/test_env_sanitization.py::TestGetEnvStr::test_required_raises_on_empty_after_strip PASSED [ 15%]
+tests/test_env_sanitization.py::TestGetEnvStr::test_required_passes_with_valid_value PASSED [ 15%]
+tests/test_env_sanitization.py::TestGetEnvStr::test_stripe_webhook_secret_scenario PASSED [ 16%]
+tests/test_events_csrf_exempt.py::test_events_endpoint_accepts_post_without_csrf ERROR [ 16%]
+tests/test_events_csrf_exempt.py::test_events_blueprint_is_csrf_exempt_in_app PASSED [ 17%]
+tests/test_events_csrf_runtime.py::test_events_csrf_exempt_code_inspection PASSED [ 17%]
+tests/test_events_csrf_runtime.py::test_events_endpoint_returns_200_without_csrf PASSED [ 18%]
+tests/test_feature_flows.py::test_lead_lifecycle ERROR                   [ 18%]
+tests/test_feature_flows.py::test_qr_variant_resolution ERROR            [ 19%]
+tests/test_feature_flows.py::test_open_house_mode ERROR                  [ 19%]
+tests/test_feature_flows.py::test_gating_rendering ERROR                 [ 20%]
+tests/test_feature_flows.py::test_cleanup_calls_storage_delete ERROR     [ 20%]
+tests/test_fix_cleanup.py::test_smart_riser_webhook_behavior PASSED      [ 21%]
+tests/test_fix_cleanup.py::test_admin_drift_grep PASSED                  [ 21%]
+tests/test_free_property.py::test_new_property_get ERROR                 [ 22%]
+tests/test_free_property.py::test_new_property_post_success ERROR        [ 22%]
+tests/test_free_property.py::test_new_property_post_free_limit ERROR     [ 23%]
+tests/test_fulfillment.py::test_fulfill_order_enqueues_one_print_job ERROR [ 23%]
+tests/test_fulfillment.py::test_fulfill_order_idempotency ERROR          [ 24%]
+tests/test_global_code_generation_enforcement.py::test_property_creation_uses_global_generator ERROR [ 24%]
+tests/test_global_code_generation_enforcement.py::test_variant_creation_uses_global_generator ERROR [ 25%]
+tests/test_guest_linking_security.py::test_guest_linking_security FAILED [ 25%]
+tests/test_guest_security.py::test_guest_resize_with_body_token FAILED   [ 26%]
+tests/test_guest_security.py::test_billing_unverified_access PASSED      [ 26%]
+tests/test_guest_security.py::test_branding_csrf_protection PASSED       [ 27%]
+tests/test_import.py::test_import_listing PASSED                         [ 27%]
+tests/test_import.py::test_import_smart PASSED                           [ 28%]
+tests/test_import.py::test_import_validation PASSED                      [ 28%]
+tests/test_lead_attribution.py::TestAttribToken::test_make_verify_token_roundtrip PASSED [ 29%]
+tests/test_lead_attribution.py::TestAttribToken::test_expired_token_rejected PASSED [ 29%]
+tests/test_lead_attribution.py::TestAttribToken::test_forged_signature_rejected PASSED [ 30%]
+tests/test_lead_attribution.py::TestAttribToken::test_forged_asset_id_rejected PASSED [ 30%]
+tests/test_lead_attribution.py::TestAttribToken::test_invalid_token_formats PASSED [ 31%]
+tests/test_lead_attribution.py::TestLeadValidation::test_lead_with_email_only SKIPPED [ 31%]
+tests/test_lead_attribution.py::TestLeadValidation::test_lead_with_phone_only SKIPPED [ 32%]
+tests/test_lead_attribution.py::TestLeadValidation::test_lead_without_contact_fails SKIPPED [ 32%]
+tests/test_lead_attribution.py::TestAttributionCookie::test_cookie_set_on_assigned_smartsign SKIPPED [ 33%]
+tests/test_lead_attribution.py::TestAttributionCookie::test_cookie_not_set_on_unassigned_smartsign SKIPPED [ 34%]
+tests/test_lead_attribution.py::TestLeadAttribution::test_lead_attributed_with_valid_token SKIPPED [ 34%]
+tests/test_lead_attribution.py::TestLeadAttribution::test_forged_token_ignored SKIPPED [ 35%]
+tests/test_listing_kits_imports.py::test_listing_kits_import PASSED      [ 35%]
+tests/test_listing_kits_imports.py::test_kit_zip_builder_structure FAILED [ 36%]
+tests/test_local_storage_security.py::TestLocalStorageSecurity::test_path_traversal_with_dotdot_raises_error PASSED [ 36%]
+tests/test_local_storage_security.py::TestLocalStorageSecurity::test_path_traversal_with_absolute_path_raises_error PASSED [ 37%]
+tests/test_local_storage_security.py::TestLocalStorageSecurity::test_normal_paths_work_correctly PASSED [ 37%]
+tests/test_local_storage_security.py::TestLocalStorageSecurity::test_get_url_returns_storage_path FAILED [ 38%]
+tests/test_local_storage_security.py::TestLocalStorageSecurity::test_put_and_get_with_safe_path PASSED [ 38%]
+tests/test_local_storage_security.py::TestLocalStorageSecurity::test_get_file_with_traversal_raises PASSED [ 39%]
+tests/test_notifications_skipped.py::TestNotificationSkipped::test_notification_returns_skipped_without_smtp PASSED [ 39%]
+tests/test_notifications_skipped.py::TestNotificationSkipped::test_notification_tuple_has_three_elements PASSED [ 40%]
+tests/test_onboarding_activation.py::TestPhase1Dashboard::test_dashboard_mode_no_signs ERROR [ 40%]
+tests/test_onboarding_activation.py::TestPhase1Dashboard::test_dashboard_mode_needs_assignment ERROR [ 41%]
+tests/test_onboarding_activation.py::TestPhase1Dashboard::test_dashboard_mode_active ERROR [ 41%]
+tests/test_onboarding_activation.py::TestPhase1Dashboard::test_progress_percent_stages PASSED [ 42%]
+tests/test_onboarding_activation.py::TestPhase1Dashboard::test_first_scan_banner ERROR [ 42%]
+tests/test_onboarding_activation.py::TestPhase1Dashboard::test_first_lead_banner ERROR [ 43%]
+tests/test_onboarding_activation.py::TestPhase1Dashboard::test_analytics_gated_until_scan ERROR [ 43%]
+tests/test_pdf_security.py::TestResolvePdfPath::test_allows_valid_order_path_format PASSED [ 44%]
+tests/test_pdf_security.py::TestResolvePdfPath::test_blocks_absolute_paths PASSED [ 44%]
+tests/test_pdf_security.py::TestResolvePdfPath::test_blocks_leading_slash PASSED [ 45%]
+tests/test_pdf_security.py::TestResolvePdfPath::test_blocks_path_traversal PASSED [ 45%]
+tests/test_pdf_security.py::TestResolvePdfPath::test_empty_and_none_input PASSED [ 46%]
+tests/test_pdf_security.py::TestResolvePdfPath::test_rejects_invalid_order_id_format PASSED [ 46%]
+tests/test_pdf_security.py::TestPrivatePdfPaths::test_get_private_pdf_path_format PASSED [ 47%]
+tests/test_pdf_security.py::TestPrivatePdfPaths::test_get_private_pdf_relative_path_format PASSED [ 47%]
+tests/test_pdf_security.py::TestPaidStatuses::test_paid_statuses_contains_expected_values PASSED [ 48%]
+tests/test_pdf_vector_qr.py::test_pdf_vector_qr_no_embedded_images PASSED [ 48%]
+tests/test_pdf_vector_qr.py::test_pdf_vector_qr_all_sizes PASSED         [ 49%]
+tests/test_pdf_vector_qr.py::test_pdf_with_agent_photo_has_one_image FAILED [ 49%]
+tests/test_phase4_guardrails.py::test_free_user_cannot_create_second_property ERROR [ 50%]
+tests/test_phase4_guardrails.py::test_pro_user_can_create_multiple_properties ERROR [ 50%]
+tests/test_phase4_guardrails.py::test_reassign_requires_pro ERROR        [ 51%]
+tests/test_phase4_guardrails.py::test_reassign_requires_activated ERROR  [ 51%]
+tests/test_phase4_guardrails.py::test_reassign_blocked_when_frozen ERROR [ 52%]
+tests/test_phase4_guardrails.py::test_listing_kit_returns_reason_code ERROR [ 52%]
+tests/test_phase_2_5.py::test_webhook_idempotency_activation ERROR       [ 53%]
+tests/test_phase_2_5.py::test_assignment_rules ERROR                     [ 53%]
+tests/test_phase_2_5.py::test_smart_sign_checkout_endpoint_disabled ERROR [ 54%]
+tests/test_placeholder.py::test_release_placeholder PASSED               [ 54%]
+tests/test_print_jobs.py::test_claim_jobs_is_idempotent ERROR            [ 55%]
+tests/test_print_jobs.py::test_download_pdf_requires_auth_and_returns_bytes ERROR [ 55%]
+tests/test_print_preflight.py::test_validate_sign_layout_success PASSED  [ 56%]
+tests/test_print_preflight.py::test_validate_sign_layout_too_small_qr PASSED [ 56%]
+tests/test_print_preflight.py::test_validate_sign_layout_small_bleed PASSED [ 57%]
+tests/test_print_preflight.py::test_validate_sign_layout_warnings PASSED [ 57%]
+tests/test_print_skus.py::test_yard_sign_skus PASSED                     [ 58%]
+tests/test_print_skus.py::test_smart_sign_skus PASSED                    [ 58%]
+tests/test_print_skus.py::test_smart_riser_skus PASSED                   [ 59%]
+tests/test_print_skus.py::test_get_price_id_uses_cache_in_test_mode PASSED [ 59%]
+tests/test_printing_atomic.py::test_claim_jobs_success ERROR             [ 60%]
+tests/test_printing_atomic.py::test_claim_unauthorized PASSED            [ 60%]
+tests/test_printing_atomic.py::test_mark_downloaded_transition ERROR     [ 61%]
+tests/test_printing_atomic.py::test_download_pdf ERROR                   [ 61%]
+tests/test_pro_features.py::TestLeadSubmissionCSRF::test_lead_submission_no_csrf_error PASSED [ 62%]
+tests/test_pro_features.py::TestFreeTierLeadLimit::test_free_lead_limit_constant PASSED [ 62%]
+tests/test_pro_features.py::TestCSVExport::test_csv_export_requires_login PASSED [ 63%]
+tests/test_pro_features.py::TestCSVExport::test_csv_export_route_exists PASSED [ 63%]
+tests/test_pro_features.py::TestAnalyticsService::test_analytics_module_exists FAILED [ 64%]
+tests/test_pro_features.py::TestAnalyticsService::test_analytics_returns_expected_keys FAILED [ 64%]
+tests/test_property_creation_flow.py::TestPropertyCreationFlow::test_get_submit_page_property_only_mode ERROR [ 65%]
+tests/test_property_creation_flow.py::TestPropertyCreationFlow::test_create_property_only_does_not_create_order ERROR [ 65%]
+tests/test_property_creation_flow.py::TestPropertyCreationFlow::test_standard_flow_creates_order FAILED [ 66%]
+tests/test_qr_code_uniqueness.py::TestQRCodeUniqueness::test_is_code_taken_finds_sign_assets ERROR [ 67%]
+tests/test_qr_code_uniqueness.py::TestQRCodeUniqueness::test_is_code_taken_finds_properties_qr_code ERROR [ 67%]
+tests/test_qr_code_uniqueness.py::TestQRCodeUniqueness::test_is_code_taken_finds_qr_variants ERROR [ 68%]
+tests/test_qr_code_uniqueness.py::TestQRCodeUniqueness::test_generate_unique_code_avoids_collisions ERROR [ 68%]
+tests/test_qr_code_uniqueness.py::TestOptionBEnforcement::test_create_asset_always_unactivated ERROR [ 69%]
+tests/test_qr_code_uniqueness.py::TestOptionBEnforcement::test_activate_asset_requires_order_id ERROR [ 69%]
+tests/test_qr_code_uniqueness.py::TestOptionBEnforcement::test_activate_asset_rejects_already_activated ERROR [ 70%]
+tests/test_qr_logo_pro_gating.py::test_qr_logo_gating_free_user ERROR    [ 70%]
+tests/test_qr_logo_pro_gating.py::test_qr_logo_flow_pro_user ERROR       [ 71%]
+tests/test_qr_logo_rendering.py::test_qr_without_logo PASSED             [ 71%]
+tests/test_qr_logo_rendering.py::test_qr_with_logo_decodes PASSED        [ 72%]
+tests/test_qr_logo_rendering.py::test_qr_auto_fallback PASSED            [ 72%]
+tests/test_qr_routes.py::TestPropertyPage::test_paid_property_returns_200 ERROR [ 73%]
+tests/test_qr_routes.py::TestPropertyPage::test_expired_property_returns_410 ERROR [ 73%]
+tests/test_qr_routes.py::TestPropertyPage::test_invalid_slug_returns_404 PASSED [ 74%]
+tests/test_qr_routes.py::TestPropertyPage::test_free_property_returns_200 ERROR [ 74%]
+tests/test_qr_routes.py::TestQRRedirect::test_valid_code_redirects ERROR [ 75%]
+tests/test_qr_routes.py::TestQRRedirect::test_expired_property_code_returns_410 ERROR [ 75%]
+tests/test_qr_routes.py::TestQRRedirect::test_invalid_code_returns_404 PASSED [ 76%]
+tests/test_qr_routes.py::TestQRRedirect::test_scan_logs_to_qr_scans ERROR [ 76%]
+tests/test_qr_scaling.py::test_qr_integer_scaling PASSED                 [ 77%]
+tests/test_release_gate.py::test_release_gate_fails_on_forbidden FAILED  [ 77%]
+tests/test_release_gate.py::test_font_registration PASSED                [ 78%]
+tests/test_repro_500.py::test_dashboard_new_property_page_loads FAILED   [ 78%]
+tests/test_smart_sign_activation.py::TestSmartSignActivation::test_inactive_asset_scan_returns_not_activated_page ERROR [ 79%]
+tests/test_smart_sign_activation.py::TestSmartSignActivation::test_active_asset_scan_redirects_to_property ERROR [ 79%]
+tests/test_smart_sign_activation.py::TestSmartSignActivation::test_active_unassigned_asset_shows_unassigned_page ERROR [ 80%]
+tests/test_smart_sign_activation.py::TestSmartSignActivation::test_assignment_blocked_for_inactive_asset ERROR [ 80%]
+tests/test_smart_sign_activation.py::TestSmartSignActivation::test_unassigned_active_asset_scan_logs_to_app_events ERROR [ 81%]
+tests/test_smart_signs.py::TestSmartSigns::test_pro_create_asset_via_purchase_flow ERROR [ 81%]
+tests/test_smart_signs.py::TestSmartSigns::test_pro_assign_asset_to_own_property ERROR [ 82%]
+tests/test_smart_signs.py::TestSmartSigns::test_free_can_initial_assign_asset ERROR [ 82%]
+tests/test_smart_signs.py::TestSmartSigns::test_free_cannot_reassign_asset ERROR [ 83%]
+tests/test_smart_signs.py::TestSmartSigns::test_free_cannot_unassign_asset ERROR [ 83%]
+tests/test_smart_signs.py::TestSmartSigns::test_frozen_blocks_assign ERROR [ 84%]
+tests/test_smart_signs.py::TestSmartSigns::test_inactive_blocks_assign ERROR [ 84%]
+tests/test_smart_signs.py::TestSmartSigns::test_scan_resolution_flow ERROR [ 85%]
+tests/test_smart_signs.py::TestSmartSigns::test_unassigned_asset_page ERROR [ 85%]
+tests/test_smart_signs_printing.py::TestSmartSignsPrinting::test_frozen_asset_access FAILED [ 86%]
+tests/test_smart_signs_printing.py::TestSmartSignsPrinting::test_non_pro_access FAILED [ 86%]
+tests/test_smart_signs_printing.py::TestSmartSignsPrinting::test_pro_active_flow FAILED [ 87%]
+tests/test_smartsign_v2_persistence.py::test_smartsign_v2_persistence_e2e ERROR [ 87%]
+tests/test_smartsign_validation.py::test_v2_validation PASSED            [ 88%]
+tests/test_smoke.py::test_healthz PASSED                                 [ 88%]
+tests/test_smoke.py::test_homepage PASSED                                [ 89%]
+tests/test_smoke.py::test_qr_generation PASSED                           [ 89%]
+tests/test_smoke.py::test_smartsign_pdf_generation PASSED                [ 90%]
+tests/test_strategy_alignment.py::test_listing_kit_persistence PASSED    [ 90%]
+tests/test_strategy_alignment.py::test_paid_statuses_completeness PASSED [ 91%]
+tests/test_strategy_alignment.py::test_webhook_freeze_logic_uses_constants PASSED [ 91%]
+tests/test_strategy_alignment.py::test_smart_sign_strictness PASSED      [ 92%]
+tests/test_stripe_price_resolver.py::test_resolve_price_id_calls_fail_if_no_cache_and_no_patch FAILED [ 92%]
+tests/test_stripe_price_resolver.py::test_resolve_uses_injected_cache PASSED [ 93%]
+tests/test_stripe_price_resolver.py::test_warm_cache_forbidden_in_test FAILED [ 93%]
+tests/test_stripe_price_resolver.py::test_warm_cache_success PASSED      [ 94%]
+tests/test_stripe_price_resolver.py::test_validation_inactive_product PASSED [ 94%]
+tests/test_stripe_price_resolver.py::test_validation_duplicate_prices PASSED [ 95%]
+tests/test_stripe_price_resolver.py::test_validation_missing_key PASSED  [ 95%]
+tests/test_tour_scheduling.py::test_tour_scheduling_link_render FAILED   [ 96%]
+tests/test_tour_scheduling.py::test_free_tier_hides_virtual_tour FAILED  [ 96%]
+tests/test_webhook_amounts.py::test_webhook_captures_totals ERROR        [ 97%]
+tests/test_yard_sign_pdf.py::TestListingSignPDF::test_generate_yard_sign_pdf_queries_schema_correctly SKIPPED [ 97%]
+tests/test_yard_sign_pdf.py::TestListingSignPDF::test_yard_sign_qr_value_is_r_path ERROR [ 98%]
+tests/test_yard_sign_pdf.py::TestListingSignPDF::test_landscape_layout_used_for_36x24 ERROR [ 98%]
+tests/test_yard_sign_pdf.py::TestListingSignPDF::test_standard_layout_used_for_18x24 SKIPPED [ 99%]
+tests/test_yard_sign_pdf.py::TestListingSignPDF::test_generate_yard_sign_pdf_smoke ERROR [100%]
+
+==================================== ERRORS ====================================
+_______________ ERROR at setup of test_admin_metrics_page_loads ________________
+file /app/tests/test_admin_metrics.py, line 29
+  def test_admin_metrics_page_loads(client, db, admin_user):
+E       fixture 'db' not found
+>       available fixtures: admin_user, app, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, class_mocker, client, cov, create_test_user, db_session, doctest_namespace, mocker, module_mocker, monkeypatch, no_cover, package_mocker, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, requests_mock, session_mocker, subtests, test_user_password, test_user_password_hash, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/app/tests/test_admin_metrics.py:29
+____________ ERROR at setup of test_non_admin_cannot_access_metrics ____________
+file /app/tests/test_admin_metrics.py, line 42
+  def test_non_admin_cannot_access_metrics(client, db):
+E       fixture 'db' not found
+>       available fixtures: admin_user, app, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, class_mocker, client, cov, create_test_user, db_session, doctest_namespace, mocker, module_mocker, monkeypatch, no_cover, package_mocker, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, requests_mock, session_mocker, subtests, test_user_password, test_user_password_hash, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/app/tests/test_admin_metrics.py:42
+_________________ ERROR at setup of test_metrics_data_display __________________
+file /app/tests/test_admin_metrics.py, line 61
+  def test_metrics_data_display(client, db, admin_user):
+E       fixture 'db' not found
+>       available fixtures: admin_user, app, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, class_mocker, client, cov, create_test_user, db_session, doctest_namespace, mocker, module_mocker, monkeypatch, no_cover, package_mocker, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, requests_mock, session_mocker, subtests, test_user_password, test_user_password_hash, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/app/tests/test_admin_metrics.py:61
+___ ERROR at setup of test_register_does_not_link_agent_before_verification ____
+file /app/tests/test_agent_claiming_security.py, line 6
+  def test_register_does_not_link_agent_before_verification(client, db):
+E       fixture 'db' not found
+>       available fixtures: app, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, class_mocker, client, cov, create_test_user, db_session, doctest_namespace, mocker, module_mocker, monkeypatch, no_cover, package_mocker, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, requests_mock, session_mocker, subtests, test_user_password, test_user_password_hash, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/app/tests/test_agent_claiming_security.py:6
+_________ ERROR at setup of test_login_unverified_does_not_link_agent __________
+file /app/tests/test_agent_claiming_security.py, line 36
+  def test_login_unverified_does_not_link_agent(client, db):
+E       fixture 'db' not found
+>       available fixtures: app, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, class_mocker, client, cov, create_test_user, db_session, doctest_namespace, mocker, module_mocker, monkeypatch, no_cover, package_mocker, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, requests_mock, session_mocker, subtests, test_user_password, test_user_password_hash, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/app/tests/test_agent_claiming_security.py:36
+_______________ ERROR at setup of test_verify_email_links_agent ________________
+file /app/tests/test_agent_claiming_security.py, line 65
+  def test_verify_email_links_agent(client, db):
+E       fixture 'db' not found
+>       available fixtures: app, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, class_mocker, client, cov, create_test_user, db_session, doctest_namespace, mocker, module_mocker, monkeypatch, no_cover, package_mocker, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, requests_mock, session_mocker, subtests, test_user_password, test_user_password_hash, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/app/tests/test_agent_claiming_security.py:65
+____________ ERROR at setup of test_submit_cannot_claim_other_email ____________
+file /app/tests/test_agent_claiming_security.py, line 99
+  def test_submit_cannot_claim_other_email(client, db):
+E       fixture 'db' not found
+>       available fixtures: app, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, class_mocker, client, cov, create_test_user, db_session, doctest_namespace, mocker, module_mocker, monkeypatch, no_cover, package_mocker, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, requests_mock, session_mocker, subtests, test_user_password, test_user_password_hash, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/app/tests/test_agent_claiming_security.py:99
+____ ERROR at setup of test_submit_blocked_when_agent_claimed_by_other_user ____
+file /app/tests/test_agent_claiming_security.py, line 145
+  def test_submit_blocked_when_agent_claimed_by_other_user(client, db):
+E       fixture 'db' not found
+>       available fixtures: app, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, class_mocker, client, cov, create_test_user, db_session, doctest_namespace, mocker, module_mocker, monkeypatch, no_cover, package_mocker, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, requests_mock, session_mocker, subtests, test_user_password, test_user_password_hash, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/app/tests/test_agent_claiming_security.py:145
+__________ ERROR at teardown of TestAIReadiness.test_action_rejection __________
+tests/test_ai_readiness.py:26: in tearDown
+    db.execute("DELETE FROM app_events")
+database.py:53: in execute
+    raise e
+database.py:45: in execute
+    cur.execute(sql, params)
+/usr/local/lib/python3.13/site-packages/psycopg2/extras.py:146: in execute
+    return super().execute(query, vars)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   psycopg2.errors.InFailedSqlTransaction: current transaction is aborted, commands ignored until end of transaction block
+----------------------------- Captured stdout call -----------------------------
+{"timestamp": "2026-02-09T16:11:30.488176", "level": "INFO", "message": "[App] create_app() called", "logger": "app", "module": "app", "lineno": 29}
+{"timestamp": "2026-02-09T16:11:30.488855", "level": "INFO", "message": "[App] Flask app instance created", "logger": "app", "module": "app", "lineno": 31}
+{"timestamp": "2026-02-09T16:11:30.488997", "level": "INFO", "message": "Logger setup complete. JSON formatted logs enabled.", "logger": "app", "module": "logger", "lineno": 66}
+{"timestamp": "2026-02-09T16:11:30.490554", "level": "INFO", "message": "[Startup] Warming Stripe Price Cache...", "logger": "app", "module": "app", "lineno": 112}
+{"timestamp": "2026-02-09T16:11:30.518611", "level": "WARNING", "message": "[Startup] Dev Warning: Cache warm failed: Invalid API Key provided: sk_test_mock", "logger": "app", "module": "app", "lineno": 120}
+------------------------------ Captured log call -------------------------------
+INFO     app:app.py:29 [App] create_app() called
+INFO     app:app.py:31 [App] Flask app instance created
+INFO     app:logger.py:66 Logger setup complete. JSON formatted logs enabled.
+INFO     app:app.py:112 [Startup] Warming Stripe Price Cache...
+ERROR    services.stripe_price_resolver:stripe_price_resolver.py:129 Stripe API error refreshing keys ['smart_sign_print_18x24', 'smart_sign_print_24x36', 'smart_sign_print_36x24', 'smart_riser_6x24', 'smart_riser_6x36', 'yard_sign_coroplast_12x18', 'yard_sign_coroplast_18x24', 'yard_sign_coroplast_24x36', 'yard_sign_aluminum_18x24', 'yard_sign_aluminum_24x36']: Invalid API Key provided: sk_test_mock
+WARNING  app:app.py:120 [Startup] Dev Warning: Cache warm failed: Invalid API Key provided: sk_test_mock
+ERROR    database:database.py:50 [DB] Query Failed: null value in column "created_by_type" of relation "agent_actions" violates not-null constraint
+DETAIL:  Failing row contains (1, 8edaada3-b8ec-44ce-9808-24ad2f21e08e, 2026-02-09 16:11:30.556307+00, 2026-02-09 16:11:30.556307+00, 1, null, null, null, null, null, null, draft_sms, proposed, {}, null, {}, [], t, null, null, null, null, null, null, null, null, null).
+
+ERROR    database:database.py:52 [DB] SQL: INSERT INTO agent_actions (user_id, action_type, status, proposal, policy_snapshot, input_event_refs) VALUES (%s, %s, %s, %s, %s, %s) RETURNING id
+ERROR    database:database.py:50 [DB] Query Failed: current transaction is aborted, commands ignored until end of transaction block
+
+ERROR    database:database.py:52 [DB] SQL: DELETE FROM app_events
+_ ERROR at setup of TestSmartSignsPhase1.test_create_asset_always_unactivated __
+file /app/tests/test_dashboard_smartsigns_phase1.py, line 16
+      def test_create_asset_always_unactivated(self, app, db):
+E       fixture 'db' not found
+>       available fixtures: app, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, class_mocker, client, cov, create_test_user, db_session, doctest_namespace, mocker, module_mocker, monkeypatch, no_cover, package_mocker, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, requests_mock, session_mocker, subtests, test_user_password, test_user_password_hash, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/app/tests/test_dashboard_smartsigns_phase1.py:16
+_ ERROR at setup of TestSmartSignsPhase1.test_pro_user_cant_activate_without_order _
+file /app/tests/test_dashboard_smartsigns_phase1.py, line 50
+      def test_pro_user_cant_activate_without_order(self, app, client, db):
+E       fixture 'db' not found
+>       available fixtures: app, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, class_mocker, client, cov, create_test_user, db_session, doctest_namespace, mocker, module_mocker, monkeypatch, no_cover, package_mocker, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, requests_mock, session_mocker, subtests, test_user_password, test_user_password_hash, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/app/tests/test_dashboard_smartsigns_phase1.py:50
+_______ ERROR at setup of test_events_endpoint_accepts_post_without_csrf _______
+file /app/tests/test_events_csrf_exempt.py, line 10
+  def test_events_endpoint_accepts_post_without_csrf(client, db):
+E       fixture 'db' not found
+>       available fixtures: app, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, class_mocker, client, cov, create_test_user, db_session, doctest_namespace, mocker, module_mocker, monkeypatch, no_cover, package_mocker, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, requests_mock, session_mocker, subtests, test_user_password, test_user_password_hash, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/app/tests/test_events_csrf_exempt.py:10
+____________________ ERROR at setup of test_lead_lifecycle _____________________
+file /app/tests/test_feature_flows.py, line 33
+  def test_lead_lifecycle(client, db, feature_data):
+E       fixture 'db' not found
+>       available fixtures: app, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, class_mocker, client, cov, create_test_user, db_session, doctest_namespace, feature_data, mocker, module_mocker, monkeypatch, no_cover, package_mocker, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, requests_mock, session_mocker, subtests, test_user_password, test_user_password_hash, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/app/tests/test_feature_flows.py:33
+_________________ ERROR at setup of test_qr_variant_resolution _________________
+file /app/tests/test_feature_flows.py, line 95
+  def test_qr_variant_resolution(client, db, feature_data):
+E       fixture 'db' not found
+>       available fixtures: app, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, class_mocker, client, cov, create_test_user, db_session, doctest_namespace, feature_data, mocker, module_mocker, monkeypatch, no_cover, package_mocker, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, requests_mock, session_mocker, subtests, test_user_password, test_user_password_hash, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/app/tests/test_feature_flows.py:95
+____________________ ERROR at setup of test_open_house_mode ____________________
+file /app/tests/test_feature_flows.py, line 135
+  def test_open_house_mode(client, db, feature_data):
+E       fixture 'db' not found
+>       available fixtures: app, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, class_mocker, client, cov, create_test_user, db_session, doctest_namespace, feature_data, mocker, module_mocker, monkeypatch, no_cover, package_mocker, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, requests_mock, session_mocker, subtests, test_user_password, test_user_password_hash, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/app/tests/test_feature_flows.py:135
+___________________ ERROR at setup of test_gating_rendering ____________________
+file /app/tests/test_feature_flows.py, line 159
+  def test_gating_rendering(client, db, feature_data):
+E       fixture 'db' not found
+>       available fixtures: app, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, class_mocker, client, cov, create_test_user, db_session, doctest_namespace, feature_data, mocker, module_mocker, monkeypatch, no_cover, package_mocker, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, requests_mock, session_mocker, subtests, test_user_password, test_user_password_hash, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/app/tests/test_feature_flows.py:159
+_____________ ERROR at setup of test_cleanup_calls_storage_delete ______________
+file /app/tests/test_feature_flows.py, line 203
+  @patch('utils.storage.get_storage')
+  def test_cleanup_calls_storage_delete(mock_get_storage, db):
+E       fixture 'db' not found
+>       available fixtures: app, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, class_mocker, client, cov, create_test_user, db_session, doctest_namespace, feature_data, mocker, module_mocker, monkeypatch, no_cover, package_mocker, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, requests_mock, session_mocker, subtests, test_user_password, test_user_password_hash, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/app/tests/test_feature_flows.py:203
+___________________ ERROR at setup of test_new_property_get ____________________
+file /app/tests/test_free_property.py, line 14
+  def test_new_property_get(client, auth):
+E       fixture 'auth' not found
+>       available fixtures: app, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, class_mocker, client, cov, create_test_user, db_session, doctest_namespace, mock_db_cursor, mocker, module_mocker, monkeypatch, no_cover, package_mocker, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, requests_mock, session_mocker, subtests, test_user_password, test_user_password_hash, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/app/tests/test_free_property.py:14
+_______________ ERROR at setup of test_new_property_post_success _______________
+file /app/tests/test_free_property.py, line 21
+  def test_new_property_post_success(client, auth, mock_db_cursor, mocker):
+E       fixture 'auth' not found
+>       available fixtures: app, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, class_mocker, client, cov, create_test_user, db_session, doctest_namespace, mock_db_cursor, mocker, module_mocker, monkeypatch, no_cover, package_mocker, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, requests_mock, session_mocker, subtests, test_user_password, test_user_password_hash, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/app/tests/test_free_property.py:21
+_____________ ERROR at setup of test_new_property_post_free_limit ______________
+file /app/tests/test_free_property.py, line 73
+  def test_new_property_post_free_limit(client, auth, mock_db_cursor, mocker):
+E       fixture 'auth' not found
+>       available fixtures: app, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, class_mocker, client, cov, create_test_user, db_session, doctest_namespace, mock_db_cursor, mocker, module_mocker, monkeypatch, no_cover, package_mocker, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, requests_mock, session_mocker, subtests, test_user_password, test_user_password_hash, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/app/tests/test_free_property.py:73
+_________ ERROR at setup of test_fulfill_order_enqueues_one_print_job __________
+file /app/tests/test_fulfillment.py, line 12
+  def test_fulfill_order_enqueues_one_print_job(db, app):
+E       fixture 'db' not found
+>       available fixtures: app, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, class_mocker, client, cov, create_test_user, db_session, doctest_namespace, mocker, module_mocker, monkeypatch, no_cover, package_mocker, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, requests_mock, session_mocker, subtests, test_user_password, test_user_password_hash, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/app/tests/test_fulfillment.py:12
+_______________ ERROR at setup of test_fulfill_order_idempotency _______________
+file /app/tests/test_fulfillment.py, line 68
+  def test_fulfill_order_idempotency(db, app):
+E       fixture 'db' not found
+>       available fixtures: app, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, class_mocker, client, cov, create_test_user, db_session, doctest_namespace, mocker, module_mocker, monkeypatch, no_cover, package_mocker, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, requests_mock, session_mocker, subtests, test_user_password, test_user_password_hash, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/app/tests/test_fulfillment.py:68
+________ ERROR at setup of test_property_creation_uses_global_generator ________
+file /app/tests/test_global_code_generation_enforcement.py, line 32
+  def test_property_creation_uses_global_generator(auth_client_with_property, db):
+file /app/tests/test_global_code_generation_enforcement.py, line 7
+  @pytest.fixture
+  def auth_client_with_property(client, db):
+E       fixture 'db' not found
+>       available fixtures: app, auth_client_with_property, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, class_mocker, client, cov, create_test_user, db_session, doctest_namespace, mocker, module_mocker, monkeypatch, no_cover, package_mocker, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, requests_mock, session_mocker, subtests, test_user_password, test_user_password_hash, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/app/tests/test_global_code_generation_enforcement.py:7
+________ ERROR at setup of test_variant_creation_uses_global_generator _________
+file /app/tests/test_global_code_generation_enforcement.py, line 85
+  def test_variant_creation_uses_global_generator(auth_client_with_property, db):
+file /app/tests/test_global_code_generation_enforcement.py, line 7
+  @pytest.fixture
+  def auth_client_with_property(client, db):
+E       fixture 'db' not found
+>       available fixtures: app, auth_client_with_property, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, class_mocker, client, cov, create_test_user, db_session, doctest_namespace, mocker, module_mocker, monkeypatch, no_cover, package_mocker, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, requests_mock, session_mocker, subtests, test_user_password, test_user_password_hash, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/app/tests/test_global_code_generation_enforcement.py:7
+______ ERROR at setup of TestPhase1Dashboard.test_dashboard_mode_no_signs ______
+tests/test_onboarding_activation.py:186: in test_user_with_agent
+    ur = db.execute("INSERT INTO users (email, password_hash, display_name, is_pro) VALUES ('t1@e.com', 'x', 'T1', true) RETURNING id").fetchone()
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+database.py:53: in execute
+    raise e
+database.py:45: in execute
+    cur.execute(sql, params)
+/usr/local/lib/python3.13/site-packages/psycopg2/extras.py:146: in execute
+    return super().execute(query, vars)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   psycopg2.errors.UndefinedColumn: column "display_name" of relation "users" does not exist
+E   LINE 1: INSERT INTO users (email, password_hash, display_name, is_pr...
+E                                                    ^
+------------------------------ Captured log setup ------------------------------
+ERROR    database:database.py:50 [DB] Query Failed: column "display_name" of relation "users" does not exist
+LINE 1: INSERT INTO users (email, password_hash, display_name, is_pr...
+                                                 ^
+
+ERROR    database:database.py:52 [DB] SQL: INSERT INTO users (email, password_hash, display_name, is_pro) VALUES ('t1@e.com', 'x', 'T1', true) RETURNING id
+__ ERROR at setup of TestPhase1Dashboard.test_dashboard_mode_needs_assignment __
+tests/test_onboarding_activation.py:200: in test_user_with_unassigned_sign
+    ur = db.execute("INSERT INTO users (email, password_hash, is_pro) VALUES ('t2@e.com', 'x', true) RETURNING id").fetchone()
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+database.py:53: in execute
+    raise e
+database.py:45: in execute
+    cur.execute(sql, params)
+/usr/local/lib/python3.13/site-packages/psycopg2/extras.py:146: in execute
+    return super().execute(query, vars)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   psycopg2.errors.UndefinedColumn: column "is_pro" of relation "users" does not exist
+E   LINE 1: INSERT INTO users (email, password_hash, is_pro) VALUES ('t2...
+E                                                    ^
+------------------------------ Captured log setup ------------------------------
+ERROR    database:database.py:50 [DB] Query Failed: column "is_pro" of relation "users" does not exist
+LINE 1: INSERT INTO users (email, password_hash, is_pro) VALUES ('t2...
+                                                 ^
+
+ERROR    database:database.py:52 [DB] SQL: INSERT INTO users (email, password_hash, is_pro) VALUES ('t2@e.com', 'x', true) RETURNING id
+_______ ERROR at setup of TestPhase1Dashboard.test_dashboard_mode_active _______
+tests/test_onboarding_activation.py:216: in test_user_with_assigned_sign
+    ur = db.execute("INSERT INTO users (email, password_hash, is_pro) VALUES ('t3@e.com', 'x', true) RETURNING id").fetchone()
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+database.py:53: in execute
+    raise e
+database.py:45: in execute
+    cur.execute(sql, params)
+/usr/local/lib/python3.13/site-packages/psycopg2/extras.py:146: in execute
+    return super().execute(query, vars)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   psycopg2.errors.UndefinedColumn: column "is_pro" of relation "users" does not exist
+E   LINE 1: INSERT INTO users (email, password_hash, is_pro) VALUES ('t3...
+E                                                    ^
+------------------------------ Captured log setup ------------------------------
+ERROR    database:database.py:50 [DB] Query Failed: column "is_pro" of relation "users" does not exist
+LINE 1: INSERT INTO users (email, password_hash, is_pro) VALUES ('t3...
+                                                 ^
+
+ERROR    database:database.py:52 [DB] SQL: INSERT INTO users (email, password_hash, is_pro) VALUES ('t3@e.com', 'x', true) RETURNING id
+_________ ERROR at setup of TestPhase1Dashboard.test_first_scan_banner _________
+tests/test_onboarding_activation.py:216: in test_user_with_assigned_sign
+    ur = db.execute("INSERT INTO users (email, password_hash, is_pro) VALUES ('t3@e.com', 'x', true) RETURNING id").fetchone()
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+database.py:53: in execute
+    raise e
+database.py:45: in execute
+    cur.execute(sql, params)
+/usr/local/lib/python3.13/site-packages/psycopg2/extras.py:146: in execute
+    return super().execute(query, vars)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   psycopg2.errors.UndefinedColumn: column "is_pro" of relation "users" does not exist
+E   LINE 1: INSERT INTO users (email, password_hash, is_pro) VALUES ('t3...
+E                                                    ^
+------------------------------ Captured log setup ------------------------------
+ERROR    database:database.py:50 [DB] Query Failed: column "is_pro" of relation "users" does not exist
+LINE 1: INSERT INTO users (email, password_hash, is_pro) VALUES ('t3...
+                                                 ^
+
+ERROR    database:database.py:52 [DB] SQL: INSERT INTO users (email, password_hash, is_pro) VALUES ('t3@e.com', 'x', true) RETURNING id
+_________ ERROR at setup of TestPhase1Dashboard.test_first_lead_banner _________
+tests/test_onboarding_activation.py:216: in test_user_with_assigned_sign
+    ur = db.execute("INSERT INTO users (email, password_hash, is_pro) VALUES ('t3@e.com', 'x', true) RETURNING id").fetchone()
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+database.py:53: in execute
+    raise e
+database.py:45: in execute
+    cur.execute(sql, params)
+/usr/local/lib/python3.13/site-packages/psycopg2/extras.py:146: in execute
+    return super().execute(query, vars)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   psycopg2.errors.UndefinedColumn: column "is_pro" of relation "users" does not exist
+E   LINE 1: INSERT INTO users (email, password_hash, is_pro) VALUES ('t3...
+E                                                    ^
+------------------------------ Captured log setup ------------------------------
+ERROR    database:database.py:50 [DB] Query Failed: column "is_pro" of relation "users" does not exist
+LINE 1: INSERT INTO users (email, password_hash, is_pro) VALUES ('t3...
+                                                 ^
+
+ERROR    database:database.py:52 [DB] SQL: INSERT INTO users (email, password_hash, is_pro) VALUES ('t3@e.com', 'x', true) RETURNING id
+____ ERROR at setup of TestPhase1Dashboard.test_analytics_gated_until_scan _____
+tests/test_onboarding_activation.py:216: in test_user_with_assigned_sign
+    ur = db.execute("INSERT INTO users (email, password_hash, is_pro) VALUES ('t3@e.com', 'x', true) RETURNING id").fetchone()
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+database.py:53: in execute
+    raise e
+database.py:45: in execute
+    cur.execute(sql, params)
+/usr/local/lib/python3.13/site-packages/psycopg2/extras.py:146: in execute
+    return super().execute(query, vars)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   psycopg2.errors.UndefinedColumn: column "is_pro" of relation "users" does not exist
+E   LINE 1: INSERT INTO users (email, password_hash, is_pro) VALUES ('t3...
+E                                                    ^
+------------------------------ Captured log setup ------------------------------
+ERROR    database:database.py:50 [DB] Query Failed: column "is_pro" of relation "users" does not exist
+LINE 1: INSERT INTO users (email, password_hash, is_pro) VALUES ('t3...
+                                                 ^
+
+ERROR    database:database.py:52 [DB] SQL: INSERT INTO users (email, password_hash, is_pro) VALUES ('t3@e.com', 'x', true) RETURNING id
+________ ERROR at setup of test_free_user_cannot_create_second_property ________
+file /app/tests/test_phase4_guardrails.py, line 59
+  def test_free_user_cannot_create_second_property(client, db, phase4_data):
+E       fixture 'db' not found
+>       available fixtures: app, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, class_mocker, client, cov, create_test_user, db_session, doctest_namespace, mocker, module_mocker, monkeypatch, no_cover, package_mocker, phase4_data, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, requests_mock, session_mocker, subtests, test_user_password, test_user_password_hash, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/app/tests/test_phase4_guardrails.py:59
+________ ERROR at setup of test_pro_user_can_create_multiple_properties ________
+file /app/tests/test_phase4_guardrails.py, line 87
+  def test_pro_user_can_create_multiple_properties(client, db, phase4_data):
+E       fixture 'db' not found
+>       available fixtures: app, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, class_mocker, client, cov, create_test_user, db_session, doctest_namespace, mocker, module_mocker, monkeypatch, no_cover, package_mocker, phase4_data, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, requests_mock, session_mocker, subtests, test_user_password, test_user_password_hash, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/app/tests/test_phase4_guardrails.py:87
+_________________ ERROR at setup of test_reassign_requires_pro _________________
+file /app/tests/test_phase4_guardrails.py, line 138
+  def test_reassign_requires_pro(app, client, db, phase4_data):
+E       fixture 'db' not found
+>       available fixtures: app, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, class_mocker, client, cov, create_test_user, db_session, doctest_namespace, mocker, module_mocker, monkeypatch, no_cover, package_mocker, phase4_data, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, requests_mock, session_mocker, subtests, test_user_password, test_user_password_hash, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/app/tests/test_phase4_guardrails.py:138
+______________ ERROR at setup of test_reassign_requires_activated ______________
+file /app/tests/test_phase4_guardrails.py, line 165
+  def test_reassign_requires_activated(app, client, db, phase4_data):
+E       fixture 'db' not found
+>       available fixtures: app, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, class_mocker, client, cov, create_test_user, db_session, doctest_namespace, mocker, module_mocker, monkeypatch, no_cover, package_mocker, phase4_data, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, requests_mock, session_mocker, subtests, test_user_password, test_user_password_hash, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/app/tests/test_phase4_guardrails.py:165
+_____________ ERROR at setup of test_reassign_blocked_when_frozen ______________
+file /app/tests/test_phase4_guardrails.py, line 192
+  def test_reassign_blocked_when_frozen(app, client, db, phase4_data):
+E       fixture 'db' not found
+>       available fixtures: app, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, class_mocker, client, cov, create_test_user, db_session, doctest_namespace, mocker, module_mocker, monkeypatch, no_cover, package_mocker, phase4_data, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, requests_mock, session_mocker, subtests, test_user_password, test_user_password_hash, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/app/tests/test_phase4_guardrails.py:192
+____________ ERROR at setup of test_listing_kit_returns_reason_code ____________
+file /app/tests/test_phase4_guardrails.py, line 221
+  def test_listing_kit_returns_reason_code(client, db, phase4_data):
+E       fixture 'db' not found
+>       available fixtures: app, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, class_mocker, client, cov, create_test_user, db_session, doctest_namespace, mocker, module_mocker, monkeypatch, no_cover, package_mocker, phase4_data, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, requests_mock, session_mocker, subtests, test_user_password, test_user_password_hash, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/app/tests/test_phase4_guardrails.py:221
+____________ ERROR at setup of test_webhook_idempotency_activation _____________
+file /app/tests/test_phase_2_5.py, line 58
+  def test_webhook_idempotency_activation(client, app, db, auth, mock_stripe_session):
+E       fixture 'db' not found
+>       available fixtures: app, auth, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, class_mocker, client, cov, create_test_user, db_session, doctest_namespace, mock_stripe_session, mocker, module_mocker, monkeypatch, no_cover, package_mocker, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, requests_mock, session_mocker, subtests, test_user_password, test_user_password_hash, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/app/tests/test_phase_2_5.py:58
+___________________ ERROR at setup of test_assignment_rules ____________________
+file /app/tests/test_phase_2_5.py, line 141
+  def test_assignment_rules(client, app, db, auth):
+E       fixture 'db' not found
+>       available fixtures: app, auth, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, class_mocker, client, cov, create_test_user, db_session, doctest_namespace, mock_stripe_session, mocker, module_mocker, monkeypatch, no_cover, package_mocker, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, requests_mock, session_mocker, subtests, test_user_password, test_user_password_hash, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/app/tests/test_phase_2_5.py:141
+_________ ERROR at setup of test_smart_sign_checkout_endpoint_disabled _________
+file /app/tests/test_phase_2_5.py, line 174
+  def test_smart_sign_checkout_endpoint_disabled(client, app, db, auth):
+E       fixture 'db' not found
+>       available fixtures: app, auth, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, class_mocker, client, cov, create_test_user, db_session, doctest_namespace, mock_stripe_session, mocker, module_mocker, monkeypatch, no_cover, package_mocker, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, requests_mock, session_mocker, subtests, test_user_password, test_user_password_hash, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/app/tests/test_phase_2_5.py:174
+_______________ ERROR at setup of test_claim_jobs_is_idempotent ________________
+file /app/tests/test_print_jobs.py, line 7
+  def test_claim_jobs_is_idempotent(client, db):
+E       fixture 'db' not found
+>       available fixtures: app, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, class_mocker, client, cov, create_test_user, db_session, doctest_namespace, mocker, module_mocker, monkeypatch, no_cover, package_mocker, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, requests_mock, session_mocker, subtests, test_user_password, test_user_password_hash, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/app/tests/test_print_jobs.py:7
+_____ ERROR at setup of test_download_pdf_requires_auth_and_returns_bytes ______
+file /app/tests/test_print_jobs.py, line 43
+  def test_download_pdf_requires_auth_and_returns_bytes(client, db):
+E       fixture 'db' not found
+>       available fixtures: app, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, class_mocker, client, cov, create_test_user, db_session, doctest_namespace, mocker, module_mocker, monkeypatch, no_cover, package_mocker, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, requests_mock, session_mocker, subtests, test_user_password, test_user_password_hash, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/app/tests/test_print_jobs.py:43
+__________________ ERROR at setup of test_claim_jobs_success ___________________
+file /app/tests/test_printing_atomic.py, line 46
+  def test_claim_jobs_success(client, db, atomic_data):
+E       fixture 'db' not found
+>       available fixtures: app, atomic_data, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, class_mocker, client, cov, create_test_user, db_session, doctest_namespace, mocker, module_mocker, monkeypatch, no_cover, package_mocker, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, requests_mock, session_mocker, subtests, test_user_password, test_user_password_hash, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/app/tests/test_printing_atomic.py:46
+______________ ERROR at setup of test_mark_downloaded_transition _______________
+file /app/tests/test_printing_atomic.py, line 71
+  def test_mark_downloaded_transition(client, db, atomic_data):
+E       fixture 'db' not found
+>       available fixtures: app, atomic_data, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, class_mocker, client, cov, create_test_user, db_session, doctest_namespace, mocker, module_mocker, monkeypatch, no_cover, package_mocker, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, requests_mock, session_mocker, subtests, test_user_password, test_user_password_hash, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/app/tests/test_printing_atomic.py:71
+_____________________ ERROR at setup of test_download_pdf ______________________
+file /app/tests/test_printing_atomic.py, line 99
+  def test_download_pdf(client, db, atomic_data):
+E       fixture 'db' not found
+>       available fixtures: app, atomic_data, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, class_mocker, client, cov, create_test_user, db_session, doctest_namespace, mocker, module_mocker, monkeypatch, no_cover, package_mocker, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, requests_mock, session_mocker, subtests, test_user_password, test_user_password_hash, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/app/tests/test_printing_atomic.py:99
+_ ERROR at setup of TestPropertyCreationFlow.test_get_submit_page_property_only_mode _
+tests/test_property_creation_flow.py:11: in test_user
+    ur = db.execute("INSERT INTO users (email, password_hash, is_pro) VALUES ('prop_flow@test.com', 'x', true) RETURNING id").fetchone()
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+database.py:53: in execute
+    raise e
+database.py:45: in execute
+    cur.execute(sql, params)
+/usr/local/lib/python3.13/site-packages/psycopg2/extras.py:146: in execute
+    return super().execute(query, vars)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   psycopg2.errors.UndefinedColumn: column "is_pro" of relation "users" does not exist
+E   LINE 1: INSERT INTO users (email, password_hash, is_pro) VALUES ('pr...
+E                                                    ^
+------------------------------ Captured log setup ------------------------------
+ERROR    database:database.py:50 [DB] Query Failed: column "is_pro" of relation "users" does not exist
+LINE 1: INSERT INTO users (email, password_hash, is_pro) VALUES ('pr...
+                                                 ^
+
+ERROR    database:database.py:52 [DB] SQL: INSERT INTO users (email, password_hash, is_pro) VALUES ('prop_flow@test.com', 'x', true) RETURNING id
+_ ERROR at setup of TestPropertyCreationFlow.test_create_property_only_does_not_create_order _
+tests/test_property_creation_flow.py:11: in test_user
+    ur = db.execute("INSERT INTO users (email, password_hash, is_pro) VALUES ('prop_flow@test.com', 'x', true) RETURNING id").fetchone()
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+database.py:53: in execute
+    raise e
+database.py:45: in execute
+    cur.execute(sql, params)
+/usr/local/lib/python3.13/site-packages/psycopg2/extras.py:146: in execute
+    return super().execute(query, vars)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   psycopg2.errors.UndefinedColumn: column "is_pro" of relation "users" does not exist
+E   LINE 1: INSERT INTO users (email, password_hash, is_pro) VALUES ('pr...
+E                                                    ^
+------------------------------ Captured log setup ------------------------------
+ERROR    database:database.py:50 [DB] Query Failed: column "is_pro" of relation "users" does not exist
+LINE 1: INSERT INTO users (email, password_hash, is_pro) VALUES ('pr...
+                                                 ^
+
+ERROR    database:database.py:52 [DB] SQL: INSERT INTO users (email, password_hash, is_pro) VALUES ('prop_flow@test.com', 'x', true) RETURNING id
+_ ERROR at setup of TestQRCodeUniqueness.test_is_code_taken_finds_sign_assets __
+file /app/tests/test_qr_code_uniqueness.py, line 17
+      def test_is_code_taken_finds_sign_assets(self, app, db):
+E       fixture 'db' not found
+>       available fixtures: app, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, class_mocker, client, cov, create_test_user, db_session, doctest_namespace, mocker, module_mocker, monkeypatch, no_cover, package_mocker, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, requests_mock, session_mocker, subtests, test_user_password, test_user_password_hash, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/app/tests/test_qr_code_uniqueness.py:17
+_ ERROR at setup of TestQRCodeUniqueness.test_is_code_taken_finds_properties_qr_code _
+file /app/tests/test_qr_code_uniqueness.py, line 35
+      def test_is_code_taken_finds_properties_qr_code(self, app, db):
+E       fixture 'db' not found
+>       available fixtures: app, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, class_mocker, client, cov, create_test_user, db_session, doctest_namespace, mocker, module_mocker, monkeypatch, no_cover, package_mocker, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, requests_mock, session_mocker, subtests, test_user_password, test_user_password_hash, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/app/tests/test_qr_code_uniqueness.py:35
+_ ERROR at setup of TestQRCodeUniqueness.test_is_code_taken_finds_qr_variants __
+file /app/tests/test_qr_code_uniqueness.py, line 59
+      def test_is_code_taken_finds_qr_variants(self, app, db):
+E       fixture 'db' not found
+>       available fixtures: app, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, class_mocker, client, cov, create_test_user, db_session, doctest_namespace, mocker, module_mocker, monkeypatch, no_cover, package_mocker, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, requests_mock, session_mocker, subtests, test_user_password, test_user_password_hash, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/app/tests/test_qr_code_uniqueness.py:59
+_ ERROR at setup of TestQRCodeUniqueness.test_generate_unique_code_avoids_collisions _
+file /app/tests/test_qr_code_uniqueness.py, line 89
+      def test_generate_unique_code_avoids_collisions(self, app, db):
+E       fixture 'db' not found
+>       available fixtures: app, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, class_mocker, client, cov, create_test_user, db_session, doctest_namespace, mocker, module_mocker, monkeypatch, no_cover, package_mocker, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, requests_mock, session_mocker, subtests, test_user_password, test_user_password_hash, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/app/tests/test_qr_code_uniqueness.py:89
+_ ERROR at setup of TestOptionBEnforcement.test_create_asset_always_unactivated _
+file /app/tests/test_qr_code_uniqueness.py, line 117
+      def test_create_asset_always_unactivated(self, app, db):
+E       fixture 'db' not found
+>       available fixtures: app, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, class_mocker, client, cov, create_test_user, db_session, doctest_namespace, mocker, module_mocker, monkeypatch, no_cover, package_mocker, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, requests_mock, session_mocker, subtests, test_user_password, test_user_password_hash, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/app/tests/test_qr_code_uniqueness.py:117
+_ ERROR at setup of TestOptionBEnforcement.test_activate_asset_requires_order_id _
+file /app/tests/test_qr_code_uniqueness.py, line 136
+      def test_activate_asset_requires_order_id(self, app, db):
+E       fixture 'db' not found
+>       available fixtures: app, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, class_mocker, client, cov, create_test_user, db_session, doctest_namespace, mocker, module_mocker, monkeypatch, no_cover, package_mocker, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, requests_mock, session_mocker, subtests, test_user_password, test_user_password_hash, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/app/tests/test_qr_code_uniqueness.py:136
+_ ERROR at setup of TestOptionBEnforcement.test_activate_asset_rejects_already_activated _
+file /app/tests/test_qr_code_uniqueness.py, line 167
+      def test_activate_asset_rejects_already_activated(self, app, db):
+E       fixture 'db' not found
+>       available fixtures: app, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, class_mocker, client, cov, create_test_user, db_session, doctest_namespace, mocker, module_mocker, monkeypatch, no_cover, package_mocker, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, requests_mock, session_mocker, subtests, test_user_password, test_user_password_hash, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/app/tests/test_qr_code_uniqueness.py:167
+_______________ ERROR at setup of test_qr_logo_gating_free_user ________________
+file /app/tests/test_qr_logo_pro_gating.py, line 45
+  def test_qr_logo_gating_free_user(client, free_user):
+file /app/tests/test_qr_logo_pro_gating.py, line 8
+  @pytest.fixture
+  def free_user(db):
+E       fixture 'db' not found
+>       available fixtures: app, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, class_mocker, client, cov, create_test_user, db_session, doctest_namespace, free_user, mocker, module_mocker, monkeypatch, no_cover, package_mocker, pro_user, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, requests_mock, session_mocker, subtests, test_user_password, test_user_password_hash, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/app/tests/test_qr_logo_pro_gating.py:8
+_________________ ERROR at setup of test_qr_logo_flow_pro_user _________________
+file /app/tests/test_qr_logo_pro_gating.py, line 68
+  def test_qr_logo_flow_pro_user(client, pro_user, db):
+file /app/tests/test_qr_logo_pro_gating.py, line 20
+  @pytest.fixture
+  def pro_user(db):
+E       fixture 'db' not found
+>       available fixtures: app, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, class_mocker, client, cov, create_test_user, db_session, doctest_namespace, free_user, mocker, module_mocker, monkeypatch, no_cover, package_mocker, pro_user, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, requests_mock, session_mocker, subtests, test_user_password, test_user_password_hash, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/app/tests/test_qr_logo_pro_gating.py:20
+______ ERROR at setup of TestPropertyPage.test_paid_property_returns_200 _______
+tests/test_qr_routes.py:46: in setup_test_data
+    db.execute("""
+database.py:53: in execute
+    raise e
+database.py:45: in execute
+    cur.execute(sql, params)
+/usr/local/lib/python3.13/site-packages/psycopg2/extras.py:146: in execute
+    return super().execute(query, vars)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   psycopg2.errors.NotNullViolation: null value in column "brokerage" of relation "agents" violates not-null constraint
+E   DETAIL:  Failing row contains (1, 6, Test Agent, null, test@example.com, null, null, null, null, null, null).
+---------------------------- Captured stdout setup -----------------------------
+{"timestamp": "2026-02-09T16:11:32.993558", "level": "INFO", "message": "[App] create_app() called", "logger": "app", "module": "app", "lineno": 29}
+{"timestamp": "2026-02-09T16:11:32.994213", "level": "INFO", "message": "[App] Flask app instance created", "logger": "app", "module": "app", "lineno": 31}
+{"timestamp": "2026-02-09T16:11:32.994404", "level": "INFO", "message": "Logger setup complete. JSON formatted logs enabled.", "logger": "app", "module": "logger", "lineno": 66}
+{"timestamp": "2026-02-09T16:11:32.995271", "level": "INFO", "message": "[Startup] Warming Stripe Price Cache...", "logger": "app", "module": "app", "lineno": 112}
+{"timestamp": "2026-02-09T16:11:33.017566", "level": "WARNING", "message": "[Startup] Dev Warning: Cache warm failed: Invalid API Key provided: sk_test_mock", "logger": "app", "module": "app", "lineno": 120}
+------------------------------ Captured log setup ------------------------------
+INFO     app:app.py:29 [App] create_app() called
+INFO     app:app.py:31 [App] Flask app instance created
+INFO     app:logger.py:66 Logger setup complete. JSON formatted logs enabled.
+INFO     app:app.py:112 [Startup] Warming Stripe Price Cache...
+ERROR    services.stripe_price_resolver:stripe_price_resolver.py:129 Stripe API error refreshing keys ['smart_sign_print_18x24', 'smart_sign_print_24x36', 'smart_sign_print_36x24', 'smart_riser_6x24', 'smart_riser_6x36', 'yard_sign_coroplast_12x18', 'yard_sign_coroplast_18x24', 'yard_sign_coroplast_24x36', 'yard_sign_aluminum_18x24', 'yard_sign_aluminum_24x36']: Invalid API Key provided: sk_test_mock
+WARNING  app:app.py:120 [Startup] Dev Warning: Cache warm failed: Invalid API Key provided: sk_test_mock
+ERROR    database:database.py:50 [DB] Query Failed: null value in column "brokerage" of relation "agents" violates not-null constraint
+DETAIL:  Failing row contains (1, 6, Test Agent, null, test@example.com, null, null, null, null, null, null).
+
+ERROR    database:database.py:52 [DB] SQL: 
+            INSERT INTO agents (user_id, name, email)
+            VALUES (%s, 'Test Agent', 'test@example.com')
+            ON CONFLICT DO NOTHING
+_____ ERROR at setup of TestPropertyPage.test_expired_property_returns_410 _____
+tests/test_qr_routes.py:46: in setup_test_data
+    db.execute("""
+database.py:53: in execute
+    raise e
+database.py:45: in execute
+    cur.execute(sql, params)
+/usr/local/lib/python3.13/site-packages/psycopg2/extras.py:146: in execute
+    return super().execute(query, vars)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   psycopg2.errors.NotNullViolation: null value in column "brokerage" of relation "agents" violates not-null constraint
+E   DETAIL:  Failing row contains (2, 7, Test Agent, null, test@example.com, null, null, null, null, null, null).
+---------------------------- Captured stdout setup -----------------------------
+{"timestamp": "2026-02-09T16:11:33.089591", "level": "INFO", "message": "[App] create_app() called", "logger": "app", "module": "app", "lineno": 29}
+{"timestamp": "2026-02-09T16:11:33.090188", "level": "INFO", "message": "[App] Flask app instance created", "logger": "app", "module": "app", "lineno": 31}
+{"timestamp": "2026-02-09T16:11:33.090313", "level": "INFO", "message": "Logger setup complete. JSON formatted logs enabled.", "logger": "app", "module": "logger", "lineno": 66}
+{"timestamp": "2026-02-09T16:11:33.091184", "level": "INFO", "message": "[Startup] Warming Stripe Price Cache...", "logger": "app", "module": "app", "lineno": 112}
+{"timestamp": "2026-02-09T16:11:33.116053", "level": "WARNING", "message": "[Startup] Dev Warning: Cache warm failed: Invalid API Key provided: sk_test_mock", "logger": "app", "module": "app", "lineno": 120}
+------------------------------ Captured log setup ------------------------------
+INFO     app:app.py:29 [App] create_app() called
+INFO     app:app.py:31 [App] Flask app instance created
+INFO     app:logger.py:66 Logger setup complete. JSON formatted logs enabled.
+INFO     app:app.py:112 [Startup] Warming Stripe Price Cache...
+ERROR    services.stripe_price_resolver:stripe_price_resolver.py:129 Stripe API error refreshing keys ['smart_sign_print_18x24', 'smart_sign_print_24x36', 'smart_sign_print_36x24', 'smart_riser_6x24', 'smart_riser_6x36', 'yard_sign_coroplast_12x18', 'yard_sign_coroplast_18x24', 'yard_sign_coroplast_24x36', 'yard_sign_aluminum_18x24', 'yard_sign_aluminum_24x36']: Invalid API Key provided: sk_test_mock
+WARNING  app:app.py:120 [Startup] Dev Warning: Cache warm failed: Invalid API Key provided: sk_test_mock
+ERROR    database:database.py:50 [DB] Query Failed: null value in column "brokerage" of relation "agents" violates not-null constraint
+DETAIL:  Failing row contains (2, 7, Test Agent, null, test@example.com, null, null, null, null, null, null).
+
+ERROR    database:database.py:52 [DB] SQL: 
+            INSERT INTO agents (user_id, name, email)
+            VALUES (%s, 'Test Agent', 'test@example.com')
+            ON CONFLICT DO NOTHING
+______ ERROR at setup of TestPropertyPage.test_free_property_returns_200 _______
+tests/test_qr_routes.py:46: in setup_test_data
+    db.execute("""
+database.py:53: in execute
+    raise e
+database.py:45: in execute
+    cur.execute(sql, params)
+/usr/local/lib/python3.13/site-packages/psycopg2/extras.py:146: in execute
+    return super().execute(query, vars)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   psycopg2.errors.NotNullViolation: null value in column "brokerage" of relation "agents" violates not-null constraint
+E   DETAIL:  Failing row contains (3, 8, Test Agent, null, test@example.com, null, null, null, null, null, null).
+---------------------------- Captured stdout setup -----------------------------
+{"timestamp": "2026-02-09T16:11:33.252512", "level": "INFO", "message": "[App] create_app() called", "logger": "app", "module": "app", "lineno": 29}
+{"timestamp": "2026-02-09T16:11:33.253164", "level": "INFO", "message": "[App] Flask app instance created", "logger": "app", "module": "app", "lineno": 31}
+{"timestamp": "2026-02-09T16:11:33.253311", "level": "INFO", "message": "Logger setup complete. JSON formatted logs enabled.", "logger": "app", "module": "logger", "lineno": 66}
+{"timestamp": "2026-02-09T16:11:33.254372", "level": "INFO", "message": "[Startup] Warming Stripe Price Cache...", "logger": "app", "module": "app", "lineno": 112}
+{"timestamp": "2026-02-09T16:11:33.274193", "level": "WARNING", "message": "[Startup] Dev Warning: Cache warm failed: Invalid API Key provided: sk_test_mock", "logger": "app", "module": "app", "lineno": 120}
+------------------------------ Captured log setup ------------------------------
+INFO     app:app.py:29 [App] create_app() called
+INFO     app:app.py:31 [App] Flask app instance created
+INFO     app:logger.py:66 Logger setup complete. JSON formatted logs enabled.
+INFO     app:app.py:112 [Startup] Warming Stripe Price Cache...
+ERROR    services.stripe_price_resolver:stripe_price_resolver.py:129 Stripe API error refreshing keys ['smart_sign_print_18x24', 'smart_sign_print_24x36', 'smart_sign_print_36x24', 'smart_riser_6x24', 'smart_riser_6x36', 'yard_sign_coroplast_12x18', 'yard_sign_coroplast_18x24', 'yard_sign_coroplast_24x36', 'yard_sign_aluminum_18x24', 'yard_sign_aluminum_24x36']: Invalid API Key provided: sk_test_mock
+WARNING  app:app.py:120 [Startup] Dev Warning: Cache warm failed: Invalid API Key provided: sk_test_mock
+ERROR    database:database.py:50 [DB] Query Failed: null value in column "brokerage" of relation "agents" violates not-null constraint
+DETAIL:  Failing row contains (3, 8, Test Agent, null, test@example.com, null, null, null, null, null, null).
+
+ERROR    database:database.py:52 [DB] SQL: 
+            INSERT INTO agents (user_id, name, email)
+            VALUES (%s, 'Test Agent', 'test@example.com')
+            ON CONFLICT DO NOTHING
+__________ ERROR at setup of TestQRRedirect.test_valid_code_redirects __________
+tests/test_qr_routes.py:46: in setup_test_data
+    db.execute("""
+database.py:53: in execute
+    raise e
+database.py:45: in execute
+    cur.execute(sql, params)
+/usr/local/lib/python3.13/site-packages/psycopg2/extras.py:146: in execute
+    return super().execute(query, vars)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   psycopg2.errors.NotNullViolation: null value in column "brokerage" of relation "agents" violates not-null constraint
+E   DETAIL:  Failing row contains (4, 9, Test Agent, null, test@example.com, null, null, null, null, null, null).
+---------------------------- Captured stdout setup -----------------------------
+{"timestamp": "2026-02-09T16:11:33.342742", "level": "INFO", "message": "[App] create_app() called", "logger": "app", "module": "app", "lineno": 29}
+{"timestamp": "2026-02-09T16:11:33.343326", "level": "INFO", "message": "[App] Flask app instance created", "logger": "app", "module": "app", "lineno": 31}
+{"timestamp": "2026-02-09T16:11:33.343449", "level": "INFO", "message": "Logger setup complete. JSON formatted logs enabled.", "logger": "app", "module": "logger", "lineno": 66}
+{"timestamp": "2026-02-09T16:11:33.344370", "level": "INFO", "message": "[Startup] Warming Stripe Price Cache...", "logger": "app", "module": "app", "lineno": 112}
+{"timestamp": "2026-02-09T16:11:33.362588", "level": "WARNING", "message": "[Startup] Dev Warning: Cache warm failed: Invalid API Key provided: sk_test_mock", "logger": "app", "module": "app", "lineno": 120}
+------------------------------ Captured log setup ------------------------------
+INFO     app:app.py:29 [App] create_app() called
+INFO     app:app.py:31 [App] Flask app instance created
+INFO     app:logger.py:66 Logger setup complete. JSON formatted logs enabled.
+INFO     app:app.py:112 [Startup] Warming Stripe Price Cache...
+ERROR    services.stripe_price_resolver:stripe_price_resolver.py:129 Stripe API error refreshing keys ['smart_sign_print_18x24', 'smart_sign_print_24x36', 'smart_sign_print_36x24', 'smart_riser_6x24', 'smart_riser_6x36', 'yard_sign_coroplast_12x18', 'yard_sign_coroplast_18x24', 'yard_sign_coroplast_24x36', 'yard_sign_aluminum_18x24', 'yard_sign_aluminum_24x36']: Invalid API Key provided: sk_test_mock
+WARNING  app:app.py:120 [Startup] Dev Warning: Cache warm failed: Invalid API Key provided: sk_test_mock
+ERROR    database:database.py:50 [DB] Query Failed: null value in column "brokerage" of relation "agents" violates not-null constraint
+DETAIL:  Failing row contains (4, 9, Test Agent, null, test@example.com, null, null, null, null, null, null).
+
+ERROR    database:database.py:52 [DB] SQL: 
+            INSERT INTO agents (user_id, name, email)
+            VALUES (%s, 'Test Agent', 'test@example.com')
+            ON CONFLICT DO NOTHING
+___ ERROR at setup of TestQRRedirect.test_expired_property_code_returns_410 ____
+tests/test_qr_routes.py:46: in setup_test_data
+    db.execute("""
+database.py:53: in execute
+    raise e
+database.py:45: in execute
+    cur.execute(sql, params)
+/usr/local/lib/python3.13/site-packages/psycopg2/extras.py:146: in execute
+    return super().execute(query, vars)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   psycopg2.errors.NotNullViolation: null value in column "brokerage" of relation "agents" violates not-null constraint
+E   DETAIL:  Failing row contains (5, 10, Test Agent, null, test@example.com, null, null, null, null, null, null).
+---------------------------- Captured stdout setup -----------------------------
+{"timestamp": "2026-02-09T16:11:33.434424", "level": "INFO", "message": "[App] create_app() called", "logger": "app", "module": "app", "lineno": 29}
+{"timestamp": "2026-02-09T16:11:33.435017", "level": "INFO", "message": "[App] Flask app instance created", "logger": "app", "module": "app", "lineno": 31}
+{"timestamp": "2026-02-09T16:11:33.435158", "level": "INFO", "message": "Logger setup complete. JSON formatted logs enabled.", "logger": "app", "module": "logger", "lineno": 66}
+{"timestamp": "2026-02-09T16:11:33.436064", "level": "INFO", "message": "[Startup] Warming Stripe Price Cache...", "logger": "app", "module": "app", "lineno": 112}
+{"timestamp": "2026-02-09T16:11:33.461252", "level": "WARNING", "message": "[Startup] Dev Warning: Cache warm failed: Invalid API Key provided: sk_test_mock", "logger": "app", "module": "app", "lineno": 120}
+------------------------------ Captured log setup ------------------------------
+INFO     app:app.py:29 [App] create_app() called
+INFO     app:app.py:31 [App] Flask app instance created
+INFO     app:logger.py:66 Logger setup complete. JSON formatted logs enabled.
+INFO     app:app.py:112 [Startup] Warming Stripe Price Cache...
+ERROR    services.stripe_price_resolver:stripe_price_resolver.py:129 Stripe API error refreshing keys ['smart_sign_print_18x24', 'smart_sign_print_24x36', 'smart_sign_print_36x24', 'smart_riser_6x24', 'smart_riser_6x36', 'yard_sign_coroplast_12x18', 'yard_sign_coroplast_18x24', 'yard_sign_coroplast_24x36', 'yard_sign_aluminum_18x24', 'yard_sign_aluminum_24x36']: Invalid API Key provided: sk_test_mock
+WARNING  app:app.py:120 [Startup] Dev Warning: Cache warm failed: Invalid API Key provided: sk_test_mock
+ERROR    database:database.py:50 [DB] Query Failed: null value in column "brokerage" of relation "agents" violates not-null constraint
+DETAIL:  Failing row contains (5, 10, Test Agent, null, test@example.com, null, null, null, null, null, null).
+
+ERROR    database:database.py:52 [DB] SQL: 
+            INSERT INTO agents (user_id, name, email)
+            VALUES (%s, 'Test Agent', 'test@example.com')
+            ON CONFLICT DO NOTHING
+_________ ERROR at setup of TestQRRedirect.test_scan_logs_to_qr_scans __________
+tests/test_qr_routes.py:46: in setup_test_data
+    db.execute("""
+database.py:53: in execute
+    raise e
+database.py:45: in execute
+    cur.execute(sql, params)
+/usr/local/lib/python3.13/site-packages/psycopg2/extras.py:146: in execute
+    return super().execute(query, vars)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   psycopg2.errors.NotNullViolation: null value in column "brokerage" of relation "agents" violates not-null constraint
+E   DETAIL:  Failing row contains (6, 11, Test Agent, null, test@example.com, null, null, null, null, null, null).
+---------------------------- Captured stdout setup -----------------------------
+{"timestamp": "2026-02-09T16:11:33.593442", "level": "INFO", "message": "[App] create_app() called", "logger": "app", "module": "app", "lineno": 29}
+{"timestamp": "2026-02-09T16:11:33.594117", "level": "INFO", "message": "[App] Flask app instance created", "logger": "app", "module": "app", "lineno": 31}
+{"timestamp": "2026-02-09T16:11:33.594257", "level": "INFO", "message": "Logger setup complete. JSON formatted logs enabled.", "logger": "app", "module": "logger", "lineno": 66}
+{"timestamp": "2026-02-09T16:11:33.595158", "level": "INFO", "message": "[Startup] Warming Stripe Price Cache...", "logger": "app", "module": "app", "lineno": 112}
+{"timestamp": "2026-02-09T16:11:33.613073", "level": "WARNING", "message": "[Startup] Dev Warning: Cache warm failed: Invalid API Key provided: sk_test_mock", "logger": "app", "module": "app", "lineno": 120}
+------------------------------ Captured log setup ------------------------------
+INFO     app:app.py:29 [App] create_app() called
+INFO     app:app.py:31 [App] Flask app instance created
+INFO     app:logger.py:66 Logger setup complete. JSON formatted logs enabled.
+INFO     app:app.py:112 [Startup] Warming Stripe Price Cache...
+ERROR    services.stripe_price_resolver:stripe_price_resolver.py:129 Stripe API error refreshing keys ['smart_sign_print_18x24', 'smart_sign_print_24x36', 'smart_sign_print_36x24', 'smart_riser_6x24', 'smart_riser_6x36', 'yard_sign_coroplast_12x18', 'yard_sign_coroplast_18x24', 'yard_sign_coroplast_24x36', 'yard_sign_aluminum_18x24', 'yard_sign_aluminum_24x36']: Invalid API Key provided: sk_test_mock
+WARNING  app:app.py:120 [Startup] Dev Warning: Cache warm failed: Invalid API Key provided: sk_test_mock
+ERROR    database:database.py:50 [DB] Query Failed: null value in column "brokerage" of relation "agents" violates not-null constraint
+DETAIL:  Failing row contains (6, 11, Test Agent, null, test@example.com, null, null, null, null, null, null).
+
+ERROR    database:database.py:52 [DB] SQL: 
+            INSERT INTO agents (user_id, name, email)
+            VALUES (%s, 'Test Agent', 'test@example.com')
+            ON CONFLICT DO NOTHING
+_ ERROR at setup of TestSmartSignActivation.test_inactive_asset_scan_returns_not_activated_page _
+file /app/tests/test_smart_sign_activation.py, line 14
+      def test_inactive_asset_scan_returns_not_activated_page(self, app, client, db):
+E       fixture 'db' not found
+>       available fixtures: app, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, class_mocker, client, cov, create_test_user, db_session, doctest_namespace, mocker, module_mocker, monkeypatch, no_cover, package_mocker, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, requests_mock, session_mocker, subtests, test_user_password, test_user_password_hash, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/app/tests/test_smart_sign_activation.py:14
+_ ERROR at setup of TestSmartSignActivation.test_active_asset_scan_redirects_to_property _
+file /app/tests/test_smart_sign_activation.py, line 42
+      def test_active_asset_scan_redirects_to_property(self, app, client, db):
+E       fixture 'db' not found
+>       available fixtures: app, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, class_mocker, client, cov, create_test_user, db_session, doctest_namespace, mocker, module_mocker, monkeypatch, no_cover, package_mocker, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, requests_mock, session_mocker, subtests, test_user_password, test_user_password_hash, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/app/tests/test_smart_sign_activation.py:42
+_ ERROR at setup of TestSmartSignActivation.test_active_unassigned_asset_shows_unassigned_page _
+file /app/tests/test_smart_sign_activation.py, line 90
+      def test_active_unassigned_asset_shows_unassigned_page(self, app, client, db):
+E       fixture 'db' not found
+>       available fixtures: app, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, class_mocker, client, cov, create_test_user, db_session, doctest_namespace, mocker, module_mocker, monkeypatch, no_cover, package_mocker, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, requests_mock, session_mocker, subtests, test_user_password, test_user_password_hash, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/app/tests/test_smart_sign_activation.py:90
+_ ERROR at setup of TestSmartSignActivation.test_assignment_blocked_for_inactive_asset _
+file /app/tests/test_smart_sign_activation.py, line 122
+      def test_assignment_blocked_for_inactive_asset(self, app, db):
+E       fixture 'db' not found
+>       available fixtures: app, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, class_mocker, client, cov, create_test_user, db_session, doctest_namespace, mocker, module_mocker, monkeypatch, no_cover, package_mocker, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, requests_mock, session_mocker, subtests, test_user_password, test_user_password_hash, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/app/tests/test_smart_sign_activation.py:122
+_ ERROR at setup of TestSmartSignActivation.test_unassigned_active_asset_scan_logs_to_app_events _
+file /app/tests/test_smart_sign_activation.py, line 153
+      def test_unassigned_active_asset_scan_logs_to_app_events(self, app, client, db):
+E       fixture 'db' not found
+>       available fixtures: app, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, class_mocker, client, cov, create_test_user, db_session, doctest_namespace, mocker, module_mocker, monkeypatch, no_cover, package_mocker, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, requests_mock, session_mocker, subtests, test_user_password, test_user_password_hash, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/app/tests/test_smart_sign_activation.py:153
+___ ERROR at setup of TestSmartSigns.test_pro_create_asset_via_purchase_flow ___
+file /app/tests/test_smart_signs.py, line 14
+      def test_pro_create_asset_via_purchase_flow(self, app, db, client):
+E       fixture 'db' not found
+>       available fixtures: app, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, class_mocker, client, cov, create_test_user, db_session, doctest_namespace, mocker, module_mocker, monkeypatch, no_cover, package_mocker, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, requests_mock, session_mocker, subtests, test_user_password, test_user_password_hash, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/app/tests/test_smart_signs.py:14
+____ ERROR at setup of TestSmartSigns.test_pro_assign_asset_to_own_property ____
+file /app/tests/test_smart_signs.py, line 35
+      def test_pro_assign_asset_to_own_property(self, app, db):
+E       fixture 'db' not found
+>       available fixtures: app, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, class_mocker, client, cov, create_test_user, db_session, doctest_namespace, mocker, module_mocker, monkeypatch, no_cover, package_mocker, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, requests_mock, session_mocker, subtests, test_user_password, test_user_password_hash, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/app/tests/test_smart_signs.py:35
+_____ ERROR at setup of TestSmartSigns.test_free_can_initial_assign_asset ______
+file /app/tests/test_smart_signs.py, line 59
+      def test_free_can_initial_assign_asset(self, app, db):
+E       fixture 'db' not found
+>       available fixtures: app, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, class_mocker, client, cov, create_test_user, db_session, doctest_namespace, mocker, module_mocker, monkeypatch, no_cover, package_mocker, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, requests_mock, session_mocker, subtests, test_user_password, test_user_password_hash, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/app/tests/test_smart_signs.py:59
+_______ ERROR at setup of TestSmartSigns.test_free_cannot_reassign_asset _______
+file /app/tests/test_smart_signs.py, line 79
+      def test_free_cannot_reassign_asset(self, app, db):
+E       fixture 'db' not found
+>       available fixtures: app, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, class_mocker, client, cov, create_test_user, db_session, doctest_namespace, mocker, module_mocker, monkeypatch, no_cover, package_mocker, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, requests_mock, session_mocker, subtests, test_user_password, test_user_password_hash, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/app/tests/test_smart_signs.py:79
+_______ ERROR at setup of TestSmartSigns.test_free_cannot_unassign_asset _______
+file /app/tests/test_smart_signs.py, line 110
+      def test_free_cannot_unassign_asset(self, app, db):
+E       fixture 'db' not found
+>       available fixtures: app, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, class_mocker, client, cov, create_test_user, db_session, doctest_namespace, mocker, module_mocker, monkeypatch, no_cover, package_mocker, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, requests_mock, session_mocker, subtests, test_user_password, test_user_password_hash, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/app/tests/test_smart_signs.py:110
+__________ ERROR at setup of TestSmartSigns.test_frozen_blocks_assign __________
+file /app/tests/test_smart_signs.py, line 139
+      def test_frozen_blocks_assign(self, app, db):
+E       fixture 'db' not found
+>       available fixtures: app, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, class_mocker, client, cov, create_test_user, db_session, doctest_namespace, mocker, module_mocker, monkeypatch, no_cover, package_mocker, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, requests_mock, session_mocker, subtests, test_user_password, test_user_password_hash, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/app/tests/test_smart_signs.py:139
+_________ ERROR at setup of TestSmartSigns.test_inactive_blocks_assign _________
+file /app/tests/test_smart_signs.py, line 153
+      def test_inactive_blocks_assign(self, app, db):
+E       fixture 'db' not found
+>       available fixtures: app, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, class_mocker, client, cov, create_test_user, db_session, doctest_namespace, mocker, module_mocker, monkeypatch, no_cover, package_mocker, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, requests_mock, session_mocker, subtests, test_user_password, test_user_password_hash, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/app/tests/test_smart_signs.py:153
+__________ ERROR at setup of TestSmartSigns.test_scan_resolution_flow __________
+file /app/tests/test_smart_signs.py, line 165
+      def test_scan_resolution_flow(self, app, client, db):
+E       fixture 'db' not found
+>       available fixtures: app, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, class_mocker, client, cov, create_test_user, db_session, doctest_namespace, mocker, module_mocker, monkeypatch, no_cover, package_mocker, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, requests_mock, session_mocker, subtests, test_user_password, test_user_password_hash, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/app/tests/test_smart_signs.py:165
+_________ ERROR at setup of TestSmartSigns.test_unassigned_asset_page __________
+file /app/tests/test_smart_signs.py, line 191
+      def test_unassigned_asset_page(self, app, client, db):
+E       fixture 'db' not found
+>       available fixtures: app, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, class_mocker, client, cov, create_test_user, db_session, doctest_namespace, mocker, module_mocker, monkeypatch, no_cover, package_mocker, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, requests_mock, session_mocker, subtests, test_user_password, test_user_password_hash, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/app/tests/test_smart_signs.py:191
+_____________ ERROR at setup of test_smartsign_v2_persistence_e2e ______________
+file /app/tests/test_smartsign_v2_persistence.py, line 17
+  def test_smartsign_v2_persistence_e2e(app, db, mock_storage):
+E       fixture 'db' not found
+>       available fixtures: app, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, class_mocker, client, cov, create_test_user, db_session, doctest_namespace, mock_storage, mocker, module_mocker, monkeypatch, no_cover, package_mocker, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, requests_mock, session_mocker, subtests, test_user_password, test_user_password_hash, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/app/tests/test_smartsign_v2_persistence.py:17
+________________ ERROR at setup of test_webhook_captures_totals ________________
+file /app/tests/test_webhook_amounts.py, line 5
+  def test_webhook_captures_totals(db):
+E       fixture 'db' not found
+>       available fixtures: app, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, class_mocker, client, cov, create_test_user, db_session, doctest_namespace, mocker, module_mocker, monkeypatch, no_cover, package_mocker, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, requests_mock, session_mocker, subtests, test_user_password, test_user_password_hash, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/app/tests/test_webhook_amounts.py:5
+____ ERROR at setup of TestListingSignPDF.test_yard_sign_qr_value_is_r_path ____
+file /app/tests/test_yard_sign_pdf.py, line 64
+      def test_yard_sign_qr_value_is_r_path(self, app, db):
+E       fixture 'db' not found
+>       available fixtures: app, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, class_mocker, client, cov, create_test_user, db_session, doctest_namespace, mocker, module_mocker, monkeypatch, no_cover, package_mocker, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, requests_mock, session_mocker, subtests, test_user_password, test_user_password_hash, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/app/tests/test_yard_sign_pdf.py:64
+__ ERROR at setup of TestListingSignPDF.test_landscape_layout_used_for_36x24 ___
+file /app/tests/test_yard_sign_pdf.py, line 131
+      def test_landscape_layout_used_for_36x24(self, app, db):
+E       fixture 'db' not found
+>       available fixtures: app, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, class_mocker, client, cov, create_test_user, db_session, doctest_namespace, mocker, module_mocker, monkeypatch, no_cover, package_mocker, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, requests_mock, session_mocker, subtests, test_user_password, test_user_password_hash, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/app/tests/test_yard_sign_pdf.py:131
+____ ERROR at setup of TestListingSignPDF.test_generate_yard_sign_pdf_smoke ____
+file /app/tests/test_yard_sign_pdf.py, line 236
+      def test_generate_yard_sign_pdf_smoke(self, app, db):
+E       fixture 'db' not found
+>       available fixtures: app, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, class_mocker, client, cov, create_test_user, db_session, doctest_namespace, mocker, module_mocker, monkeypatch, no_cover, package_mocker, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, requests_mock, session_mocker, subtests, test_user_password, test_user_password_hash, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/app/tests/test_yard_sign_pdf.py:236
+=================================== FAILURES ===================================
+____________________ TestAIReadiness.test_action_rejection _____________________
+tests/test_ai_readiness.py:113: in test_action_rejection
+    action = propose_action(
+services/agent_actions.py:46: in propose_action
+    action = AgentAction.create(
+models.py:264: in create
+    row = db.execute(sql, tuple(vals)).fetchone()
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+database.py:53: in execute
+    raise e
+database.py:45: in execute
+    cur.execute(sql, params)
+/usr/local/lib/python3.13/site-packages/psycopg2/extras.py:146: in execute
+    return super().execute(query, vars)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   psycopg2.errors.NotNullViolation: null value in column "created_by_type" of relation "agent_actions" violates not-null constraint
+E   DETAIL:  Failing row contains (1, 8edaada3-b8ec-44ce-9808-24ad2f21e08e, 2026-02-09 16:11:30.556307+00, 2026-02-09 16:11:30.556307+00, 1, null, null, null, null, null, null, draft_sms, proposed, {}, null, {}, [], t, null, null, null, null, null, null, null, null, null).
+----------------------------- Captured stdout call -----------------------------
+{"timestamp": "2026-02-09T16:11:30.488176", "level": "INFO", "message": "[App] create_app() called", "logger": "app", "module": "app", "lineno": 29}
+{"timestamp": "2026-02-09T16:11:30.488855", "level": "INFO", "message": "[App] Flask app instance created", "logger": "app", "module": "app", "lineno": 31}
+{"timestamp": "2026-02-09T16:11:30.488997", "level": "INFO", "message": "Logger setup complete. JSON formatted logs enabled.", "logger": "app", "module": "logger", "lineno": 66}
+{"timestamp": "2026-02-09T16:11:30.490554", "level": "INFO", "message": "[Startup] Warming Stripe Price Cache...", "logger": "app", "module": "app", "lineno": 112}
+{"timestamp": "2026-02-09T16:11:30.518611", "level": "WARNING", "message": "[Startup] Dev Warning: Cache warm failed: Invalid API Key provided: sk_test_mock", "logger": "app", "module": "app", "lineno": 120}
+------------------------------ Captured log call -------------------------------
+INFO     app:app.py:29 [App] create_app() called
+INFO     app:app.py:31 [App] Flask app instance created
+INFO     app:logger.py:66 Logger setup complete. JSON formatted logs enabled.
+INFO     app:app.py:112 [Startup] Warming Stripe Price Cache...
+ERROR    services.stripe_price_resolver:stripe_price_resolver.py:129 Stripe API error refreshing keys ['smart_sign_print_18x24', 'smart_sign_print_24x36', 'smart_sign_print_36x24', 'smart_riser_6x24', 'smart_riser_6x36', 'yard_sign_coroplast_12x18', 'yard_sign_coroplast_18x24', 'yard_sign_coroplast_24x36', 'yard_sign_aluminum_18x24', 'yard_sign_aluminum_24x36']: Invalid API Key provided: sk_test_mock
+WARNING  app:app.py:120 [Startup] Dev Warning: Cache warm failed: Invalid API Key provided: sk_test_mock
+ERROR    database:database.py:50 [DB] Query Failed: null value in column "created_by_type" of relation "agent_actions" violates not-null constraint
+DETAIL:  Failing row contains (1, 8edaada3-b8ec-44ce-9808-24ad2f21e08e, 2026-02-09 16:11:30.556307+00, 2026-02-09 16:11:30.556307+00, 1, null, null, null, null, null, null, draft_sms, proposed, {}, null, {}, [], t, null, null, null, null, null, null, null, null, null).
+
+ERROR    database:database.py:52 [DB] SQL: INSERT INTO agent_actions (user_id, action_type, status, proposal, policy_snapshot, input_event_refs) VALUES (%s, %s, %s, %s, %s, %s) RETURNING id
+ERROR    database:database.py:50 [DB] Query Failed: current transaction is aborted, commands ignored until end of transaction block
+
+ERROR    database:database.py:52 [DB] SQL: DELETE FROM app_events
+_________________ TestAIReadiness.test_agent_action_lifecycle __________________
+tests/test_ai_readiness.py:20: in setUp
+    db.execute("INSERT INTO users (email, password_hash, is_verified) VALUES ('ai@test.com', 'hash', true) RETURNING id")
+database.py:53: in execute
+    raise e
+database.py:45: in execute
+    cur.execute(sql, params)
+/usr/local/lib/python3.13/site-packages/psycopg2/extras.py:146: in execute
+    return super().execute(query, vars)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   psycopg2.errors.UniqueViolation: duplicate key value violates unique constraint "users_email_key"
+E   DETAIL:  Key (email)=(ai@test.com) already exists.
+----------------------------- Captured stdout call -----------------------------
+{"timestamp": "2026-02-09T16:11:30.869848", "level": "INFO", "message": "[App] create_app() called", "logger": "app", "module": "app", "lineno": 29}
+{"timestamp": "2026-02-09T16:11:30.870467", "level": "INFO", "message": "[App] Flask app instance created", "logger": "app", "module": "app", "lineno": 31}
+{"timestamp": "2026-02-09T16:11:30.870601", "level": "INFO", "message": "Logger setup complete. JSON formatted logs enabled.", "logger": "app", "module": "logger", "lineno": 66}
+{"timestamp": "2026-02-09T16:11:30.871517", "level": "INFO", "message": "[Startup] Warming Stripe Price Cache...", "logger": "app", "module": "app", "lineno": 112}
+{"timestamp": "2026-02-09T16:11:30.892110", "level": "WARNING", "message": "[Startup] Dev Warning: Cache warm failed: Invalid API Key provided: sk_test_mock", "logger": "app", "module": "app", "lineno": 120}
+------------------------------ Captured log call -------------------------------
+INFO     app:app.py:29 [App] create_app() called
+INFO     app:app.py:31 [App] Flask app instance created
+INFO     app:logger.py:66 Logger setup complete. JSON formatted logs enabled.
+INFO     app:app.py:112 [Startup] Warming Stripe Price Cache...
+ERROR    services.stripe_price_resolver:stripe_price_resolver.py:129 Stripe API error refreshing keys ['smart_sign_print_18x24', 'smart_sign_print_24x36', 'smart_sign_print_36x24', 'smart_riser_6x24', 'smart_riser_6x36', 'yard_sign_coroplast_12x18', 'yard_sign_coroplast_18x24', 'yard_sign_coroplast_24x36', 'yard_sign_aluminum_18x24', 'yard_sign_aluminum_24x36']: Invalid API Key provided: sk_test_mock
+WARNING  app:app.py:120 [Startup] Dev Warning: Cache warm failed: Invalid API Key provided: sk_test_mock
+ERROR    database:database.py:50 [DB] Query Failed: duplicate key value violates unique constraint "users_email_key"
+DETAIL:  Key (email)=(ai@test.com) already exists.
+
+ERROR    database:database.py:52 [DB] SQL: INSERT INTO users (email, password_hash, is_verified) VALUES ('ai@test.com', 'hash', true) RETURNING id
+______________ TestAIReadiness.test_app_event_schema_and_defaults ______________
+tests/test_ai_readiness.py:20: in setUp
+    db.execute("INSERT INTO users (email, password_hash, is_verified) VALUES ('ai@test.com', 'hash', true) RETURNING id")
+database.py:53: in execute
+    raise e
+database.py:45: in execute
+    cur.execute(sql, params)
+/usr/local/lib/python3.13/site-packages/psycopg2/extras.py:146: in execute
+    return super().execute(query, vars)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   psycopg2.errors.UniqueViolation: duplicate key value violates unique constraint "users_email_key"
+E   DETAIL:  Key (email)=(ai@test.com) already exists.
+----------------------------- Captured stdout call -----------------------------
+{"timestamp": "2026-02-09T16:11:30.960957", "level": "INFO", "message": "[App] create_app() called", "logger": "app", "module": "app", "lineno": 29}
+{"timestamp": "2026-02-09T16:11:30.961595", "level": "INFO", "message": "[App] Flask app instance created", "logger": "app", "module": "app", "lineno": 31}
+{"timestamp": "2026-02-09T16:11:30.961730", "level": "INFO", "message": "Logger setup complete. JSON formatted logs enabled.", "logger": "app", "module": "logger", "lineno": 66}
+{"timestamp": "2026-02-09T16:11:30.962711", "level": "INFO", "message": "[Startup] Warming Stripe Price Cache...", "logger": "app", "module": "app", "lineno": 112}
+{"timestamp": "2026-02-09T16:11:30.985263", "level": "WARNING", "message": "[Startup] Dev Warning: Cache warm failed: Invalid API Key provided: sk_test_mock", "logger": "app", "module": "app", "lineno": 120}
+------------------------------ Captured log call -------------------------------
+INFO     app:app.py:29 [App] create_app() called
+INFO     app:app.py:31 [App] Flask app instance created
+INFO     app:logger.py:66 Logger setup complete. JSON formatted logs enabled.
+INFO     app:app.py:112 [Startup] Warming Stripe Price Cache...
+ERROR    services.stripe_price_resolver:stripe_price_resolver.py:129 Stripe API error refreshing keys ['smart_sign_print_18x24', 'smart_sign_print_24x36', 'smart_sign_print_36x24', 'smart_riser_6x24', 'smart_riser_6x36', 'yard_sign_coroplast_12x18', 'yard_sign_coroplast_18x24', 'yard_sign_coroplast_24x36', 'yard_sign_aluminum_18x24', 'yard_sign_aluminum_24x36']: Invalid API Key provided: sk_test_mock
+WARNING  app:app.py:120 [Startup] Dev Warning: Cache warm failed: Invalid API Key provided: sk_test_mock
+ERROR    database:database.py:50 [DB] Query Failed: duplicate key value violates unique constraint "users_email_key"
+DETAIL:  Key (email)=(ai@test.com) already exists.
+
+ERROR    database:database.py:52 [DB] SQL: INSERT INTO users (email, password_hash, is_verified) VALUES ('ai@test.com', 'hash', true) RETURNING id
+______________________ TestAIReadiness.test_pii_stripping ______________________
+tests/test_ai_readiness.py:20: in setUp
+    db.execute("INSERT INTO users (email, password_hash, is_verified) VALUES ('ai@test.com', 'hash', true) RETURNING id")
+database.py:53: in execute
+    raise e
+database.py:45: in execute
+    cur.execute(sql, params)
+/usr/local/lib/python3.13/site-packages/psycopg2/extras.py:146: in execute
+    return super().execute(query, vars)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   psycopg2.errors.UniqueViolation: duplicate key value violates unique constraint "users_email_key"
+E   DETAIL:  Key (email)=(ai@test.com) already exists.
+----------------------------- Captured stdout call -----------------------------
+{"timestamp": "2026-02-09T16:11:31.052331", "level": "INFO", "message": "[App] create_app() called", "logger": "app", "module": "app", "lineno": 29}
+{"timestamp": "2026-02-09T16:11:31.052931", "level": "INFO", "message": "[App] Flask app instance created", "logger": "app", "module": "app", "lineno": 31}
+{"timestamp": "2026-02-09T16:11:31.053060", "level": "INFO", "message": "Logger setup complete. JSON formatted logs enabled.", "logger": "app", "module": "logger", "lineno": 66}
+{"timestamp": "2026-02-09T16:11:31.053970", "level": "INFO", "message": "[Startup] Warming Stripe Price Cache...", "logger": "app", "module": "app", "lineno": 112}
+{"timestamp": "2026-02-09T16:11:31.072976", "level": "WARNING", "message": "[Startup] Dev Warning: Cache warm failed: Invalid API Key provided: sk_test_mock", "logger": "app", "module": "app", "lineno": 120}
+------------------------------ Captured log call -------------------------------
+INFO     app:app.py:29 [App] create_app() called
+INFO     app:app.py:31 [App] Flask app instance created
+INFO     app:logger.py:66 Logger setup complete. JSON formatted logs enabled.
+INFO     app:app.py:112 [Startup] Warming Stripe Price Cache...
+ERROR    services.stripe_price_resolver:stripe_price_resolver.py:129 Stripe API error refreshing keys ['smart_sign_print_18x24', 'smart_sign_print_24x36', 'smart_sign_print_36x24', 'smart_riser_6x24', 'smart_riser_6x36', 'yard_sign_coroplast_12x18', 'yard_sign_coroplast_18x24', 'yard_sign_coroplast_24x36', 'yard_sign_aluminum_18x24', 'yard_sign_aluminum_24x36']: Invalid API Key provided: sk_test_mock
+WARNING  app:app.py:120 [Startup] Dev Warning: Cache warm failed: Invalid API Key provided: sk_test_mock
+ERROR    database:database.py:50 [DB] Query Failed: duplicate key value violates unique constraint "users_email_key"
+DETAIL:  Key (email)=(ai@test.com) already exists.
+
+ERROR    database:database.py:52 [DB] SQL: INSERT INTO users (email, password_hash, is_verified) VALUES ('ai@test.com', 'hash', true) RETURNING id
+____________________ TestAIReadiness.test_strict_allowlist _____________________
+tests/test_ai_readiness.py:20: in setUp
+    db.execute("INSERT INTO users (email, password_hash, is_verified) VALUES ('ai@test.com', 'hash', true) RETURNING id")
+database.py:53: in execute
+    raise e
+database.py:45: in execute
+    cur.execute(sql, params)
+/usr/local/lib/python3.13/site-packages/psycopg2/extras.py:146: in execute
+    return super().execute(query, vars)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   psycopg2.errors.UniqueViolation: duplicate key value violates unique constraint "users_email_key"
+E   DETAIL:  Key (email)=(ai@test.com) already exists.
+----------------------------- Captured stdout call -----------------------------
+{"timestamp": "2026-02-09T16:11:31.151781", "level": "INFO", "message": "[App] create_app() called", "logger": "app", "module": "app", "lineno": 29}
+{"timestamp": "2026-02-09T16:11:31.152542", "level": "INFO", "message": "[App] Flask app instance created", "logger": "app", "module": "app", "lineno": 31}
+{"timestamp": "2026-02-09T16:11:31.152731", "level": "INFO", "message": "Logger setup complete. JSON formatted logs enabled.", "logger": "app", "module": "logger", "lineno": 66}
+{"timestamp": "2026-02-09T16:11:31.154367", "level": "INFO", "message": "[Startup] Warming Stripe Price Cache...", "logger": "app", "module": "app", "lineno": 112}
+{"timestamp": "2026-02-09T16:11:31.181481", "level": "WARNING", "message": "[Startup] Dev Warning: Cache warm failed: Invalid API Key provided: sk_test_mock", "logger": "app", "module": "app", "lineno": 120}
+------------------------------ Captured log call -------------------------------
+INFO     app:app.py:29 [App] create_app() called
+INFO     app:app.py:31 [App] Flask app instance created
+INFO     app:logger.py:66 Logger setup complete. JSON formatted logs enabled.
+INFO     app:app.py:112 [Startup] Warming Stripe Price Cache...
+ERROR    services.stripe_price_resolver:stripe_price_resolver.py:129 Stripe API error refreshing keys ['smart_sign_print_18x24', 'smart_sign_print_24x36', 'smart_sign_print_36x24', 'smart_riser_6x24', 'smart_riser_6x36', 'yard_sign_coroplast_12x18', 'yard_sign_coroplast_18x24', 'yard_sign_coroplast_24x36', 'yard_sign_aluminum_18x24', 'yard_sign_aluminum_24x36']: Invalid API Key provided: sk_test_mock
+WARNING  app:app.py:120 [Startup] Dev Warning: Cache warm failed: Invalid API Key provided: sk_test_mock
+ERROR    database:database.py:50 [DB] Query Failed: duplicate key value violates unique constraint "users_email_key"
+DETAIL:  Key (email)=(ai@test.com) already exists.
+
+ERROR    database:database.py:52 [DB] SQL: INSERT INTO users (email, password_hash, is_verified) VALUES ('ai@test.com', 'hash', true) RETURNING id
+_____________ TestConfigStagingBoot.test_staging_boot_without_smtp _____________
+tests/test_config_boot.py:51: in test_staging_boot_without_smtp
+    assert config.IS_PRODUCTION == True
+E   AssertionError: assert False == True
+E    +  where False = <module 'config' from '/app/config.py'>.IS_PRODUCTION
+
+During handling of the above exception, another exception occurred:
+tests/test_config_boot.py:55: in test_staging_boot_without_smtp
+    pytest.fail(f"Config raised exception: {e}")
+E   Failed: Config raised exception: assert False == True
+E    +  where False = <module 'config' from '/app/config.py'>.IS_PRODUCTION
+_________________________ test_guest_linking_security __________________________
+tests/test_guest_linking_security.py:30: in test_guest_linking_security
+    db.execute(
+database.py:53: in execute
+    raise e
+database.py:45: in execute
+    cur.execute(sql, params)
+/usr/local/lib/python3.13/site-packages/psycopg2/extras.py:146: in execute
+    return super().execute(query, vars)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   psycopg2.errors.UndefinedColumn: column "request_id" of relation "orders" does not exist
+E   LINE 1: INSERT INTO orders (request_id, guest_email, guest_token, st...
+E                               ^
+---------------------------- Captured stdout setup -----------------------------
+{"timestamp": "2026-02-09T16:11:31.418628", "level": "INFO", "message": "[App] create_app() called", "logger": "app", "module": "app", "lineno": 29}
+{"timestamp": "2026-02-09T16:11:31.419258", "level": "INFO", "message": "[App] Flask app instance created", "logger": "app", "module": "app", "lineno": 31}
+{"timestamp": "2026-02-09T16:11:31.419390", "level": "INFO", "message": "Logger setup complete. JSON formatted logs enabled.", "logger": "app", "module": "logger", "lineno": 66}
+{"timestamp": "2026-02-09T16:11:31.420241", "level": "INFO", "message": "[Startup] Warming Stripe Price Cache...", "logger": "app", "module": "app", "lineno": 112}
+{"timestamp": "2026-02-09T16:11:31.447801", "level": "WARNING", "message": "[Startup] Dev Warning: Cache warm failed: Invalid API Key provided: sk_test_mock", "logger": "app", "module": "app", "lineno": 120}
+------------------------------ Captured log setup ------------------------------
+INFO     app:app.py:29 [App] create_app() called
+INFO     app:app.py:31 [App] Flask app instance created
+INFO     app:logger.py:66 Logger setup complete. JSON formatted logs enabled.
+INFO     app:app.py:112 [Startup] Warming Stripe Price Cache...
+ERROR    services.stripe_price_resolver:stripe_price_resolver.py:129 Stripe API error refreshing keys ['smart_sign_print_18x24', 'smart_sign_print_24x36', 'smart_sign_print_36x24', 'smart_riser_6x24', 'smart_riser_6x36', 'yard_sign_coroplast_12x18', 'yard_sign_coroplast_18x24', 'yard_sign_coroplast_24x36', 'yard_sign_aluminum_18x24', 'yard_sign_aluminum_24x36']: Invalid API Key provided: sk_test_mock
+WARNING  app:app.py:120 [Startup] Dev Warning: Cache warm failed: Invalid API Key provided: sk_test_mock
+------------------------------ Captured log call -------------------------------
+ERROR    database:database.py:50 [DB] Query Failed: column "request_id" of relation "orders" does not exist
+LINE 1: INSERT INTO orders (request_id, guest_email, guest_token, st...
+                            ^
+
+ERROR    database:database.py:52 [DB] SQL: INSERT INTO orders (request_id, guest_email, guest_token, status, order_type) VALUES (%s, %s, %s, 'pending', 'sign')
+______________________ test_guest_resize_with_body_token _______________________
+tests/test_guest_security.py:8: in test_guest_resize_with_body_token
+    patch('routes.orders.get_db'), \
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.13/unittest/mock.py:1497: in __enter__
+    original, local = self.get_original()
+                      ^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.13/unittest/mock.py:1467: in get_original
+    raise AttributeError(
+E   AttributeError: <module 'routes.orders' from '/app/routes/orders.py'> does not have the attribute 'get_db'
+________________________ test_kit_zip_builder_structure ________________________
+tests/test_listing_kits_imports.py:17: in test_kit_zip_builder_structure
+    patch('services.listing_kits.generate_pdf_sign') as mock_gen_pdf:
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.13/unittest/mock.py:1497: in __enter__
+    original, local = self.get_original()
+                      ^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.13/unittest/mock.py:1467: in get_original
+    raise AttributeError(
+E   AttributeError: <module 'services.listing_kits' from '/app/services/listing_kits.py'> does not have the attribute 'generate_pdf_sign'
+__________ TestLocalStorageSecurity.test_get_url_returns_storage_path __________
+tests/test_local_storage_security.py:74: in test_get_url_returns_storage_path
+    assert "/storage/" in url
+E   AssertionError: assert '/storage/' in '/uploads/test.jpg'
+___________________ test_pdf_with_agent_photo_has_one_image ____________________
+tests/test_pdf_vector_qr.py:140: in test_pdf_with_agent_photo_has_one_image
+    assert total_images == 1, (
+E   AssertionError: Expected 1 image (agent photo), got 0. QR should be vector, not adding to image count.
+E   assert 0 == 1
+------------------------------ Captured log call -------------------------------
+ERROR    utils.pdf_generator:pdf_generator.py:291 QR Draw Error: draw_qr() got multiple values for argument 'size'
+ERROR    utils.pdf_generator:pdf_generator.py:291 QR Draw Error: draw_qr() got multiple values for argument 'size'
+______________ TestAnalyticsService.test_analytics_module_exists _______________
+tests/test_pro_features.py:76: in test_analytics_module_exists
+    from services.analytics import get_dashboard_analytics
+E   ImportError: cannot import name 'get_dashboard_analytics' from 'services.analytics' (/app/services/analytics.py)
+
+During handling of the above exception, another exception occurred:
+tests/test_pro_features.py:79: in test_analytics_module_exists
+    self.fail("Could not import analytics service")
+E   AssertionError: Could not import analytics service
+__________ TestAnalyticsService.test_analytics_returns_expected_keys ___________
+tests/test_pro_features.py:83: in test_analytics_returns_expected_keys
+    from services.analytics import get_dashboard_analytics
+E   ImportError: cannot import name 'get_dashboard_analytics' from 'services.analytics' (/app/services/analytics.py)
+__________ TestPropertyCreationFlow.test_standard_flow_creates_order ___________
+tests/test_property_creation_flow.py:99: in test_standard_flow_creates_order
+    ur = db.execute("INSERT INTO users (email, password_hash, is_pro) VALUES ('std_flow@test.com', 'x', true) RETURNING id").fetchone()
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+database.py:53: in execute
+    raise e
+database.py:45: in execute
+    cur.execute(sql, params)
+/usr/local/lib/python3.13/site-packages/psycopg2/extras.py:146: in execute
+    return super().execute(query, vars)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   psycopg2.errors.UndefinedColumn: column "is_pro" of relation "users" does not exist
+E   LINE 1: INSERT INTO users (email, password_hash, is_pro) VALUES ('st...
+E                                                    ^
+------------------------------ Captured log call -------------------------------
+ERROR    database:database.py:50 [DB] Query Failed: column "is_pro" of relation "users" does not exist
+LINE 1: INSERT INTO users (email, password_hash, is_pro) VALUES ('st...
+                                                 ^
+
+ERROR    database:database.py:52 [DB] SQL: INSERT INTO users (email, password_hash, is_pro) VALUES ('std_flow@test.com', 'x', true) RETURNING id
+_____________________ test_release_gate_fails_on_forbidden _____________________
+tests/test_release_gate.py:19: in test_release_gate_fails_on_forbidden
+    assert "CRITICAL FAILURE" in result.stdout
+E   AssertionError: assert 'CRITICAL FAILURE' in '[Release Gate] Running safety checks...\n[Release Gate] Running acceptance tests...\n[Acceptance] Building web with dev deps...\n[Release Gate] FAILED: Acceptance tests did not pass.\n'
+E    +  where '[Release Gate] Running safety checks...\n[Release Gate] Running acceptance tests...\n[Acceptance] Building web with dev deps...\n[Release Gate] FAILED: Acceptance tests did not pass.\n' = CompletedProcess(args=['/usr/local/bin/python', 'scripts/release_gate.py'], returncode=1, stdout='[Release Gate] Running safety checks...\n[Release Gate] Running acceptance tests...\n[Acceptance] Building web with dev deps...\n[Release Gate] FAILED: Acceptance tests did not pass.\n', stderr='/app/scripts/run_tests_in_docker.sh: line 27: docker: command not found\n').stdout
+____________________ test_dashboard_new_property_page_loads ____________________
+tests/test_repro_500.py:21: in test_dashboard_new_property_page_loads
+    u = User(
+E   TypeError: User.__init__() got an unexpected keyword argument 'auth_provider'
+_______________ TestSmartSignsPrinting.test_frozen_asset_access ________________
+tests/test_smart_signs_printing.py:48: in setUp
+    row = db.execute(
+database.py:53: in execute
+    raise e
+database.py:45: in execute
+    cur.execute(sql, params)
+/usr/local/lib/python3.13/site-packages/psycopg2/extras.py:146: in execute
+    return super().execute(query, vars)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   psycopg2.errors.CheckViolation: new row for relation "sign_assets" violates check constraint "chk_activation_requires_order"
+E   DETAIL:  Failing row contains (1, 12, PROtest, Active Asset, null, 2026-02-09 16:11:34.130124, null, f, 2026-02-09 16:11:34.130124, 2026-02-09 16:11:34.130124, Old Brand, null, null, scan_for_details, solid_blue, null, null, t, f, null, null, null, null, auto, null).
+----------------------------- Captured stdout call -----------------------------
+{"timestamp": "2026-02-09T16:11:34.068244", "level": "INFO", "message": "[App] create_app() called", "logger": "app", "module": "app", "lineno": 29}
+{"timestamp": "2026-02-09T16:11:34.068962", "level": "INFO", "message": "[App] Flask app instance created", "logger": "app", "module": "app", "lineno": 31}
+{"timestamp": "2026-02-09T16:11:34.069099", "level": "INFO", "message": "Logger setup complete. JSON formatted logs enabled.", "logger": "app", "module": "logger", "lineno": 66}
+{"timestamp": "2026-02-09T16:11:34.069972", "level": "INFO", "message": "[Startup] Warming Stripe Price Cache...", "logger": "app", "module": "app", "lineno": 112}
+{"timestamp": "2026-02-09T16:11:34.095075", "level": "WARNING", "message": "[Startup] Dev Warning: Cache warm failed: Invalid API Key provided: sk_test_mock", "logger": "app", "module": "app", "lineno": 120}
+------------------------------ Captured log call -------------------------------
+INFO     app:app.py:29 [App] create_app() called
+INFO     app:app.py:31 [App] Flask app instance created
+INFO     app:logger.py:66 Logger setup complete. JSON formatted logs enabled.
+INFO     app:app.py:112 [Startup] Warming Stripe Price Cache...
+ERROR    services.stripe_price_resolver:stripe_price_resolver.py:129 Stripe API error refreshing keys ['smart_sign_print_18x24', 'smart_sign_print_24x36', 'smart_sign_print_36x24', 'smart_riser_6x24', 'smart_riser_6x36', 'yard_sign_coroplast_12x18', 'yard_sign_coroplast_18x24', 'yard_sign_coroplast_24x36', 'yard_sign_aluminum_18x24', 'yard_sign_aluminum_24x36']: Invalid API Key provided: sk_test_mock
+WARNING  app:app.py:120 [Startup] Dev Warning: Cache warm failed: Invalid API Key provided: sk_test_mock
+ERROR    database:database.py:50 [DB] Query Failed: new row for relation "sign_assets" violates check constraint "chk_activation_requires_order"
+DETAIL:  Failing row contains (1, 12, PROtest, Active Asset, null, 2026-02-09 16:11:34.130124, null, f, 2026-02-09 16:11:34.130124, 2026-02-09 16:11:34.130124, Old Brand, null, null, scan_for_details, solid_blue, null, null, t, f, null, null, null, null, auto, null).
+
+ERROR    database:database.py:52 [DB] SQL: INSERT INTO sign_assets (user_id, code, label, created_at, activated_at, is_frozen, brand_name)
+               VALUES (%s, 'PROtest', 'Active Asset', NOW(), NOW(), FALSE, 'Old Brand')
+               RETURNING id
+__________________ TestSmartSignsPrinting.test_non_pro_access __________________
+tests/test_smart_signs_printing.py:19: in setUp
+    db.execute("DELETE FROM users WHERE email IN ('pro@test.com', 'basic@test.com')")
+database.py:53: in execute
+    raise e
+database.py:45: in execute
+    cur.execute(sql, params)
+/usr/local/lib/python3.13/site-packages/psycopg2/extras.py:146: in execute
+    return super().execute(query, vars)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   psycopg2.errors.ForeignKeyViolation: update or delete on table "users" violates foreign key constraint "agents_user_id_fkey" on table "agents"
+E   DETAIL:  Key (id)=(12) is still referenced from table "agents".
+----------------------------- Captured stdout call -----------------------------
+{"timestamp": "2026-02-09T16:11:34.169907", "level": "INFO", "message": "[App] create_app() called", "logger": "app", "module": "app", "lineno": 29}
+{"timestamp": "2026-02-09T16:11:34.170545", "level": "INFO", "message": "[App] Flask app instance created", "logger": "app", "module": "app", "lineno": 31}
+{"timestamp": "2026-02-09T16:11:34.170677", "level": "INFO", "message": "Logger setup complete. JSON formatted logs enabled.", "logger": "app", "module": "logger", "lineno": 66}
+{"timestamp": "2026-02-09T16:11:34.171726", "level": "INFO", "message": "[Startup] Warming Stripe Price Cache...", "logger": "app", "module": "app", "lineno": 112}
+{"timestamp": "2026-02-09T16:11:34.193393", "level": "WARNING", "message": "[Startup] Dev Warning: Cache warm failed: Invalid API Key provided: sk_test_mock", "logger": "app", "module": "app", "lineno": 120}
+------------------------------ Captured log call -------------------------------
+INFO     app:app.py:29 [App] create_app() called
+INFO     app:app.py:31 [App] Flask app instance created
+INFO     app:logger.py:66 Logger setup complete. JSON formatted logs enabled.
+INFO     app:app.py:112 [Startup] Warming Stripe Price Cache...
+ERROR    services.stripe_price_resolver:stripe_price_resolver.py:129 Stripe API error refreshing keys ['smart_sign_print_18x24', 'smart_sign_print_24x36', 'smart_sign_print_36x24', 'smart_riser_6x24', 'smart_riser_6x36', 'yard_sign_coroplast_12x18', 'yard_sign_coroplast_18x24', 'yard_sign_coroplast_24x36', 'yard_sign_aluminum_18x24', 'yard_sign_aluminum_24x36']: Invalid API Key provided: sk_test_mock
+WARNING  app:app.py:120 [Startup] Dev Warning: Cache warm failed: Invalid API Key provided: sk_test_mock
+ERROR    database:database.py:50 [DB] Query Failed: update or delete on table "users" violates foreign key constraint "agents_user_id_fkey" on table "agents"
+DETAIL:  Key (id)=(12) is still referenced from table "agents".
+
+ERROR    database:database.py:52 [DB] SQL: DELETE FROM users WHERE email IN ('pro@test.com', 'basic@test.com')
+_________________ TestSmartSignsPrinting.test_pro_active_flow __________________
+tests/test_smart_signs_printing.py:19: in setUp
+    db.execute("DELETE FROM users WHERE email IN ('pro@test.com', 'basic@test.com')")
+database.py:53: in execute
+    raise e
+database.py:45: in execute
+    cur.execute(sql, params)
+/usr/local/lib/python3.13/site-packages/psycopg2/extras.py:146: in execute
+    return super().execute(query, vars)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   psycopg2.errors.ForeignKeyViolation: update or delete on table "users" violates foreign key constraint "agents_user_id_fkey" on table "agents"
+E   DETAIL:  Key (id)=(12) is still referenced from table "agents".
+----------------------------- Captured stdout call -----------------------------
+{"timestamp": "2026-02-09T16:11:34.262970", "level": "INFO", "message": "[App] create_app() called", "logger": "app", "module": "app", "lineno": 29}
+{"timestamp": "2026-02-09T16:11:34.263641", "level": "INFO", "message": "[App] Flask app instance created", "logger": "app", "module": "app", "lineno": 31}
+{"timestamp": "2026-02-09T16:11:34.263777", "level": "INFO", "message": "Logger setup complete. JSON formatted logs enabled.", "logger": "app", "module": "logger", "lineno": 66}
+{"timestamp": "2026-02-09T16:11:34.264787", "level": "INFO", "message": "[Startup] Warming Stripe Price Cache...", "logger": "app", "module": "app", "lineno": 112}
+{"timestamp": "2026-02-09T16:11:34.291736", "level": "WARNING", "message": "[Startup] Dev Warning: Cache warm failed: Invalid API Key provided: sk_test_mock", "logger": "app", "module": "app", "lineno": 120}
+------------------------------ Captured log call -------------------------------
+INFO     app:app.py:29 [App] create_app() called
+INFO     app:app.py:31 [App] Flask app instance created
+INFO     app:logger.py:66 Logger setup complete. JSON formatted logs enabled.
+INFO     app:app.py:112 [Startup] Warming Stripe Price Cache...
+ERROR    services.stripe_price_resolver:stripe_price_resolver.py:129 Stripe API error refreshing keys ['smart_sign_print_18x24', 'smart_sign_print_24x36', 'smart_sign_print_36x24', 'smart_riser_6x24', 'smart_riser_6x36', 'yard_sign_coroplast_12x18', 'yard_sign_coroplast_18x24', 'yard_sign_coroplast_24x36', 'yard_sign_aluminum_18x24', 'yard_sign_aluminum_24x36']: Invalid API Key provided: sk_test_mock
+WARNING  app:app.py:120 [Startup] Dev Warning: Cache warm failed: Invalid API Key provided: sk_test_mock
+ERROR    database:database.py:50 [DB] Query Failed: update or delete on table "users" violates foreign key constraint "agents_user_id_fkey" on table "agents"
+DETAIL:  Key (id)=(12) is still referenced from table "agents".
+
+ERROR    database:database.py:52 [DB] SQL: DELETE FROM users WHERE email IN ('pro@test.com', 'basic@test.com')
+__________ test_resolve_price_id_calls_fail_if_no_cache_and_no_patch ___________
+tests/test_stripe_price_resolver.py:22: in test_resolve_price_id_calls_fail_if_no_cache_and_no_patch
+    resolve_price_id("missing_key")
+services/stripe_price_resolver.py:69: in resolve_price_id
+    _refresh_keys([lookup_key])
+services/stripe_price_resolver.py:122: in _refresh_keys
+    resp = stripe.Price.list(
+/usr/local/lib/python3.13/unittest/mock.py:1169: in __call__
+    return self._mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.13/unittest/mock.py:1173: in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.13/unittest/mock.py:1228: in _execute_mock_call
+    raise effect
+E   RuntimeError: NETWORK CALL
+
+During handling of the above exception, another exception occurred:
+tests/test_stripe_price_resolver.py:21: in test_resolve_price_id_calls_fail_if_no_cache_and_no_patch
+    with pytest.raises(RuntimeError, match="Stripe network call attempted in TEST mode"):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: Regex pattern did not match.
+E     Expected regex: 'Stripe network call attempted in TEST mode'
+E     Actual message: 'NETWORK CALL'
+------------------------------ Captured log call -------------------------------
+ERROR    services.stripe_price_resolver:stripe_price_resolver.py:129 Stripe API error refreshing keys ['missing_key']: NETWORK CALL
+______________________ test_warm_cache_forbidden_in_test _______________________
+tests/test_stripe_price_resolver.py:38: in test_warm_cache_forbidden_in_test
+    warm_cache(['k1'])
+services/stripe_price_resolver.py:103: in warm_cache
+    _refresh_keys(chunk)
+services/stripe_price_resolver.py:122: in _refresh_keys
+    resp = stripe.Price.list(
+/usr/local/lib/python3.13/unittest/mock.py:1169: in __call__
+    return self._mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.13/unittest/mock.py:1173: in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.13/unittest/mock.py:1228: in _execute_mock_call
+    raise effect
+E   RuntimeError: NETWORK CALL
+
+During handling of the above exception, another exception occurred:
+tests/test_stripe_price_resolver.py:37: in test_warm_cache_forbidden_in_test
+    with pytest.raises(RuntimeError, match="warm_cache called in TEST mode"):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: Regex pattern did not match.
+E     Expected regex: 'warm_cache called in TEST mode'
+E     Actual message: 'NETWORK CALL'
+------------------------------ Captured log call -------------------------------
+ERROR    services.stripe_price_resolver:stripe_price_resolver.py:129 Stripe API error refreshing keys ['k1']: NETWORK CALL
+_______________________ test_tour_scheduling_link_render _______________________
+tests/test_tour_scheduling.py:30: in test_tour_scheduling_link_render
+    db.execute(
+database.py:53: in execute
+    raise e
+database.py:45: in execute
+    cur.execute(sql, params)
+/usr/local/lib/python3.13/site-packages/psycopg2/extras.py:146: in execute
+    return super().execute(query, vars)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   psycopg2.errors.NotNullViolation: null value in column "brokerage" of relation "agents" violates not-null constraint
+E   DETAIL:  Failing row contains (8, 13, Test Agent, null, agent@test.com, null, null, null, https://calendly.com/test, null, null).
+---------------------------- Captured stdout setup -----------------------------
+{"timestamp": "2026-02-09T16:11:34.798545", "level": "INFO", "message": "[App] create_app() called", "logger": "app", "module": "app", "lineno": 29}
+{"timestamp": "2026-02-09T16:11:34.799178", "level": "INFO", "message": "[App] Flask app instance created", "logger": "app", "module": "app", "lineno": 31}
+{"timestamp": "2026-02-09T16:11:34.799321", "level": "INFO", "message": "Logger setup complete. JSON formatted logs enabled.", "logger": "app", "module": "logger", "lineno": 66}
+{"timestamp": "2026-02-09T16:11:34.800256", "level": "INFO", "message": "[Startup] Warming Stripe Price Cache...", "logger": "app", "module": "app", "lineno": 112}
+{"timestamp": "2026-02-09T16:11:34.824606", "level": "WARNING", "message": "[Startup] Dev Warning: Cache warm failed: Invalid API Key provided: sk_test_mock", "logger": "app", "module": "app", "lineno": 120}
+------------------------------ Captured log setup ------------------------------
+INFO     app:app.py:29 [App] create_app() called
+INFO     app:app.py:31 [App] Flask app instance created
+INFO     app:logger.py:66 Logger setup complete. JSON formatted logs enabled.
+INFO     app:app.py:112 [Startup] Warming Stripe Price Cache...
+ERROR    services.stripe_price_resolver:stripe_price_resolver.py:129 Stripe API error refreshing keys ['smart_sign_print_18x24', 'smart_sign_print_24x36', 'smart_sign_print_36x24', 'smart_riser_6x24', 'smart_riser_6x36', 'yard_sign_coroplast_12x18', 'yard_sign_coroplast_18x24', 'yard_sign_coroplast_24x36', 'yard_sign_aluminum_18x24', 'yard_sign_aluminum_24x36']: Invalid API Key provided: sk_test_mock
+WARNING  app:app.py:120 [Startup] Dev Warning: Cache warm failed: Invalid API Key provided: sk_test_mock
+------------------------------ Captured log call -------------------------------
+ERROR    database:database.py:50 [DB] Query Failed: null value in column "brokerage" of relation "agents" violates not-null constraint
+DETAIL:  Failing row contains (8, 13, Test Agent, null, agent@test.com, null, null, null, https://calendly.com/test, null, null).
+
+ERROR    database:database.py:52 [DB] SQL: INSERT INTO agents (user_id, name, email, scheduling_url) VALUES (%s, 'Test Agent', 'agent@test.com', 'https://calendly.com/test')
+______________________ test_free_tier_hides_virtual_tour _______________________
+tests/test_tour_scheduling.py:65: in test_free_tier_hides_virtual_tour
+    db.execute("INSERT INTO agents (user_id, name, email) VALUES (%s, 'Free Agent', 'free@test.com')", (user['id'],))
+database.py:53: in execute
+    raise e
+database.py:45: in execute
+    cur.execute(sql, params)
+/usr/local/lib/python3.13/site-packages/psycopg2/extras.py:146: in execute
+    return super().execute(query, vars)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   psycopg2.errors.NotNullViolation: null value in column "brokerage" of relation "agents" violates not-null constraint
+E   DETAIL:  Failing row contains (9, 14, Free Agent, null, free@test.com, null, null, null, null, null, null).
+---------------------------- Captured stdout setup -----------------------------
+{"timestamp": "2026-02-09T16:11:34.894430", "level": "INFO", "message": "[App] create_app() called", "logger": "app", "module": "app", "lineno": 29}
+{"timestamp": "2026-02-09T16:11:34.895164", "level": "INFO", "message": "[App] Flask app instance created", "logger": "app", "module": "app", "lineno": 31}
+{"timestamp": "2026-02-09T16:11:34.895314", "level": "INFO", "message": "Logger setup complete. JSON formatted logs enabled.", "logger": "app", "module": "logger", "lineno": 66}
+{"timestamp": "2026-02-09T16:11:34.896317", "level": "INFO", "message": "[Startup] Warming Stripe Price Cache...", "logger": "app", "module": "app", "lineno": 112}
+{"timestamp": "2026-02-09T16:11:34.917579", "level": "WARNING", "message": "[Startup] Dev Warning: Cache warm failed: Invalid API Key provided: sk_test_mock", "logger": "app", "module": "app", "lineno": 120}
+------------------------------ Captured log setup ------------------------------
+INFO     app:app.py:29 [App] create_app() called
+INFO     app:app.py:31 [App] Flask app instance created
+INFO     app:logger.py:66 Logger setup complete. JSON formatted logs enabled.
+INFO     app:app.py:112 [Startup] Warming Stripe Price Cache...
+ERROR    services.stripe_price_resolver:stripe_price_resolver.py:129 Stripe API error refreshing keys ['smart_sign_print_18x24', 'smart_sign_print_24x36', 'smart_sign_print_36x24', 'smart_riser_6x24', 'smart_riser_6x36', 'yard_sign_coroplast_12x18', 'yard_sign_coroplast_18x24', 'yard_sign_coroplast_24x36', 'yard_sign_aluminum_18x24', 'yard_sign_aluminum_24x36']: Invalid API Key provided: sk_test_mock
+WARNING  app:app.py:120 [Startup] Dev Warning: Cache warm failed: Invalid API Key provided: sk_test_mock
+------------------------------ Captured log call -------------------------------
+ERROR    database:database.py:50 [DB] Query Failed: null value in column "brokerage" of relation "agents" violates not-null constraint
+DETAIL:  Failing row contains (9, 14, Free Agent, null, free@test.com, null, null, null, null, null, null).
+
+ERROR    database:database.py:52 [DB] SQL: INSERT INTO agents (user_id, name, email) VALUES (%s, 'Free Agent', 'free@test.com')
+=============================== warnings summary ===============================
+utils/logger.py:16: 3 warnings
+tests/test_ai_readiness.py: 25 warnings
+tests/test_guest_linking_security.py: 5 warnings
+tests/test_lead_attribution.py: 35 warnings
+tests/test_qr_routes.py: 40 warnings
+tests/test_smart_signs_printing.py: 15 warnings
+tests/test_strategy_alignment.py: 5 warnings
+tests/test_tour_scheduling.py: 10 warnings
+  /app/utils/logger.py:16: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    "timestamp": datetime.utcnow().isoformat(),
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_ai_readiness.py::TestAIReadiness::test_action_rejection - p...
+FAILED tests/test_ai_readiness.py::TestAIReadiness::test_agent_action_lifecycle
+FAILED tests/test_ai_readiness.py::TestAIReadiness::test_app_event_schema_and_defaults
+FAILED tests/test_ai_readiness.py::TestAIReadiness::test_pii_stripping - psyc...
+FAILED tests/test_ai_readiness.py::TestAIReadiness::test_strict_allowlist - p...
+FAILED tests/test_config_boot.py::TestConfigStagingBoot::test_staging_boot_without_smtp
+FAILED tests/test_guest_linking_security.py::test_guest_linking_security - ps...
+FAILED tests/test_guest_security.py::test_guest_resize_with_body_token - Attr...
+FAILED tests/test_listing_kits_imports.py::test_kit_zip_builder_structure - A...
+FAILED tests/test_local_storage_security.py::TestLocalStorageSecurity::test_get_url_returns_storage_path
+FAILED tests/test_pdf_vector_qr.py::test_pdf_with_agent_photo_has_one_image
+FAILED tests/test_pro_features.py::TestAnalyticsService::test_analytics_module_exists
+FAILED tests/test_pro_features.py::TestAnalyticsService::test_analytics_returns_expected_keys
+FAILED tests/test_property_creation_flow.py::TestPropertyCreationFlow::test_standard_flow_creates_order
+FAILED tests/test_release_gate.py::test_release_gate_fails_on_forbidden - Ass...
+FAILED tests/test_repro_500.py::test_dashboard_new_property_page_loads - Type...
+FAILED tests/test_smart_signs_printing.py::TestSmartSignsPrinting::test_frozen_asset_access
+FAILED tests/test_smart_signs_printing.py::TestSmartSignsPrinting::test_non_pro_access
+FAILED tests/test_smart_signs_printing.py::TestSmartSignsPrinting::test_pro_active_flow
+FAILED tests/test_stripe_price_resolver.py::test_resolve_price_id_calls_fail_if_no_cache_and_no_patch
+FAILED tests/test_stripe_price_resolver.py::test_warm_cache_forbidden_in_test
+FAILED tests/test_tour_scheduling.py::test_tour_scheduling_link_render - psyc...
+FAILED tests/test_tour_scheduling.py::test_free_tier_hides_virtual_tour - psy...
+ERROR tests/test_admin_metrics.py::test_admin_metrics_page_loads
+ERROR tests/test_admin_metrics.py::test_non_admin_cannot_access_metrics
+ERROR tests/test_admin_metrics.py::test_metrics_data_display
+ERROR tests/test_agent_claiming_security.py::test_register_does_not_link_agent_before_verification
+ERROR tests/test_agent_claiming_security.py::test_login_unverified_does_not_link_agent
+ERROR tests/test_agent_claiming_security.py::test_verify_email_links_agent
+ERROR tests/test_agent_claiming_security.py::test_submit_cannot_claim_other_email
+ERROR tests/test_agent_claiming_security.py::test_submit_blocked_when_agent_claimed_by_other_user
+ERROR tests/test_ai_readiness.py::TestAIReadiness::test_action_rejection - ps...
+ERROR tests/test_dashboard_smartsigns_phase1.py::TestSmartSignsPhase1::test_create_asset_always_unactivated
+ERROR tests/test_dashboard_smartsigns_phase1.py::TestSmartSignsPhase1::test_pro_user_cant_activate_without_order
+ERROR tests/test_events_csrf_exempt.py::test_events_endpoint_accepts_post_without_csrf
+ERROR tests/test_feature_flows.py::test_lead_lifecycle
+ERROR tests/test_feature_flows.py::test_qr_variant_resolution
+ERROR tests/test_feature_flows.py::test_open_house_mode
+ERROR tests/test_feature_flows.py::test_gating_rendering
+ERROR tests/test_feature_flows.py::test_cleanup_calls_storage_delete
+ERROR tests/test_free_property.py::test_new_property_get
+ERROR tests/test_free_property.py::test_new_property_post_success
+ERROR tests/test_free_property.py::test_new_property_post_free_limit
+ERROR tests/test_fulfillment.py::test_fulfill_order_enqueues_one_print_job
+ERROR tests/test_fulfillment.py::test_fulfill_order_idempotency
+ERROR tests/test_global_code_generation_enforcement.py::test_property_creation_uses_global_generator
+ERROR tests/test_global_code_generation_enforcement.py::test_variant_creation_uses_global_generator
+ERROR tests/test_onboarding_activation.py::TestPhase1Dashboard::test_dashboard_mode_no_signs
+ERROR tests/test_onboarding_activation.py::TestPhase1Dashboard::test_dashboard_mode_needs_assignment
+ERROR tests/test_onboarding_activation.py::TestPhase1Dashboard::test_dashboard_mode_active
+ERROR tests/test_onboarding_activation.py::TestPhase1Dashboard::test_first_scan_banner
+ERROR tests/test_onboarding_activation.py::TestPhase1Dashboard::test_first_lead_banner
+ERROR tests/test_onboarding_activation.py::TestPhase1Dashboard::test_analytics_gated_until_scan
+ERROR tests/test_phase4_guardrails.py::test_free_user_cannot_create_second_property
+ERROR tests/test_phase4_guardrails.py::test_pro_user_can_create_multiple_properties
+ERROR tests/test_phase4_guardrails.py::test_reassign_requires_pro
+ERROR tests/test_phase4_guardrails.py::test_reassign_requires_activated
+ERROR tests/test_phase4_guardrails.py::test_reassign_blocked_when_frozen
+ERROR tests/test_phase4_guardrails.py::test_listing_kit_returns_reason_code
+ERROR tests/test_phase_2_5.py::test_webhook_idempotency_activation
+ERROR tests/test_phase_2_5.py::test_assignment_rules
+ERROR tests/test_phase_2_5.py::test_smart_sign_checkout_endpoint_disabled
+ERROR tests/test_print_jobs.py::test_claim_jobs_is_idempotent
+ERROR tests/test_print_jobs.py::test_download_pdf_requires_auth_and_returns_bytes
+ERROR tests/test_printing_atomic.py::test_claim_jobs_success
+ERROR tests/test_printing_atomic.py::test_mark_downloaded_transition
+ERROR tests/test_printing_atomic.py::test_download_pdf
+ERROR tests/test_property_creation_flow.py::TestPropertyCreationFlow::test_get_submit_page_property_only_mode
+ERROR tests/test_property_creation_flow.py::TestPropertyCreationFlow::test_create_property_only_does_not_create_order
+ERROR tests/test_qr_code_uniqueness.py::TestQRCodeUniqueness::test_is_code_taken_finds_sign_assets
+ERROR tests/test_qr_code_uniqueness.py::TestQRCodeUniqueness::test_is_code_taken_finds_properties_qr_code
+ERROR tests/test_qr_code_uniqueness.py::TestQRCodeUniqueness::test_is_code_taken_finds_qr_variants
+ERROR tests/test_qr_code_uniqueness.py::TestQRCodeUniqueness::test_generate_unique_code_avoids_collisions
+ERROR tests/test_qr_code_uniqueness.py::TestOptionBEnforcement::test_create_asset_always_unactivated
+ERROR tests/test_qr_code_uniqueness.py::TestOptionBEnforcement::test_activate_asset_requires_order_id
+ERROR tests/test_qr_code_uniqueness.py::TestOptionBEnforcement::test_activate_asset_rejects_already_activated
+ERROR tests/test_qr_logo_pro_gating.py::test_qr_logo_gating_free_user
+ERROR tests/test_qr_logo_pro_gating.py::test_qr_logo_flow_pro_user
+ERROR tests/test_qr_routes.py::TestPropertyPage::test_paid_property_returns_200
+ERROR tests/test_qr_routes.py::TestPropertyPage::test_expired_property_returns_410
+ERROR tests/test_qr_routes.py::TestPropertyPage::test_free_property_returns_200
+ERROR tests/test_qr_routes.py::TestQRRedirect::test_valid_code_redirects - ps...
+ERROR tests/test_qr_routes.py::TestQRRedirect::test_expired_property_code_returns_410
+ERROR tests/test_qr_routes.py::TestQRRedirect::test_scan_logs_to_qr_scans - p...
+ERROR tests/test_smart_sign_activation.py::TestSmartSignActivation::test_inactive_asset_scan_returns_not_activated_page
+ERROR tests/test_smart_sign_activation.py::TestSmartSignActivation::test_active_asset_scan_redirects_to_property
+ERROR tests/test_smart_sign_activation.py::TestSmartSignActivation::test_active_unassigned_asset_shows_unassigned_page
+ERROR tests/test_smart_sign_activation.py::TestSmartSignActivation::test_assignment_blocked_for_inactive_asset
+ERROR tests/test_smart_sign_activation.py::TestSmartSignActivation::test_unassigned_active_asset_scan_logs_to_app_events
+ERROR tests/test_smart_signs.py::TestSmartSigns::test_pro_create_asset_via_purchase_flow
+ERROR tests/test_smart_signs.py::TestSmartSigns::test_pro_assign_asset_to_own_property
+ERROR tests/test_smart_signs.py::TestSmartSigns::test_free_can_initial_assign_asset
+ERROR tests/test_smart_signs.py::TestSmartSigns::test_free_cannot_reassign_asset
+ERROR tests/test_smart_signs.py::TestSmartSigns::test_free_cannot_unassign_asset
+ERROR tests/test_smart_signs.py::TestSmartSigns::test_frozen_blocks_assign
+ERROR tests/test_smart_signs.py::TestSmartSigns::test_inactive_blocks_assign
+ERROR tests/test_smart_signs.py::TestSmartSigns::test_scan_resolution_flow
+ERROR tests/test_smart_signs.py::TestSmartSigns::test_unassigned_asset_page
+ERROR tests/test_smartsign_v2_persistence.py::test_smartsign_v2_persistence_e2e
+ERROR tests/test_webhook_amounts.py::test_webhook_captures_totals
+ERROR tests/test_yard_sign_pdf.py::TestListingSignPDF::test_yard_sign_qr_value_is_r_path
+ERROR tests/test_yard_sign_pdf.py::TestListingSignPDF::test_landscape_layout_used_for_36x24
+ERROR tests/test_yard_sign_pdf.py::TestListingSignPDF::test_generate_yard_sign_pdf_smoke
+====== 23 failed, 85 passed, 10 skipped, 138 warnings, 80 errors in 8.05s ======
