@@ -28,7 +28,7 @@
                     <th style="text-align: center;">Scans</th>
                     <th style="text-align: center;">Leads</th>
                     <th style="text-align: center;">Conv.</th>
-                    <th>Actions</th>
+                    <th style="position: sticky; right: 0; background: var(--bg-card); z-index: 1;">Actions</th>
                 </tr>
             </thead>
             <tbody>
@@ -57,8 +57,7 @@
                     <td style="text-align: center; font-family: monospace;">{{ asset.leads or 0 }}</td>
                     <td style="text-align: center; font-family: monospace; color: var(--accent-cyan);">
                         {{ asset.conversion or '—' }}</td>
-                    <td>
-                    <td>
+                    <td style="position: sticky; right: 0; background: var(--bg-card); z-index: 1;">
                         <!-- Case 0: Pending Order (Resume) -->
                         {% if asset.is_pending_order %}
                         <div style="font-size: 0.85rem; margin-bottom: 4px; color: var(--text-orange);">
