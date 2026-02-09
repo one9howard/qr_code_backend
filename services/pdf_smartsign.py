@@ -696,7 +696,7 @@ def _draw_elegant_serif(c, l, asset, user_id, base_url):
     
     # CTA tiny below QR
     cta_key = _read(asset, 'cta_key')
-    cta_text = CTA_MAP.get(cta_key, 'SCAN FOE DETAILS')
+    cta_text = CTA_MAP.get(cta_key, 'SCAN FOR DETAILS')
     
     font_cta = spec['fonts']['cta']
     c.setFont(lu.FONT_SERIF, font_cta[0])
