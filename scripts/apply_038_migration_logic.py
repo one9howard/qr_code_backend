@@ -24,7 +24,9 @@ def apply_migration():
         # 2. Update order_type
         res2 = db.execute("""
             UPDATE orders 
-            SET order_type = 'yard_sign'
+             # WARNING: CANONICAL VALUE IS 'sign'. DO NOT SET TO 'yard_sign'.
+    # This script previously set it to 'yard_sign' which caused fulfillment failure.
+    SET order_type = 'sign'
             WHERE order_type = 'listing_sign'
         """)
         print(f"Updated order_type count: {res2.rowcount}")

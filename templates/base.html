@@ -65,7 +65,7 @@
             {% block drawer_links %}
             {% if current_user.is_authenticated %}
             <a href="{{ url_for('dashboard.index') }}" class="drawer-item highlight">Dashboard</a>
-            <a href="{{ url_for('orders.select_property_for_sign') }}" class="drawer-item">Order Listing Sign</a>
+            <a href="{{ url_for('orders.select_property_for_sign') }}" class="drawer-item">Order Yard Sign</a>
             <a href="{{ url_for('smart_signs.order_start') }}" class="drawer-item">Order SmartSign</a>
             <a href="{{ url_for('account.index') }}" class="drawer-item">Settings</a>
             <a href="{{ url_for('public.privacy') }}" class="drawer-item">Privacy Policy</a>

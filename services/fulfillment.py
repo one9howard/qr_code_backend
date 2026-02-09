@@ -17,7 +17,7 @@ from psycopg2.extras import Json
 logger = logging.getLogger(__name__)
 
 # Supported order types for fulfillment
-SUPPORTED_ORDER_TYPES = ('sign', 'smart_sign', 'listing_kit')
+SUPPORTED_ORDER_TYPES = ('sign', 'smart_sign', 'listing_kit', 'yard_sign')
 
 
 def fulfill_order(order_id):
@@ -57,6 +57,11 @@ def fulfill_order(order_id):
     order_type = order['order_type']
     status = order['status']
     paid_at = order.get('paid_at')
+    
+    # BACKWARD COMPATIBILITY: Normalize 'yard_sign' alias to canonical 'sign'
+    if order_type == 'yard_sign':
+        order_type = 'sign'
+    
     
     logger.info(f"[Fulfillment] Processing Order {order_id} (type={order_type}, status={status}, paid_at={paid_at})")
     

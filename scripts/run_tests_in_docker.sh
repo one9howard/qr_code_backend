@@ -44,9 +44,9 @@ docker compose run --rm \
     && python scripts/reset_test_db.py \
     # Hermeticity check: ensure migrate.py does NOT load .env unless LOAD_DOTENV=1 \
     && echo 'DATABASE_URL=postgresql://should_not_use' > .env \
-    && MIGRATE_LOG=$(python migrate.py 2>&1) \
-    && echo \"$MIGRATE_LOG\" \
-    && (echo \"$MIGRATE_LOG\" | grep -q \"Loaded .env file\" && echo \"[Acceptance] ERROR: migrate.py loaded .env unexpectedly\" && exit 1 || true) \
+    && MIGRATE_LOG=\$(python migrate.py 2>&1) \
+    && echo \"\$MIGRATE_LOG\" \
+    && (echo \"\$MIGRATE_LOG\" | grep -q \"Loaded .env file\" && echo \"[Acceptance] ERROR: migrate.py loaded .env unexpectedly\" && exit 1 || true) \
     && rm -f .env \
     && python -m pytest -q"
 

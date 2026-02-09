@@ -48,11 +48,11 @@ def order_preview(order_id):
         logger.warning(f"Preview not found for order {order_id}: {preview_key} - {e}")
         abort(404)
 
-@orders_bp.route('/orders/listing/select')
+@orders_bp.route('/orders/yard/select')
 @login_required
 def select_property_for_sign():
     """
-    Select a property to order a listing sign for.
+    Select a property to order a Yard Sign for.
     Redirects to Property Creation if no properties exist.
     """
     from database import get_db
@@ -102,7 +102,7 @@ def order_sign_start(property_id):
 @orders_bp.route('/order-sign', methods=['POST'])
 def order_sign():
     """
-    Create a Stripe Checkout Session for a Listing Sign.
+    Create a Stripe Checkout Session for a Yard Sign.
     Guest Supported.
     """
     from services.order_access import get_order_for_request
@@ -363,3 +363,8 @@ def smart_sign_checkout():
     # Intentionally disabled to prevent drift and accidental use.
     abort(404)
 
+@orders_bp.route('/orders/listing/select')
+@login_required
+def select_property_legacy_redirect():
+    """Backward compatibility for old 'listing sign' ordering URL."""
+    return redirect(url_for('orders.select_property_for_sign'))
