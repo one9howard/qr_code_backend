@@ -62,7 +62,8 @@ def test_free_tier_hides_virtual_tour(client, app):
         user = db.execute("SELECT * FROM users WHERE email='free@test.com'").fetchone()
         
         # 2. Create Agent
-        db.execute("INSERT INTO agents (user_id, name, email, brokerage) VALUES (%s, 'Free Agent', 'free@test.com')", (user['id'],))
+        db.execute("INSERT INTO agents (user_id, name, email, brokerage) VALUES (%s, 'Free Agent', 'free@test.com', 'Free Brokerage')", (user['id'],))
+        db.commit()
         agent = db.execute("SELECT * FROM agents WHERE user_id=%s", (user['id'],)).fetchone()
         
         # 3. Create Property with Virtual Tour
