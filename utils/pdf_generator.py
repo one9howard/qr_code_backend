@@ -894,10 +894,27 @@ def _draw_landscape_brand(c, layout, address, beds, baths, sqft, price,
     except: pass
 
 
-def _draw_modern_round_layout(c, layout, address, beds, baths, sqft, price,
-                                  agent_name, brokerage, agent_email, agent_phone,
-                                  qr_key, agent_photo_key, sign_color, qr_value=None,
-                                  agent_photo_path=None, user_id=None, logo_key=None):
+def _draw_modern_round_layout(
+    c,
+    layout,
+    address,
+    beds=None,
+    baths=None,
+    sqft=None,
+    price=None,
+    agent_name=None,
+    brokerage=None,
+    agent_email=None,
+    agent_phone=None,
+    qr_key=None,
+    agent_photo_key=None,
+    sign_color=None,
+    qr_value=None,
+    agent_photo_path=None,
+    user_id=None,
+    logo_key=None,
+    **kwargs,
+):
     """
     Dispatcher for Modern Round Layout (Portrait vs Landscape).
     Ensures deliberate composition for each orientation.
