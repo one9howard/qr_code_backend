@@ -159,7 +159,7 @@ def draw_fitted_text_block(c, text_list, x, y_top, w, align='center', font_map=N
 
 
 # 3. Identity Block
-def draw_identity_block(c, x, y, w, h, asset, storage, theme='dark'):
+def draw_identity_block(c, x, y, w, h, asset, storage, theme='dark', cta_text=None):
     """
     Draws the shared Realtor-Grade Identity Block.
     Layout: [Headshot/Initials] [Name/Phone/Email] ... [Brokerage]
@@ -179,15 +179,45 @@ def draw_identity_block(c, x, y, w, h, asset, storage, theme='dark'):
     # Render Band Background
     c.setFillColor(HexColor(bg_color))
     c.rect(x, y, w, h, fill=1, stroke=0)
-    
+
     # Safe Margins
-    # Assume global safety is handled by caller passing safe bounds? 
-    # Or we verify safe margin inside the band.
     # We'll assume x,y,w,h is the "Band Area". Safe content should be inside.
     margin = h * 0.15
-    safe_h = h - (2 * margin)
-    content_y_top = y + h - margin
-    
+    content_top = y + h - margin
+    content_bottom = y + margin
+
+    # Optional CTA row (top of band)
+    info_top = content_top
+    if cta_text:
+        cta_txt = str(cta_text).strip()
+        if cta_txt:
+            available_h = max(0, content_top - content_bottom)
+            # Guarantee usable space for identity content (headshot + text)
+            min_info_h = max(available_h * 0.55, 42)
+            cta_h = min(available_h * 0.24, max(0, available_h - min_info_h))
+            if cta_h > 0:
+                cta_u = cta_txt.upper()
+                cta_max_w = max(0, w - (2 * margin))
+                max_font = max(12, cta_h * 0.55)
+                min_font = max(10, cta_h * 0.35)
+                size = fit_text_one_line(c, cta_u, FONT_BOLD, cta_max_w, max_font, min_font)
+
+                c.setFillColor(HexColor(text_primary))
+                c.setFont(FONT_BOLD, size)
+                cta_center_y = content_top - (cta_h / 2)
+                c.drawCentredString(x + (w / 2), cta_center_y - (size * 0.35), cta_u)
+
+                # Divider line between CTA and identity content
+                divider_y = content_top - cta_h
+                c.setStrokeColor(HexColor('#334155' if is_dark else '#e2e8f0'))
+                c.setLineWidth(1)
+                c.line(x + margin, divider_y, x + w - margin, divider_y)
+
+                info_top = divider_y - (h * 0.06)
+
+    # Identity content region (below CTA)
+    safe_h = max(0, info_top - content_bottom)
+    content_y_top = info_top
     # --- 1. Headshot (Left) ---
     head_size = safe_h
     head_x = x + margin

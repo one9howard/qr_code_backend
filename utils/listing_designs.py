@@ -56,7 +56,7 @@ def _draw_yard_phone_qr_premium(c, layout, address, beds, baths, sqft, price,
         
         # 2. Identity Block (Bottom)
         block_h = h * 0.18
-        lu.draw_identity_block(c, 0, 0, w, block_h, asset_shim, get_storage(), theme='dark')
+        lu.draw_identity_block(c, 0, 0, w, block_h, asset_shim, get_storage(), theme='dark', cta_text="SCAN FOR DETAILS")
         
         # 3. Main Body
         body_top = h - status_h
@@ -69,16 +69,6 @@ def _draw_yard_phone_qr_premium(c, layout, address, beds, baths, sqft, price,
         
         url = _resolve_qr_url(qr_value, qr_key)
         _draw_qr_safe(c, url, (w-qr_size)/2, qr_center_y - qr_size/2, qr_size, user_id)
-        
-        # CTA
-        c.setFillColorRGB(*COLOR_TEXT)
-        pdf_text.draw_single_line_fitted(
-            c, "Scan for details", 
-            w/2, qr_center_y - (qr_size/2) - SPACING['sm'], 
-            w * 0.8,
-            lu.FONT_SCRIPT, w * 0.08, min_font_size=12
-        )
-        
         # Phone (Lower Middle)
         phone_y_center = body_bottom + (body_h * 0.25)
         phone_fmt = lu.format_phone(agent_phone)
@@ -90,72 +80,73 @@ def _draw_yard_phone_qr_premium(c, layout, address, beds, baths, sqft, price,
             w - (2*SAFE_MARGIN),
             lu.FONT_BOLD, w * 0.18, min_font_size=24
         )
-        
     else:
-        # LANDSCAPE (36x24) - 3 Columns
-        # Left: Agent | Center: Phone/Status | Right: QR
+        # LANDSCAPE (36x24) - 3 Columns + Bottom Identity Band
+        # Top body: Left = Agent | Center = Status/Phone | Right = QR
+        # Bottom: Shared Identity band (CTA lives here)
+        strip_h = h * 0.18
+        lu.draw_identity_block(
+            c, 0, 0, w, strip_h,
+            asset_shim, get_storage(),
+            theme='dark',
+            cta_text="SCAN FOR DETAILS"
+        )
+
+        body_h = h - strip_h
+        y0 = strip_h
         col_w = w / 3
-        
+
         # --- Col 3 (Right): QR ---
-        # Center in column
-        qr_size = min(col_w * 0.7, h * 0.6)
+        qr_size = min(col_w * 0.70, body_h * 0.60)
         qr_center_x = (2.5 * col_w)
-        qr_center_y = h / 2
-        
+        qr_center_y = y0 + (body_h / 2)
+
         url = _resolve_qr_url(qr_value, qr_key)
         _draw_qr_safe(c, url, qr_center_x - qr_size/2, qr_center_y - qr_size/2, qr_size, user_id)
-        
-        c.setFillColorRGB(*COLOR_TEXT)
-        pdf_text.draw_single_line_fitted(
-            c, "Scan for details",
-            qr_center_x, qr_center_y - qr_size/2 - SPACING['md'],
-            col_w * 0.9,
-            lu.FONT_SCRIPT, h * 0.06, min_font_size=12
-        )
-        
+
         # --- Col 2 (Center): Status + Phone ---
         c.setFillColorRGB(*accent_rgb)
+
         # Status
-        c.setFont(lu.FONT_SERIF, h * 0.08)
-        c.drawCentredString(w/2, h * 0.7, status_text.upper())
-        
+        c.setFont(lu.FONT_SERIF, body_h * 0.10)
+        c.drawCentredString(w/2, y0 + (body_h * 0.72), status_text.upper())
+
         # Phone
         phone_fmt = lu.format_phone(agent_phone)
         pdf_text.draw_single_line_fitted(
             c, phone_fmt,
-            w/2, h * 0.5,
-            col_w * 1.1,
-            lu.FONT_BOLD, h * 0.12, min_font_size=20
+            w/2, y0 + (body_h * 0.50),
+            col_w * 1.10,
+            lu.FONT_BOLD, body_h * 0.16, min_font_size=20
         )
-        
+
         # --- Col 1 (Left): Agent ---
-        # Photo + Name + Brokerage
-        photo_size = min(col_w * 0.5, h * 0.25)
+        photo_size = min(col_w * 0.52, body_h * 0.28)
         photo_x = (col_w - photo_size)/2
-        photo_y = h * 0.6
-        
+        photo_y = y0 + (body_h * 0.60)
+
         _draw_photo_circle(c, agent_photo_key, photo_x, photo_y, photo_size)
-        
+
         c.setFillColorRGB(*COLOR_TEXT)
         pdf_text.draw_single_line_fitted(
             c, agent_name,
-            col_w/2, photo_y - (h*0.05),
+            col_w/2, photo_y - (body_h * 0.06),
             col_w - SAFE_MARGIN,
-            lu.FONT_SCRIPT, h * 0.07, min_font_size=14
+            lu.FONT_SCRIPT, body_h * 0.09, min_font_size=14
         )
-        
+
         pdf_text.draw_single_line_fitted(
             c, brokerage.upper(),
-            col_w/2, photo_y - (h*0.12),
+            col_w/2, photo_y - (body_h * 0.14),
             col_w - SAFE_MARGIN,
-            lu.FONT_MED, h * 0.035, min_font_size=10
+            lu.FONT_MED, body_h * 0.045, min_font_size=10
         )
-        
-        # Separators
+
+        # Separators (body only, above identity band)
         c.setStrokeColorRGB(0.9, 0.9, 0.9)
         c.setLineWidth(1)
-        c.line(col_w, h*0.15, col_w, h*0.85)
-        c.line(2*col_w, h*0.15, 2*col_w, h*0.85)
+        c.line(col_w, y0 + (body_h * 0.10), col_w, y0 + (body_h * 0.92))
+        c.line(2*col_w, y0 + (body_h * 0.10), 2*col_w, y0 + (body_h * 0.92))
 
     c.restoreState()
 
@@ -191,12 +182,13 @@ def _draw_yard_address_qr_premium(c, layout, address, beds, baths, sqft, price,
         # PORTRAIT
         # Strip Bottom
         strip_h = h * 0.18
-        lu.draw_identity_block(c, 0, 0, w, strip_h, asset_shim, get_storage(), theme='dark')
+        lu.draw_identity_block(c, 0, 0, w, strip_h, asset_shim, get_storage(), theme='dark', cta_text="SCAN FOR DETAILS")
         
         body_h = h - strip_h
+        y0 = strip_h
         
         # Address (Top Hero)
-        addr_y = body_h * 0.80
+        addr_y = y0 + (body_h * 0.80)
         pdf_text.draw_fitted_block(
             c, address.upper(),
             SAFE_MARGIN, addr_y - (body_h * 0.2), # Approx
@@ -218,28 +210,20 @@ def _draw_yard_address_qr_premium(c, layout, address, beds, baths, sqft, price,
         
         # QR (Center Remaining)
         qr_max_y = addr_y - (body_h * 0.25)
-        qr_center_y = qr_max_y / 2
+        qr_center_y = y0 + ((qr_max_y - y0) / 2)
         qr_size = min(w * 0.6, qr_max_y * 0.6)
         
         url = _resolve_qr_url(qr_value, qr_key)
         _draw_qr_safe(c, url, (w-qr_size)/2, qr_center_y - qr_size/2, qr_size, user_id)
-        
-        c.setFillColorRGB(*COLOR_TEXT)
-        pdf_text.draw_single_line_fitted(
-            c, "Scan for details",
-            w/2, qr_center_y - qr_size/2 - SPACING['sm'],
-            w * 0.8,
-            lu.FONT_SCRIPT, w * 0.08, min_font_size=12
-        )
-        
     else:
         # LANDSCAPE (2 Column)
         # Left (60%): Address | Right (40%): QR
         # Bottom: Identity Strip
         strip_h = h * 0.18
-        lu.draw_identity_block(c, 0, 0, w, strip_h, asset_shim, get_storage(), theme='dark')
+        lu.draw_identity_block(c, 0, 0, w, strip_h, asset_shim, get_storage(), theme='dark', cta_text="SCAN FOR DETAILS")
         
         body_h = h - strip_h
+        y0 = strip_h
         col_gap = SPACING['lg']
         left_w = (w * 0.6) - col_gap/2
         right_w = (w * 0.4) - col_gap/2
@@ -249,7 +233,7 @@ def _draw_yard_address_qr_premium(c, layout, address, beds, baths, sqft, price,
         
         # Left: Address
         # Vertically center address in body
-        addr_y_center = body_h / 2
+        addr_y_center = y0 + (body_h / 2)
         
         c.setFillColorRGB(*COLOR_TEXT)
         pdf_text.draw_fitted_block(
@@ -263,18 +247,10 @@ def _draw_yard_address_qr_premium(c, layout, address, beds, baths, sqft, price,
         # Right: QR
         qr_size = min(right_w * 0.8, body_h * 0.8)
         qr_center_x = right_x + (right_w / 2)
-        qr_center_y = body_h / 2
+        qr_center_y = y0 + (body_h / 2)
         
         url = _resolve_qr_url(qr_value, qr_key)
         _draw_qr_safe(c, url, qr_center_x - qr_size/2, qr_center_y - qr_size/2, qr_size, user_id)
-        
-        pdf_text.draw_single_line_fitted(
-            c, "Scan for details",
-            qr_center_x, qr_center_y - qr_size/2 - SPACING['sm'],
-            right_w,
-            lu.FONT_SCRIPT, h * 0.05, min_font_size=12
-        )
-
     c.restoreState()
 
 

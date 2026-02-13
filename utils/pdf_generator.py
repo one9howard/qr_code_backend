@@ -361,17 +361,12 @@ def _draw_standard_layout(c, layout, address, beds, baths, sqft, price,
             qr_url = "https://example.com"
 
         # Size: 60% of width
-        qr_size = layout.qr_size_base
+        qr_size = layout.qr_size_base * 1.08
         qr_x = (layout.width - qr_size) / 2
         qr_y = layout.qr_center_y - (qr_size / 2)
         
         # 4a. Draw QR (Vector H-ECC)
         draw_qr(c, qr_url, qr_x, qr_y, qr_size, size=qr_size, ecc_level="H", user_id=user_id)
-        
-        # 4b. CTA "SCAN FOR DETAILS" (Below QR)
-        c.setFont(FONT_BOLD, layout.cta_font)
-        c.setFillColorRGB(0, 0, 0)
-        c.drawCentredString(layout.width / 2, qr_y - (layout.cta_font * 1.5), "SCAN FOR PHOTOS & DETAILS")
         
     except Exception as e:
         logger.error(f"QR Draw Error: {e}")
@@ -399,7 +394,8 @@ def _draw_standard_layout(c, layout, address, beds, baths, sqft, price,
         layout.width, layout.footer_height, # w, h
         asset, 
         get_storage(), 
-        theme='dark'
+        theme='dark',
+        cta_text="SCAN FOR PHOTOS & DETAILS"
     )
 
 
@@ -416,6 +412,7 @@ def _draw_landscape_split_layout(c, layout, address, beds, baths, sqft, price,
     # Dimensions
     w = layout.width
     h = layout.height
+    band_h = layout.footer_height  # bottom identity band
     
     # Split
     split_x = w * 0.45
@@ -443,20 +440,16 @@ def _draw_landscape_split_layout(c, layout, address, beds, baths, sqft, price,
         quiet = max(0.02 * h, 0.25 * inch)
         
         qr_max_w = right_w - (2 * margin_x)
-        qr_max_h = h - (2 * margin_y)
+        body_h = h - band_h
+        qr_max_h = body_h - (2 * margin_y)
         qr_size = min(qr_max_w, qr_max_h)
         
         # Center QR in right column
         qr_x = split_x + (right_w - qr_size) / 2
-        qr_y = (h - qr_size) / 2 
+        qr_y = band_h + ((body_h - qr_size) / 2) 
         
         # Draw vector QR
         draw_qr(c, qr_url, qr_x, qr_y, qr_size, size=qr_size, ecc_level="H", user_id=user_id)
-        
-        # CTA (Below QR)
-        c.setFont(FONT_BOLD, layout.cta_font * 0.9)
-        c.setFillColorRGB(0, 0, 0)
-        c.drawCentredString(qr_x + qr_size/2, qr_y - (layout.cta_font * 1.5), "SCAN FOR PHOTOS & DETAILS")
         
     except Exception as e:
         logger.error(f"[PDF] Split Layout Vector QR Error: {e}")
@@ -505,18 +498,18 @@ def _draw_landscape_split_layout(c, layout, address, beds, baths, sqft, price,
     }
     
     draw_identity_block(
-        c, 
-        0, 0, # x, y 
-        split_x - (w*0.01), layout.footer_height, # w (stop before split), h
-        asset, 
-        get_storage(), 
-        theme='dark' # or 'light'
+        c,
+        0, 0,
+        w, band_h,
+        asset,
+        get_storage(),
+        theme='dark',
+        cta_text="SCAN FOR PHOTOS & DETAILS"
     )
-    
     # Divider Line
     c.setStrokeColorRGB(0.9, 0.9, 0.9)
     c.setLineWidth(2)
-    c.line(split_x, margin_y, split_x, h - margin_y)
+    c.line(split_x, band_h + margin_y, split_x, h - margin_y)
 
 
 
@@ -1038,20 +1031,26 @@ def _draw_modern_round_portrait(c, layout, address, beds, baths, sqft, price,
     qr_y_pos = qr_center_y - (qr_size / 2)
     
     safe_draw_qr(c, qr_url, qr_x, qr_y_pos, qr_size, user_id)
-    
-    # CTA (Below QR, overlaying ring slightly or just below?)
-    # "SCAN FOR DETAILS"
-    c.setFillColorRGB(*COLOR_TEXT)
-    cta_y = qr_y_pos - SPACING['md']
-    pdf_text.draw_single_line_fitted(
-        c, "SCAN FOR DETAILS",
-        layout.width / 2, cta_y,
-        content_width * 0.8,
-        FONT_BOLD, layout.cta_font, min_font_size=TYPE_SCALE_MODERN['cta']['min']
-    )
 
     # 6. Identity Footer
-    _draw_modern_footer(c, layout, agent_name, brokerage, agent_phone, sign_color)
+    asset = {
+        'brand_name': agent_name,
+        'brokerage_name': brokerage,
+        'email': agent_email,
+        'phone': agent_phone,
+        'headshot_key': agent_photo_key,
+        'logo_key': logo_key,
+        'agent_headshot_path': agent_photo_path,
+    }
+    draw_identity_block(
+        c,
+        0, 0,
+        layout.width, layout.footer_height,
+        asset,
+        get_storage(),
+        theme='dark',
+        cta_text="SCAN FOR DETAILS",
+    )
 
 def _draw_modern_round_landscape(c, layout, address, beds, baths, sqft, price,
                                  agent_name, brokerage, agent_email, agent_phone,
@@ -1072,8 +1071,11 @@ def _draw_modern_round_landscape(c, layout, address, beds, baths, sqft, price,
            layout.width + 2*layout.bleed, 
            layout.height + 2*layout.bleed, fill=1, stroke=0)
            
+    band_h = layout.footer_height
+    body_top = layout.height - SAFE_MARGIN
+    body_bottom = band_h + SAFE_MARGIN
     content_w = layout.width - (2 * SAFE_MARGIN)
-    content_h = layout.height - (2 * SAFE_MARGIN)
+    content_h = max(0, body_top - body_bottom)
     
     col_gap = SPACING['lg']
     left_col_w = (content_w * 0.6) - (col_gap / 2)
@@ -1128,12 +1130,29 @@ def _draw_modern_round_landscape(c, layout, address, beds, baths, sqft, price,
         )
 
     # Identity (Bottom Left)
-    _draw_modern_footer_landscape(c, layout, agent_name, brokerage, agent_phone, left_x, left_col_w)
+    asset = {
+        'brand_name': agent_name,
+        'brokerage_name': brokerage,
+        'email': agent_email,
+        'phone': agent_phone,
+        'headshot_key': agent_photo_key,
+        'logo_key': logo_key,
+        'agent_headshot_path': agent_photo_path,
+    }
+    draw_identity_block(
+        c,
+        0, 0,
+        layout.width, band_h,
+        asset,
+        get_storage(),
+        theme='dark',
+        cta_text="SCAN FOR DETAILS",
+    )
 
     # --- Right Column (QR Focus) ---
     # Center QR vertically in available space
     qr_center_x = right_x + (right_col_w / 2)
-    qr_center_y = layout.height / 2
+    qr_center_y = (body_top + body_bottom) / 2
     
     qr_size = min(right_col_w, content_h * 0.7)
     
@@ -1145,15 +1164,6 @@ def _draw_modern_round_landscape(c, layout, address, beds, baths, sqft, price,
     
     qr_url = resolve_qr_url(qr_value, qr_key)
     safe_draw_qr(c, qr_url, qr_center_x - qr_size/2, qr_center_y - qr_size/2, qr_size, user_id)
-    
-    # CTA
-    c.setFillColorRGB(*COLOR_TEXT)
-    pdf_text.draw_single_line_fitted(
-        c, "SCAN FOR DETAILS",
-        qr_center_x, qr_center_y - (qr_size/2) - SPACING['md'],
-        right_col_w,
-        FONT_BOLD, layout.cta_font, min_font_size=12
-    )
 
 def _draw_modern_footer(c, layout, agent, brokerage, phone, color_hex):
     """Standard Portrait Footer"""
