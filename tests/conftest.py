@@ -34,12 +34,13 @@ def client(app):
 
 
 @pytest.fixture(scope='function')
-def db_session():
+def db_session(app):
     """Provide a database session for tests."""
     from database import get_db
-    conn = get_db()
-    yield conn
-    conn.rollback()
+    with app.app_context():
+        conn = get_db()
+        yield conn
+        conn.rollback()
 
 
 @pytest.fixture

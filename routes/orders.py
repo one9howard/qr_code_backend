@@ -105,132 +105,21 @@ def order_sign():
     Create a Stripe Checkout Session for a Yard Sign.
     Guest Supported.
     """
-    from services.order_access import get_order_for_request
-    data = request.get_json()
-    order_id = data.get('order_id')
+    # Delegate to Service
+    from services.orders import create_sign_order
     
-    # 1. Resolve Order & Auth
-    if order_id:
-        # Use centralized helper (Supports Guest)
-        order = get_order_for_request(order_id)
-    else:
-        # New Order Logic - MUST require Login for now to create NEW from property
-        # (Unless we add property guest access logic, but goal is flow repair for EXISTING flow)
-        if not current_user.is_authenticated:
-             return jsonify({"success": False, "error": "Login required to start new order"}), 401
-             
-        property_id = data.get('property_id')
-        if not property_id:
-            return jsonify({"success": False, "error": "Property ID required"}), 400
+    result = create_sign_order(current_user, data)
+    
+    status_code = 200
+    if not result.get('success'):
+        status_code = 400
+        # If specific error codes/types were needed, we could parse result['error']
+        if "Unauthorized" in result.get('error', ''):
+            status_code = 403
+        elif "Login required" in result.get('error', ''):
+            status_code = 401
             
-        prop = Property.get(property_id)
-        if not prop or (prop.agent.user_id != current_user.id and not current_user.is_admin):
-             return jsonify({"success": False, "error": "Unauthorized"}), 403
-             
-        from database import get_db
-        db_conn = get_db()
-        import secrets
-        guest_token = secrets.token_urlsafe(32)
-        
-        # Canonical: order_type='sign', print_product set later
-        row = db_conn.execute("""
-            INSERT INTO orders (
-                user_id, property_id, status, 
-                order_type, guest_token, guest_token_created_at, created_at
-            ) VALUES (%s, %s, %s, %s, %s, NOW(), NOW())
-            RETURNING id
-        """, (current_user.id, property_id, 'pending_payment', 'sign', guest_token)).fetchone()
-        
-        db_conn.commit()
-        order = Order.get(row['id'])
-
-    # 2. Apply Options (Guest Safe)
-    from database import get_db
-    db_conn = get_db()
-    
-    req_size = data.get('size') or data.get('sign_size')
-    req_color = data.get('color') or data.get('sign_color')
-    
-    if req_size or req_color:
-        updates = ["status = 'pending_payment'", "updated_at = NOW()"]
-        params = []
-        if req_size:
-            updates.append("sign_size = %s")
-            params.append(normalize_sign_size(req_size))
-        if req_color:
-            updates.append("sign_color = %s")
-            params.append(validate_sign_color(req_color))
-            
-        params.append(order.id)
-        db_conn.execute(f"UPDATE orders SET {', '.join(updates)} WHERE id = %s", tuple(params))
-        db_conn.commit()
-        # Reload
-        order = Order.get(order.id)
-
-    # 3. Checkout Setup
-    # Guest Email Handling
-    customer_email = None
-    if current_user.is_authenticated:
-        customer_email = current_user.email
-    elif data.get('email'):
-        customer_email = data.get('email')
-        
-        # Persist guest email if new/changed
-        # Note: We only set this for unauthenticated orders
-        if order.guest_email != customer_email:
-             db_conn.execute("UPDATE orders SET guest_email = %s WHERE id = %s", (customer_email, order.id))
-             db_conn.commit()
-        
-    raw_sign_size = order.sign_size
-    sign_size = normalize_sign_size(raw_sign_size)
-    material = data.get('material', 'coroplast_4mm')
-    sides = 'double'
-    
-    from services.print_catalog import get_price_id
-    try:
-        price_id = get_price_id('yard_sign', sign_size, material)
-    except ValueError as e:
-        return jsonify({"success": False, "error": str(e)}), 400
-        
-    db_conn.execute("""
-        UPDATE orders 
-        SET print_product = %s, material = %s, sides = %s, print_size = %s, layout_id = %s, updated_at = NOW()
-        WHERE id = %s
-    """, ('yard_sign', material, sides, sign_size, data.get('layout_id', order.layout_id or 'yard_standard'), order.id))
-    db_conn.commit()
-    
-    try:
-        curr_user_id = str(current_user.id) if current_user.is_authenticated else "guest"
-        
-        checkout_params = {
-            'line_items': [{'price': price_id, 'quantity': 1}],
-            'mode': 'payment',
-            'success_url': STRIPE_SIGN_SUCCESS_URL,
-            'cancel_url': STRIPE_SIGN_CANCEL_URL,
-            'client_reference_id': str(order.id),
-            'shipping_address_collection': {'allowed_countries': ['US']},
-            'metadata': {
-                'order_id': str(order.id),
-                'property_id': str(order.property_id),
-                'user_id': curr_user_id,
-                'sign_type': 'yard_sign', # Keep for analytics/reference? Or change to 'sign'? Leaving as descriptive 'yard_sign' is fine for metadata.
-                'material': material,
-                'sides': sides,
-                'size': sign_size
-            }
-        }
-        
-        if customer_email:
-            checkout_params['customer_email'] = customer_email
-            
-        checkout_session = stripe.checkout.Session.create(**checkout_params)
-        return jsonify({"success": True, "checkoutUrl": checkout_session.url})
-        
-    except Exception as e:
-        logger.error(f"Stripe setup failed: {e}")
-        import traceback
-        traceback.print_exc()
-        return jsonify({"success": False, "error": f"Stripe Setup Error: {str(e)}", "details": str(e)}), 500
+    return jsonify(result), status_code
 
 @orders_bp.route('/order/success')
 def order_success():

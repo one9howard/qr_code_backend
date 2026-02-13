@@ -11,16 +11,23 @@ CANONICAL: Called ONLY from webhooks. Success pages are READ-ONLY and do not cal
 """
 import logging
 import json
+import secrets
+import traceback
 import stripe
+from services.order_access import get_order_for_request
 from datetime import datetime
 from database import get_db
 from utils.timestamps import utc_iso
 from services.stripe_checkout import update_attempt_status
+from services.print_catalog import get_price_id
 from constants import (
     ORDER_STATUS_PAID, 
     ORDER_STATUS_SUBMITTED_TO_PRINTER, 
     ORDER_STATUS_FULFILLED
 )
+from utils.sign_options import normalize_sign_size, validate_sign_color
+from config import STRIPE_SIGN_SUCCESS_URL, STRIPE_SIGN_CANCEL_URL
+from models import Order, Property, User
 
 logger = logging.getLogger(__name__)
 
@@ -328,3 +335,136 @@ def process_paid_order(db, session):
         from services.async_jobs import enqueue
         job_id = enqueue('generate_listing_kit', {'order_id': order_id})
         logger.info(f"[Orders] Enqueued Job {job_id}")
+
+def create_sign_order(user, data):
+    """
+    Core logic for creating a Yard Sign order (Guest or Auth).
+    
+    Args:
+        user: The current User object (or None/AnonymousUser)
+        data: Dict containing request payload (property_id, size, etc.)
+        
+    Returns:
+        dict: {'success': bool, 'checkoutUrl': str, 'error': str}
+    """
+    order_id = data.get('order_id')
+    db_conn = get_db()
+    
+    # 1. Resolve Order & Auth
+    if order_id:
+        # Use centralized helper (Supports Guest)
+        try:
+            order = get_order_for_request(order_id)
+        except Exception:
+            return {"success": False, "error": "Order not found or access denied"}
+    else:
+        # New Order Logic
+        # Canonical rule: Must be authenticated to create NEW except specific flows?
+        # The original route said: "MUST require Login for now to create NEW from property"
+        if not user or not user.is_authenticated:
+             return {"success": False, "error": "Login required to start new order"}
+             
+        property_id = data.get('property_id')
+        if not property_id:
+            return {"success": False, "error": "Property ID required"}
+            
+        prop = Property.get(property_id)
+        if not prop or (prop.agent.user_id != user.id and not getattr(user, 'is_admin', False)):
+             return {"success": False, "error": "Unauthorized property access"}
+             
+        guest_token = secrets.token_urlsafe(32)
+        
+        # Canonical: order_type='sign', print_product set later
+        row = db_conn.execute("""
+            INSERT INTO orders (
+                user_id, property_id, status, 
+                order_type, guest_token, guest_token_created_at, created_at
+            ) VALUES (%s, %s, %s, %s, %s, NOW(), NOW())
+            RETURNING id
+        """, (int(user.id), int(property_id), 'pending_payment', 'sign', guest_token)).fetchone()
+        
+        db_conn.commit()
+        # We need a fresh object to continue
+        order = Order.get(row['id'])
+
+    # 2. Apply Options (Guest Safe)
+    req_size = data.get('size') or data.get('sign_size')
+    req_color = data.get('color') or data.get('sign_color')
+    
+    if req_size or req_color:
+        updates = ["status = 'pending_payment'", "updated_at = NOW()"]
+        params = []
+        if req_size:
+            updates.append("sign_size = %s")
+            params.append(normalize_sign_size(req_size))
+        if req_color:
+            updates.append("sign_color = %s")
+            params.append(validate_sign_color(req_color))
+            
+        params.append(order.id)
+        db_conn.execute(f"UPDATE orders SET {', '.join(updates)} WHERE id = %s", tuple(params))
+        db_conn.commit()
+        # Reload
+        order = Order.get(order.id)
+
+    # 3. Checkout Setup
+    # Guest Email Handling
+    customer_email = None
+    if user and user.is_authenticated:
+        customer_email = user.email
+    elif data.get('email'):
+        customer_email = data.get('email')
+        
+        # Persist guest email if new/changed
+        if order.guest_email != customer_email:
+             db_conn.execute("UPDATE orders SET guest_email = %s WHERE id = %s", (customer_email, order.id))
+             db_conn.commit()
+        
+    raw_sign_size = order.sign_size
+    sign_size = normalize_sign_size(raw_sign_size)
+    material = data.get('material', 'coroplast_4mm')
+    sides = 'double'
+    
+    try:
+        price_id = get_price_id('yard_sign', sign_size, material)
+    except ValueError as e:
+        return {"success": False, "error": str(e)}
+        
+    db_conn.execute("""
+        UPDATE orders 
+        SET print_product = %s, material = %s, sides = %s, print_size = %s, layout_id = %s, updated_at = NOW()
+        WHERE id = %s
+    """, ('yard_sign', material, sides, sign_size, data.get('layout_id', order.layout_id or 'yard_standard'), order.id))
+    db_conn.commit()
+    
+    try:
+        curr_user_id = str(user.id) if (user and user.is_authenticated) else "guest"
+        
+        checkout_params = {
+            'line_items': [{'price': price_id, 'quantity': 1}],
+            'mode': 'payment',
+            'success_url': STRIPE_SIGN_SUCCESS_URL,
+            'cancel_url': STRIPE_SIGN_CANCEL_URL,
+            'client_reference_id': str(order.id),
+            'shipping_address_collection': {'allowed_countries': ['US']},
+            'metadata': {
+                'order_id': str(order.id),
+                'property_id': str(order.property_id),
+                'user_id': curr_user_id,
+                'sign_type': 'yard_sign', 
+                'material': material,
+                'sides': sides,
+                'size': sign_size
+            }
+        }
+        
+        if customer_email:
+            checkout_params['customer_email'] = customer_email
+            
+        checkout_session = stripe.checkout.Session.create(**checkout_params)
+        return {"success": True, "checkoutUrl": checkout_session.url}
+        
+    except Exception as e:
+        logger.error(f"Stripe setup failed: {e}")
+        traceback.print_exc()
+        return {"success": False, "error": f"Stripe Setup Error: {str(e)}"}
