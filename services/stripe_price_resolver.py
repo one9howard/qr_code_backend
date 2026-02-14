@@ -59,6 +59,12 @@ def resolve_price_id(lookup_key: str) -> str:
         if lookup_key in PRICE_CACHE:
             return PRICE_CACHE[lookup_key]['price_id']
 
+        # CHECK ENV VAR FALLBACK (Fix for verified test runs)
+        env_var_name = f"STRIPE_PRICE_{lookup_key.upper()}"
+        env_val = os.environ.get(env_var_name)
+        if env_val:
+            return env_val
+
         # FALLBACK: Return a mock ID to allow local dev/preview without Stripe
         logger.warning(f"Returning MOCK price for {lookup_key} in TEST mode (No valid Stripe Key).")
         return f"price_mock_{lookup_key}"
