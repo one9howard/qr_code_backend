@@ -7,17 +7,19 @@ def get_db():
     if 'db' not in g:
         db_url = os.environ.get("DATABASE_URL")
         if not db_url:
-             raise RuntimeError("DATABASE_URL is required for Postgres connection.")
+            raise RuntimeError("DATABASE_URL is required for Postgres connection.")
 
-        if not db_url.startswith("postgres"):
-             raise ValueError(f"Only Postgres is supported. Invalid scheme in: {db_url}")
+        # Never echo the full DATABASE_URL (it may contain credentials)
+        if not db_url.startswith("postgresql://"):
+            raise ValueError("Only Postgres is supported. DATABASE_URL must start with postgresql://")
 
         try:
             conn = psycopg2.connect(db_url, cursor_factory=DictCursor)
             g.db = PostgresDB(conn)
         except Exception as e:
-            print(f"[DB] Connection Failed: {e}")
-            raise e
+            # Avoid printing the DSN (some drivers may echo it in exception strings)
+            print(f"[DB] Connection Failed: {type(e).__name__}")
+            raise
     return g.db
 
 def close_connection(exception=None):

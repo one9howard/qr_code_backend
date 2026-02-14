@@ -2,6 +2,8 @@ services:
   web:
     build:
       context: .
+    env_file:
+      - .env
     environment:
       - DATABASE_URL=postgresql://postgres:postgres@db:5432/insite_test
       - FLASK_ENV=testing

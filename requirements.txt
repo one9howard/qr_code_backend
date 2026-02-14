@@ -5,7 +5,7 @@
 #    pip-compile --generate-hashes --output-file=requirements.txt requirements.in
 #
 #
-# Runtime pin: see runtime.txt (python-3.13.11) and Dockerfile (python:3.13-slim)
+# Runtime pin: see runtime.txt (python-3.14.3) and Dockerfile (python:3.14-slim)
 # Regenerate this lockfile under that same Python version for deploy parity.
 #
 alembic==1.18.1 \

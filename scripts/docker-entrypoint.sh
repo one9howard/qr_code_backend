@@ -17,6 +17,11 @@ else
   echo "[Entrypoint] Skipping migrations (RUN_MIGRATIONS_ON_STARTUP is not true)."
 fi
 
+if [ -n "${DATABASE_URL:-}" ]; then
+  echo "[Entrypoint] Validating schema..."
+  python3 /app/scripts/check_schema_ready.py
+fi
+
 echo "[Entrypoint] Starting application..."
 echo "[Entrypoint] Executing: $@"
 exec "$@"

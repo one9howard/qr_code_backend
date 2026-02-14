@@ -59,6 +59,7 @@ ROOT_PATTERNS = [
     ".dockerignore",   # Docker build context exclusions
     "docker-compose.yml", # Local orchestration spec
     "README*",         # Docs entrypoint
+    "SPECS.md",        # Canonical generated specs snapshot (release gate requires it)
     "alembic.ini",     # DB Config
     "runtime.txt",     # Runtime pin for deploy parity
     "requirements.txt", # Depencies

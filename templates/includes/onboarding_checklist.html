@@ -6,60 +6,22 @@
     </h4>
 
     <div style="display: flex; flex-direction: column; gap: 12px;">
-        <!-- Step 1: Create Property -->
-        <div
-            style="display: flex; align-items: center; gap: 10px; opacity: {% if property_count > 0 %}1{% else %}0.6{% endif %};">
+        {% for step in onboarding_steps %}
+        <div style="display: flex; align-items: center; gap: 10px; opacity: {% if step.done %}1{% else %}0.6{% endif %};">
             <span
-                style="font-size: 1rem; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; border-radius: 50%; background: {% if property_count > 0 %}var(--accent-green){% else %}rgba(255,255,255,0.1){% endif %}; color: white; font-size: 0.75rem;">
-                {% if property_count > 0 %}✓{% else %}1{% endif %}
+                style="width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; border-radius: 50%; background: {% if step.done %}var(--accent-green){% else %}rgba(255,255,255,0.1){% endif %}; color: white; font-size: 0.72rem; font-weight: 600; text-transform: uppercase;">
+                {% if step.done %}done{% else %}{{ loop.index }}{% endif %}
             </span>
             <span
-                style="font-size: 0.85rem; color: {% if property_count > 0 %}var(--text-main){% else %}var(--text-muted){% endif %}; {% if property_count > 0 %}text-decoration: line-through; opacity: 0.5;{% endif %}">
-                Create a property
-            </span>
-        </div>
-
-        <!-- Step 2: Order SmartSign -->
-        <div
-            style="display: flex; align-items: center; gap: 10px; opacity: {% if smart_sign_count > 0 %}1{% else %}0.6{% endif %};">
-            <span
-                style="font-size: 1rem; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; border-radius: 50%; background: {% if smart_sign_count > 0 %}var(--accent-green){% else %}rgba(255,255,255,0.1){% endif %}; color: white; font-size: 0.75rem;">
-                {% if smart_sign_count > 0 %}✓{% else %}2{% endif %}
-            </span>
-            <span
-                style="font-size: 0.85rem; color: {% if smart_sign_count > 0 %}var(--text-main){% else %}var(--text-muted){% endif %}; {% if smart_sign_count > 0 %}text-decoration: line-through; opacity: 0.5;{% endif %}">
-                Order a SmartSign
+                style="font-size: 0.85rem; color: {% if step.done %}var(--text-main){% else %}var(--text-muted){% endif %}; {% if step.done %}text-decoration: line-through; opacity: 0.6;{% endif %}">
+                {{ step.label }}
             </span>
         </div>
-
-        <!-- Step 3: Assign to Property -->
-        <div
-            style="display: flex; align-items: center; gap: 10px; opacity: {% if assigned_sign_count > 0 %}1{% else %}0.6{% endif %};">
-            <span
-                style="font-size: 1rem; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; border-radius: 50%; background: {% if assigned_sign_count > 0 %}var(--accent-green){% else %}rgba(255,255,255,0.1){% endif %}; color: white; font-size: 0.75rem;">
-                {% if assigned_sign_count > 0 %}✓{% else %}3{% endif %}
-            </span>
-            <span
-                style="font-size: 0.85rem; color: {% if assigned_sign_count > 0 %}var(--text-main){% else %}var(--text-muted){% endif %}; {% if assigned_sign_count > 0 %}text-decoration: line-through; opacity: 0.5;{% endif %}">
-                Assign to property
-            </span>
-        </div>
-
-        <!-- Step 4: Get Leads -->
-        <div
-            style="display: flex; align-items: center; gap: 10px; opacity: {% if lead_count_total > 0 %}1{% else %}0.6{% endif %};">
-            <span
-                style="font-size: 1rem; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; border-radius: 50%; background: {% if lead_count_total > 0 %}var(--accent-green){% else %}rgba(255,255,255,0.1){% endif %}; color: white; font-size: 0.75rem;">
-                {% if lead_count_total > 0 %}✓{% else %}4{% endif %}
-            </span>
-            <span
-                style="font-size: 0.85rem; color: {% if lead_count_total > 0 %}var(--text-main){% else %}var(--text-muted){% endif %};">
-                Receive first lead
-            </span>
-        </div>
+        {% endfor %}
     </div>
 
-    {% if progress_percent < 100 %} <div
+    {% if progress_percent < 100 %}
+    <div
         style="margin-top: 20px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.1);">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
             <span style="font-size: 0.75rem; color: var(--text-muted);">Setup Progress</span>
@@ -71,6 +33,6 @@
                 style="width: {{ progress_percent }}%; height: 100%; background: var(--accent-blue); transition: width 0.5s ease;">
             </div>
         </div>
-</div>
-{% endif %}
+    </div>
+    {% endif %}
 </div>

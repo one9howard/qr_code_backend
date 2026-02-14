@@ -174,6 +174,30 @@
                 </div>
             </div>
 
+            {% if guided_step %}
+            <div class="col-span-12" style="margin-bottom: 20px;">
+                <div class="card"
+                    style="padding: 20px 24px; border: 1px solid rgba(79, 172, 254, 0.35); background: linear-gradient(135deg, rgba(79,172,254,0.09) 0%, rgba(0,242,254,0.03) 100%);"
+                    data-testid="guided-setup">
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap;">
+                        <div>
+                            <h3 style="margin: 0 0 6px 0; font-size: 1rem;">Guided Setup</h3>
+                            <p style="margin: 0; color: var(--text-muted); font-size: 0.9rem;">
+                                Step {{ onboarding_completed_steps + 1 if guided_step else onboarding_total_steps }} of
+                                {{
+                                onboarding_total_steps }}: {{ guided_step.label }}
+                            </p>
+                        </div>
+                        <a href="{{ guided_step.url }}" class="glass-button accent"
+                            style="padding: 8px 14px; font-size: 0.85rem;">
+                            {{ guided_step.cta }}
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
             <!-- SmartSigns Section (Fully Active for Assignment) -->
             {% include "includes/smart_signs_table.html" %}
 
@@ -577,6 +601,8 @@
 
 <!-- Tab Switching Script -->
 <script>
+    const DASHBOARD_TAB_KEY = 'dashboard.activeTab';
+
     function copyText(text, el) {
         if (navigator.clipboard && navigator.clipboard.writeText) {
             navigator.clipboard.writeText(text).then(() => {
@@ -598,7 +624,7 @@
         }
     }
 
-    function switchTab(tabName) {
+    function switchTab(tabName, persist = true) {
         // Hide all sections
         document.querySelectorAll('.grid-sections').forEach(el => el.classList.remove('active'));
         document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
@@ -613,23 +639,53 @@
                 btn.classList.add('active');
             }
         });
+
+        if (persist) {
+            try {
+                localStorage.setItem(DASHBOARD_TAB_KEY, tabName);
+            } catch (e) {
+                // Ignore storage failures silently (private mode, etc.)
+            }
+        }
     }
 
     function handleHashNavigation() {
         const hash = window.location.hash;
+        let handled = false;
         if (hash === '#smart-signs-section') {
             switchTab('smart');
             setTimeout(() => document.getElementById('smart-signs-section')?.scrollIntoView({ behavior: 'smooth' }), 100);
+            handled = true;
         } else if (hash === '#leads-section') {
             switchTab('analytics');
             setTimeout(() => document.getElementById('leads-section')?.scrollIntoView({ behavior: 'smooth' }), 100);
+            handled = true;
         } else if (hash === '#listings-section') {
             switchTab('listings');
             setTimeout(() => document.getElementById('listings-section')?.scrollIntoView({ behavior: 'smooth' }), 100);
+            handled = true;
+        }
+        return handled;
+    }
+
+    function restoreTabFromStorage() {
+        let tabName = null;
+        try {
+            tabName = localStorage.getItem(DASHBOARD_TAB_KEY);
+        } catch (e) {
+            tabName = null;
+        }
+        if (tabName) {
+            switchTab(tabName, false);
         }
     }
 
-    document.addEventListener('DOMContentLoaded', handleHashNavigation);
+    document.addEventListener('DOMContentLoaded', () => {
+        const hashHandled = handleHashNavigation();
+        if (!hashHandled) {
+            restoreTabFromStorage();
+        }
+    });
     window.addEventListener('hashchange', handleHashNavigation);
 </script>
 

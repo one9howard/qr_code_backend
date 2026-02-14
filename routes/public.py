@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template
+from flask import Blueprint, render_template, redirect, url_for
 
 public_bp = Blueprint('public', __name__)
 
@@ -27,8 +27,13 @@ def terms():
 @public_bp.route("/pricing")
 def pricing():
     """Redirect to the landing page pricing section."""
-    from flask import redirect
     return redirect("/#plans")
+
+
+@public_bp.route("/order")
+def legacy_order():
+    """Legacy order route kept for backward compatibility."""
+    return redirect(url_for("public.select_sign"), code=301)
 
 
 

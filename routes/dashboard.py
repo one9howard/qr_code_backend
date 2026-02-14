@@ -7,11 +7,10 @@ Provides:
 - GET/POST /dashboard/edit/<id> - Edit property
 """
 import os
-from flask import Blueprint, render_template, redirect, url_for, request, flash
+from flask import Blueprint, render_template, redirect, url_for, request, flash, current_app
 from flask_login import login_required, current_user
 from database import get_db
 from config import PROPERTY_PHOTOS_DIR, PROPERTY_PHOTOS_KEY_PREFIX
-from utils.uploads import save_image_upload
 from utils.uploads import save_image_upload
 from utils.storage import get_storage
 from slugify import slugify
@@ -376,6 +375,13 @@ def index():
         if not a.get('active_property_id'):
             first_unassigned_sign_id = a['id']
             break
+
+    # First assigned property id (for deep-linking to a real property page)
+    first_assigned_property_id = None
+    for a in sign_assets:
+        if a.get('active_property_id'):
+            first_assigned_property_id = a['active_property_id']
+            break
     
     # Next step label and CTA for progress bar
     if not has_smartsigns:
@@ -392,15 +398,6 @@ def index():
     elif not has_scan:
         next_step_label = "Place the sign and test-scan it"
         next_step_cta = "View Property Page"
-        # Find first assigned property
-        first_assigned_property = None
-        for a in sign_assets:
-            if a.get('active_property_id'):
-                # Need property ID for internal redirect
-                prop = db.execute("SELECT id FROM properties WHERE id = %s", (a['active_property_id'],)).fetchone()
-                if prop:
-                    first_assigned_property_id = prop['id']
-                    break
         next_step_url = url_for('properties.internal_agent_redirect', property_id=first_assigned_property_id) if first_assigned_property_id else None
     else:
         next_step_label = "Wait for a buyer inquiry (or test the form)"
@@ -419,6 +416,58 @@ def index():
     # True if user has 0 properties AND 0 SmartSigns
     property_count = len(properties)
     is_new_user = (property_count == 0 and smart_sign_count == 0)
+
+    assign_step_url = (
+        url_for('dashboard.index', highlight_asset_id=first_unassigned_sign_id) + '#smart-signs-section'
+        if first_unassigned_sign_id
+        else url_for('dashboard.index') + '#smart-signs-section'
+    )
+    scan_step_url = (
+        url_for('properties.internal_agent_redirect', property_id=first_assigned_property_id)
+        if first_assigned_property_id
+        else url_for('dashboard.index') + '#smart-signs-section'
+    )
+
+    onboarding_steps = [
+        {
+            "key": "create_property",
+            "label": "Create a property",
+            "done": property_count > 0,
+            "cta": "Create Property",
+            "url": url_for('dashboard.new_property'),
+        },
+        {
+            "key": "order_smartsign",
+            "label": "Order a SmartSign",
+            "done": has_smartsigns,
+            "cta": "Order SmartSign",
+            "url": url_for('smart_signs.order_start'),
+        },
+        {
+            "key": "assign_sign",
+            "label": "Assign SmartSign to a property",
+            "done": has_assigned_sign,
+            "cta": "Assign SmartSign",
+            "url": assign_step_url,
+        },
+        {
+            "key": "test_scan",
+            "label": "Test-scan your SmartSign",
+            "done": has_scan,
+            "cta": "Open Property Page",
+            "url": scan_step_url,
+        },
+        {
+            "key": "first_lead",
+            "label": "Receive your first lead",
+            "done": lead_count_total > 0,
+            "cta": "View Leads",
+            "url": url_for('dashboard.index') + '#leads-section',
+        },
+    ]
+    guided_step = next((step for step in onboarding_steps if not step["done"]), None)
+    onboarding_completed_steps = sum(1 for step in onboarding_steps if step["done"])
+    onboarding_total_steps = len(onboarding_steps)
 
     # 10. Chart Data (Lead Timeseries)
     chart_data = get_agent_lead_timeseries(current_user.id, days=30)
@@ -451,8 +500,13 @@ def index():
         next_step_url=next_step_url,
         has_any_activity=has_any_activity,
         first_unassigned_sign_id=first_unassigned_sign_id,
+        first_assigned_property_id=first_assigned_property_id,
         is_new_user=is_new_user,
         property_count=property_count,
+        onboarding_steps=onboarding_steps,
+        guided_step=guided_step,
+        onboarding_completed_steps=onboarding_completed_steps,
+        onboarding_total_steps=onboarding_total_steps,
         # Legacy compat
         has_assigned_smartsigns=has_assigned_sign,
         highlight_asset_id=request.args.get("highlight_asset_id", type=int),
@@ -926,5 +980,3 @@ def property_created(property_id):
         has_unassigned_sign=bool(unassigned_sign),
         first_unassigned_sign_id=unassigned_sign['id'] if unassigned_sign else None
     )
-
-

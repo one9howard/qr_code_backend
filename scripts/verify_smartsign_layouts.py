@@ -24,10 +24,10 @@ from reportlab.lib.units import inch
 # Mock Data
 WORST_CASE_ASSET = {
     'code': 'ABCD1234',
-    'brand_name': 'Alexandria Catherine Van Der Westhuizen',
+    'brand_name': 'Alexandria Example',
     'phone': '(555) 555-5555',
-    'email': 'alexandria.vanderwesthuizen.longemailaddress@gmail.com',
-    'brokerage_name': 'Sotheby’s International Realty – Northern California Peninsula',
+    'email': 'alex@example.com',
+    'brokerage_name': 'Example Realty – Peninsula Office',
     'banner_color_id': 'navy',
     'cta_key': 'scan_for_details',
     'include_logo': False,

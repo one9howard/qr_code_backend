@@ -43,6 +43,7 @@
                 </div>
 
                 <div class="action-buttons">
+                    {% if checkout_available %}
                     <form action="{{ url_for('smart_signs.start_payment', order_id=order_id) }}" method="POST"
                         style="width: 100%;">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -51,6 +52,16 @@
                             Proceed to Payment
                         </button>
                     </form>
+                    {% else %}
+                    <div
+                        style="margin-bottom: 10px; padding: 10px 12px; border-radius: 8px; border: 1px solid rgba(239,68,68,0.45); background: rgba(239,68,68,0.08); color: #fecaca; font-size: 0.9rem;">
+                        {{ checkout_block_reason or "Checkout is temporarily unavailable." }}
+                    </div>
+                    <button type="button" class="glass-button secondary order-btn" disabled
+                        style="width: 100%; justify-content: center; opacity: 0.65; cursor: not-allowed;">
+                        Checkout Unavailable
+                    </button>
+                    {% endif %}
                 </div>
             </div>
             {% else %}

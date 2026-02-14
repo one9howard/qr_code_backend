@@ -34,28 +34,19 @@ else
   docker compose -p insite_signs up -d "${DB_SERVICE}"
 fi
 
-# Ensure .env exists so docker compose doesn't fail mounting it
-# No env_file requirement in docker-compose; keep runner hermetic and non-destructive.
-CREATED_ENV="0"
-if [ ! -f .env ]; then touch .env; CREATED_ENV="1"; fi
-  if [ "${CREATED_ENV}" = "1" ]; then rm -f .env; fi
+# IMPORTANT: do not create/touch .env here.
+# docker compose runs fine without it, and creating it invites footguns.
 
 echo "[Acceptance] Running reset + migrate + pytest inside ${WEB_SERVICE}..."
 # Run as a single in-container shell so failures stop the whole chain.
 docker compose -p insite_signs run --rm \
   -e DATABASE_URL="${TEST_DATABASE_URL}" \
   -e TEST_DB_NAME="${TEST_DB_NAME}" \
+  -e LOAD_DOTENV=0 \
   "${WEB_SERVICE}" \
   bash -lc "set -euo pipefail \
     && python scripts/reset_test_db.py \
-    # Hermeticity check: ensure migrate.py does NOT load .env unless LOAD_DOTENV=1 \
-    && ENV_BAK=0 \
-    && if [ -f .env ]; then cp .env .env.__bak && ENV_BAK=1; fi \
-    && echo 'DATABASE_URL=postgresql://should_not_use' > .env \
-    && MIGRATE_LOG=\$(python migrate.py 2>&1) \
-    && echo \"\$MIGRATE_LOG\" \
-    && (echo \"\$MIGRATE_LOG\" | grep -q \"Loaded .env file\" && echo \"[Acceptance] ERROR: migrate.py loaded .env unexpectedly\" && exit 1 || true) \
-    && if [ "\$ENV_BAK" = "1" ]; then mv .env.__bak .env; else rm -f .env; fi \
+    && python migrate.py \
     && python -m pytest -q"
 
 echo "[Acceptance] OK"

@@ -5,7 +5,7 @@ import os
 import json
 import uuid
 from datetime import datetime
-from config import STRIPE_SECRET_KEY, STRIPE_SIGN_SUCCESS_URL, STRIPE_SIGN_CANCEL_URL
+from config import STRIPE_SIGN_SUCCESS_URL, STRIPE_SIGN_CANCEL_URL
 from models import User
 from database import get_db
 # Use subscriptions for entitlement checks
@@ -30,6 +30,21 @@ def create_checkout_attempt(*args, **kwargs):
 def update_attempt_status(*args, **kwargs):
     """Placeholder for test patching. Not used in production flow."""
     pass
+
+
+@smart_signs_bp.route('/')
+@login_required
+def smart_signs_root():
+    """Legacy /smart-signs/ entry point -> dashboard SmartSigns section."""
+    return redirect(url_for('dashboard.index') + '#smart-signs-section')
+
+
+@smart_signs_bp.route('/manage')
+@login_required
+def smart_signs_manage():
+    """Legacy /smart-signs/manage entry point -> dashboard SmartSigns section."""
+    return redirect(url_for('dashboard.index') + '#smart-signs-section')
+
 
 # --- Edit / Preview ---
 
@@ -512,6 +527,13 @@ def order_preview(order_id):
     if order['preview_key']:
         preview_url = url_for("orders.order_preview", order_id=order_id)
 
+    checkout_available = bool(current_app.config.get('STRIPE_SECRET_KEY'))
+    checkout_block_reason = None
+    if not checkout_available:
+        checkout_block_reason = (
+            "Checkout is unavailable because Stripe is not configured in this runtime."
+        )
+
     return render_template(
         'smart_signs/preview.html',
         order_id=order_id,
@@ -519,7 +541,9 @@ def order_preview(order_id):
         sign_size=order['print_size'],
         asset_id=order['sign_asset_id'],
         timestamp=int(datetime.now().timestamp()),
-        order_status=order['status']
+        order_status=order['status'],
+        checkout_available=checkout_available,
+        checkout_block_reason=checkout_block_reason,
     )
 
 
@@ -538,6 +562,18 @@ def start_payment(order_id):
     if order['status'] != 'pending_payment':
         flash("Order is not pending payment.", "info")
         return redirect(url_for('dashboard.index')) # or wherever
+
+    stripe_secret = current_app.config.get('STRIPE_SECRET_KEY')
+    if not stripe_secret:
+        flash(
+            "Checkout is unavailable: STRIPE_SECRET_KEY is missing in this runtime. "
+            "Add Stripe env vars and restart the web container.",
+            "error",
+        )
+        return redirect(url_for('smart_signs.order_preview', order_id=order_id))
+
+    if stripe.api_key != stripe_secret:
+        stripe.api_key = stripe_secret
 
     try:
         # 1. Re-calculate Price ID (Safety check)

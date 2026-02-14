@@ -80,6 +80,7 @@ def main() -> None:
             "migrate.py",
             "alembic.ini",
             "extensions.py",
+            "SPECS.md",
             "runtime.txt",
             "Dockerfile",
             ".dockerignore",
