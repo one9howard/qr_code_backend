@@ -28,7 +28,7 @@ import getpass
 import socket
 import platform
 import json
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 
 # --- PATH RESOLUTION (do not rely on cwd) ---
@@ -62,6 +62,7 @@ ROOT_PATTERNS = [
     "SPECS.md",        # Canonical generated specs snapshot (release gate requires it)
     "alembic.ini",     # DB Config
     "runtime.txt",     # Runtime pin for deploy parity
+    ".python-version", # Runtime pin parity for tooling
     "requirements.txt", # Depencies
     "requirements-test.txt", # Test deps for Docker build
     "requirements.in",
@@ -143,6 +144,19 @@ def assert_repo_root(project_root: str) -> None:
             + "\nResolved project_root="
             + project_root
         )
+
+
+def ensure_specs_synced(project_root: str) -> None:
+    """Generate SPECS.md and fail the release build if it is still out of sync."""
+    specs_path = os.path.join(project_root, "SPECS.md")
+    print("[GATE] Generating SPECS.md...")
+    subprocess.check_call([sys.executable, "scripts/generate_specs_md.py"], cwd=project_root)
+    if not os.path.isfile(specs_path):
+        raise RuntimeError("[SPECS] scripts/generate_specs_md.py did not produce SPECS.md")
+    print("[GATE] Verifying SPECS.md sync...")
+    subprocess.check_call([sys.executable, "scripts/check_specs_sync.py"], cwd=project_root)
+
+
 def clean_tree(src_root, dest_root):
     """Copy allowlisted files from src to dest."""
     if os.path.exists(dest_root):
@@ -209,7 +223,7 @@ import os
 # Mock ENV
 os.environ['DATABASE_URL'] = 'postgresql://mock:mock@localhost/mock'
 os.environ['SECRET_KEY'] = 'mock-secret-key'
-os.environ['FLASK_ENV'] = 'testing'
+os.environ['FLASK_ENV'] = 'production'
 os.environ['APP_STAGE'] = '{check_stage}'
 os.environ['STORAGE_BACKEND'] = 's3'
 os.environ['S3_BUCKET'] = 'mock-bucket'
@@ -217,6 +231,7 @@ os.environ['AWS_REGION'] = 'us-east-1'
 os.environ['PUBLIC_BASE_URL'] = 'https://example.com'
 os.environ['STRIPE_SECRET_KEY'] = '{stripe_secret}'
 os.environ['STRIPE_PUBLISHABLE_KEY'] = '{stripe_publishable}'
+os.environ['SKIP_STRIPE_PRICE_WARMUP'] = '1'
 os.environ['PRINT_JOBS_TOKEN'] = 'mock-print-token'
 
 try:
@@ -282,7 +297,7 @@ def _sha256_file(path: str) -> str:
 
 def write_release_manifest(stage_dir: str, project_root: str, zip_path: str) -> None:
     """Write RELEASE_MANIFEST.json into the staging directory."""
-    built_at_utc = datetime.utcnow().replace(microsecond=0).isoformat() + "Z"
+    built_at_utc = datetime.now(UTC).replace(microsecond=0).isoformat().replace("+00:00", "Z")
 
     git_sha = None
     try:
@@ -376,7 +391,9 @@ def validate_artifact(zip_path, project_root, check_stage="staging"):
             "migrate.py",
             "alembic.ini",
             "extensions.py",
+            "SPECS.md",
             "runtime.txt",
+            ".python-version",
             "Dockerfile",
             ".dockerignore",
             "docker-compose.yml",
@@ -401,6 +418,15 @@ def validate_artifact(zip_path, project_root, check_stage="staging"):
 
         if missing:
             print(f"[FAIL] Missing required operational files in artifact: {missing}")
+            return False
+
+        # 4. SPECS sync check
+        print("[LOCK] Running SPECS sync check on artifact...")
+        try:
+            subprocess.check_call([sys.executable, "scripts/check_specs_sync.py"], cwd=temp_dir, env=env)
+            print("[OK] SPECS sync check passed.")
+        except subprocess.CalledProcessError:
+            print("[FAIL] SPECS sync check failed inside artifact.")
             return False
 
         # 4. Syntax Check (No Disk Write)
@@ -488,6 +514,7 @@ def main():
     pr = Path(args.project_root).resolve() if args.project_root else DEFAULT_PROJECT_ROOT
     project_root = str(pr)
     assert_repo_root(project_root)
+    ensure_specs_synced(project_root)
 
     # SAFETY CHECK
     if args.no_validate:
@@ -531,11 +558,17 @@ def main():
 
     # 2. Post-Build Gate (Artifact Validation)
     if not args.no_validate:
-         if not validate_artifact(zip_path, project_root, check_stage=args.check_stage):
-             print("[FAIL] ARTIFACT VALIDATION FAILED. Deleting invalid artifact.")
-             if os.path.exists(zip_path):
-                 os.remove(zip_path)
-             sys.exit(1)
+        validate_script = os.path.join(project_root, "scripts", "validate_release_zip.py")
+        try:
+            subprocess.check_call(
+                [sys.executable, validate_script, zip_path, "--check-stage", args.check_stage],
+                cwd=project_root,
+            )
+        except subprocess.CalledProcessError:
+            print("[FAIL] ARTIFACT VALIDATION FAILED. Deleting invalid artifact.")
+            if os.path.exists(zip_path):
+                os.remove(zip_path)
+            sys.exit(1)
 
     print(f"\n[SUCCESS] Release Build Success: {zip_path}")
     if not args.no_validate:

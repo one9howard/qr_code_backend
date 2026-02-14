@@ -20,6 +20,8 @@ artifacts/
 
 # Generated diagnostics and local test/build outputs
 *.log
+docker_logs*.txt
+last_docker_logs*.txt
 build_log*.txt
 test_error*.txt
 test_logs.txt

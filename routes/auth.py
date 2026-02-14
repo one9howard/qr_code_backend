@@ -1,3 +1,5 @@
+import os
+
 from flask import Blueprint, render_template, request, redirect, url_for, flash, current_app
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import login_user, login_required, logout_user, current_user
@@ -7,6 +9,7 @@ from urllib.parse import urlparse, urljoin
 import random
 from datetime import datetime, timedelta
 from services.notifications import send_verification_email
+from config import IS_PRODUCTION, IS_STAGING
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -23,6 +26,25 @@ def is_safe_url(target):
 
 def generate_verification_code():
     return str(random.randint(100000, 999999))
+
+
+def _is_secure_stage() -> bool:
+    """Return True in staging/production where verification delivery must succeed."""
+    return IS_STAGING or IS_PRODUCTION
+
+
+def _debug_verification_code_enabled() -> bool:
+    """
+    Controlled debug path for dev/test environments.
+
+    In testing, always enabled for deterministic testability.
+    In local dev, can be disabled with AUTH_DEBUG_VERIFICATION_CODE=0.
+    """
+    if _is_secure_stage():
+        return False
+    if current_app.config.get("TESTING"):
+        return True
+    return os.environ.get("AUTH_DEBUG_VERIFICATION_CODE", "1") == "1"
 
 @auth_bp.route("/register", methods=["GET", "POST"])
 def register():
@@ -145,10 +167,18 @@ def register():
         # [SECURITY] Do NOT link agents here. Wait for verification.
         # db.execute("UPDATE agents SET user_id = %s WHERE lower(email) = lower(%s) AND user_id IS NULL", (user_id, email))
         
-        db.commit()
+        # Send verification email before commit so we can atomically fail in secure stages.
+        email_sent = send_verification_email(email, ver_code)
+        if (not email_sent) and _is_secure_stage():
+            db.rollback()
+            flash(
+                "We could not send your verification email, so registration was not completed. "
+                "Please try again in a moment.",
+                "error",
+            )
+            return redirect(url_for("auth.register", next=next_url))
 
-        # Send Verification Email
-        send_verification_email(email, ver_code)
+        db.commit()
 
         # Auto-login the user (unverified)
         user_obj = User(id=user_id, email=email, is_verified=False)
@@ -158,7 +188,12 @@ def register():
             from flask import session
             session['next_url'] = next_url
         
-        flash("Registration successful! Please verify your email.", "info")
+        if not email_sent and _debug_verification_code_enabled():
+            flash(f"SMTP unavailable (dev/test). Verification code: {ver_code}", "warning")
+        elif not email_sent:
+            flash("Registration saved, but email delivery is unavailable. Please use resend verification.", "error")
+        else:
+            flash("Registration successful! Please verify your email.", "info")
         return redirect(url_for("auth.verify_email"))
 
     return render_template("register.html")
@@ -325,10 +360,22 @@ def resend_verification():
         "UPDATE users SET verification_code = %s, verification_code_expires_at = %s WHERE id = %s",
         (ver_code, ver_expires, current_user.id)
     )
+    email_sent = send_verification_email(current_user.email, ver_code)
+    if (not email_sent) and _is_secure_stage():
+        db.rollback()
+        flash(
+            "We could not resend your verification code right now. Please try again shortly.",
+            "error",
+        )
+        return redirect(url_for("auth.verify_email"))
+
     db.commit()
-    
-    send_verification_email(current_user.email, ver_code)
-    flash("New verification code sent!", "info")
+    if not email_sent and _debug_verification_code_enabled():
+        flash(f"SMTP unavailable (dev/test). Verification code: {ver_code}", "warning")
+    elif not email_sent:
+        flash("Verification code updated, but email delivery is unavailable.", "error")
+    else:
+        flash("New verification code sent!", "info")
     return redirect(url_for("auth.verify_email"))
 
 @auth_bp.route("/logout")

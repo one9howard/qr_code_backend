@@ -11,30 +11,15 @@ from __future__ import annotations
 import os
 import sys
 import time
-from urllib.parse import urlparse
+from pathlib import Path
 
 import psycopg2
 
+REPO_ROOT = Path(__file__).resolve().parents[1]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
 
-def _mask_database_url(url: str) -> str:
-    """Mask password for logs."""
-    try:
-        p = urlparse(url)
-        if p.username:
-            user = p.username
-        else:
-            user = ""
-
-        host = p.hostname or ""
-        port = p.port or ""
-        db = (p.path or "").lstrip("/")
-        scheme = p.scheme or "postgresql"
-        if user:
-            return f"{scheme}://{user}:****@{host}:{port}/{db}"
-        return f"{scheme}://{host}:{port}/{db}"
-    except Exception:
-        return "<unparseable DATABASE_URL>"
-
+from utils.redaction import redact_database_url
 
 def wait_for_db(database_url: str, timeout_seconds: int = 60, sleep_seconds: float = 1.0) -> None:
     """Exit 0 when DB is ready; exit 1 on timeout."""
@@ -58,10 +43,17 @@ def wait_for_db(database_url: str, timeout_seconds: int = 60, sleep_seconds: flo
             return
         except Exception as e:
             elapsed = time.time() - start
+            safe_url = redact_database_url(database_url)
             if elapsed >= timeout_seconds:
-                print(f"[wait_for_db] TIMEOUT after {timeout_seconds}s: {e}")
+                print(
+                    f"[wait_for_db] TIMEOUT after {timeout_seconds}s while connecting to {safe_url}: "
+                    f"{type(e).__name__}"
+                )
                 raise
-            print(f"[wait_for_db] Not ready yet ({elapsed:.1f}s): {e}")
+            print(
+                f"[wait_for_db] Not ready yet ({elapsed:.1f}s) for {safe_url}: "
+                f"{type(e).__name__}"
+            )
             time.sleep(sleep_seconds)
 
 
@@ -76,7 +68,7 @@ def main() -> int:
         database_url = database_url.replace("postgres://", "postgresql://", 1)
 
     timeout = int(os.environ.get("DB_WAIT_TIMEOUT", "60"))
-    print(f"[wait_for_db] Waiting for Postgres: {_mask_database_url(database_url)}")
+    print(f"[wait_for_db] Waiting for Postgres: {redact_database_url(database_url)}")
     try:
         wait_for_db(database_url, timeout_seconds=timeout)
         return 0

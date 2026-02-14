@@ -3,9 +3,15 @@
 
 import os
 import sys
-from urllib.parse import urlparse
+from pathlib import Path
 
 import psycopg2
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
+from utils.redaction import redact_database_url
 
 
 REQUIRED_TABLES = (
@@ -17,19 +23,6 @@ REQUIRED_TABLES = (
 )
 
 
-def _masked_db_url(url: str) -> str:
-    try:
-        parsed = urlparse(url or "")
-        if not parsed.scheme:
-            return "EMPTY"
-        host = parsed.hostname or "unknown-host"
-        port = f":{parsed.port}" if parsed.port else ""
-        db = parsed.path.lstrip("/") or "unknown-db"
-        return f"{parsed.scheme}://{host}{port}/{db}"
-    except Exception:
-        return "INVALID_URL"
-
-
 def main() -> int:
     db_url = os.environ.get("DATABASE_URL", "").strip()
     if not db_url:
@@ -39,7 +32,7 @@ def main() -> int:
     try:
         conn = psycopg2.connect(db_url)
     except Exception as exc:
-        print(f"[SchemaCheck] ERROR: Could not connect to {_masked_db_url(db_url)}: {exc}")
+        print(f"[SchemaCheck] ERROR: Could not connect to {redact_database_url(db_url)}: {type(exc).__name__}")
         return 1
 
     missing = []

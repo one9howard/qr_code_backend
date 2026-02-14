@@ -1,4 +1,3 @@
-from datetime import datetime
 from database import get_db
 from models import AgentAction
 from services.events import track_event, _clean_payload
@@ -82,11 +81,7 @@ def approve_action(action_id, approved_by_user_id):
 
     action.status = 'approved'
     action.approved_by_user_id = approved_by_user_id
-    action.approved_at = datetime.utcnow() # timezone naive? Models usually want tz aware or we convert.
-    # Postgres TIMESTAMPTZ handles naive as local, better use UTC ISO or naive UTC.
-    # Codebase uses 'now()' in SQL mostly.
-    # Let's use SQL update for atomicity + correct time
-    
+    # Use SQL-side CURRENT_TIMESTAMP for atomic + timezone-safe persisted audit fields.
     db.execute("""
         UPDATE agent_actions 
         SET status = 'approved', 

@@ -443,6 +443,16 @@ def _draw_landscape_split_layout(c, layout, address, beds, baths, sqft, price,
         body_h = h - band_h
         qr_max_h = body_h - (2 * margin_y)
         qr_size = min(qr_max_w, qr_max_h)
+        if os.environ.get("DEBUG_LAYOUT") == "1":
+            logger.info(
+                "[LayoutDebug] yard_split size=%sx%s qr_size_pt=%.2f qr_size_in=%.2f avail_w_pt=%.2f avail_h_pt=%.2f",
+                round(w / inch, 2),
+                round(h / inch, 2),
+                qr_size,
+                qr_size / inch,
+                qr_max_w,
+                qr_max_h,
+            )
         
         # Center QR in right column
         qr_x = split_x + (right_w - qr_size) / 2
@@ -1016,9 +1026,20 @@ def _draw_modern_round_portrait(c, layout, address, beds, baths, sqft, price,
     qr_area_top = price_y - SPACING['lg']
     qr_center_y = (qr_area_top + footer_top) / 2
     
-    # Ensure min size and safe margins
-    max_qr_h = qr_area_top - footer_top - SPACING['md']
-    qr_size = min(layout.width * 0.6, max_qr_h, QR_MIN_SIZE * 2.0) # Cap at decent size
+    # Compute QR from actual available body area (no artificial upper cap).
+    available_qr_w = max(layout.width - (2 * SAFE_MARGIN) - (2 * SPACING['sm']), QR_MIN_SIZE)
+    available_qr_h = max(qr_area_top - footer_top - SPACING['md'], QR_MIN_SIZE)
+    qr_size = min(available_qr_w, available_qr_h)
+    if os.environ.get("DEBUG_LAYOUT") == "1":
+        logger.info(
+            "[LayoutDebug] yard_modern_round size=%sx%s qr_size_pt=%.2f qr_size_in=%.2f avail_w_pt=%.2f avail_h_pt=%.2f",
+            round(layout.width / inch, 2),
+            round(layout.height / inch, 2),
+            qr_size,
+            qr_size / inch,
+            available_qr_w,
+            available_qr_h,
+        )
     
     # Ring
     c.setFillColorRGB(*COLOR_ACCENT)

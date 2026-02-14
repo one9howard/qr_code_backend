@@ -1,6 +1,7 @@
 import os
 import sys
 import subprocess
+from pathlib import Path
 import pytest
 import services.printing.layout_utils as lu
 
@@ -31,3 +32,12 @@ def test_font_registration():
     else:
         # Fallback case
         assert lu.FONT_BODY == "Helvetica"
+
+
+def test_canonical_runner_enforces_mocker_fixture_gate():
+    runner = Path("scripts/run_tests_in_docker.sh").read_text(encoding="utf-8")
+    fixture_gate = Path("scripts/check_pytest_fixtures.py").read_text(encoding="utf-8")
+
+    assert "python scripts/check_pytest_fixtures.py" in runner
+    assert "pytest" in fixture_gate and "--fixtures" in fixture_gate
+    assert "mocker" in fixture_gate

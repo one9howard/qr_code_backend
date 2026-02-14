@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 import sys
 import os
+from urllib.parse import urlparse
 from dotenv import load_dotenv
+from utils.redaction import redact_database_url
 
 # Optional .env loading (LOCAL DEV ONLY).
 #
@@ -36,11 +38,7 @@ def migrate():
     # Debug: show URL format (mask password)
     if database_url:
         try:
-            # Mask password for logging
-            from urllib.parse import urlparse
-            parsed = urlparse(database_url)
-            masked = f"{parsed.scheme}://{parsed.username}:****@{parsed.hostname}:{parsed.port}/{parsed.path.lstrip('/')}"
-            print(f"[Manage] DATABASE_URL format: {masked}")
+            print(f"[Manage] DATABASE_URL format: {redact_database_url(database_url)}")
         except Exception as e:
             print(f"[Manage] Could not parse URL for logging: {e}")
 
@@ -51,7 +49,6 @@ def migrate():
 
     if not database_url.startswith("postgres"):
         try:
-            from urllib.parse import urlparse
             p = urlparse(database_url)
             safe_msg = f"{p.scheme}://{p.hostname}"
         except Exception:

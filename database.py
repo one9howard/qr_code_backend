@@ -2,6 +2,7 @@ import os
 import psycopg2
 from psycopg2.extras import DictCursor
 from flask import g, current_app
+from utils.redaction import redact_database_url
 
 def get_db():
     if 'db' not in g:
@@ -9,16 +10,25 @@ def get_db():
         if not db_url:
             raise RuntimeError("DATABASE_URL is required for Postgres connection.")
 
-        # Never echo the full DATABASE_URL (it may contain credentials)
+        if db_url.startswith("postgres://"):
+            db_url = db_url.replace("postgres://", "postgresql://", 1)
+
         if not db_url.startswith("postgresql://"):
-            raise ValueError("Only Postgres is supported. DATABASE_URL must start with postgresql://")
+            redacted = redact_database_url(db_url)
+            raise ValueError(
+                "Only Postgres is supported. DATABASE_URL must start with postgresql:// "
+                f"(got {redacted})."
+            )
 
         try:
             conn = psycopg2.connect(db_url, cursor_factory=DictCursor)
             g.db = PostgresDB(conn)
         except Exception as e:
-            # Avoid printing the DSN (some drivers may echo it in exception strings)
-            print(f"[DB] Connection Failed: {type(e).__name__}")
+            logger.error(
+                "[DB] Connection Failed (%s) while connecting to %s",
+                type(e).__name__,
+                redact_database_url(db_url),
+            )
             raise
     return g.db
 

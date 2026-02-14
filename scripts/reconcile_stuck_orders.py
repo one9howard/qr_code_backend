@@ -15,7 +15,7 @@ Options:
 import os
 import sys
 import argparse
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 
 # Add project root to path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -35,7 +35,7 @@ def find_stuck_orders(db, hours_back=24):
     Find orders stuck in pending_payment for more than X hours.
     These are candidates for reconciliation.
     """
-    cutoff = datetime.utcnow() - timedelta(hours=hours_back)
+    cutoff = datetime.now(UTC) - timedelta(hours=hours_back)
     
     orders = db.execute("""
         SELECT id, stripe_checkout_session_id, status, created_at, order_type

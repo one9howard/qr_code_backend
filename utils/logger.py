@@ -2,7 +2,7 @@ import logging
 import json
 import uuid
 from flask import request, has_request_context, g
-from datetime import datetime
+from datetime import UTC, datetime
 import sys
 
 # Define usage of Gunicorn logger if available
@@ -13,7 +13,7 @@ class JSONFormatter(logging.Formatter):
     """
     def format(self, record):
         log_record = {
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
             "level": record.levelname,
             "message": record.getMessage(),
             "logger": record.name,

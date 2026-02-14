@@ -1,32 +1,47 @@
 #!/usr/bin/env python3
-"""Validate a release ZIP artifact.
+"""Validate a release ZIP artifact."""
 
-Workflow:
-- Someone sends you a zip (or you find one in releases/)
-- You want a single red/green verdict with strict checks
+from __future__ import annotations
 
-Usage:
-  python scripts/validate_release_zip.py path/to/insite_signs_release_*.zip
-
-Options:
-  --skip-import    Skip the import smoke (useful if deps aren't installed in this Python env)
-
-Exit code:
-  0 = ok
-  1 = failed
-"""
-
-import os
-import sys
-import zipfile
-import tempfile
-import subprocess
 import argparse
+import json
+import os
+import re
+import subprocess
+import sys
+import tempfile
+import zipfile
 
 
 def fail(msg: str) -> None:
     print(f"[FAIL] {msg}")
     sys.exit(1)
+
+
+def _extract_python_version_from_docker_tag(tag: str) -> str | None:
+    match = re.match(r"^(\d+\.\d+(?:\.\d+)?)(?:[.-].*)?$", tag.strip())
+    return match.group(1) if match else None
+
+
+def _read_docker_python_tag(dockerfile_path: str) -> str:
+    with open(dockerfile_path, "r", encoding="utf-8") as f:
+        for raw in f:
+            line = raw.strip()
+            if not line or line.startswith("#"):
+                continue
+            match = re.match(r"^FROM\s+python:([^\s]+)", line, re.IGNORECASE)
+            if match:
+                return match.group(1)
+    raise ValueError("Could not find `FROM python:*` in Dockerfile")
+
+
+def _read_runtime_version(runtime_path: str) -> str:
+    raw = open(runtime_path, "r", encoding="utf-8").read().strip()
+    if raw.startswith("python-"):
+        raw = raw[len("python-") :]
+    if not raw:
+        raise ValueError("runtime.txt is empty")
+    return raw
 
 
 def main() -> None:
@@ -66,14 +81,12 @@ def main() -> None:
         except Exception as e:
             fail(f"Could not extract zip: {e}")
 
-        # 1) Release cleanliness
         print("[CHECK] Release cleanliness...")
         try:
             subprocess.check_call([sys.executable, check_script, "--root", td], env=env)
         except subprocess.CalledProcessError:
             fail("Release cleanliness check failed")
 
-        # 2) Minimal operational files check
         print("[CHECK] Required operational files...")
         required_files = [
             "app.py",
@@ -82,6 +95,7 @@ def main() -> None:
             "extensions.py",
             "SPECS.md",
             "runtime.txt",
+            ".python-version",
             "Dockerfile",
             ".dockerignore",
             "docker-compose.yml",
@@ -103,12 +117,65 @@ def main() -> None:
         if missing:
             fail("Missing required files: " + ", ".join(missing))
 
-        # 3) Syntax check (no bytecode)
+        manifest_path = os.path.join(td, "RELEASE_MANIFEST.json")
+        if os.path.isfile(manifest_path):
+            print("[CHECK] RELEASE_MANIFEST.json includes critical files...")
+            try:
+                with open(manifest_path, "r", encoding="utf-8") as f:
+                    manifest = json.load(f)
+            except Exception as e:
+                fail(f"Could not parse RELEASE_MANIFEST.json: {e}")
+            manifest_paths = {entry.get("path") for entry in manifest.get("files", []) if isinstance(entry, dict)}
+            for required in ("SPECS.md", ".python-version", "Dockerfile", "runtime.txt"):
+                if required not in manifest_paths:
+                    fail(f"RELEASE_MANIFEST.json missing required file entry: {required}")
+            print("[CHECK] RELEASE_MANIFEST.json coverage OK.")
+
+        print("[CHECK] Runtime pin consistency...")
+        docker_tag = _read_docker_python_tag(os.path.join(td, "Dockerfile"))
+        docker_ver = _extract_python_version_from_docker_tag(docker_tag)
+        runtime_ver = _read_runtime_version(os.path.join(td, "runtime.txt"))
+        py_ver = open(os.path.join(td, ".python-version"), "r", encoding="utf-8").read().strip()
+        if not docker_ver:
+            fail(f"Could not parse python version from Dockerfile tag: {docker_tag}")
+        if docker_ver != runtime_ver or docker_ver != py_ver:
+            fail(
+                "Python version pins are inconsistent: "
+                f"Dockerfile={docker_tag}, runtime.txt={runtime_ver}, .python-version={py_ver}"
+            )
+        print(
+            "[Runtime] Python version pins consistent: "
+            f"Dockerfile={docker_tag}, runtime.txt=python-{runtime_ver}, .python-version={py_ver}"
+        )
+
+        print("[CHECK] SPECS sync check...")
+        specs_check_script = os.path.join(td, "scripts", "check_specs_sync.py")
+        try:
+            subprocess.check_call([sys.executable, specs_check_script], cwd=td, env=env)
+        except subprocess.CalledProcessError:
+            fail("SPECS sync check failed")
+        print("[CHECK] SPECS sync check passed.")
+
+        print("[CHECK] DATABASE_URL redaction self-test...")
+        redaction_check = (
+            "from utils.redaction import redact_database_url\n"
+            "raw='postgresql://demo:supersecret@db.example:5432/insite'\n"
+            "masked=redact_database_url(raw)\n"
+            "assert 'supersecret' not in masked\n"
+            "assert '****' in masked\n"
+            "assert 'db.example' in masked\n"
+            "print('[CHECK] DATABASE_URL redaction self-test passed.')\n"
+        )
+        try:
+            subprocess.check_call([sys.executable, "-c", redaction_check], cwd=td, env=env)
+        except subprocess.CalledProcessError:
+            fail("DATABASE_URL redaction self-test failed")
+
         print("[CHECK] Python syntax (ast.parse)...")
         check_syntax_script = (
             "import ast, os, sys\n"
             "errors = 0\n"
-            "for r, d, f in os.walk('.'): \n"
+            "for r, d, f in os.walk('.'):\n"
             "  if any(s in r for s in ['.git', '.venv', 'venv', 'node_modules', '__pycache__']):\n"
             "    continue\n"
             "  for file in f:\n"
@@ -126,7 +193,6 @@ def main() -> None:
         except subprocess.CalledProcessError:
             fail("Syntax check failed")
 
-        # 4) Import check (cheap smoke)
         if not args.skip_import:
             print("[CHECK] Import smoke (app + extensions)...")
             stripe_secret = "sk_live_mock" if args.check_stage == "production" else "sk_test_mock"
@@ -142,6 +208,7 @@ def main() -> None:
                 "os.environ.setdefault('PUBLIC_BASE_URL','https://example.com')\n"
                 f"os.environ.setdefault('STRIPE_SECRET_KEY','{stripe_secret}')\n"
                 f"os.environ.setdefault('STRIPE_PUBLISHABLE_KEY','{stripe_publishable}')\n"
+                "os.environ.setdefault('SKIP_STRIPE_PRICE_WARMUP','1')\n"
                 "os.environ.setdefault('PRINT_JOBS_TOKEN','mock-print-token')\n"
                 "import app, extensions\n"
                 "print('OK')\n"

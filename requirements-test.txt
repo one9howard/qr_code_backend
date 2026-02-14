@@ -1,4 +1,6 @@
 # Test / QA dependencies (installed when Docker build arg INSTALL_DEV=true)
 pytest>=8,<9
 pytest-cov>=5,<6
+pytest-mock>=3.14,<4
+requests-mock>=1.12,<2
 playwright>=1.52,<2

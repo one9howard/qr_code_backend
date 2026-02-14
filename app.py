@@ -101,7 +101,10 @@ def create_app(test_config=None):
             # Pragmatic Boot: Only Strict in Prod/Staging
             is_strict = IS_PRODUCTION or IS_STAGING
             
-            if os.environ.get('FLASK_ENV') == 'testing':
+            skip_price_warm = os.environ.get("SKIP_STRIPE_PRICE_WARMUP", "0") == "1"
+            if skip_price_warm:
+                logger.info("[Startup] Skipping Stripe Price Cache Warmup (SKIP_STRIPE_PRICE_WARMUP=1)")
+            elif os.environ.get('FLASK_ENV') == 'testing':
                 logger.info("[Startup] Skipping Stripe Price Cache Warmup (Testing Env)")
             elif not app.config.get('STRIPE_SECRET_KEY'):
                 msg = "Missing STRIPE_SECRET_KEY."
