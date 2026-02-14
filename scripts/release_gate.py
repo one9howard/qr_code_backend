@@ -2,6 +2,16 @@
 import os
 import sys
 
+def _normalize_stage(raw):
+    raw = (raw or "").strip().lower()
+    if raw in {"prod", "production"}:
+        return "production"
+    if raw in {"stage", "staging"}:
+        return "staging"
+    if raw in {"test", "testing"}:
+        return "test"
+    return "dev"
+
 def check_forbidden_files():
     forbidden_exact = ["dump.sql", "dump.wkr"]
     found = []
@@ -49,15 +59,33 @@ def check_fonts():
     return True
 
 def check_config():
-    # Only if FLASK_ENV is set to production
-    if os.getenv("FLASK_ENV") == "production":
-        pb_url = os.getenv("PUBLIC_BASE_URL")
-        if not pb_url:
-            print("CRITICAL FAILURE: PUBLIC_BASE_URL not set in production.")
-            return False
-        if "staging" in pb_url or "localhost" in pb_url:
-            print(f"CRITICAL FAILURE: PUBLIC_BASE_URL '{pb_url}' is unsafe for production.")
-            return False
+    stage = _normalize_stage(os.getenv("APP_STAGE", "dev"))
+    if stage not in {"staging", "production"}:
+        return True
+
+    pb_url = (os.getenv("PUBLIC_BASE_URL") or "").strip()
+    if not pb_url:
+        print(f"CRITICAL FAILURE: PUBLIC_BASE_URL not set in {stage}.")
+        return False
+
+    lower_pb = pb_url.lower()
+    if not lower_pb.startswith("https://"):
+        print(f"CRITICAL FAILURE: PUBLIC_BASE_URL '{pb_url}' must use https in {stage}.")
+        return False
+    if "localhost" in lower_pb or "127.0.0.1" in lower_pb:
+        print(f"CRITICAL FAILURE: PUBLIC_BASE_URL '{pb_url}' is unsafe for {stage}.")
+        return False
+    if stage == "production" and "staging" in lower_pb:
+        print(f"CRITICAL FAILURE: PUBLIC_BASE_URL '{pb_url}' is unsafe for production.")
+        return False
+
+    stripe_secret = os.getenv("STRIPE_SECRET_KEY", "")
+    if stage == "staging" and stripe_secret.startswith("sk_live_"):
+        print("CRITICAL FAILURE: Live Stripe secret key is forbidden in staging.")
+        return False
+    if stage == "production" and stripe_secret.startswith("sk_test_"):
+        print("CRITICAL FAILURE: Test Stripe secret key is forbidden in production.")
+        return False
     return True
 
 def check_specs_sync():

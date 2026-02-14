@@ -77,7 +77,12 @@ def send_lead_notification_email(agent_email, lead_payload):
         logger.warning(f"[Notifications] SMTP not configured. Skipping email to agent.")
         return (False, "SMTP not configured", "skipped")
 
-    logger.info(f"[Notifications] Config: Host={smtp_host}, Port={smtp_port}, User={smtp_user}, TLS={use_tls}")
+    logger.info(
+        "[Notifications] SMTP config loaded: Host=%s, Port=%s, TLS=%s",
+        smtp_host,
+        smtp_port,
+        use_tls,
+    )
     
     # Force IPv4 resolution - DISABLED (causes SSL Host verify fail)
     effective_host = smtp_host
@@ -106,7 +111,7 @@ def send_lead_notification_email(agent_email, lead_payload):
                 server.login(smtp_user, smtp_pass)
                 server.send_message(msg)
         
-        logger.info(f"[Notifications] Lead notification sent successfully.")
+        logger.info("[Notifications] Lead notification sent successfully.")
         return (True, None, "sent")
         
     except Exception as e:
@@ -151,7 +156,12 @@ def send_verification_email(to_email, code):
     InSite Signs
     """
 
-    logger.warning(f"[Notifications] Config: Host={smtp_host}, Port={smtp_port}, User={smtp_user}, TLS={use_tls}")
+    logger.warning(
+        "[Notifications] SMTP config loaded: Host=%s, Port=%s, TLS=%s",
+        smtp_host,
+        smtp_port,
+        use_tls,
+    )
 
     # Force IPv4 resolution - DISABLED (causes SSL Host verify fail)
     effective_host = smtp_host
@@ -180,7 +190,7 @@ def send_verification_email(to_email, code):
                 server.login(smtp_user, smtp_pass)
                 server.send_message(msg)
         
-        logger.info(f"[Notifications] Verification email sent to {to_email}")
+        logger.info("[Notifications] Verification email sent successfully.")
         return True
         
     except Exception as e:

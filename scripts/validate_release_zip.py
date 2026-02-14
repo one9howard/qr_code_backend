@@ -33,6 +33,12 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Validate a release ZIP artifact")
     parser.add_argument("zip_path", help="Path to the zip")
     parser.add_argument(
+        "--check-stage",
+        choices=["staging", "production"],
+        default=os.environ.get("RELEASE_CHECK_STAGE", "staging"),
+        help="Stage to emulate during import smoke.",
+    )
+    parser.add_argument(
         "--skip-import",
         action="store_true",
         help="Skip import smoke (useful if deps are not installed in this Python env)",
@@ -69,7 +75,7 @@ def main() -> None:
 
         # 2) Minimal operational files check
         print("[CHECK] Required operational files...")
-        required_files = ["app.py", "migrate.py", "alembic.ini", "extensions.py"]
+        required_files = ["app.py", "migrate.py", "alembic.ini", "extensions.py", "runtime.txt"]
         missing = [f for f in required_files if not os.path.isfile(os.path.join(td, f))]
         if not (
             os.path.isfile(os.path.join(td, "Procfile"))
@@ -105,13 +111,19 @@ def main() -> None:
         # 4) Import check (cheap smoke)
         if not args.skip_import:
             print("[CHECK] Import smoke (app + extensions)...")
+            stripe_secret = "sk_live_mock" if args.check_stage == "production" else "sk_test_mock"
+            stripe_publishable = "pk_live_mock" if args.check_stage == "production" else "pk_test_mock"
             smoke = (
                 "import os\n"
                 "os.environ.setdefault('DATABASE_URL','postgresql://mock:mock@localhost/mock')\n"
                 "os.environ.setdefault('SECRET_KEY','mock-secret')\n"
                 "os.environ.setdefault('FLASK_ENV','production')\n"
+                f"os.environ.setdefault('APP_STAGE','{args.check_stage}')\n"
+                "os.environ.setdefault('STORAGE_BACKEND','s3')\n"
+                "os.environ.setdefault('S3_BUCKET','mock-bucket')\n"
                 "os.environ.setdefault('PUBLIC_BASE_URL','https://example.com')\n"
-                "os.environ.setdefault('STRIPE_SECRET_KEY','sk_live_mock')\n"
+                f"os.environ.setdefault('STRIPE_SECRET_KEY','{stripe_secret}')\n"
+                f"os.environ.setdefault('STRIPE_PUBLISHABLE_KEY','{stripe_publishable}')\n"
                 "os.environ.setdefault('PRINT_JOBS_TOKEN','mock-print-token')\n"
                 "import app, extensions\n"
                 "print('OK')\n"

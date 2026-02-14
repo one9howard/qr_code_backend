@@ -55,6 +55,7 @@ ROOT_PATTERNS = [
     "migrate.py",      # Canonical migration runner
     "Procfile",        # Heroku/Railway entrypoint
     "alembic.ini",     # DB Config
+    "runtime.txt",     # Runtime pin for deploy parity
     "requirements.txt", # Depencies
 ]
 
@@ -177,7 +178,7 @@ def create_zip(source_dir, zip_path):
                 rel_path = os.path.relpath(abs_path, source_dir)
                 zf.write(abs_path, rel_path)
 
-def verify_import(temp_dir):
+def verify_import(temp_dir, check_stage="staging"):
     """
     Attempt to import the app to verify all dependencies and files are present.
     This runs in a subprocess.
@@ -186,7 +187,9 @@ def verify_import(temp_dir):
     
     # Simple check script that tries to import app
     # We mock DATABASE_URL to prevent connection attempts
-    check_script = """
+    stripe_secret = "sk_live_mock" if check_stage == "production" else "sk_test_mock"
+    stripe_publishable = "pk_live_mock" if check_stage == "production" else "pk_test_mock"
+    check_script = f"""
 import sys
 import os
 
@@ -194,11 +197,13 @@ import os
 os.environ['DATABASE_URL'] = 'postgresql://mock:mock@localhost/mock'
 os.environ['SECRET_KEY'] = 'mock-secret-key'
 os.environ['FLASK_ENV'] = 'production'
+os.environ['APP_STAGE'] = '{check_stage}'
 os.environ['STORAGE_BACKEND'] = 's3'
 os.environ['S3_BUCKET'] = 'mock-bucket'
 os.environ['AWS_REGION'] = 'us-east-1'
 os.environ['PUBLIC_BASE_URL'] = 'https://example.com'
-os.environ['STRIPE_SECRET_KEY'] = 'sk_live_mock'
+os.environ['STRIPE_SECRET_KEY'] = '{stripe_secret}'
+os.environ['STRIPE_PUBLISHABLE_KEY'] = '{stripe_publishable}'
 os.environ['PRINT_JOBS_TOKEN'] = 'mock-print-token'
 
 try:
@@ -310,7 +315,7 @@ def write_release_manifest(stage_dir: str, project_root: str, zip_path: str) -> 
     with open(out_path, "w", encoding="utf-8") as f:
         json.dump(manifest, f, indent=2, sort_keys=True)
         f.write("\n")
-def validate_artifact(zip_path, project_root):
+def validate_artifact(zip_path, project_root, check_stage="staging"):
     """
     Unzips the artifact to a temp dir and performs strict validation.
     1. Scan for forbidden patterns.
@@ -353,7 +358,7 @@ def validate_artifact(zip_path, project_root):
             return False
         # 3. Key operational files check
         # Keep this minimal and environment-agnostic. Railway/Nixpacks may not use a Procfile.
-        required_files = ["app.py", "migrate.py", "alembic.ini", "extensions.py"]
+        required_files = ["app.py", "migrate.py", "alembic.ini", "extensions.py", "runtime.txt"]
         missing = [f for f in required_files if not os.path.exists(os.path.join(temp_dir, f))]
 
         # Require at least one boot entrypoint hint (Procfile OR gunicorn config).
@@ -391,7 +396,7 @@ def validate_artifact(zip_path, project_root):
             return False
 
         # 5. Import Check
-        if not verify_import(temp_dir):
+        if not verify_import(temp_dir, check_stage=check_stage):
             return False
 
         # 6. Test Runner Availability (Inside Artifact)
@@ -434,6 +439,12 @@ def main():
     parser = argparse.ArgumentParser(description="Build Release ZIP")
     parser.add_argument("--output-dir", default="releases", help="Output directory")
     parser.add_argument("--project-root", default=None, help="Project root (defaults to repo root resolved from this script)")
+    parser.add_argument(
+        "--check-stage",
+        choices=["staging", "production"],
+        default=os.environ.get("RELEASE_CHECK_STAGE", "staging"),
+        help="Stage to emulate during artifact import validation.",
+    )
     parser.add_argument("--no-validate", action="store_true", help="SKIP VALIDATION (UNSAFE)")
     parser.add_argument("--i-understand-this-is-unsafe", action="store_true", help="Confirm unsafe mode")
     parser.add_argument("--allow-test-failures", action="store_true", help="Allow unit tests to fail (PASSES ALLOW_TEST_FAILURES=1)")
@@ -486,7 +497,7 @@ def main():
 
     # 2. Post-Build Gate (Artifact Validation)
     if not args.no_validate:
-         if not validate_artifact(zip_path, project_root):
+         if not validate_artifact(zip_path, project_root, check_stage=args.check_stage):
              print("[FAIL] ARTIFACT VALIDATION FAILED. Deleting invalid artifact.")
              if os.path.exists(zip_path):
                  os.remove(zip_path)
