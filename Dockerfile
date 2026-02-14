@@ -1,15 +1,15 @@
 FROM python:3.14-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
-  PYTHONUNBUFFERED=1 \
-  PIP_DISABLE_PIP_VERSION_CHECK=1 \
-  PIP_NO_CACHE_DIR=1
+    PYTHONUNBUFFERED=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PIP_NO_CACHE_DIR=1
 
 WORKDIR /app
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-  curl build-essential gcc libpq-dev libzbar0 \
-  libxrender1 libxext6 fontconfig \
+    curl build-essential gcc libpq-dev libzbar0 \
+    libxrender1 libxext6 fontconfig \
   && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt /app/requirements.txt
@@ -18,12 +18,12 @@ COPY requirements-test.txt /app/requirements-test.txt
 ARG INSTALL_DEV=false
 
 RUN python -m pip install --upgrade pip setuptools wheel \
-  && pip install -r /app/requirements.txt \
-  && if [ "$INSTALL_DEV" = "true" ]; then \
-  echo "Installing test dependencies..." && pip install -r /app/requirements-test.txt; \
-  else \
-  echo "Skipping test dependencies (INSTALL_DEV=$INSTALL_DEV)"; \
-  fi
+ && pip install -r /app/requirements.txt \
+ && if [ "$INSTALL_DEV" = "true" ]; then \
+      echo "Installing test dependencies..." && pip install -r /app/requirements-test.txt; \
+    else \
+      echo "Skipping test dependencies (INSTALL_DEV=$INSTALL_DEV)"; \
+    fi
 
 RUN useradd -m qrapp
 
