@@ -9,7 +9,7 @@ echo ""
 
 # 1. Boot database
 echo "[1/4] Starting database container..."
-docker compose up -d db
+docker compose -p insite_signs up -d db
 echo "Waiting for database to be ready..."
 sleep 5
 

@@ -24,14 +24,14 @@ BUILD_FLAGS=()
 if [[ "$NO_CACHE" == "1" ]]; then 
   BUILD_FLAGS+=(--no-cache)
 fi
-docker compose build "${BUILD_FLAGS[@]}" --build-arg INSTALL_DEV=true "${WEB_SERVICE}"
+docker compose -p insite_signs build "${BUILD_FLAGS[@]}" --build-arg INSTALL_DEV=true "${WEB_SERVICE}"
 
 echo "[Acceptance] Starting ${DB_SERVICE}..."
 # --wait exists on newer compose; don't hard-require it.
-if docker compose up -d --wait "${DB_SERVICE}" 2>/dev/null; then
+if docker compose -p insite_signs up -d --wait "${DB_SERVICE}" 2>/dev/null; then
   :
 else
-  docker compose up -d "${DB_SERVICE}"
+  docker compose -p insite_signs up -d "${DB_SERVICE}"
 fi
 
 # Ensure .env exists so docker compose doesn't fail mounting it
@@ -39,7 +39,7 @@ touch .env
 
 echo "[Acceptance] Running reset + migrate + pytest inside ${WEB_SERVICE}..."
 # Run as a single in-container shell so failures stop the whole chain.
-docker compose run --rm \
+docker compose -p insite_signs run --rm \
   -e DATABASE_URL="${TEST_DATABASE_URL}" \
   -e TEST_DB_NAME="${TEST_DB_NAME}" \
   "${WEB_SERVICE}" \

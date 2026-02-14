@@ -232,7 +232,12 @@ class AppEvent:
 class AgentAction:
     ALLOWED_COLUMNS = (
         'id', 'user_id', 'action_type', 'status', 'proposal', 'execution', 
-        'feedback', 'policy_snapshot', 'input_event_refs', 'created_at', 'updated_at'
+        'feedback', 'policy_snapshot', 'input_event_refs', 'created_at', 'updated_at',
+        'created_by_type', 'created_by_id', 'action_uuid',
+        'property_id', 'lead_id', 'sign_asset_id', 'order_id',
+        'requires_approval', 'approved_by_user_id', 'approved_at',
+        'rejected_by_user_id', 'rejected_at', 'rejection_reason',
+        'execute_after', 'executed_at', 'error_code', 'error_detail'
     )
 
     def __init__(self, **kwargs):

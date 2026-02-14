@@ -24,30 +24,30 @@ if ([string]::IsNullOrWhiteSpace($testDatabaseUrl)) {
 }
 
 Write-Host "[Acceptance] Building $webService with dev deps..."
-docker compose build --no-cache --build-arg INSTALL_DEV=true $webService
+docker compose -p insite_signs build --no-cache --build-arg INSTALL_DEV=true $webService
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
 Write-Host "[Acceptance] Starting $dbService..."
-docker compose up -d $dbService
+docker compose -p insite_signs up -d $dbService
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
 Write-Host "[Acceptance] Waiting for database to be healthy..."
 $retries = 30
 while ($retries -gt 0) {
-    $result = docker compose exec -T $dbService pg_isready -U postgres 2>$null
+    $result = docker compose -p insite_signs exec -T $dbService pg_isready -U postgres 2>$null
     if ($LASTEXITCODE -eq 0) { break }
     Start-Sleep -Seconds 1
     $retries--
 }
 if ($retries -eq 0) {
     Write-Host "[Acceptance] ERROR: Database did not become healthy in time." -ForegroundColor Red
-    docker compose down
+    docker compose -p insite_signs down
     exit 1
 }
 Write-Host "[Acceptance] Database is healthy."
 
 Write-Host "[Acceptance] Running reset + migrate + pytest inside $webService..."
-docker compose run --rm `
+docker compose -p insite_signs run --rm `
     -e DATABASE_URL="$testDatabaseUrl" `
     -e TEST_DB_NAME="$testDbName" `
     $webService `
@@ -56,7 +56,7 @@ docker compose run --rm `
 $testResult = $LASTEXITCODE
 
 Write-Host "[Acceptance] Cleaning up..."
-docker compose down
+docker compose -p insite_signs down
 
 if ($testResult -ne 0) {
     Write-Host "[Acceptance] FAILED with exit code $testResult" -ForegroundColor Red
