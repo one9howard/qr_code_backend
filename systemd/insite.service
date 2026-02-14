@@ -1,0 +1,14 @@
+[Unit]
+Description=InSite Signs Web Application
+After=network.target
+
+[Service]
+User=insite
+Group=insite
+WorkingDirectory=/opt/qr_code_backend
+ExecStart=/usr/local/bin/docker-compose up -d
+ExecStop=/usr/local/bin/docker-compose down
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

@@ -1,15 +1,15 @@
 FROM python:3.14-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1 \
-    PIP_DISABLE_PIP_VERSION_CHECK=1 \
-    PIP_NO_CACHE_DIR=1
+  PYTHONUNBUFFERED=1 \
+  PIP_DISABLE_PIP_VERSION_CHECK=1 \
+  PIP_NO_CACHE_DIR=1
 
 WORKDIR /app
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    curl build-essential gcc libpq-dev libzbar0 \
-    libxrender1 libxext6 fontconfig \
+  curl build-essential gcc libpq-dev libzbar0 \
+  libxrender1 libxext6 fontconfig \
   && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt /app/requirements.txt
@@ -18,21 +18,21 @@ COPY requirements-test.txt /app/requirements-test.txt
 ARG INSTALL_DEV=false
 
 RUN python -m pip install --upgrade pip setuptools wheel \
- && pip install -r /app/requirements.txt \
- && if [ "$INSTALL_DEV" = "true" ]; then \
-      echo "Installing test dependencies..." && pip install -r /app/requirements-test.txt; \
-    else \
-      echo "Skipping test dependencies (INSTALL_DEV=$INSTALL_DEV)"; \
-    fi
+  && pip install -r /app/requirements.txt \
+  && if [ "$INSTALL_DEV" = "true" ]; then \
+  echo "Installing test dependencies..." && pip install -r /app/requirements-test.txt; \
+  else \
+  echo "Skipping test dependencies (INSTALL_DEV=$INSTALL_DEV)"; \
+  fi
 
-RUN useradd -m qrapp
+RUN useradd -m insite
 
 COPY . /app
-RUN chown -R qrapp:qrapp /app
+RUN chown -R insite:insite /app
 
-RUN mkdir -p /var/lib/qrapp/uploads && chown -R qrapp:qrapp /var/lib/qrapp
+RUN mkdir -p /var/lib/insite/uploads && chown -R insite:insite /var/lib/insite
 
-USER qrapp
+USER insite
 
 # informative only; Railway uses PORT env var
 EXPOSE 8080

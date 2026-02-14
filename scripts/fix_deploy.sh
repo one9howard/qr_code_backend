@@ -14,14 +14,14 @@ sudo git pull origin main
 
 echo "Fixing service user to '$USER_NAME'..."
 # Replace 'User=ubuntu' with actual user in service files
-sudo sed -i "s/User=ubuntu/User=$USER_NAME/g" systemd/qrapp.service
+sudo sed -i "s/User=ubuntu/User=$USER_NAME/g" systemd/insite.service
 
 echo "Fixing backend directory ownership..."
 sudo chown -R "$USER_NAME:$USER_NAME" "$TARGET_DIR"
 
 echo "Reloading and restarting services..."
-sudo ln -sf "$TARGET_DIR/systemd/qrapp.service" /etc/systemd/system/qrapp.service
+sudo ln -sf "$TARGET_DIR/systemd/insite.service" /etc/systemd/system/insite.service
 sudo systemctl daemon-reload
-sudo systemctl restart qrapp
+sudo systemctl restart insite
 
-echo "Done! check status with: sudo systemctl status qrapp"
+echo "Done! check status with: sudo systemctl status insite"
