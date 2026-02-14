@@ -3,6 +3,8 @@ $ErrorActionPreference = "Stop"
 $root = Resolve-Path (Join-Path $PSScriptRoot "..")
 Set-Location $root
 
+
+
 $webService = $env:WEB_SERVICE
 if ([string]::IsNullOrWhiteSpace($webService)) { $webService = "web" }
 
@@ -56,6 +58,7 @@ docker compose -p insite_signs run --rm `
 $testResult = $LASTEXITCODE
 
 Write-Host "[Acceptance] Cleaning up..."
+
 docker compose -p insite_signs down
 
 if ($testResult -ne 0) {

@@ -35,3 +35,20 @@ python scripts/build_release_zip.py
 ```
 
 The release zip is written to `releases/` and validated by `scripts/validate_release_zip.py`.
+
+
+## Environment files
+
+This project uses optional env files for local development:
+
+- `.env` (non-secret defaults)
+- `.env.local` (machine-specific secrets / overrides)
+
+Copy templates as needed:
+
+```bash
+cp .env.example .env
+cp .env.local.example .env.local
+```
+
+For local overrides, you can create `.env` / `.env.local` in the project root; Compose will use them for variable interpolation, and you can also export env vars in your shell.

@@ -2,17 +2,13 @@ services:
   web:
     build:
       context: .
-    env_file:
-      - .env
-      - .env.local
-
     environment:
       - DATABASE_URL=postgresql://postgres:postgres@db:5432/insite_test
       - FLASK_ENV=testing
       - APP_STAGE=test
-      - BASE_URL=http://192.168.1.187:8080
+      - BASE_URL=${BASE_URL:-http://localhost:8080}
       - PORT=5000 # Match the port we are actually using
-      - PUBLIC_BASE_URL=http://192.168.1.187:8080
+      - PUBLIC_BASE_URL=${PUBLIC_BASE_URL:-http://localhost:8080}
       - STORAGE_BACKEND=local
       - SERVER_DOMAIN=localhost
       - RUN_MIGRATIONS_ON_STARTUP=true

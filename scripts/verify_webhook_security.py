@@ -1,49 +1,62 @@
+#!/usr/bin/env python3
+"""Verify Stripe webhook security behavior.
 
+Defaults to localhost and can be overridden via:
+  - env BASE_URL
+  - CLI: --base-url http://host:port
+
+Examples:
+  python scripts/verify_webhook_security.py
+  BASE_URL=http://localhost:8080 python scripts/verify_webhook_security.py
+  python scripts/verify_webhook_security.py --base-url http://localhost:8080
+"""
+
+import os
+import argparse
 import requests
-import time
 
-BASE_URL = "http://192.168.1.186:5000"
-WEBHOOK_URL = f"{BASE_URL}/stripe/webhook"
-
-def test_bypass_attempt():
-    """Attempt to use the removed bypass mechanism. Should FAIL (400)."""
-    print(f"Testing bypass attempt on {WEBHOOK_URL}...")
-    
-    # Payload that would be valid JSON
+def test_bypass_attempt(webhook_url: str) -> None:
+    """Attempt to use the removed bypass mechanism. Should FAIL (400 Invalid signature)."""
+    print(f"Testing bypass attempt on {webhook_url}...")
     payload = {
         "id": "evt_test_bypass",
         "object": "event",
-        "type": "payment_intent.succeeded"
+        "type": "payment_intent.succeeded",
     }
-    
-    # Try using the query param bypass
     try:
-        response = requests.post(f"{WEBHOOK_URL}?dev_bypass=true", json=payload, timeout=5)
-        
-        if response.status_code == 400 and "Invalid signature" in response.text:
+        r = requests.post(f"{webhook_url}?dev_bypass=true", json=payload, timeout=5)
+        if r.status_code == 400 and "Invalid signature" in r.text:
             print("✅ SUCCESS: Bypass attempt rejected with 400 Invalid signature.")
         else:
-            print(f"❌ FAILURE: Unexpected response. Status: {response.status_code}, Body: {response.text}")
+            print(f"❌ FAILURE: Unexpected response. Status: {r.status_code}, Body: {r.text}")
     except Exception as e:
         print(f"❌ ERROR: Request failed: {e}")
 
-def test_no_signature():
+def test_no_signature(webhook_url: str) -> None:
     """Attempt to post without any signature. Should FAIL (400)."""
-    print(f"Testing no-signature attempt on {WEBHOOK_URL}...")
-    
+    print(f"Testing no-signature attempt on {webhook_url}...")
     payload = {"id": "evt_test_nosig", "object": "event"}
-    
     try:
-        response = requests.post(WEBHOOK_URL, json=payload, timeout=5)
-        
-        if response.status_code == 400:
-             print("✅ SUCCESS: No-signature attempt rejected with 400.")
+        r = requests.post(webhook_url, json=payload, timeout=5)
+        if r.status_code == 400:
+            print("✅ SUCCESS: No-signature attempt rejected with 400.")
         else:
-            print(f"❌ FAILURE: Unexpected response. Status: {response.status_code}")
+            print(f"❌ FAILURE: Unexpected response. Status: {r.status_code}, Body: {r.text}")
     except Exception as e:
-         print(f"❌ ERROR: Request failed: {e}")
+        print(f"❌ ERROR: Request failed: {e}")
+
+def main() -> None:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--base-url", default=os.environ.get("BASE_URL", "http://localhost:8080"),
+                    help="Base URL of the running app (default: env BASE_URL or http://localhost:8080)")
+    args = ap.parse_args()
+
+    base = args.base_url.rstrip("/")
+    webhook_url = f"{base}/stripe/webhook"
+
+    print("--- Verifying Webhook Security Fix ---")
+    test_bypass_attempt(webhook_url)
+    test_no_signature(webhook_url)
 
 if __name__ == "__main__":
-    print("--- Verifying Webhook Security Fix ---")
-    test_bypass_attempt()
-    test_no_signature()
+    main()

@@ -8,6 +8,18 @@ from reportlab.lib import colors
 from reportlab.lib.utils import ImageReader
 from PIL import Image, ImageDraw
 
+def _safe_image_reader(path: str):
+    """Return an ImageReader if path exists, else None."""
+    if not path:
+        return None
+    try:
+        if os.path.exists(path):
+            return ImageReader(path)
+    except Exception:
+        return None
+    return None
+
+
 # Add project root to path
 sys.path.append(os.getcwd())
 
@@ -23,8 +35,8 @@ from utils.pdf_generator import draw_qr
 BLEED = 0.125 * inch
 WIDTH = 18 * inch
 HEIGHT = 24 * inch
-HEADSHOT_PATH = r"C:/Users/player1/.gemini/antigravity/brain/05b6190c-db87-48c8-a169-739d3cf53879/uploaded_media_0_1769625472150.png"
-BROKERAGE_LOGO_PATH = r"C:/Users/player1/.gemini/antigravity/brain/05b6190c-db87-48c8-a169-739d3cf53879/uploaded_media_1_1769625472150.png"
+HEADSHOT_PATH = os.environ.get("HEADSHOT_PATH", "")  # optional
+BROKERAGE_LOGO_PATH = os.environ.get("BROKERAGE_LOGO_PATH", "")  # optional
 
 def setup_canvas():
     buffer = io.BytesIO()

@@ -4,6 +4,10 @@
 #
 #    pip-compile --generate-hashes --output-file=requirements.txt requirements.in
 #
+#
+# Runtime pin: see runtime.txt (python-3.13.11) and Dockerfile (python:3.13-slim)
+# Regenerate this lockfile under that same Python version for deploy parity.
+#
 alembic==1.18.1 \
     --hash=sha256:83ac6b81359596816fb3b893099841a0862f2117b2963258e965d70dc62fb866 \
     --hash=sha256:f1c3b0920b87134e851c25f1f7f236d8a332c34b75416802d06971df5d1b7810

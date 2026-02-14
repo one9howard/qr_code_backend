@@ -62,6 +62,11 @@ ROOT_PATTERNS = [
     "alembic.ini",     # DB Config
     "runtime.txt",     # Runtime pin for deploy parity
     "requirements.txt", # Depencies
+    "requirements-test.txt", # Test deps for Docker build
+    "requirements.in",
+    "requirements-test.in",
+    ".env.example",
+    ".env.local.example",
 ]
 
 # Patterns to ALWAYS EXCLUDE (even if in allowlist)
@@ -77,7 +82,10 @@ GLOBAL_EXCLUDES = [
     "*.sqlite",
     ".DS_Store",
     ".env",
-    ".env.*",
+    ".env.local",
+    ".env.production",
+    ".env.staging",
+    ".env.test",
     "instance*",
     "tmp*",
     "pdfs*",  # Runtime generated PDFs

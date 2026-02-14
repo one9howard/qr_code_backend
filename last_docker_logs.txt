@@ -1,0 +1,1148 @@
+﻿docker : [2026-02-14 
+15:34:25 +0000] [14] 
+[DEBUG] POST /login
+At C:\Users\player1\Desktop
+\InSite_signs\get_last_logs
+.ps1:1 char:9
++ $logs = docker logs 
+--tail 500 
+insite_signs-web-1 2>&1
++         ~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~
+    + CategoryInfo         
+     : NotSpecified: ([20  
+  26-02-14 15:...UG] POS   
+ T /login:String) [], R    
+emoteException
+    + FullyQualifiedErrorI 
+   d : NativeCommandError
+ 
+172.20.0.1 - - [14/Feb/2026:15:34:25 +0000] "POST /login HTTP/1.1" 302 209 "-" "python-requests/2.32.5"
+[2026-02-14 15:34:25 
++0000] [13] [DEBUG] GET 
+/orders/24/preview.webp
+[2026-02-14 15:34:25 
++0000] [13] [DEBUG] GET 
+/orders/25/preview.webp
+[2026-02-14 15:34:25 
++0000] [13] [DEBUG] GET 
+/orders/26/preview.webp
+[2026-02-14 15:35:06 
++0000] [13] [DEBUG] GET /
+[2026-02-14 15:35:06 
++0000] [13] [DEBUG] GET 
+/login
+[2026-02-14 15:35:06 
++0000] [14] [DEBUG] GET 
+/register
+[2026-02-14 15:35:06 
++0000] [14] [DEBUG] GET 
+/pricing
+[2026-02-14 15:35:06 
++0000] [14] [DEBUG] GET /
+[2026-02-14 15:35:06 
++0000] [14] [DEBUG] GET 
+/submit
+[2026-02-14 15:35:06 
++0000] [12] [DEBUG] GET 
+/register
+[2026-02-14 15:35:06 
++0000] [12] [DEBUG] POST 
+/register
+[Notifications] SMTP 
+config loaded: 
+Host=smtp.gmail.com, 
+Port=465, TLS=False
+[2026-02-14 15:35:08 
++0000] [13] [DEBUG] GET 
+/verify
+[2026-02-14 15:35:08 
++0000] [13] [DEBUG] POST 
+/verify
+[2026-02-14 15:35:08 
++0000] [14] [DEBUG] GET 
+/dashboard/
+[2026-02-14 15:35:08 
++0000] [13] [DEBUG] GET 
+/dashboard/today
+[2026-02-14 15:35:08 
++0000] [13] [DEBUG] GET 
+/dashboard/kits
+[2026-02-14 15:35:08 
++0000] [13] [DEBUG] GET 
+/dashboard/how-it-works
+[2026-02-14 15:35:08 
++0000] [12] [DEBUG] GET 
+/smart-signs/order/start
+[2026-02-14 15:35:08 
++0000] [12] [DEBUG] GET 
+/smart-signs/order/start
+[2026-02-14 15:35:08 
++0000] [12] [DEBUG] POST 
+/smart-signs/order/create
+[2026-02-14 15:35:09 
++0000] [13] [DEBUG] GET /sm
+art-signs/order/28/preview
+[2026-02-14 15:35:09 
++0000] [14] [DEBUG] POST 
+/smart-signs/order/28/pay
+[2026-02-14 15:35:09 
++0000] [13] [DEBUG] GET 
+/smart-signs/order/start
+[2026-02-14 15:35:09 
++0000] [13] [DEBUG] POST 
+/smart-signs/order/create
+[2026-02-14 15:35:10 
++0000] [12] [DEBUG] GET /sm
+art-signs/order/29/preview
+[2026-02-14 15:35:10 
++0000] [12] [DEBUG] POST 
+/smart-signs/order/29/pay
+[2026-02-14 15:35:10 
++0000] [13] [DEBUG] GET 
+/smart-signs/order/start
+[2026-02-14 15:35:10 
++0000] [13] [DEBUG] POST 
+/smart-signs/order/create
+[2026-02-14 15:35:11 
++0000] [13] [DEBUG] GET /sm
+art-signs/order/30/preview
+[2026-02-14 15:35:11 
++0000] [13] [DEBUG] POST 
+/smart-signs/order/30/pay
+[2026-02-14 15:35:13 
++0000] [13] [DEBUG] GET 
+/dashboard/properties/new
+[2026-02-14 15:35:13 
++0000] [14] [DEBUG] POST 
+/dashboard/properties/new
+[2026-02-14 15:35:14 
++0000] [12] [DEBUG] GET 
+/smart-signs/24/edit
+[2026-02-14 15:35:14 
++0000] [12] [DEBUG] POST 
+/smart-signs/24/edit
+[2026-02-14 15:35:14 
++0000] [12] [DEBUG] GET 
+/dashboard/edit/6
+[2026-02-14 15:35:14 
++0000] [12] [DEBUG] POST 
+/dashboard/edit/6
+[2026-02-14 15:35:14 
++0000] [12] [DEBUG] GET 
+/r/GED54MX6B9QT
+[2026-02-14 15:35:26 
++0000] [12] [DEBUG] GET 
+/login
+[2026-02-14 15:35:26 
++0000] [12] [DEBUG] POST 
+/login
+[2026-02-14 15:35:26 
++0000] [12] [DEBUG] GET /sm
+art-signs/order/28/preview
+[2026-02-14 15:35:26 
++0000] [14] [DEBUG] GET 
+/orders/28/preview.webp
+[2026-02-14 15:35:26 
++0000] [14] [DEBUG] GET /sm
+art-signs/order/29/preview
+[2026-02-14 15:35:26 
++0000] [12] [DEBUG] GET 
+/orders/29/preview.webp
+[2026-02-14 15:35:26 
++0000] [12] [DEBUG] GET /sm
+art-signs/order/30/preview
+[2026-02-14 15:35:26 
++0000] [12] [DEBUG] GET 
+/orders/30/preview.webp
+[2026-02-14 16:05:00 
++0000] [14] [DEBUG] GET /
+[2026-02-14 16:05:00 
++0000] [13] [DEBUG] GET 
+/static/css/style.css
+[2026-02-14 16:05:00 
++0000] [14] [DEBUG] GET 
+/static/css/components.css
+[2026-02-14 16:05:00 
++0000] [12] [DEBUG] GET 
+/static/img/logo.png
+[2026-02-14 16:05:00 
++0000] [14] [DEBUG] GET /st
+atic/css/pages/landing_saas
+.css
+[2026-02-14 16:05:00 
++0000] [13] [DEBUG] GET /st
+atic/img/mockups/dashboard_
+screen.png
+[2026-02-14 16:05:00 
++0000] [12] [DEBUG] GET /st
+atic/img/mockups/qr_variant
+s.png
+172.20.0.1 - - [14/Feb/2026:15:34:25 +0000] "GET /orders/24/preview.webp HTTP/1.1" 200 67446 "-" "python-requests/2.32.5"
+172.20.0.1 - - [14/Feb/2026:15:34:25 +0000] "GET /orders/25/preview.webp HTTP/1.1" 200 49156 "-" "python-requests/2.32.5"
+172.20.0.1 - - [14/Feb/2026:15:34:25 +0000] "GET /orders/26/preview.webp HTTP/1.1" 200 48664 "-" "python-requests/2.32.5"
+172.20.0.1 - - [14/Feb/2026:15:35:06 +0000] "GET / HTTP/1.1" 200 15048 "-" "InSite-AuditBot/2.0"
+172.20.0.1 - - [14/Feb/2026:15:35:06 +0000] "GET /login HTTP/1.1" 200 4568 "-" "InSite-AuditBot/2.0"
+172.20.0.1 - - [14/Feb/2026:15:35:06 +0000] "GET /register HTTP/1.1" 200 7175 "-" "InSite-AuditBot/2.0"
+172.20.0.1 - - [14/Feb/2026:15:35:06 +0000] "GET /pricing HTTP/1.1" 302 201 "-" "InSite-AuditBot/2.0"
+172.20.0.1 - - [14/Feb/2026:15:35:06 +0000] "GET / HTTP/1.1" 200 15048 "-" "InSite-AuditBot/2.0"
+172.20.0.1 - - [14/Feb/2026:15:35:06 +0000] "GET /submit HTTP/1.1" 200 19735 "-" "InSite-AuditBot/2.0"
+172.20.0.1 - - [14/Feb/2026:15:35:06 +0000] "GET /register HTTP/1.1" 200 7175 "-" "InSite-AuditBot/2.0"
+172.20.0.1 - - [14/Feb/2026:15:35:08 +0000] "POST /register HTTP/1.1" 302 201 "-" "InSite-AuditBot/2.0"
+172.20.0.1 - - [14/Feb/2026:15:35:08 +0000] "GET /verify HTTP/1.1" 200 6538 "-" "InSite-AuditBot/2.0"
+172.20.0.1 - - [14/Feb/2026:15:35:08 +0000] "POST /verify HTTP/1.1" 302 209 "-" "InSite-AuditBot/2.0"
+172.20.0.1 - - [14/Feb/2026:15:35:08 +0000] "GET /dashboard/ HTTP/1.1" 200 32635 "-" "InSite-AuditBot/2.0"
+172.20.0.1 - - [14/Feb/2026:15:35:08 +0000] "GET /dashboard/today HTTP/1.1" 200 6973 "-" "InSite-AuditBot/2.0"
+172.20.0.1 - - [14/Feb/2026:15:35:08 +0000] "GET /dashboard/kits HTTP/1.1" 200 8732 "-" "InSite-AuditBot/2.0"
+172.20.0.1 - - [14/Feb/2026:15:35:08 +0000] "GET /dashboard/how-it-works HTTP/1.1" 200 7581 "-" "InSite-AuditBot/2.0"
+172.20.0.1 - - [14/Feb/2026:15:35:08 +0000] "GET /smart-signs/order/start HTTP/1.1" 200 21884 "-" "InSite-AuditBot/2.0"
+172.20.0.1 - - [14/Feb/2026:15:35:08 +0000] "GET /smart-signs/order/start HTTP/1.1" 200 21884 "-" "InSite-AuditBot/2.0"
+172.20.0.1 - - [14/Feb/2026:15:35:09 +0000] "POST /smart-signs/order/create HTTP/1.1" 302 245 "-" "InSite-AuditBot/2.0"
+172.20.0.1 - - [14/Feb/2026:15:35:09 +0000] "GET /smart-signs/order/28/preview HTTP/1.1" 200 6702 "-" "InSite-AuditBot/2.0"
+172.20.0.1 - - [14/Feb/2026:15:35:09 +0000] "POST /smart-signs/order/28/pay HTTP/1.1" 303 1053 "-" "InSite-AuditBot/2.0"
+172.20.0.1 - - [14/Feb/2026:15:35:09 +0000] "GET /smart-signs/order/start HTTP/1.1" 200 21884 "-" "InSite-AuditBot/2.0"
+172.20.0.1 - - [14/Feb/2026:15:35:10 +0000] "POST /smart-signs/order/create HTTP/1.1" 302 245 "-" "InSite-AuditBot/2.0"
+172.20.0.1 - - [14/Feb/2026:15:35:10 +0000] "GET /smart-signs/order/29/preview HTTP/1.1" 200 6702 "-" "InSite-AuditBot/2.0"
+172.20.0.1 - - [14/Feb/2026:15:35:10 +0000] "POST /smart-signs/order/29/pay HTTP/1.1" 303 1053 "-" "InSite-AuditBot/2.0"
+172.20.0.1 - - [14/Feb/2026:15:35:10 +0000] "GET /smart-signs/order/start HTTP/1.1" 200 21884 "-" "InSite-AuditBot/2.0"
+172.20.0.1 - - [14/Feb/2026:15:35:11 +0000] "POST /smart-signs/order/create HTTP/1.1" 302 245 "-" "InSite-AuditBot/2.0"
+172.20.0.1 - - [14/Feb/2026:15:35:11 +0000] "GET /smart-signs/order/30/preview HTTP/1.1" 200 6702 "-" "InSite-AuditBot/2.0"
+172.20.0.1 - - [14/Feb/2026:15:35:11 +0000] "POST /smart-signs/order/30/pay HTTP/1.1" 303 1053 "-" "InSite-AuditBot/2.0"
+172.20.0.1 - - [14/Feb/2026:15:35:13 +0000] "GET /dashboard/properties/new HTTP/1.1" 200 8251 "-" "InSite-AuditBot/2.0"
+172.20.0.1 - - [14/Feb/2026:15:35:13 +0000] "POST /dashboard/properties/new HTTP/1.1" 302 245 "-" "InSite-AuditBot/2.0"
+172.20.0.1 - - [14/Feb/2026:15:35:14 +0000] "GET /smart-signs/24/edit HTTP/1.1" 200 16153 "-" "InSite-AuditBot/2.0"
+172.20.0.1 - - [14/Feb/2026:15:35:14 +0000] "POST /smart-signs/24/edit HTTP/1.1" 302 227 "-" "InSite-AuditBot/2.0"
+[2026-02-14 16:05:00 
++0000] [14] [DEBUG] GET /st
+atic/img/mockups/pipeline_l
+ist.png
+172.20.0.1 - - [14/Feb/2026:15:35:14 +0000] "GET /dashboard/edit/6 HTTP/1.1" 200 8039 "-" "InSite-AuditBot/2.0"
+172.20.0.1 - - [14/Feb/2026:15:35:14 +0000] "POST /dashboard/edit/6 HTTP/1.1" 302 209 "-" "InSite-AuditBot/2.0"
+172.20.0.1 - - [14/Feb/2026:15:35:14 +0000] "GET /r/GED54MX6B9QT HTTP/1.1" 302 233 "-" "InSite-AuditBot/2.0"
+172.20.0.1 - - [14/Feb/2026:15:35:26 +0000] "GET /login HTTP/1.1" 200 4568 "-" "python-requests/2.32.5"
+172.20.0.1 - - [14/Feb/2026:15:35:26 +0000] "POST /login HTTP/1.1" 302 209 "-" "python-requests/2.32.5"
+172.20.0.1 - - [14/Feb/2026:15:35:26 +0000] "GET /smart-signs/order/28/preview HTTP/1.1" 200 6714 "-" "python-requests/2.32.5"
+172.20.0.1 - - [14/Feb/2026:15:35:26 +0000] "GET /orders/28/preview.webp?v=1771083326 HTTP/1.1" 200 66916 "-" "python-requests/2.32.5"
+[2026-02-14 16:05:00 
++0000] [13] [DEBUG] GET /st
+atic/img/mockups/mobile_lis
+ting.png
+[2026-02-14 16:05:00 
++0000] [14] [DEBUG] GET 
+/static/js/landing_saas.js
+[2026-02-14 16:05:00 
++0000] [12] [DEBUG] GET 
+/favicon.ico
+[2026-02-14 16:05:04 
++0000] [12] [DEBUG] GET 
+/register
+[2026-02-14 16:05:04 
++0000] [14] [DEBUG] GET 
+/static/css/style.css
+[2026-02-14 16:05:04 
++0000] [12] [DEBUG] GET 
+/static/css/components.css
+[2026-02-14 16:05:04 
++0000] [13] [DEBUG] GET 
+/static/img/logo.png
+172.20.0.1 - - [14/Feb/2026:15:35:26 +0000] "GET /smart-signs/order/29/preview HTTP/1.1" 200 6714 "-" "python-requests/2.32.5"
+172.20.0.1 - - [14/Feb/2026:15:35:26 +0000] "GET /orders/29/preview.webp?v=1771083326 HTTP/1.1" 200 77472 "-" "python-requests/2.32.5"
+172.20.0.1 - - [14/Feb/2026:15:35:26 +0000] "GET /smart-signs/order/30/preview HTTP/1.1" 200 6714 "-" "python-requests/2.32.5"
+172.20.0.1 - - [14/Feb/2026:15:35:26 +0000] "GET /orders/30/preview.webp?v=1771083326 HTTP/1.1" 200 55562 "-" "python-requests/2.32.5"
+172.20.0.1 - - [14/Feb/2026:16:05:00 +0000] "GET / HTTP/1.1" 200 15048 "-" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+172.20.0.1 - - [14/Feb/2026:16:05:00 +0000] "GET /static/css/components.css HTTP/1.1" 304 0 "http://192.168.1.187:8080/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+172.20.0.1 - - [14/Feb/2026:16:05:00 +0000] "GET /static/css/style.css?v=9 HTTP/1.1" 304 0 "http://192.168.1.187:8080/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+172.20.0.1 - - [14/Feb/2026:16:05:00 +0000] "GET /static/img/logo.png HTTP/1.1" 304 0 "http://192.168.1.187:8080/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+172.20.0.1 - - [14/Feb/2026:16:05:00 +0000] "GET /static/css/pages/landing_saas.css?v=6 HTTP/1.1" 304 0 "http://192.168.1.187:8080/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+172.20.0.1 - - [14/Feb/2026:16:05:00 +0000] "GET /static/img/mockups/dashboard_screen.png HTTP/1.1" 304 0 "http://192.168.1.187:8080/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+[2026-02-14 16:05:04 
++0000] [12] [DEBUG] GET 
+/static/img/backdrop.png
+172.20.0.1 - - [14/Feb/2026:16:05:00 +0000] "GET /static/img/mockups/qr_variants.png HTTP/1.1" 304 0 "http://192.168.1.187:8080/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+172.20.0.1 - - [14/Feb/2026:16:05:00 +0000] "GET /static/img/mockups/pipeline_list.png HTTP/1.1" 304 0 "http://192.168.1.187:8080/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+172.20.0.1 - - [14/Feb/2026:16:05:00 +0000] "GET /static/img/mockups/mobile_listing.png HTTP/1.1" 304 0 "http://192.168.1.187:8080/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+[2026-02-14 16:05:23 
++0000] [14] [DEBUG] POST 
+/register
+[DB] Query Failed: 
+relation "users" does not 
+exist
+172.20.0.1 - - [14/Feb/2026:16:05:00 +0000] "GET /static/js/landing_saas.js HTTP/1.1" 304 0 "http://192.168.1.187:8080/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+172.20.0.1 - - [14/Feb/2026:16:05:00 +0000] "GET /favicon.ico HTTP/1.1" 404 207 "http://192.168.1.187:8080/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+172.20.0.1 - - [14/Feb/2026:16:05:04 +0000] "GET /register HTTP/1.1" 200 7175 "http://192.168.1.187:8080/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+172.20.0.1 - - [14/Feb/2026:16:05:04 +0000] "GET /static/css/components.css HTTP/1.1" 304 0 "http://192.168.1.187:8080/register" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+172.20.0.1 - - [14/Feb/2026:16:05:04 +0000] "GET /static/css/style.css?v=9 HTTP/1.1" 304 0 "http://192.168.1.187:8080/register" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+172.20.0.1 - - [14/Feb/2026:16:05:04 +0000] "GET /static/img/logo.png HTTP/1.1" 304 0 "http://192.168.1.187:8080/register" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+172.20.0.1 - - [14/Feb/2026:16:05:04 +0000] "GET /static/img/backdrop.png HTTP/1.1" 304 0 "http://192.168.1.187:8080/static/css/style.css?v=9" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+LINE 1: SELECT id FROM 
+users WHERE email = 'audit_
+round3@example.com...
+                       ^
+
+[DB] SQL: SELECT id FROM 
+users WHERE email = %s
+[2026-02-14 16:05:23 
++0000] [14] [ERROR] 
+Exception on /register 
+[POST]
+Traceback (most recent 
+call last):
+  File "/usr/local/lib/pyth
+on3.13/site-packages/flask/
+app.py", line 1511, in 
+wsgi_app
+    response = self.full_di
+spatch_request()
+  File "/usr/local/lib/pyth
+on3.13/site-packages/flask/
+app.py", line 919, in 
+full_dispatch_request
+    rv = self.handle_user_e
+xception(e)
+  File "/usr/local/lib/pyth
+on3.13/site-packages/flask/
+app.py", line 917, in 
+full_dispatch_request
+    rv = 
+self.dispatch_request()
+  File "/usr/local/lib/pyth
+on3.13/site-packages/flask/
+app.py", line 902, in 
+dispatch_request
+    return self.ensure_sync
+(self.view_functions[rule.e
+ndpoint])(**view_args)  # 
+type: ignore[no-any-return]
+           ~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~^^^^^^^^^^^^^
+  File 
+"/app/routes/auth.py", 
+line 52, in register
+    user = db.execute(
+           ~~~~~~~~~~^
+        "SELECT id FROM 
+users WHERE email = %s", 
+(email,)
+172.20.0.1 - - [14/Feb/2026:16:05:23 +0000] "POST /register HTTP/1.1" 500 265 "http://192.168.1.187:8080/register" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+        ^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^
+    ).fetchone()
+    ^
+  File "/app/database.py", 
+line 53, in execute
+    raise e
+  File "/app/database.py", 
+line 45, in execute
+    cur.execute(sql, 
+params)
+    
+~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/usr/local/lib/pyth
+on3.13/site-packages/psycop
+g2/extras.py", line 146, 
+in execute
+    return 
+super().execute(query, 
+vars)
+           ~~~~~~~~~~~~~~~^
+^^^^^^^^^^^^
+psycopg2.errors.UndefinedTa
+ble: relation "users" does 
+not exist
+LINE 1: SELECT id FROM 
+users WHERE email = 'audit_
+round3@example.com...
+                       ^
+
+[2026-02-14 16:05:29 
++0000] [12] [DEBUG] GET 
+/register
+[2026-02-14 16:05:29 
++0000] [12] [DEBUG] GET 
+/static/css/style.css
+[2026-02-14 16:05:29 
++0000] [14] [DEBUG] GET 
+/static/css/components.css
+[2026-02-14 16:05:29 
++0000] [13] [DEBUG] GET 
+/static/img/logo.png
+[2026-02-14 16:05:35 
++0000] [13] [DEBUG] POST 
+/register
+[DB] Query Failed: 
+relation "users" does not 
+exist
+LINE 1: SELECT id FROM 
+users WHERE email = 'audit_
+round3@example.com...
+                       ^
+
+[DB] SQL: SELECT id FROM 
+users WHERE email = %s
+[2026-02-14 16:05:35 
++0000] [13] [ERROR] 
+Exception on /register 
+[POST]
+Traceback (most recent 
+call last):
+  File "/usr/local/lib/pyth
+on3.13/site-packages/flask/
+app.py", line 1511, in 
+wsgi_app
+    response = self.full_di
+spatch_request()
+  File "/usr/local/lib/pyth
+on3.13/site-packages/flask/
+app.py", line 919, in 
+full_dispatch_request
+    rv = self.handle_user_e
+xception(e)
+  File "/usr/local/lib/pyth
+on3.13/site-packages/flask/
+app.py", line 917, in 
+full_dispatch_request
+    rv = 
+self.dispatch_request()
+  File "/usr/local/lib/pyth
+on3.13/site-packages/flask/
+app.py", line 902, in 
+dispatch_request
+    return self.ensure_sync
+(self.view_functions[rule.e
+ndpoint])(**view_args)  # 
+type: ignore[no-any-return]
+           ~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~^^^^^^^^^^^^^
+  File 
+"/app/routes/auth.py", 
+line 52, in register
+    user = db.execute(
+           ~~~~~~~~~~^
+        "SELECT id FROM 
+users WHERE email = %s", 
+(email,)
+        ^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^
+    ).fetchone()
+    ^
+  File "/app/database.py", 
+line 53, in execute
+    raise e
+  File "/app/database.py", 
+line 45, in execute
+    cur.execute(sql, 
+params)
+    
+~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/usr/local/lib/pyth
+on3.13/site-packages/psycop
+g2/extras.py", line 146, 
+in execute
+    return 
+super().execute(query, 
+vars)
+           ~~~~~~~~~~~~~~~^
+^^^^^^^^^^^^
+psycopg2.errors.UndefinedTa
+ble: relation "users" does 
+not exist
+LINE 1: SELECT id FROM 
+users WHERE email = 'audit_
+round3@example.com...
+                       ^
+
+[2026-02-14 16:05:39 
++0000] [14] [DEBUG] GET 
+/register
+[2026-02-14 16:05:39 
++0000] [12] [DEBUG] GET 
+/static/css/style.css
+[2026-02-14 16:05:39 
++0000] [14] [DEBUG] GET 
+/static/css/components.css
+[2026-02-14 16:05:39 
++0000] [13] [DEBUG] GET 
+/static/img/logo.png
+[2026-02-14 16:05:43 
++0000] [13] [DEBUG] POST 
+/register
+[DB] Query Failed: 
+relation "users" does not 
+exist
+LINE 1: SELECT id FROM 
+users WHERE email = 'audit_
+test_1@example.com...
+                       ^
+
+[DB] SQL: SELECT id FROM 
+users WHERE email = %s
+[2026-02-14 16:05:43 
++0000] [13] [ERROR] 
+Exception on /register 
+[POST]
+Traceback (most recent 
+call last):
+  File "/usr/local/lib/pyth
+on3.13/site-packages/flask/
+app.py", line 1511, in 
+wsgi_app
+    response = self.full_di
+spatch_request()
+  File "/usr/local/lib/pyth
+on3.13/site-packages/flask/
+app.py", line 919, in 
+full_dispatch_request
+    rv = self.handle_user_e
+xception(e)
+  File "/usr/local/lib/pyth
+on3.13/site-packages/flask/
+app.py", line 917, in 
+full_dispatch_request
+    rv = 
+self.dispatch_request()
+  File "/usr/local/lib/pyth
+on3.13/site-packages/flask/
+app.py", line 902, in 
+dispatch_request
+    return self.ensure_sync
+(self.view_functions[rule.e
+ndpoint])(**view_args)  # 
+type: ignore[no-any-return]
+           ~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~^^^^^^^^^^^^^
+  File 
+"/app/routes/auth.py", 
+line 52, in register
+    user = db.execute(
+           ~~~~~~~~~~^
+        "SELECT id FROM 
+users WHERE email = %s", 
+(email,)
+        ^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^
+    ).fetchone()
+    ^
+  File "/app/database.py", 
+line 53, in execute
+    raise e
+  File "/app/database.py", 
+line 45, in execute
+    cur.execute(sql, 
+params)
+    
+~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/usr/local/lib/pyth
+on3.13/site-packages/psycop
+g2/extras.py", line 146, 
+in execute
+    return 
+super().execute(query, 
+vars)
+           ~~~~~~~~~~~~~~~^
+^^^^^^^^^^^^
+psycopg2.errors.UndefinedTa
+ble: relation "users" does 
+not exist
+LINE 1: SELECT id FROM 
+users WHERE email = 'audit_
+test_1@example.com...
+                       ^
+
+[2026-02-14 16:05:47 
++0000] [12] [DEBUG] GET 
+/login
+[2026-02-14 16:05:47 
++0000] [14] [DEBUG] GET 
+/static/css/style.css
+[2026-02-14 16:05:47 
++0000] [12] [DEBUG] GET 
+/static/css/components.css
+[2026-02-14 16:05:47 
++0000] [13] [DEBUG] GET 
+/static/img/logo.png
+[2026-02-14 16:06:01 
++0000] [13] [DEBUG] GET 
+/register
+[2026-02-14 16:06:01 
++0000] [14] [DEBUG] GET 
+/static/css/style.css
+[2026-02-14 16:06:01 
++0000] [12] [DEBUG] GET 
+/static/css/components.css
+[2026-02-14 16:06:01 
++0000] [13] [DEBUG] GET 
+/static/img/logo.png
+[2026-02-14 16:06:06 
++0000] [12] [DEBUG] POST 
+/register
+[DB] Query Failed: 
+relation "users" does not 
+exist
+LINE 1: SELECT id FROM 
+users WHERE email = 'audit_
+round3@example.com...
+                       ^
+
+[DB] SQL: SELECT id FROM 
+users WHERE email = %s
+[2026-02-14 16:06:06 
++0000] [12] [ERROR] 
+Exception on /register 
+[POST]
+Traceback (most recent 
+call last):
+  File "/usr/local/lib/pyth
+on3.13/site-packages/flask/
+app.py", line 1511, in 
+wsgi_app
+    response = self.full_di
+spatch_request()
+  File "/usr/local/lib/pyth
+on3.13/site-packages/flask/
+app.py", line 919, in 
+full_dispatch_request
+    rv = self.handle_user_e
+xception(e)
+  File "/usr/local/lib/pyth
+on3.13/site-packages/flask/
+app.py", line 917, in 
+full_dispatch_request
+    rv = 
+self.dispatch_request()
+  File "/usr/local/lib/pyth
+on3.13/site-packages/flask/
+app.py", line 902, in 
+dispatch_request
+    return self.ensure_sync
+(self.view_functions[rule.e
+ndpoint])(**view_args)  # 
+type: ignore[no-any-return]
+           ~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~^^^^^^^^^^^^^
+  File 
+"/app/routes/auth.py", 
+line 52, in register
+    user = db.execute(
+           ~~~~~~~~~~^
+        "SELECT id FROM 
+users WHERE email = %s", 
+(email,)
+        ^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^
+    ).fetchone()
+    ^
+  File "/app/database.py", 
+line 53, in execute
+    raise e
+  File "/app/database.py", 
+line 45, in execute
+    cur.execute(sql, 
+params)
+    
+~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/usr/local/lib/pyth
+on3.13/site-packages/psycop
+g2/extras.py", line 146, 
+in execute
+    return 
+super().execute(query, 
+vars)
+           ~~~~~~~~~~~~~~~^
+^^^^^^^^^^^^
+psycopg2.errors.UndefinedTa
+ble: relation "users" does 
+not exist
+LINE 1: SELECT id FROM 
+users WHERE email = 'audit_
+round3@example.com...
+                       ^
+
+[2026-02-14 16:06:11 
++0000] [13] [DEBUG] GET 
+/register
+[2026-02-14 16:06:11 
++0000] [12] [DEBUG] GET 
+/static/css/style.css
+[2026-02-14 16:06:11 
++0000] [13] [DEBUG] GET 
+/static/css/components.css
+[2026-02-14 16:06:11 
++0000] [14] [DEBUG] GET 
+/static/img/logo.png
+[2026-02-14 16:06:27 
++0000] [14] [DEBUG] POST 
+/register
+[DB] Query Failed: 
+relation "users" does not 
+exist
+LINE 1: SELECT id FROM 
+users WHERE email = 'audit_
+round3@example.com...
+                       ^
+
+[DB] SQL: SELECT id FROM 
+users WHERE email = %s
+[2026-02-14 16:06:27 
++0000] [14] [ERROR] 
+Exception on /register 
+[POST]
+Traceback (most recent 
+call last):
+  File "/usr/local/lib/pyth
+on3.13/site-packages/flask/
+app.py", line 1511, in 
+wsgi_app
+    response = self.full_di
+spatch_request()
+  File "/usr/local/lib/pyth
+on3.13/site-packages/flask/
+app.py", line 919, in 
+full_dispatch_request
+    rv = self.handle_user_e
+xception(e)
+  File "/usr/local/lib/pyth
+on3.13/site-packages/flask/
+app.py", line 917, in 
+full_dispatch_request
+    rv = 
+self.dispatch_request()
+  File "/usr/local/lib/pyth
+on3.13/site-packages/flask/
+app.py", line 902, in 
+dispatch_request
+    return self.ensure_sync
+(self.view_functions[rule.e
+ndpoint])(**view_args)  # 
+type: ignore[no-any-return]
+           ~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~^^^^^^^^^^^^^
+  File 
+"/app/routes/auth.py", 
+line 52, in register
+    user = db.execute(
+           ~~~~~~~~~~^
+        "SELECT id FROM 
+users WHERE email = %s", 
+(email,)
+        ^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^
+    ).fetchone()
+    ^
+  File "/app/database.py", 
+line 53, in execute
+    raise e
+  File "/app/database.py", 
+line 45, in execute
+    cur.execute(sql, 
+params)
+    
+~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/usr/local/lib/pyth
+on3.13/site-packages/psycop
+g2/extras.py", line 146, 
+in execute
+    return 
+super().execute(query, 
+vars)
+           ~~~~~~~~~~~~~~~^
+^^^^^^^^^^^^
+psycopg2.errors.UndefinedTa
+ble: relation "users" does 
+not exist
+LINE 1: SELECT id FROM 
+users WHERE email = 'audit_
+round3@example.com...
+                       ^
+
+[2026-02-14 16:06:34 
++0000] [12] [DEBUG] GET /
+[2026-02-14 16:06:34 
++0000] [14] [DEBUG] GET 
+/static/css/style.css
+[2026-02-14 16:06:34 
++0000] [12] [DEBUG] GET 
+/static/css/components.css
+[2026-02-14 16:06:34 
++0000] [13] [DEBUG] GET 
+/static/img/logo.png
+[2026-02-14 16:06:34 
++0000] [14] [DEBUG] GET /st
+atic/css/pages/landing_saas
+.css
+[2026-02-14 16:06:34 
++0000] [12] [DEBUG] GET /st
+atic/img/mockups/dashboard_
+screen.png
+[2026-02-14 16:06:34 
++0000] [13] [DEBUG] GET /st
+atic/img/mockups/qr_variant
+s.png
+[2026-02-14 16:06:34 
++0000] [12] [DEBUG] GET /st
+atic/img/mockups/pipeline_l
+ist.png
+[2026-02-14 16:06:34 
++0000] [13] [DEBUG] GET /st
+atic/img/mockups/mobile_lis
+ting.png
+[2026-02-14 16:06:34 
++0000] [14] [DEBUG] GET 
+/static/js/landing_saas.js
+[2026-02-14 16:06:41 
++0000] [14] [DEBUG] GET 
+/register
+[2026-02-14 16:06:41 
++0000] [12] [DEBUG] GET 
+/static/css/style.css
+[2026-02-14 16:06:41 
++0000] [14] [DEBUG] GET 
+/static/css/components.css
+[2026-02-14 16:06:41 
++0000] [13] [DEBUG] GET 
+/static/img/logo.png
+172.20.0.1 - - [14/Feb/2026:16:05:29 +0000] "GET /register HTTP/1.1" 200 7175 "-" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+172.20.0.1 - - [14/Feb/2026:16:05:29 +0000] "GET /static/css/style.css?v=9 HTTP/1.1" 304 0 "http://192.168.1.187:8080/register" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+172.20.0.1 - - [14/Feb/2026:16:05:29 +0000] "GET /static/css/components.css HTTP/1.1" 304 0 "http://192.168.1.187:8080/register" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+172.20.0.1 - - [14/Feb/2026:16:05:29 +0000] "GET /static/img/logo.png HTTP/1.1" 304 0 "http://192.168.1.187:8080/register" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+172.20.0.1 - - [14/Feb/2026:16:05:35 +0000] "POST /register HTTP/1.1" 500 265 "http://192.168.1.187:8080/register" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+172.20.0.1 - - [14/Feb/2026:16:05:39 +0000] "GET /register HTTP/1.1" 200 7175 "-" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+172.20.0.1 - - [14/Feb/2026:16:05:39 +0000] "GET /static/css/style.css?v=9 HTTP/1.1" 304 0 "http://192.168.1.187:8080/register" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+172.20.0.1 - - [14/Feb/2026:16:05:39 +0000] "GET /static/css/components.css HTTP/1.1" 304 0 "http://192.168.1.187:8080/register" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+172.20.0.1 - - [14/Feb/2026:16:05:39 +0000] "GET /static/img/logo.png HTTP/1.1" 304 0 "http://192.168.1.187:8080/register" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+172.20.0.1 - - [14/Feb/2026:16:05:43 +0000] "POST /register HTTP/1.1" 500 265 "http://192.168.1.187:8080/register" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+172.20.0.1 - - [14/Feb/2026:16:05:47 +0000] "GET /login HTTP/1.1" 200 4568 "-" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+172.20.0.1 - - [14/Feb/2026:16:05:47 +0000] "GET /static/css/style.css?v=9 HTTP/1.1" 304 0 "http://192.168.1.187:8080/login" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+172.20.0.1 - - [14/Feb/2026:16:05:47 +0000] "GET /static/css/components.css HTTP/1.1" 304 0 "http://192.168.1.187:8080/login" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+172.20.0.1 - - [14/Feb/2026:16:05:47 +0000] "GET /static/img/logo.png HTTP/1.1" 304 0 "http://192.168.1.187:8080/login" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+172.20.0.1 - - [14/Feb/2026:16:06:01 +0000] "GET /register HTTP/1.1" 200 7175 "-" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+172.20.0.1 - - [14/Feb/2026:16:06:01 +0000] "GET /static/css/style.css?v=9 HTTP/1.1" 304 0 "http://192.168.1.187:8080/register" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+172.20.0.1 - - [14/Feb/2026:16:06:01 +0000] "GET /static/css/components.css HTTP/1.1" 304 0 "http://192.168.1.187:8080/register" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+172.20.0.1 - - [14/Feb/2026:16:06:01 +0000] "GET /static/img/logo.png HTTP/1.1" 304 0 "http://192.168.1.187:8080/register" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+172.20.0.1 - - [14/Feb/2026:16:06:06 +0000] "POST /register HTTP/1.1" 500 265 "http://192.168.1.187:8080/register" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+172.20.0.1 - - [14/Feb/2026:16:06:11 +0000] "GET /register HTTP/1.1" 200 7175 "-" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+172.20.0.1 - - [14/Feb/2026:16:06:11 +0000] "GET /static/css/style.css?v=9 HTTP/1.1" 304 0 "http://192.168.1.187:8080/register" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+172.20.0.1 - - [14/Feb/2026:16:06:11 +0000] "GET /static/css/components.css HTTP/1.1" 304 0 "http://192.168.1.187:8080/register" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+172.20.0.1 - - [14/Feb/2026:16:06:11 +0000] "GET /static/img/logo.png HTTP/1.1" 304 0 "http://192.168.1.187:8080/register" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+172.20.0.1 - - [14/Feb/2026:16:06:27 +0000] "POST /register HTTP/1.1" 500 265 "http://192.168.1.187:8080/register" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+172.20.0.1 - - [14/Feb/2026:16:06:34 +0000] "GET / HTTP/1.1" 200 15048 "-" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+172.20.0.1 - - [14/Feb/2026:16:06:34 +0000] "GET /static/css/style.css?v=9 HTTP/1.1" 304 0 "http://192.168.1.187:8080/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+172.20.0.1 - - [14/Feb/2026:16:06:34 +0000] "GET /static/css/components.css HTTP/1.1" 304 0 "http://192.168.1.187:8080/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+172.20.0.1 - - [14/Feb/2026:16:06:34 +0000] "GET /static/img/logo.png HTTP/1.1" 304 0 "http://192.168.1.187:8080/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+172.20.0.1 - - [14/Feb/2026:16:06:34 +0000] "GET /static/img/mockups/dashboard_screen.png HTTP/1.1" 304 0 "http://192.168.1.187:8080/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+172.20.0.1 - - [14/Feb/2026:16:06:34 +0000] "GET /static/img/mockups/qr_variants.png HTTP/1.1" 304 0 "http://192.168.1.187:8080/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+172.20.0.1 - - [14/Feb/2026:16:06:34 +0000] "GET /static/css/pages/landing_saas.css?v=6 HTTP/1.1" 304 0 "http://192.168.1.187:8080/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+172.20.0.1 - - [14/Feb/2026:16:06:34 +0000] "GET /static/img/mockups/pipeline_list.png HTTP/1.1" 304 0 "http://192.168.1.187:8080/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+172.20.0.1 - - [14/Feb/2026:16:06:34 +0000] "GET /static/img/mockups/mobile_listing.png HTTP/1.1" 304 0 "http://192.168.1.187:8080/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+172.20.0.1 - - [14/Feb/2026:16:06:34 +0000] "GET /static/js/landing_saas.js HTTP/1.1" 304 0 "http://192.168.1.187:8080/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+172.20.0.1 - - [14/Feb/2026:16:06:41 +0000] "GET /register HTTP/1.1" 200 7175 "-" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+172.20.0.1 - - [14/Feb/2026:16:06:41 +0000] "GET /static/css/style.css?v=9 HTTP/1.1" 304 0 "http://192.168.1.187:8080/register" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+172.20.0.1 - - [14/Feb/2026:16:06:41 +0000] "GET /static/css/components.css HTTP/1.1" 304 0 "http://192.168.1.187:8080/register" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+172.20.0.1 - - [14/Feb/2026:16:06:41 +0000] "GET /static/img/logo.png HTTP/1.1" 304 0 "http://192.168.1.187:8080/register" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+[2026-02-14 16:06:47 
++0000] [14] [DEBUG] POST 
+/register
+[DB] Query Failed: 
+relation "users" does not 
+exist
+LINE 1: SELECT id FROM 
+users WHERE email = 
+'test_928cwc@example.com'
+                       ^
+
+[DB] SQL: SELECT id FROM 
+users WHERE email = %s
+[2026-02-14 16:06:47 
++0000] [14] [ERROR] 
+Exception on /register 
+[POST]
+Traceback (most recent 
+call last):
+  File "/usr/local/lib/pyth
+on3.13/site-packages/flask/
+app.py", line 1511, in 
+wsgi_app
+    response = self.full_di
+spatch_request()
+  File "/usr/local/lib/pyth
+on3.13/site-packages/flask/
+app.py", line 919, in 
+full_dispatch_request
+    rv = self.handle_user_e
+xception(e)
+  File "/usr/local/lib/pyth
+on3.13/site-packages/flask/
+app.py", line 917, in 
+full_dispatch_request
+    rv = 
+self.dispatch_request()
+  File "/usr/local/lib/pyth
+on3.13/site-packages/flask/
+app.py", line 902, in 
+dispatch_request
+    return self.ensure_sync
+(self.view_functions[rule.e
+ndpoint])(**view_args)  # 
+type: ignore[no-any-return]
+           ~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~^^^^^^^^^^^^^
+  File 
+"/app/routes/auth.py", 
+line 52, in register
+    user = db.execute(
+           ~~~~~~~~~~^
+        "SELECT id FROM 
+users WHERE email = %s", 
+(email,)
+172.20.0.1 - - [14/Feb/2026:16:06:47 +0000] "POST /register HTTP/1.1" 500 265 "http://192.168.1.187:8080/register" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+172.20.0.1 - - [14/Feb/2026:16:06:54 +0000] "GET /login HTTP/1.1" 200 4568 "-" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+172.20.0.1 - - [14/Feb/2026:16:06:54 +0000] "GET /static/css/components.css HTTP/1.1" 304 0 "http://192.168.1.187:8080/login" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+172.20.0.1 - - [14/Feb/2026:16:06:54 +0000] "GET /static/css/style.css?v=9 HTTP/1.1" 304 0 "http://192.168.1.187:8080/login" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+172.20.0.1 - - [14/Feb/2026:16:06:54 +0000] "GET /static/img/logo.png HTTP/1.1" 304 0 "http://192.168.1.187:8080/login" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+172.20.0.1 - - [14/Feb/2026:16:07:11 +0000] "POST /login HTTP/1.1" 400 117 "http://192.168.1.187:8080/login" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+172.20.0.1 - - [14/Feb/2026:16:07:17 +0000] "GET /register HTTP/1.1" 200 7175 "-" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+172.20.0.1 - - [14/Feb/2026:16:07:17 +0000] "GET /static/css/style.css?v=9 HTTP/1.1" 304 0 "http://192.168.1.187:8080/register" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+172.20.0.1 - - [14/Feb/2026:16:07:17 +0000] "GET /static/css/components.css HTTP/1.1" 304 0 "http://192.168.1.187:8080/register" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+        ^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^
+    ).fetchone()
+172.20.0.1 - - [14/Feb/2026:16:07:17 +0000] "GET /static/img/logo.png HTTP/1.1" 304 0 "http://192.168.1.187:8080/register" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+    ^
+  File "/app/database.py", 
+line 53, in execute
+172.20.0.1 - - [14/Feb/2026:16:07:23 +0000] "POST /register HTTP/1.1" 500 265 "http://192.168.1.187:8080/register" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+    raise e
+  File "/app/database.py", 
+line 45, in execute
+    cur.execute(sql, 
+params)
+    
+~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/usr/local/lib/pyth
+on3.13/site-packages/psycop
+g2/extras.py", line 146, 
+in execute
+    return 
+super().execute(query, 
+vars)
+           ~~~~~~~~~~~~~~~^
+^^^^^^^^^^^^
+psycopg2.errors.UndefinedTa
+ble: relation "users" does 
+not exist
+LINE 1: SELECT id FROM 
+users WHERE email = 
+'test_928cwc@example.com'
+                       ^
+
+[2026-02-14 16:06:54 
++0000] [13] [DEBUG] GET 
+/login
+[2026-02-14 16:06:54 
++0000] [13] [DEBUG] GET 
+/static/css/style.css
+[2026-02-14 16:06:54 
++0000] [12] [DEBUG] GET 
+/static/img/logo.png
+[2026-02-14 16:06:54 
++0000] [14] [DEBUG] GET 
+/static/css/components.css
+[2026-02-14 16:07:11 
++0000] [14] [DEBUG] POST 
+/login
+[2026-02-14 16:07:17 
++0000] [12] [DEBUG] GET 
+/register
+[2026-02-14 16:07:17 
++0000] [14] [DEBUG] GET 
+/static/css/style.css
+[2026-02-14 16:07:17 
++0000] [12] [DEBUG] GET 
+/static/css/components.css
+[2026-02-14 16:07:17 
++0000] [13] [DEBUG] GET 
+/static/img/logo.png
+[2026-02-14 16:07:23 
++0000] [13] [DEBUG] POST 
+/register
+[DB] Query Failed: 
+relation "users" does not 
+exist
+LINE 1: SELECT id FROM 
+users WHERE email = 'audit_
+round3@example.com...
+                       ^
+
+[DB] SQL: SELECT id FROM 
+users WHERE email = %s
+[2026-02-14 16:07:23 
++0000] [13] [ERROR] 
+Exception on /register 
+[POST]
+Traceback (most recent 
+call last):
+  File "/usr/local/lib/pyth
+on3.13/site-packages/flask/
+app.py", line 1511, in 
+wsgi_app
+    response = self.full_di
+spatch_request()
+  File "/usr/local/lib/pyth
+on3.13/site-packages/flask/
+app.py", line 919, in 
+full_dispatch_request
+    rv = self.handle_user_e
+xception(e)
+  File "/usr/local/lib/pyth
+on3.13/site-packages/flask/
+app.py", line 917, in 
+full_dispatch_request
+    rv = 
+self.dispatch_request()
+  File "/usr/local/lib/pyth
+on3.13/site-packages/flask/
+app.py", line 902, in 
+dispatch_request
+    return self.ensure_sync
+(self.view_functions[rule.e
+ndpoint])(**view_args)  # 
+type: ignore[no-any-return]
+           ~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~^^^^^^^^^^^^^
+  File 
+"/app/routes/auth.py", 
+line 52, in register
+    user = db.execute(
+           ~~~~~~~~~~^
+        "SELECT id FROM 
+users WHERE email = %s", 
+(email,)
+        ^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^
+    ).fetchone()
+    ^
+  File "/app/database.py", 
+line 53, in execute
+    raise e
+  File "/app/database.py", 
+line 45, in execute
+    cur.execute(sql, 
+params)
+    
+~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/usr/local/lib/pyth
+on3.13/site-packages/psycop
+g2/extras.py", line 146, 
+in execute
+    return 
+super().execute(query, 
+vars)
+           ~~~~~~~~~~~~~~~^
+^^^^^^^^^^^^
+psycopg2.errors.UndefinedTa
+ble: relation "users" does 
+not exist
+LINE 1: SELECT id FROM 
+users WHERE email = 'audit_
+round3@example.com...
+                       ^
+
+[2026-02-14 16:09:24 
++0000] [9] [CRITICAL] 
+WORKER TIMEOUT (pid:12)
+[2026-02-14 16:09:24 
++0000] [12] [ERROR] Error 
+handling request (no URI 
+read)
+Traceback (most recent 
+call last):
+  File "/usr/local/lib/pyth
+on3.13/site-packages/gunico
+rn/workers/sync.py", line 
+133, in handle
+    req = next(parser)
+  File "/usr/local/lib/pyth
+on3.13/site-packages/gunico
+rn/http/parser.py", line 
+56, in __next__
+    self.mesg = 
+self.mesg_class(self.cfg, 
+self.unreader, 
+self.source_addr, 
+self.req_count)
+                ~~~~~~~~~~~
+~~~~^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^
+  File "/usr/local/lib/pyth
+on3.13/site-packages/gunico
+rn/http/message.py", line 
+307, in __init__
+    super().__init__(cfg, 
+unreader, peer_addr)
+    ~~~~~~~~~~~~~~~~^^^^^^^
+^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/pyth
+on3.13/site-packages/gunico
+rn/http/message.py", line 
+108, in __init__
+    unused = 
+self.parse(self.unreader)
+  File "/usr/local/lib/pyth
+on3.13/site-packages/gunico
+rn/http/message.py", line 
+319, in parse
+    
+self.read_into(unreader, 
+buf, stop=True)
+    ~~~~~~~~~~~~~~^^^^^^^^^
+^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/pyth
+on3.13/site-packages/gunico
+rn/http/message.py", line 
+358, in read_into
+    data = unreader.read()
+  File "/usr/local/lib/pyth
+on3.13/site-packages/gunico
+rn/http/unreader.py", line 
+36, in read
+    d = self.chunk()
+  File "/usr/local/lib/pyth
+on3.13/site-packages/gunico
+rn/http/unreader.py", line 
+65, in chunk
+    return self.sock.recv(s
+elf.mxchunk)
+           ~~~~~~~~~~~~~~^^
+^^^^^^^^^^^^
+  File "/usr/local/lib/pyth
+on3.13/site-packages/gunico
+rn/workers/base.py", line 
+204, in handle_abort
+    sys.exit(1)
+    ~~~~~~~~^^^
+SystemExit: 1
+[2026-02-14 16:09:24 
++0000] [12] [INFO] Worker 
+exiting (pid: 12)
+[2026-02-14 16:09:24 
++0000] [9] [DEBUG] 
+Handling signal: cld
+[2026-02-14 16:09:24 
++0000] [108] [INFO] 
+Booting worker with pid: 
+108
