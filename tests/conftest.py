@@ -43,6 +43,58 @@ def db_session(app):
         conn.rollback()
 
 
+@pytest.fixture(scope='function')
+def db(db_session):
+    """
+    Alias for db_session with added compatibility layer.
+    Wraps the raw PostgresDB connection to provide a .session attribute
+    and .add() method, mimicking SQLAlchemy for legacy tests.
+    """
+    class SessionProxy:
+        def __init__(self, db_conn):
+            self.db_conn = db_conn
+        
+        def __getattr__(self, name):
+            return getattr(self.db_conn, name)
+            
+        @property
+        def session(self):
+            return self
+            
+        def add(self, obj):
+            if hasattr(obj, 'save'):
+                obj.save()
+                
+    return SessionProxy(db_session)
+
+
+@pytest.fixture
+def auth(client, db):
+    """Authentication helper for tests that need login."""
+    class AuthActions:
+        def __init__(self, client, db):
+            self._client = client
+            self._db = db
+
+        def login(self, email='test@example.com', password='TestPassword123!'):
+            # Ensure user exists
+            from werkzeug.security import generate_password_hash
+            existing = self._db.execute(
+                "SELECT id FROM users WHERE email = %s", (email,)
+            ).fetchone()
+            if not existing:
+                self._db.execute(
+                    "INSERT INTO users (email, password_hash, is_verified) VALUES (%s, %s, %s)",
+                    (email, generate_password_hash(password), True)
+                )
+                self._db.commit()
+            return self._client.post('/login', data={
+                'email': email, 'password': password
+            }, follow_redirects=True)
+
+    return AuthActions(client, db)
+
+
 @pytest.fixture
 def test_user_password():
     """Return a consistent test password."""

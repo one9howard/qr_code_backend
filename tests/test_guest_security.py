@@ -5,9 +5,9 @@ from unittest.mock import patch, MagicMock
 def test_guest_resize_with_body_token(client):
     """Test guest resize using token in JSON body."""
     with patch('services.order_access.get_order_for_request') as mock_auth, \
-         patch('routes.orders.get_db'), \
-         patch('routes.orders.get_agent_data_for_order'), \
-         patch('routes.orders.generate_pdf_sign'):
+         patch('database.get_db'), \
+         patch('services.printing.yard_sign.generate_yard_sign_pdf_from_order_row'), \
+         patch('utils.pdf_preview.render_pdf_to_web_preview'):
          
         # Mock success auth
         mock_order = MagicMock()

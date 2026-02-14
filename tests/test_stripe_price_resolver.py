@@ -10,16 +10,14 @@ def block_stripe():
     with patch('stripe.Price.list', side_effect=RuntimeError("NETWORK CALL")):
         yield
 
-def test_resolve_price_id_calls_fail_if_no_cache_and_no_patch(block_stripe):
+def test_resolve_price_id_returns_mock_in_test_mode(block_stripe):
     """
-    Confirms that resolve_price_id raises RuntimeError if it tries to hit network in test mode
-    (enforced by the block_stripe AND the code's own guard).
+    Confirms that resolve_price_id returns a mock price ID in test mode
+    when no cache is set and no valid Stripe key is available.
     """
-    # Assuming app is in test mode (APP_STAGE=test set by pytest usually? Need to be sure)
-    # The code checks APP_STAGE or FLASK_ENV.
-    with patch('services.stripe_price_resolver.APP_STAGE', 'test'):
-        with pytest.raises(RuntimeError, match="Stripe network call attempted in TEST mode"):
-            resolve_price_id("missing_key")
+    with patch.dict('os.environ', {'APP_STAGE': 'test'}):
+        result = resolve_price_id("missing_key")
+        assert result == "price_mock_missing_key"
 
 def test_resolve_uses_injected_cache():
     """

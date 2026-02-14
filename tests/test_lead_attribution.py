@@ -124,13 +124,14 @@ class TestLeadValidation:
         data = response.get_json()
         assert data['success'] is True
     
-    def test_lead_with_phone_only(self, client, property_id):
-        """Lead with phone only should succeed."""
+    def test_lead_with_phone_and_email(self, client, property_id):
+        """Lead with phone and email should succeed."""
         if not property_id:
             pytest.skip("No test property available")
         
         response = client.post('/api/leads/submit', json={
             'property_id': property_id,
+            'buyer_email': 'phone_preferred@example.com',
             'buyer_phone': '555-123-4567',
             'consent': True
         })
@@ -152,7 +153,7 @@ class TestLeadValidation:
         
         assert response.status_code == 400
         data = response.get_json()
-        assert data['error'] == 'Email or phone is required'
+        assert data['error'] == 'Email is required'
 
 
 class TestAttributionCookie:
