@@ -44,7 +44,7 @@
                 <input name="address" class="glass-input" placeholder="123 Main St, City, State" required autofocus>
             </div>
 
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin-bottom: 20px;">
                 <div class="input-group">
                     <label class="input-label">Beds</label>
                     <input name="beds" class="glass-input" placeholder="3" required>
@@ -53,11 +53,21 @@
                     <label class="input-label">Baths</label>
                     <input name="baths" class="glass-input" placeholder="2.5" required>
                 </div>
+                <div class="input-group">
+                    <label class="input-label">Sq Ft (Optional)</label>
+                    <input name="sqft" class="glass-input" placeholder="2,500">
+                </div>
             </div>
 
             <div class="input-group" style="margin-bottom: 20px;">
                 <label class="input-label">Price (Optional)</label>
                 <input name="price" class="glass-input" placeholder="$500,000">
+            </div>
+
+            <div class="input-group" style="margin-bottom: 20px;">
+                <label class="input-label">Description (Optional)</label>
+                <textarea name="description" class="glass-input" rows="4"
+                    placeholder="Beautiful home with..."></textarea>
             </div>
 
             <details style="margin-bottom: 20px;">

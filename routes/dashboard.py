@@ -808,7 +808,9 @@ def new_property():
         address = request.form.get('address')
         beds = request.form.get('beds')
         baths = request.form.get('baths')
+        sqft = request.form.get('sqft')
         price = request.form.get('price')
+        description = request.form.get('description')
         
         # Optional URLs
         from utils.urls import normalize_https_url
@@ -830,10 +832,10 @@ def new_property():
              
         cursor = db.cursor()
         cursor.execute("""
-            INSERT INTO properties (agent_id, address, beds, baths, price, virtual_tour_url, created_at, expires_at)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+            INSERT INTO properties (agent_id, address, beds, baths, sqft, price, description, virtual_tour_url, created_at, expires_at)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             RETURNING id
-        """, (agent_id, address, beds, baths, price, virtual_tour_url, utc_iso(), expires_at))
+        """, (agent_id, address, beds, baths, sqft, price, description, virtual_tour_url, utc_iso(), expires_at))
         pid = cursor.fetchone()['id']
         
         # Slug & QR
