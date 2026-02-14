@@ -39,7 +39,6 @@ fi
 CREATED_ENV="0"
 if [ ! -f .env ]; then touch .env; CREATED_ENV="1"; fi
   if [ "${CREATED_ENV}" = "1" ]; then rm -f .env; fi
-}
 
 echo "[Acceptance] Running reset + migrate + pytest inside ${WEB_SERVICE}..."
 # Run as a single in-container shell so failures stop the whole chain.

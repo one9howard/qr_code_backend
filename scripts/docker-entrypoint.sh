@@ -2,8 +2,6 @@
 set -euo pipefail
 
 if [ "${RUN_MIGRATIONS_ON_STARTUP:-}" = "true" ]; then
-  if [ -n "${DATABASE_URL:-}" ]; then
-    ...
 
   if [ -n "${DATABASE_URL:-}" ]; then
     echo "[Entrypoint] Detected DATABASE_URL. Waiting for DB..."
