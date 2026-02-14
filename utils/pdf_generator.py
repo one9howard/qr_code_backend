@@ -366,7 +366,7 @@ def _draw_standard_layout(c, layout, address, beds, baths, sqft, price,
         qr_y = layout.qr_center_y - (qr_size / 2)
         
         # 4a. Draw QR (Vector H-ECC)
-        draw_qr(c, qr_url, qr_x, qr_y, qr_size, size=qr_size, ecc_level="H", user_id=user_id)
+        draw_qr(c, qr_url, qr_x, qr_y, qr_size, ecc_level="H", user_id=user_id)
         
     except Exception as e:
         logger.error(f"QR Draw Error: {e}")
@@ -449,7 +449,7 @@ def _draw_landscape_split_layout(c, layout, address, beds, baths, sqft, price,
         qr_y = band_h + ((body_h - qr_size) / 2) 
         
         # Draw vector QR
-        draw_qr(c, qr_url, qr_x, qr_y, qr_size, size=qr_size, ecc_level="H", user_id=user_id)
+        draw_qr(c, qr_url, qr_x, qr_y, qr_size, ecc_level="H", user_id=user_id)
         
     except Exception as e:
         logger.error(f"[PDF] Split Layout Vector QR Error: {e}")

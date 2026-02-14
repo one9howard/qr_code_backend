@@ -118,10 +118,10 @@ def submit_lead():
         track_lead_attempt(False, "missing_property_id")
         return jsonify({"success": False, "error": "Missing property_id"}), 400
     
-    # Require at least one contact method: email OR phone
-    if not buyer_email and not buyer_phone:
-        track_lead_attempt(False, "missing_contact")
-        return jsonify({"success": False, "error": "Email or phone is required"}), 400
+    # Email is required (schema enforces non-null)
+    if not buyer_email:
+        track_lead_attempt(False, "missing_email")
+        return jsonify({"success": False, "error": "Email is required"}), 400
     
     if not consent:
         track_lead_attempt(False, "missing_consent")
@@ -284,9 +284,13 @@ def submit_lead():
         
     except Exception as e:
         current_app.logger.error(f"[Leads] Error saving lead: {e}")
+        try:
+            db.rollback()
+        except Exception:
+            pass
         track_lead_attempt(False, "db_error", tier_state)
         return jsonify({
-            "success": False, 
+            "success": False,
             "error": "Failed to submit request. Please try again."
         }), 500
 

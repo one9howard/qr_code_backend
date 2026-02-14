@@ -107,7 +107,11 @@ def order_sign():
     """
     # Delegate to Service
     from services.orders import create_sign_order
-    
+
+    data = request.get_json(silent=True)
+    if not data:
+        data = request.form.to_dict()
+
     result = create_sign_order(current_user, data)
     
     status_code = 200

@@ -52,7 +52,8 @@ def create_app(test_config=None):
             db.execute("SELECT 1").fetchone()
             return {"status": "ok", "db": "connected"}, 200
         except Exception as e:
-            return {"status": "error", "db": str(e)}, 503
+            logger.warning(f"[Healthz] DB error: {e}")
+            return {"status": "error", "db": "unavailable"}, 503
 
     # Simple ping endpoint for Docker health checks
     @app.route("/ping")
