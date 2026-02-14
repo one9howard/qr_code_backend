@@ -75,8 +75,25 @@ def main() -> None:
 
         # 2) Minimal operational files check
         print("[CHECK] Required operational files...")
-        required_files = ["app.py", "migrate.py", "alembic.ini", "extensions.py", "runtime.txt"]
+        required_files = [
+            "app.py",
+            "migrate.py",
+            "alembic.ini",
+            "extensions.py",
+            "runtime.txt",
+            "Dockerfile",
+            ".dockerignore",
+            "docker-compose.yml",
+        ]
         missing = [f for f in required_files if not os.path.isfile(os.path.join(td, f))]
+        if not any(
+            name.lower().startswith("readme")
+            for name in os.listdir(td)
+            if os.path.isfile(os.path.join(td, name))
+        ):
+            missing.append("README*")
+        if not os.path.isdir(os.path.join(td, "tests")):
+            missing.append("tests/")
         if not (
             os.path.isfile(os.path.join(td, "Procfile"))
             or os.path.isfile(os.path.join(td, "gunicorn.conf.py"))

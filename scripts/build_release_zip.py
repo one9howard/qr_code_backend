@@ -45,6 +45,7 @@ INCLUDE_DIRS = [
     "templates",
     "static",
     "utils",
+    "tests",   # Include tests for end-to-end verification artifacts
     "scripts",  # Include scripts for operational tasks
     "migrations", # DB Migrations
 ]
@@ -54,6 +55,10 @@ ROOT_PATTERNS = [
     "*.py",          # All python files (app.py, config.py, extensions.py, etc)
     "migrate.py",      # Canonical migration runner
     "Procfile",        # Heroku/Railway entrypoint
+    "Dockerfile",      # Container build spec
+    ".dockerignore",   # Docker build context exclusions
+    "docker-compose.yml", # Local orchestration spec
+    "README*",         # Docs entrypoint
     "alembic.ini",     # DB Config
     "runtime.txt",     # Runtime pin for deploy parity
     "requirements.txt", # Depencies
@@ -76,7 +81,6 @@ GLOBAL_EXCLUDES = [
     "instance*",
     "tmp*",
     "pdfs*",  # Runtime generated PDFs
-    "tests*", # Don't ship tests to prod (optional, but cleaner)
     "node_modules*",
     ".git*",
     ".github*",
@@ -183,7 +187,7 @@ def verify_import(temp_dir, check_stage="staging"):
     Attempt to import the app to verify all dependencies and files are present.
     This runs in a subprocess.
     """
-    print("🧪 Verifying import (app introspection)...")
+    print("[VERIFY] Verifying import (app introspection)...")
     
     # Simple check script that tries to import app
     # We mock DATABASE_URL to prevent connection attempts
@@ -196,7 +200,7 @@ import os
 # Mock ENV
 os.environ['DATABASE_URL'] = 'postgresql://mock:mock@localhost/mock'
 os.environ['SECRET_KEY'] = 'mock-secret-key'
-os.environ['FLASK_ENV'] = 'production'
+os.environ['FLASK_ENV'] = 'testing'
 os.environ['APP_STAGE'] = '{check_stage}'
 os.environ['STORAGE_BACKEND'] = 's3'
 os.environ['S3_BUCKET'] = 'mock-bucket'
@@ -213,10 +217,10 @@ try:
     import extensions
     print("   [OK] Import successful.")
 except ImportError as e:
-    print(f"   [FAIL] ImportError: {e}")
+    print(f"   [FAIL] ImportError: {{e}}")
     sys.exit(1)
 except Exception as e:
-    print(f"   [FAIL] Validation Error: {e}")
+    print(f"   [FAIL] Validation Error: {{e}}")
     sys.exit(1)
 """
     
@@ -358,8 +362,29 @@ def validate_artifact(zip_path, project_root, check_stage="staging"):
             return False
         # 3. Key operational files check
         # Keep this minimal and environment-agnostic. Railway/Nixpacks may not use a Procfile.
-        required_files = ["app.py", "migrate.py", "alembic.ini", "extensions.py", "runtime.txt"]
+        required_files = [
+            "app.py",
+            "migrate.py",
+            "alembic.ini",
+            "extensions.py",
+            "runtime.txt",
+            "Dockerfile",
+            ".dockerignore",
+            "docker-compose.yml",
+        ]
         missing = [f for f in required_files if not os.path.exists(os.path.join(temp_dir, f))]
+
+        # README can be README, README.md, README.txt, etc.
+        if not any(
+            fnmatch.fnmatch(name.lower(), "readme*")
+            for name in os.listdir(temp_dir)
+            if os.path.isfile(os.path.join(temp_dir, name))
+        ):
+            missing.append("README*")
+
+        # Tests directory is required in release artifact for verification workflows.
+        if not os.path.isdir(os.path.join(temp_dir, "tests")):
+            missing.append("tests/")
 
         # Require at least one boot entrypoint hint (Procfile OR gunicorn config).
         if not (os.path.exists(os.path.join(temp_dir, "Procfile")) or os.path.exists(os.path.join(temp_dir, "gunicorn.conf.py"))):
