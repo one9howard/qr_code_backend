@@ -22,7 +22,12 @@
             {% if preview_url %}
             <div class="sign-preview-card">
                 <img src="{{ preview_url }}?v={{ timestamp }}" class="preview-img" id="preview-image"
-                    alt="Sign Preview">
+                    alt="Sign Preview" onerror="handlePreviewLoadError()">
+
+                <div id="preview-load-error"
+                    style="display:none; margin: 12px 0; padding: 10px 12px; border-radius: 8px; border: 1px solid rgba(239,68,68,0.45); background: rgba(239,68,68,0.08); color: #fecaca; font-size: 0.9rem;">
+                    Preview failed to load. Please click <strong>Edit Design</strong> and save again to regenerate.
+                </div>
 
                 <div class="sign-meta">
                     <p style="text-align: center; color: var(--text-muted); margin-bottom: 20px;">
@@ -64,4 +69,19 @@
 
     </div>
 </div>
+
+<script>
+    function handlePreviewLoadError() {
+        const errorBox = document.getElementById('preview-load-error');
+        if (errorBox) errorBox.style.display = 'block';
+
+        const payBtn = document.querySelector('.order-btn');
+        if (payBtn) {
+            payBtn.disabled = true;
+            payBtn.style.opacity = '0.6';
+            payBtn.style.cursor = 'not-allowed';
+            payBtn.title = 'Preview must load before payment.';
+        }
+    }
+</script>
 {% endblock %}

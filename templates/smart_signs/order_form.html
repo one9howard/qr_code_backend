@@ -27,6 +27,16 @@
                 </p>
             </div>
             {% endif %}
+            {% if property_prefill %}
+            <input type="hidden" name="property_id" value="{{ property_prefill.id }}">
+            <div
+                style="background: rgba(0, 242, 254, 0.08); border: 1px solid rgba(0, 242, 254, 0.3); border-radius: 8px; padding: 12px; margin-bottom: 24px;">
+                <p style="margin: 0; color: var(--accent-cyan); font-size: 0.9rem;">
+                    <strong>Auto-assignment enabled:</strong> after payment, this SmartSign will be linked to
+                    <span style="font-weight: 600;">{{ property_prefill.address }}</span>.
+                </p>
+            </div>
+            {% endif %}
 
             <!-- Section 1: Sign Config -->
             <div style="margin-bottom: 32px;">

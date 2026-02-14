@@ -61,10 +61,10 @@ def resolve_user_id(db, session):
     logger.warning(f"[Orders] Failed to resolve user for session {session.get('id')}")
     return None
 
-def _parse_sign_asset_id(val):
+def _parse_positive_int(val):
     """
-    Safely parse sign_asset_id from Stripe metadata.
-    Returns int if valid string digit, None otherwise.
+    Safely parse positive integers from metadata/payload values.
+    Returns int if valid (>0), otherwise None.
     """
     if not val:
         return None
@@ -72,8 +72,17 @@ def _parse_sign_asset_id(val):
     if val_str.lower() in ('none', 'null', ''):
         return None
     if val_str.isdigit():
-        return int(val_str)
+        parsed = int(val_str)
+        if parsed > 0:
+            return parsed
     return None
+
+def _parse_sign_asset_id(val):
+    """
+    Safely parse sign_asset_id from Stripe metadata.
+    Returns int if valid string digit, None otherwise.
+    """
+    return _parse_positive_int(val)
 
 def process_paid_order(db, session):
     """
@@ -216,8 +225,35 @@ def process_paid_order(db, session):
 
     # 4. SmartSign Creation & Activation (Idempotent)
     if final_type == 'smart_sign':
+        payload = row.get('design_payload') or {}
+        if isinstance(payload, str):
+            try:
+                payload = json.loads(payload)
+            except Exception:
+                payload = {}
+
         raw_asset_id = session.get('metadata', {}).get('sign_asset_id')
         asset_id = _parse_sign_asset_id(raw_asset_id)
+
+        # If a property was attached to this SmartSign order, auto-assign after activation.
+        assign_property_id = None
+        user_id_for_assignment = row['user_id'] or resolve_user_id(db, session)
+        if property_id and user_id_for_assignment:
+            owned_property = db.execute(
+                """
+                SELECT p.id
+                FROM properties p
+                JOIN agents a ON p.agent_id = a.id
+                WHERE p.id = %s AND a.user_id = %s
+                """,
+                (property_id, user_id_for_assignment),
+            ).fetchone()
+            if owned_property:
+                assign_property_id = property_id
+            else:
+                logger.warning(
+                    f"[Orders] Skipping SmartSign auto-assignment for property {property_id}: ownership validation failed."
+                )
         
         # If no asset_id, create one
         if not asset_id:
@@ -231,19 +267,15 @@ def process_paid_order(db, session):
                 asset_id = existing_asset['id']
                 logger.info(f"[Orders] Found existing asset {asset_id} for Order {order_id}")
             else:
-                user_id = row['user_id']
+                user_id = row['user_id'] or resolve_user_id(db, session)
                 if not user_id:
-                     user_id = resolve_user_id(db, session)
+                    raise ValueError(f"Unable to resolve user for smart_sign order {order_id}")
 
-                payload = row.get('design_payload') or {}
-                if isinstance(payload, str):
-                    payload = json.loads(payload)
-                    
                 code = payload.get('code')
                 if not code:
-                     from utils.qr_codes import generate_unique_code
-                     code = generate_unique_code(db, length=12)
-                     logger.warning(f"[Orders] Warning: Code missing in payload for Order {order_id}. Generated new {code}.")
+                    from utils.qr_codes import generate_unique_code
+                    code = generate_unique_code(db, length=12)
+                    logger.warning(f"[Orders] Warning: Code missing in payload for Order {order_id}. Generated new {code}.")
                 
                 brand_name = payload.get('brand_name') or payload.get('agent_name')
                 phone = payload.get('phone') or payload.get('agent_phone')
@@ -280,17 +312,17 @@ def process_paid_order(db, session):
                         include_logo, logo_key,
                         include_headshot, headshot_key,
                         agent_name, agent_phone, state, license_number, show_license_option, license_label_override,
-                        created_at, activated_at, is_frozen, activation_order_id, label
+                        active_property_id, created_at, activated_at, is_frozen, activation_order_id, label
                     )
-                    VALUES (%s, %s, %s, %s, %s, %s, 'scan_for_details', %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, NOW(), NOW(), FALSE, %s, %s)
+                    VALUES (%s, %s, %s, %s, %s, %s, 'scan_for_details', %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, NOW(), NOW(), FALSE, %s, %s)
                     RETURNING id
                 """, (
                     user_id, code, brand_name, phone, email_addr,
-                    bg_style, 
+                    bg_style,
                     inc_logo, logo_key,
                     inc_head, headshot_key,
                     agent_name, agent_phone, state, license_number, show_license_option, license_label_override,
-                    order_id, label
+                    assign_property_id, order_id, label
                 )).fetchone()
                 
                 asset_id = res['id']
@@ -303,7 +335,7 @@ def process_paid_order(db, session):
 
         # If asset exists (legacy/re-order/just created), ensure activated
         if asset_id:
-            existing = db.execute("SELECT activated_at FROM sign_assets WHERE id = %s", (asset_id,)).fetchone()
+            existing = db.execute("SELECT activated_at, active_property_id FROM sign_assets WHERE id = %s", (asset_id,)).fetchone()
             if existing and existing['activated_at'] is None:
                 db.execute("""
                     UPDATE sign_assets 
@@ -315,6 +347,17 @@ def process_paid_order(db, session):
                 logger.info(f"[Orders] Activated SmartSign Asset {asset_id} for Order {order_id}")
             else:
                 logger.info(f"[Orders] Asset {asset_id} already activated. Skipping.")
+
+            # Auto-assign only on initial assignment path.
+            if assign_property_id and existing and existing['active_property_id'] is None:
+                db.execute(
+                    "UPDATE sign_assets SET active_property_id = %s, updated_at = NOW() WHERE id = %s",
+                    (assign_property_id, asset_id),
+                )
+                db.commit()
+                logger.info(
+                    f"[Orders] Auto-assigned SmartSign Asset {asset_id} to Property {assign_property_id} for Order {order_id}"
+                )
 
     # 5. Trigger Fulfillment (Async)
     if final_type in ('sign', 'smart_sign'):

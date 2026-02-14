@@ -230,6 +230,21 @@ def order_start():
     Usually this is for a new physical sign.
     """
     asset_id = request.args.get('asset_id')
+    property_prefill = None
+
+    # Optional streamline path: if launched from "new property" flow, carry the
+    # property context forward so the sign can be auto-assigned after payment.
+    requested_property_id = request.args.get('property_id', type=int)
+    if requested_property_id:
+        property_prefill = get_db().execute(
+            """
+            SELECT p.id, p.address
+            FROM properties p
+            JOIN agents a ON p.agent_id = a.id
+            WHERE p.id = %s AND a.user_id = %s
+            """,
+            (requested_property_id, current_user.id),
+        ).fetchone()
     colors = [
         {'id': 'blue', 'name': 'Blue', 'hex': '#0077ff'},
         {'id': 'navy', 'name': 'Navy', 'hex': '#0f172a'},
@@ -246,7 +261,12 @@ def order_start():
         # If ordering for existing asset (replacement?), prefill
         pass
         
-    return render_template('smart_signs/order_form.html', colors=colors, asset_id=asset_id)
+    return render_template(
+        'smart_signs/order_form.html',
+        colors=colors,
+        asset_id=asset_id,
+        property_prefill=property_prefill,
+    )
 
 
 
@@ -259,6 +279,7 @@ def create_smart_order():
     Creates Order & Asset (Pending), Generates Preview, Redirects to Preview Page.
     """
     asset_id = request.form.get('asset_id') # Optional
+    requested_property_id = request.form.get('property_id', type=int)
     
     # 1. Extract and Validate Basic Info
     size = request.form.get('size')
@@ -342,6 +363,23 @@ def create_smart_order():
         return redirect(url_for('smart_signs.order_start', asset_id=asset_id))
 
     db = get_db()
+
+    if requested_property_id is not None:
+        owned_property = db.execute(
+            """
+            SELECT p.id
+            FROM properties p
+            JOIN agents a ON p.agent_id = a.id
+            WHERE p.id = %s AND a.user_id = %s
+            """,
+            (requested_property_id, current_user.id),
+        ).fetchone()
+        if not owned_property:
+            flash("Selected property was not found for your account.", "error")
+            return redirect(url_for('smart_signs.order_start'))
+
+        # Persist property intent in payload so webhook processing can auto-assign.
+        payload['auto_assign_property_id'] = requested_property_id
     
     # 5. Asset Creation / Retrieval
     new_asset_id = None
@@ -384,13 +422,13 @@ def create_smart_order():
     from psycopg2.extras import Json
     order_row = db.execute("""
         INSERT INTO orders (
-            user_id, order_type, status, print_product, material, sides,
-            print_size, layout_id, design_payload, design_version, sign_asset_id
-        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            user_id, property_id, order_type, status, print_product, material, sides,
+            print_size, sign_size, layout_id, design_payload, design_version, sign_asset_id
+        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
         RETURNING id
     """, (
-        current_user.id, 'smart_sign', 'pending_payment', print_product, 
-        material, sides, size, layout_id, Json(payload), 1, new_asset_id
+        current_user.id, requested_property_id, 'smart_sign', 'pending_payment', print_product,
+        material, sides, size, size, layout_id, Json(payload), 1, new_asset_id
     )).fetchone()
     order_id = order_row['id']
     db.commit()
@@ -520,6 +558,8 @@ def start_payment(order_id):
         }
         if aid:
             metadata['sign_asset_id'] = aid
+        if order.get('property_id'):
+            metadata['property_id'] = str(order['property_id'])
 
         checkout_session = stripe.checkout.Session.create(
             payment_method_types=['card'],
@@ -542,4 +582,3 @@ def start_payment(order_id):
         current_app.logger.error(f"Stripe Error for Order {order_id}: {e}")
         flash("Payment initialization failed.", "error")
         return redirect(url_for('smart_signs.order_preview', order_id=order_id))
-

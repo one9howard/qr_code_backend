@@ -19,25 +19,40 @@ def order_preview(order_id):
     Uses stored preview_key if available, otherwise falls back to deterministic logic (legacy).
     """
     from services.order_access import get_order_for_request
+    from database import get_db
     from utils.storage import get_storage
     from utils.filenames import make_sign_asset_basename
     from constants import LAYOUT_VERSION, DEFAULT_SIGN_SIZE
 
     # Centralized Auth Check (Guest Friendly)
     order = get_order_for_request(order_id)
+    db_conn = get_db()
+    order_row = db_conn.execute(
+        "SELECT preview_key, print_size, sign_size FROM orders WHERE id = %s",
+        (order_id,)
+    ).fetchone()
     
     storage = get_storage()
     
     # 1. Try stored key (Stable)
-    if hasattr(order, 'preview_key') and order.preview_key:
+    preview_key = None
+    if order_row:
+        preview_key = order_row['preview_key']
+    if not preview_key and hasattr(order, 'preview_key'):
+        preview_key = order.preview_key
+
+    if preview_key:
         try:
-            file_data = storage.get_file(order.preview_key)
+            file_data = storage.get_file(preview_key)
             return send_file(file_data, mimetype='image/webp')
         except Exception:
             pass # Fallback to deterministic
             
     # 2. Deterministic Fallback (Legacy)
-    normalized_size = normalize_sign_size(order.sign_size or DEFAULT_SIGN_SIZE)
+    print_size = order_row['print_size'] if order_row else None
+    sign_size = order_row['sign_size'] if order_row else None
+    size_hint = print_size or sign_size or getattr(order, 'print_size', None) or getattr(order, 'sign_size', None) or DEFAULT_SIGN_SIZE
+    normalized_size = normalize_sign_size(size_hint)
     basename = make_sign_asset_basename(order_id, normalized_size, LAYOUT_VERSION)
     preview_key = f"previews/order_{order_id}/{basename}.webp"
     

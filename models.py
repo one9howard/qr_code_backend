@@ -93,12 +93,14 @@ class Property:
 
 class Order:
     ALLOWED_COLUMNS = (
-        'id', 'user_id', 'property_id', 'stripe_session_id', 'amount_total', 
-        'status', 'print_product', 'print_size', 'material', 'quantity', 
-        'shipping_address', 'sign_pdf_path', 'preview_url', 
+        'id', 'user_id', 'property_id', 'stripe_session_id', 'amount_total',
+        'status', 'print_product', 'print_size', 'material', 'quantity',
+        'shipping_address', 'sign_pdf_path', 'preview_url', 'preview_key',
         'checkout_session_id', 'order_type', 'sign_asset_id', 'design_payload',
         'provider_job_id', 'layout_id', 'created_at', 'updated_at',
-        'sign_size', 'sign_color', 'guest_email', 'guest_token'
+        'sign_size', 'sign_color', 'guest_email', 'guest_token',
+        'stripe_checkout_session_id', 'stripe_payment_intent_id', 'stripe_customer_id',
+        'amount_total_cents', 'currency', 'paid_at', 'submitted_at', 'fulfilled_at'
     )
 
     def __init__(self, **kwargs):
