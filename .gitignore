@@ -1,6 +1,7 @@
 .env
 .env.local
 __pycache__/
+**/__pycache__/
 *.pyc
 *.pyo
 *.pyd
@@ -16,3 +17,15 @@ releases/
 
 static/*.pdf
 artifacts/
+
+# Generated diagnostics and local test/build outputs
+*.log
+build_log*.txt
+test_error*.txt
+test_logs.txt
+test_run.log
+test_failures*.log
+
+# Generated release/debug artifacts
+RELEASE_MANIFEST.json
+static/generated/
