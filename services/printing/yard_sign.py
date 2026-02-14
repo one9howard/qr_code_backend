@@ -228,12 +228,19 @@ def generate_yard_sign_pdf(order, output_path=None, output_key=None):
              _draw_yard_address_qr_premium(c, layout, **args_v2)
 
         elif layout_id == 'yard_modern_round':
-             _draw_modern_round_layout(
-                c, layout, address, beds, baths, sqft, price,
-                agent_name, brokerage, agent_email, agent_phone,
-                None, agent_photo_key, sign_color, qr_value=qr_url,
-                user_id=user_id, logo_key=agent_logo_key
-            )
+            if is_landscape:
+                _draw_landscape_split_layout(
+                    c, layout, address, beds, baths, sqft, price,
+                    agent_name, brokerage, agent_email, agent_phone,
+                    None, agent_photo_key, sign_color, qr_value=qr_url, user_id=user_id, logo_key=agent_logo_key
+                )
+            else:
+                _draw_modern_round_layout(
+                    c, layout, address, beds, baths, sqft, price,
+                    agent_name, brokerage, agent_email, agent_phone,
+                    None, agent_photo_key, sign_color, qr_value=qr_url,
+                    user_id=user_id, logo_key=agent_logo_key
+                )
 
         else:
             if is_landscape:

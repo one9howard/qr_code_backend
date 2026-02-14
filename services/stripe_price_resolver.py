@@ -10,6 +10,18 @@ logger = logging.getLogger(__name__)
 PRICE_CACHE = {}
 CACHE_TTL = 3600  # 1 hour (relying on warm_cache at startup mainly)
 
+
+def _is_test_env() -> bool:
+    stage = (os.environ.get('APP_STAGE') or '').strip().lower()
+    flask_env = (os.environ.get('FLASK_ENV') or '').strip().lower()
+    if stage:
+        return stage in ('test', 'testing')
+    return flask_env in ('test', 'testing')
+
+
+def _allow_live_lookup_in_test() -> bool:
+    return (os.environ.get('ALLOW_STRIPE_NETWORK_IN_TEST') or '').strip().lower() == 'true'
+
 class StripePriceError(Exception):
     """Base exception for price resolution errors."""
     pass
@@ -41,17 +53,12 @@ def resolve_price_id(lookup_key: str) -> str:
     # Test Guard: Ensure tests don't hit this without patching
     # EXCEPTION: If we have a valid Stripe Key (not placeholder) and we are in staging/test,
     # we might want to actually resolve against Stripe Test Mode.
-    is_test_env = os.environ.get('APP_STAGE') == 'test' or os.environ.get('FLASK_ENV') == 'test'
-    # Check for known dummy values often used in CI/Tests
-    invalid_key_markers = ['placeholder', 'dummy']
-    has_valid_stripe_key = stripe.api_key and not any(m in stripe.api_key for m in invalid_key_markers)
-
-    if is_test_env and not has_valid_stripe_key:
+    if _is_test_env() and not _allow_live_lookup_in_test():
         # In tests, if not patched/cached, we MUST fail.
         # But if it IS in cache (injected), we can return it.
         if lookup_key in PRICE_CACHE:
             return PRICE_CACHE[lookup_key]['price_id']
-        
+
         # FALLBACK: Return a mock ID to allow local dev/preview without Stripe
         logger.warning(f"Returning MOCK price for {lookup_key} in TEST mode (No valid Stripe Key).")
         return f"price_mock_{lookup_key}"
@@ -83,13 +90,8 @@ def warm_cache(required_keys: list[str]) -> None:
     Validate Active Price + Active Product.
     """
     # Test Guard
-    is_test_env = os.environ.get('APP_STAGE') == 'test' or os.environ.get('FLASK_ENV') == 'test'
-    # Check for known dummy values often used in CI/Tests
-    invalid_key_markers = ['placeholder', 'dummy']
-    has_valid_stripe_key = stripe.api_key and not any(m in stripe.api_key for m in invalid_key_markers)
-
-    if is_test_env and not has_valid_stripe_key:
-        raise RuntimeError("warm_cache called in TEST mode (No valid Stripe Key). Tests must mocked.")
+    if _is_test_env() and not _allow_live_lookup_in_test():
+        raise RuntimeError("warm_cache called in TEST mode")
 
     logger.info(f"Warming Stripe price cache for {len(required_keys)} keys...")
     

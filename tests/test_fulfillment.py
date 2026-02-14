@@ -35,8 +35,8 @@ def test_fulfill_order_enqueues_one_print_job(db, app):
 
     # Create order with 'paid' status
     order_id = db.execute(
-        """INSERT INTO orders (user_id, property_id, sign_pdf_path, status, order_type)
-           VALUES (%s, %s, %s, 'paid', 'sign') RETURNING id""",
+        """INSERT INTO orders (user_id, property_id, sign_pdf_path, status, order_type, paid_at)
+           VALUES (%s, %s, %s, 'paid', 'sign', NOW()) RETURNING id""",
         (user_id, property_id, source_key),
     ).fetchone()[0]
     db.commit()
@@ -89,8 +89,8 @@ def test_fulfill_order_idempotency(db, app):
     storage.put_file(b"%PDF-1.4\n%%EOF\n", source_key)
 
     order_id = db.execute(
-        """INSERT INTO orders (user_id, property_id, sign_pdf_path, status, order_type)
-           VALUES (%s, %s, %s, 'paid', 'sign') RETURNING id""",
+        """INSERT INTO orders (user_id, property_id, sign_pdf_path, status, order_type, paid_at)
+           VALUES (%s, %s, %s, 'paid', 'sign', NOW()) RETURNING id""",
         (user_id, property_id, source_key),
     ).fetchone()[0]
     db.commit()

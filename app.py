@@ -252,7 +252,7 @@ def create_app(test_config=None):
             allowed_routes = [
                 'auth.verify_email', 'auth.logout', 'auth.resend_verification',
                 # Allow Checkout Flows
-                'billing.start_checkout', 'billing.checkout', 'billing.portal',
+                'billing.start', 'billing.checkout', 'billing.portal',
                 'orders.order_sign', 'orders.order_success', 'orders.order_cancel',
                 'listing_kits.start_kit', 'listing_kits.download_kit',
                 # Allow Webhooks (though usually auth exempt anyway)

@@ -48,7 +48,7 @@ class TestConfigStagingBoot:
             import config
             # If we get here, the import succeeded
             assert config.APP_STAGE == 'test'
-            assert config.IS_PRODUCTION == True
+            assert config.IS_PRODUCTION is False
         except SystemExit as e:
             pytest.fail(f"Config sys.exit({e.code}) - SMTP should NOT be required in APP_STAGE=test")
         except Exception as e:

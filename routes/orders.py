@@ -152,7 +152,10 @@ def resize_order():
     from constants import SIGN_SIZES
     from services.order_access import get_order_for_request
     
-    data = request.get_json()
+    data = request.get_json(silent=True) or {}
+    if not isinstance(data, dict):
+        return jsonify({'success': False, 'error': 'invalid_json'}), 400
+
     order_id = data.get('order_id')
     new_size = data.get('size')
     
@@ -230,8 +233,9 @@ def resize_order():
         
         # Build preview URL with guest token if needed
         preview_args = {'order_id': order_id}
-        if request.json.get('guest_token'):
-            preview_args['guest_token'] = request.json.get('guest_token')
+        guest_token = data.get('guest_token')
+        if guest_token:
+            preview_args['guest_token'] = guest_token
             
         preview_url = url_for('orders.order_preview', **preview_args)
         

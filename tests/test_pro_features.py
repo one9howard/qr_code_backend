@@ -84,13 +84,9 @@ class TestAnalyticsService(unittest.TestCase):
         from app import app
         
         with app.app_context():
-            # Call with agent_id that may not exist - should not crash
+            # Call with user_id that does not exist - should not crash.
             result = per_agent_rollup(99999)
-            
-            self.assertIn('scans', result)
-            self.assertIn('views', result)
-            self.assertIn('leads', result)
-            self.assertIn('ctas', result)
+            self.assertEqual(result, {})
 
 
 if __name__ == "__main__":

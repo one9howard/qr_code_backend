@@ -79,8 +79,18 @@ def check_specs_sync():
 
 if __name__ == "__main__":
     print("[Release Gate] Running safety checks...")
-    
-    # First, run the canonical acceptance tests
+
+    success = True
+    if not check_forbidden_files(): success = False
+    if not check_fonts(): success = False
+    if not check_config(): success = False
+    if not check_specs_sync(): success = False
+
+    if not success:
+        print("[Release Gate] FAILED.")
+        sys.exit(1)
+
+    # Then run the canonical acceptance tests
     print("[Release Gate] Running acceptance tests...")
     import subprocess
     from pathlib import Path
@@ -98,16 +108,6 @@ if __name__ == "__main__":
             sys.exit(1)
     else:
         print(f"[Release Gate] WARNING: Canonical runner not found: {acceptance_script}")
-    
-    success = True
-    if not check_forbidden_files(): success = False
-    if not check_fonts(): success = False
-    if not check_config(): success = False
-    if not check_specs_sync(): success = False
-    
-    if not success:
-        print("[Release Gate] FAILED.")
-        sys.exit(1)
-    
+
     print("[Release Gate] PASSED.")
     sys.exit(0)

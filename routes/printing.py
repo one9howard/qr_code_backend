@@ -131,7 +131,7 @@ def claim_jobs():
     except Exception as e:
         current_app.logger.error(f"[Printing] Claim failed: {e}")
         db.rollback()
-        return jsonify({"error": "Queue error", "details": str(e)}), 500
+        return jsonify({"error": "Queue error"}), 500
             
     results = []
     
@@ -268,4 +268,3 @@ def mark_printed(job_id):
         resp["note"] = "already_printed"
 
     return jsonify(resp)
-

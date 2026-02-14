@@ -136,22 +136,41 @@ def test_pdf_with_agent_photo_has_one_image():
                 order_id=None,
                 qr_value="https://example.com/r/phototest",
             )
+            pdf_path_no_qr = generate_pdf_sign(
+                address="789 Photo Test Blvd",
+                beds="5",
+                baths="4",
+                sqft="3000",
+                price="$1,200,000",
+                agent_name="Photo Test Agent",
+                brokerage="Photo Test Brokerage",
+                agent_email="photo@example.com",
+                agent_phone="555-9999",
+                qr_path=None,
+                agent_photo_key="mock_headshot_key",
+                return_path=True,
+                sign_color="#1F6FEB",
+                sign_size="18x24",
+                order_id=None,
+                qr_value=None,
+            )
             
             assert pdf_path is not None
             assert os.path.exists(pdf_path)
+            assert os.path.exists(pdf_path_no_qr)
             
             import fitz
-            doc = fitz.open(pdf_path)
-            
-            total_images = 0
-            for page in doc:
-                total_images += len(page.get_images(full=True))
-            
-            doc.close()
-            
-            # Should have exactly 1 image (the agent photo)
-            # QR should NOT add any images
-            assert total_images == 1, (
-                f"Expected 1 image (agent photo), got {total_images}. "
-                "QR should be vector, not adding to image count."
+            with_qr = fitz.open(pdf_path)
+            without_qr = fitz.open(pdf_path_no_qr)
+
+            total_images_with_qr = sum(len(page.get_images(full=True)) for page in with_qr)
+            total_images_without_qr = sum(len(page.get_images(full=True)) for page in without_qr)
+
+            with_qr.close()
+            without_qr.close()
+
+            # QR should stay vector: enabling qr_value must not increase embedded image count.
+            assert total_images_with_qr == total_images_without_qr, (
+                f"Image count changed with qr_value: with_qr={total_images_with_qr}, "
+                f"without_qr={total_images_without_qr}."
             )

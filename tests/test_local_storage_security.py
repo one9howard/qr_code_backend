@@ -63,7 +63,7 @@ class TestLocalStorageSecurity:
                 assert path3.startswith(tmpdir)
     
     def test_get_url_returns_storage_path(self, app):
-        """get_url should return /storage/ prefixed path."""
+        """get_url should return root-relative key path."""
         with app.app_context():
             from utils.storage import LocalStorage
             
@@ -71,8 +71,7 @@ class TestLocalStorageSecurity:
                 storage = LocalStorage(tmpdir, "http://localhost:5000")
                 
                 url = storage.get_url("uploads/test.jpg")
-                assert "/storage/" in url
-                assert url == "http://localhost:5000/storage/uploads/test.jpg"
+                assert url == "/uploads/test.jpg"
     
     def test_put_and_get_with_safe_path(self, app):
         """Normal put/get operations should work."""

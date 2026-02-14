@@ -6,6 +6,7 @@ and database session management.
 """
 import os
 import pytest
+import psycopg2
 from werkzeug.security import generate_password_hash
 
 # Set test environment before importing app
@@ -16,6 +17,83 @@ os.environ['STRIPE_SECRET_KEY'] = 'sk_test_mock'
 os.environ['PUBLIC_BASE_URL'] = 'http://localhost:8080'
 os.environ['STORAGE_BACKEND'] = 'local'
 
+TEST_RUN_ADVISORY_LOCK_KEY = 972413
+
+
+@pytest.fixture(scope='session', autouse=True)
+def single_test_runner_lock():
+    """
+    Prevent concurrent pytest sessions against the same DB.
+    Concurrent runs are the main source of apparent "stalls" due to lock contention.
+    """
+    db_url = os.environ.get('DATABASE_URL')
+    if not db_url:
+        yield
+        return
+
+    conn = psycopg2.connect(db_url)
+    conn.autocommit = True
+    cur = conn.cursor()
+    cur.execute("SELECT pg_try_advisory_lock(%s)", (TEST_RUN_ADVISORY_LOCK_KEY,))
+    locked = bool(cur.fetchone()[0])
+    if not locked:
+        cur.close()
+        conn.close()
+        pytest.exit(
+            "Another pytest process is already using this database. "
+            "Stop the existing run before starting a new one.",
+            returncode=2
+        )
+
+    try:
+        yield
+    finally:
+        try:
+            cur.execute("SELECT pg_advisory_unlock(%s)", (TEST_RUN_ADVISORY_LOCK_KEY,))
+        finally:
+            cur.close()
+            conn.close()
+
+
+def _truncate_all_tables(db):
+    """
+    Truncate all public tables except Alembic metadata.
+    This guarantees test isolation even when tests call commit().
+    """
+    # Defensive cleanup: interrupted runs can leave idle-in-transaction sessions
+    # that block TRUNCATE via lingering relation locks.
+    db.execute(
+        """
+        SELECT pg_terminate_backend(pid)
+        FROM pg_stat_activity
+        WHERE datname = current_database()
+          AND pid <> pg_backend_pid()
+          AND state = 'idle in transaction'
+        """
+    )
+    db.commit()
+
+    # Ensure we fail fast on lock issues instead of hanging for minutes.
+    db.execute("SET lock_timeout = '5s'")
+
+    rows = db.execute(
+        """
+        SELECT tablename
+        FROM pg_tables
+        WHERE schemaname = 'public'
+          AND tablename <> 'alembic_version'
+        ORDER BY tablename
+        """
+    ).fetchall()
+
+    tables = [r['tablename'] for r in rows]
+    if not tables:
+        return
+
+    quoted = ", ".join(f'"{t}"' for t in tables)
+    db.execute(f"TRUNCATE TABLE {quoted} RESTART IDENTITY CASCADE")
+    db.commit()
+
 
 @pytest.fixture(scope='session')
 def app():
@@ -25,6 +103,14 @@ def app():
     flask_app.config['WTF_CSRF_ENABLED'] = False
     flask_app.config['SERVER_NAME'] = 'localhost:8080'
     return flask_app
+
+
+@pytest.fixture(scope='function', autouse=True)
+def clean_database(app):
+    """Hard reset DB before each test for isolation."""
+    from database import get_db
+    with app.app_context():
+        _truncate_all_tables(get_db())
 
 
 @pytest.fixture(scope='function')
@@ -40,7 +126,10 @@ def db_session(app):
     with app.app_context():
         conn = get_db()
         yield conn
-        conn.rollback()
+        try:
+            conn.rollback()
+        except Exception:
+            pass
 
 
 @pytest.fixture(scope='function')
@@ -90,7 +179,7 @@ def auth(client, db):
                 self._db.commit()
             return self._client.post('/login', data={
                 'email': email, 'password': password
-            }, follow_redirects=True)
+            }, follow_redirects=False)
 
     return AuthActions(client, db)
 

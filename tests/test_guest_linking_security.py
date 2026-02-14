@@ -27,15 +27,15 @@ def test_guest_linking_security(client, app):
         attacker_email = "victim@example.com" # Attacker registers as victim
         guest_token = "secure_token_123"
         
-        db.execute(
-            "INSERT INTO orders (guest_email, guest_token, status, order_type) VALUES (%s, %s, %s, 'pending', 'sign')",
-            ("req_victim", victim_email, guest_token)
-        )
+        order_id = db.execute(
+            "INSERT INTO orders (guest_email, guest_token, status, order_type) VALUES (%s, %s, 'pending_payment', 'sign') RETURNING id",
+            (victim_email, guest_token)
+        ).fetchone()['id']
         db.commit()
         
         # 2. Attacker registers with NO guest_token in session
         # Should NOT link order
-        res = client.post("/auth/register", data={
+        res = client.post("/register", data={
             "full_name": "Attacker",
             "email": attacker_email,
             "password": "password123",
@@ -49,22 +49,38 @@ def test_guest_linking_security(client, app):
         user_id = user['id']
         
         # Check order ownership
-        order = db.execute("SELECT user_id FROM orders WHERE request_id = 'req_victim'").fetchone()
+        order = db.execute("SELECT user_id FROM orders WHERE id = %s", (order_id,)).fetchone()
         # Should still be NULL
         assert order['user_id'] is None, "Order was linked without guest_token!"
-        
-        # 3. Legitimate user logs in WITH guest_token
+
+        # 3. Positive case: registration WITH a matching token should link.
+        # Use a second email to avoid duplicate-user registration edge cases.
+        legit_email = "legit@example.com"
+        legit_token = "secure_token_456"
+        linked_order_id = db.execute(
+            "INSERT INTO orders (guest_email, guest_token, status, order_type) VALUES (%s, %s, 'pending_payment', 'sign') RETURNING id",
+            (legit_email, legit_token)
+        ).fetchone()['id']
+        db.commit()
+
+        client.get("/logout", follow_redirects=False)
         with client.session_transaction() as sess:
-            sess['guest_token'] = guest_token
-            
-        res = client.post("/auth/login", data={
-            "email": attacker_email,
-            "password": "password123"
+            sess['guest_token'] = legit_token
+
+        res = client.post("/register", data={
+            "full_name": "Legit User",
+            "email": legit_email,
+            "password": "password123",
+            "brokerage": "GoodGuys",
+            "phone": "555-1111"
         }, follow_redirects=True)
-        
-        # Check order ownership again
-        order = db.execute("SELECT user_id FROM orders WHERE request_id = 'req_victim'").fetchone()
-        assert order['user_id'] == user_id, "Order should have been linked with matching token"
+        assert res.status_code == 200
+
+        legit_user = db.execute("SELECT id FROM users WHERE email = %s", (legit_email,)).fetchone()
+        assert legit_user is not None
+
+        linked_order = db.execute("SELECT user_id FROM orders WHERE id = %s", (linked_order_id,)).fetchone()
+        assert linked_order['user_id'] == legit_user['id'], "Order should have been linked with matching token"
 
     def test_guest_tokens_list_linking(self, client, app):
          """Test linking when using the list of tokens (multiple queued orders)."""

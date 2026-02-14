@@ -6,6 +6,12 @@ from routes.webhook import handle_payment_checkout
 from services.smart_signs import SmartSignsService
 from database import get_db
 
+
+def _force_login(client, user_id):
+    with client.session_transaction() as sess:
+        sess['_user_id'] = str(user_id)
+        sess['_fresh'] = True
+
 @pytest.fixture
 def mock_stripe_session():
     return {
@@ -91,52 +97,38 @@ def test_webhook_idempotency_activation(client, app, db, auth, mock_stripe_sessi
     mock_stripe_session['metadata']['property_id'] = str(prop_id)
     mock_stripe_session['metadata']['user_id'] = str(user.id)
 
-    # 3. Simulate Webhook 1st Call
-    with patch('stripe.checkout.Session.retrieve', return_value=mock_stripe_session):
-        # Mock fulfill_order to avoid actual print job logic/errors for this specific test
-        # We assume fulfill_order works (tested elsewhere)
-        with patch('routes.webhook.fulfill_order', return_value=True) as mock_fulfill:
-            handle_payment_checkout(db, mock_stripe_session)
-            
-            # Check Activation
-            updated_asset = db.execute("SELECT activated_at FROM sign_assets WHERE id=%s", (asset_id,)).fetchone()
-            assert updated_asset['activated_at'] is not None
-            first_activation = updated_asset['activated_at']
-            
-            # Check Print Job calls (Mocked)
-            assert mock_fulfill.call_count == 1
-            
-            # Check Property Unlocked
-            prop = db.execute("SELECT expires_at FROM properties WHERE id=%s", (prop_id,)).fetchone()
-            assert prop['expires_at'] is None
+    # 3. Simulate Webhook calls
+    with patch('services.async_jobs.enqueue', return_value='job_test') as mock_enqueue:
+        handle_payment_checkout(db, mock_stripe_session)
 
-            # 4. Simulate Webhook 2nd Call (Idempotency)
-            handle_payment_checkout(db, mock_stripe_session)
-            
-            updated_asset_2 = db.execute("SELECT activated_at FROM sign_assets WHERE id=%s", (asset_id,)).fetchone()
-            assert updated_asset_2['activated_at'] == first_activation # Should be exact same timestamp
-            
-            # Verify Mock was NOT called again
-            # Logic: webhook checks DB for existing print job.
-            # But wait, we Mocked `fulfill_order`, we didn't mock the DB check `SELECT job_id FROM print_jobs`
-            # The code checks DB *before* calling fulfill_order.
-            # If `fulfill_order` was mocked, it returned True, but DB wasn't updated with a job row (unless logic does it?)
-            # `fulfill_order` normally creates the job row. 
-            # So if we mocked it, the DB check will return None, and it WILL call fulfill_order again.
-            
-            # To test idempotency properly without full integration, we need to insert the job row manually
-            # to simulate what `fulfill_order` would have done.
-            # MUST provide PK (idempotency_key) and job_id as they are NOT NULL.
-            # Explicitly provide defaults to avoid NotNullViolation if server defaults missing
-            db.execute("""
-                INSERT INTO print_jobs (idempotency_key, job_id, order_id, status, attempts, updated_at) 
-                VALUES (%s, %s, %s, 'queued', 0, CURRENT_TIMESTAMP)
-            """, (f"chk_{order_id}", f"test_job_{order_id}", order_id))
-            db.commit()
-            
-            mock_fulfill.reset_mock()
-            handle_payment_checkout(db, mock_stripe_session)
-            assert mock_fulfill.call_count == 0  # Should skip because job exists
+        # Check Activation
+        updated_asset = db.execute("SELECT activated_at FROM sign_assets WHERE id=%s", (asset_id,)).fetchone()
+        assert updated_asset['activated_at'] is not None
+        first_activation = updated_asset['activated_at']
+
+        # Check async enqueue happened
+        assert mock_enqueue.call_count == 1
+
+        # Check Property Unlocked
+        prop = db.execute("SELECT expires_at FROM properties WHERE id=%s", (prop_id,)).fetchone()
+        assert prop['expires_at'] is None
+
+        # 4. Simulate Webhook 2nd Call (without print_jobs row, enqueue happens again)
+        handle_payment_checkout(db, mock_stripe_session)
+
+        updated_asset_2 = db.execute("SELECT activated_at FROM sign_assets WHERE id=%s", (asset_id,)).fetchone()
+        assert updated_asset_2['activated_at'] == first_activation  # idempotent activation timestamp
+        assert mock_enqueue.call_count == 2
+
+        # 5. Insert print_jobs row and verify future call is skipped
+        db.execute("""
+            INSERT INTO print_jobs (idempotency_key, job_id, order_id, status, attempts, updated_at) 
+            VALUES (%s, %s, %s, 'queued', 0, CURRENT_TIMESTAMP)
+        """, (f"chk_{order_id}", f"test_job_{order_id}", order_id))
+        db.commit()
+
+        handle_payment_checkout(db, mock_stripe_session)
+        assert mock_enqueue.call_count == 2
 
 def test_assignment_rules(client, app, db, auth):
     """Verify Assignment rules: Pro + Activated + Not Frozen."""
@@ -157,7 +149,18 @@ def test_assignment_rules(client, app, db, auth):
         SmartSignsService.assign_asset(asset_id, prop_id, user.id)
         
     # 3. Activate Manually
-    db.execute("UPDATE sign_assets SET activated_at = CURRENT_TIMESTAMP WHERE id=%s", (asset_id,))
+    activation_order_id = db.execute(
+        """
+        INSERT INTO orders (user_id, property_id, status, order_type, created_at)
+        VALUES (%s, %s, 'paid', 'smart_sign', CURRENT_TIMESTAMP)
+        RETURNING id
+        """,
+        (user.id, prop_id)
+    ).fetchone()['id']
+    db.execute(
+        "UPDATE sign_assets SET activated_at = CURRENT_TIMESTAMP, activation_order_id = %s WHERE id=%s",
+        (activation_order_id, asset_id),
+    )
     db.commit()
     
     # 4. Assign (Should Success)
@@ -174,7 +177,7 @@ def test_assignment_rules(client, app, db, auth):
 def test_smart_sign_checkout_endpoint_disabled(client, app, db, auth):
     'Legacy /orders/smart-sign/checkout is intentionally disabled; canonical flow lives under /smart-signs.'
     user = auth.login_pro()
-    client.post('/login', data={'email': user.email, 'password': 'password'}, follow_redirects=True)
+    _force_login(client, user.id)
 
     resp = client.post('/orders/smart-sign/checkout', data={'asset_id': 1, 'property_id': 1})
     assert resp.status_code == 404

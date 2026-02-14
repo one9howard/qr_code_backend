@@ -13,6 +13,11 @@ from werkzeug.security import generate_password_hash
 
 # --- Fixtures ---
 
+def _force_login(client, user_id):
+    with client.session_transaction() as sess:
+        sess['_user_id'] = str(user_id)
+        sess['_fresh'] = True
+
 @pytest.fixture
 def phase4_data(client, db):
     """Setup data for Phase 4 guardrail tests."""
@@ -59,7 +64,7 @@ def phase4_data(client, db):
 def test_free_user_cannot_create_second_property(client, db, phase4_data):
     """Free user with 1 property cannot create a second one."""
     # Login as free user
-    client.post('/login', data={'email': phase4_data['free_email'], 'password': phase4_data['password']})
+    _force_login(client, phase4_data['free_id'])
     
     # Create first property for free user
     db.execute(
@@ -87,7 +92,7 @@ def test_free_user_cannot_create_second_property(client, db, phase4_data):
 def test_pro_user_can_create_multiple_properties(client, db, phase4_data):
     """Pro user can create multiple properties without limits."""
     # Login as pro user
-    client.post('/login', data={'email': phase4_data['pro_email'], 'password': phase4_data['password']})
+    _force_login(client, phase4_data['pro_id'])
     
     # Create first property for pro user
     db.execute(
@@ -124,12 +129,36 @@ def _create_test_asset(db, user_id, activated=True, frozen=False, property_id=No
     """Helper to create a test sign asset."""
     import secrets
     code = secrets.token_urlsafe(9)[:12]
-    
-    db.execute(
-        """INSERT INTO sign_assets (user_id, code, active_property_id, is_frozen, activated_at) 
-           VALUES (%s, %s, %s, %s, %s) RETURNING id""",
-        (user_id, code, property_id, frozen, 'now()' if activated else None)
-    )
+
+    activation_order_id = None
+    activated_at_sql = "NULL"
+    params = [user_id, code, property_id, frozen]
+    if activated:
+        order = db.execute(
+            """
+            INSERT INTO orders (user_id, property_id, status, order_type, created_at)
+            VALUES (%s, %s, 'paid', 'smart_sign', CURRENT_TIMESTAMP)
+            RETURNING id
+            """,
+            (user_id, property_id)
+        ).fetchone()
+        activation_order_id = order['id']
+        activated_at_sql = "CURRENT_TIMESTAMP"
+        params.append(activation_order_id)
+
+    if activated:
+        db.execute(
+            f"""INSERT INTO sign_assets (user_id, code, active_property_id, is_frozen, activated_at, activation_order_id)
+               VALUES (%s, %s, %s, %s, {activated_at_sql}, %s) RETURNING id""",
+            tuple(params)
+        )
+    else:
+        db.execute(
+            """INSERT INTO sign_assets (user_id, code, active_property_id, is_frozen, activated_at)
+               VALUES (%s, %s, %s, %s, NULL) RETURNING id""",
+            tuple(params)
+        )
+
     asset = db.execute("SELECT * FROM sign_assets WHERE code = %s", (code,)).fetchone()
     db.commit()
     return asset
@@ -149,7 +178,7 @@ def test_reassign_requires_pro(app, client, db, phase4_data):
     db.commit()
     
     # Login as free user
-    client.post('/login', data={'email': phase4_data['free_email'], 'password': phase4_data['password']})
+    _force_login(client, phase4_data['free_id'])
     
     # Attempt to assign
     resp = client.post(f'/dashboard/smart-signs/{asset["id"]}/assign', data={'property_id': str(prop['id'])})
@@ -176,7 +205,7 @@ def test_reassign_requires_activated(app, client, db, phase4_data):
     db.commit()
     
     # Login as pro user
-    client.post('/login', data={'email': phase4_data['pro_email'], 'password': phase4_data['password']})
+    _force_login(client, phase4_data['pro_id'])
     
     # Attempt to assign
     resp = client.post(f'/dashboard/smart-signs/{asset["id"]}/assign', data={'property_id': str(prop['id'])})
@@ -203,7 +232,7 @@ def test_reassign_blocked_when_frozen(app, client, db, phase4_data):
     db.commit()
     
     # Login as pro user
-    client.post('/login', data={'email': phase4_data['pro_email'], 'password': phase4_data['password']})
+    _force_login(client, phase4_data['pro_id'])
     
     # Attempt to assign
     resp = client.post(f'/dashboard/smart-signs/{asset["id"]}/assign', data={'property_id': str(prop['id'])})
@@ -221,7 +250,7 @@ def test_reassign_blocked_when_frozen(app, client, db, phase4_data):
 def test_listing_kit_returns_reason_code(client, db, phase4_data):
     """Non-Pro user gets payment_required response with reason code."""
     # Login as free user
-    client.post('/login', data={'email': phase4_data['free_email'], 'password': phase4_data['password']})
+    _force_login(client, phase4_data['free_id'])
     
     # Create a property for free user
     db.execute(

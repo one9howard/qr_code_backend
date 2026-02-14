@@ -5,10 +5,18 @@ from database import get_db
 class TestSmartSigns:
     
     def _create_active_asset(self, db, user_id, label="Test Asset"):
-        # Helper to bypass purchase flow for tests
+        # Helper to activate via a real paid order reference (activation_order_id required).
         asset = SmartSignsService.create_asset_for_purchase(user_id, None, label)
-        db.execute("UPDATE sign_assets SET activated_at=now(), is_frozen=false WHERE id=%s", (asset['id'],))
+        activation_order_id = db.execute(
+            """
+            INSERT INTO orders (user_id, status, order_type, paid_at, print_product, amount_total_cents, currency)
+            VALUES (%s, 'paid', 'smart_sign', NOW(), 'smart_sign', 0, 'usd')
+            RETURNING id
+            """,
+            (user_id,)
+        ).fetchone()['id']
         db.commit()
+        SmartSignsService.activate_asset(asset['id'], activation_order_id)
         return db.execute("SELECT * FROM sign_assets WHERE id=%s", (asset['id'],)).fetchone()
 
     def test_pro_create_asset_via_purchase_flow(self, app, db, client):

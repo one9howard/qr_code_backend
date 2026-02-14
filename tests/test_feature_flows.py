@@ -57,12 +57,14 @@ def test_lead_lifecycle(client, db, feature_data):
     assert lead['status'] == 'new'
     lead_id = lead['id']
 
-    # Login as owner
-    login_resp = client.post("/login", data={
-        "email": feature_data['email'],
-        "password": feature_data['password']
-    }, follow_redirects=True)
-    assert login_resp.status_code == 200
+    # Authenticate as owner while bypassing limiter noise in full-suite runs.
+    with patch('routes.auth.get_limiter', return_value=None):
+        login_resp = client.post("/login", data={
+            "email": feature_data['email'],
+            "password": feature_data['password']
+        }, follow_redirects=False)
+    assert login_resp.status_code == 302
+    assert "/dashboard" in (login_resp.location or "")
 
     # 2. Add Note (lead_management.add_note returns redirect)
     response = client.post(f"/api/leads/{lead_id}/notes", data={"body": "Test Note"})

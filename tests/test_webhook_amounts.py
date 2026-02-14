@@ -40,8 +40,8 @@ def test_webhook_captures_totals(db):
     }
     
     # 3. Call handler with patch
-    # Patching 'routes.webhook.fulfill_order' because that is where it is imported/used
-    with patch('routes.webhook.fulfill_order', return_value=True) as mock_fulfill:
+    # process_paid_order enqueues async work; patch enqueue to keep test hermetic.
+    with patch('services.async_jobs.enqueue', return_value='job_test'):
         handle_payment_checkout(db, session)
         
     # 4. Verify DB Update
