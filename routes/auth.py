@@ -10,6 +10,7 @@ import random
 from datetime import datetime, timedelta
 from services.notifications import send_verification_email
 from config import IS_PRODUCTION, IS_STAGING
+from utils.agent_identity import normalize_agent_email, get_agent_by_normalized_email, claim_agent_for_verified_user
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -62,7 +63,7 @@ def register():
     
     if request.method == "POST":
         full_name = request.form.get("full_name", "").strip()
-        email = request.form.get("email", "").strip().lower()
+        email = normalize_agent_email(request.form.get("email", ""))
         password = request.form.get("password")
 
         if not full_name or not email or not password:
@@ -72,7 +73,7 @@ def register():
         db = get_db()
 
         user = db.execute(
-            "SELECT id FROM users WHERE email = %s", (email,)
+            "SELECT id FROM users WHERE lower(email) = %s LIMIT 1", (email,)
         ).fetchone()
 
         if user:
@@ -124,10 +125,51 @@ def register():
                 except Exception as e:
                     current_app.logger.error(f"Registration Logo Error: {e}")
 
-        db.execute(
-            "INSERT INTO agents (user_id, name, email, brokerage, phone, photo_filename, logo_filename) VALUES (%s, %s, %s, %s, %s, %s, %s)",
-            (user_id, full_name, email, brokerage, phone, headshot_key, logo_key)
-        )
+        # Maintain a single agent identity per email.
+        # Registration seeds or updates an UNCLAIMED profile; claim happens only in verified flow.
+        existing_agent = get_agent_by_normalized_email(db, email)
+        if existing_agent and existing_agent["user_id"] is not None and int(existing_agent["user_id"]) != int(user_id):
+            db.rollback()
+            flash(
+                "An agent profile already exists for this email and is claimed by another account. "
+                "Please contact support.",
+                "error",
+            )
+            return redirect(url_for("auth.register", next=next_url))
+
+        if existing_agent:
+            db.execute(
+                """
+                UPDATE agents
+                SET
+                    email = %s,
+                    name = %s,
+                    brokerage = CASE WHEN %s <> '' THEN %s ELSE brokerage END,
+                    phone = CASE WHEN %s <> '' THEN %s ELSE phone END,
+                    photo_filename = COALESCE(%s, photo_filename),
+                    logo_filename = COALESCE(%s, logo_filename)
+                WHERE id = %s
+                """,
+                (
+                    email,
+                    full_name,
+                    brokerage,
+                    brokerage,
+                    phone,
+                    phone,
+                    headshot_key,
+                    logo_key,
+                    existing_agent["id"],
+                ),
+            )
+        else:
+            db.execute(
+                """
+                INSERT INTO agents (user_id, name, email, brokerage, phone, photo_filename, logo_filename)
+                VALUES (NULL, %s, %s, %s, %s, %s, %s)
+                """,
+                (full_name, email, brokerage, phone, headshot_key, logo_key),
+            )
 
         # Link Guest Orders (Securely)
         # Only link if email matches AND guest_token matches session (if present)
@@ -164,9 +206,6 @@ def register():
             # OPTIONAL: If no guest_token, do we rely on email? 
             pass
 
-        # [SECURITY] Do NOT link agents here. Wait for verification.
-        # db.execute("UPDATE agents SET user_id = %s WHERE lower(email) = lower(%s) AND user_id IS NULL", (user_id, email))
-        
         # Send verification email before commit so we can atomically fail in secure stages.
         email_sent = send_verification_email(email, ver_code)
         if (not email_sent) and _is_secure_stage():
@@ -214,10 +253,10 @@ def login():
     next_url = request.args.get('next') or request.form.get('next')
 
     if request.method == "POST":
-        email = request.form["email"]
+        email = normalize_agent_email(request.form.get("email"))
         password = request.form["password"]
         db = get_db()
-        user = db.execute("SELECT * FROM users WHERE email = %s", (email,)).fetchone()
+        user = db.execute("SELECT * FROM users WHERE lower(email) = %s LIMIT 1", (email,)).fetchone()
         
         if user and check_password_hash(user['password_hash'], password):
             user_obj = User(
@@ -259,10 +298,17 @@ def login():
             # We must only link if user.is_verified is True.
             
             if user_obj.is_verified:
-                db.execute(
-                     "UPDATE agents SET user_id = %s WHERE lower(email) = lower(%s) AND user_id IS NULL",
-                     (user['id'], email)
-                )
+                try:
+                    claim_agent_for_verified_user(
+                        db,
+                        user_obj.id,
+                        user_obj.email,
+                        default_name=dict(user).get("full_name"),
+                    )
+                except PermissionError as e:
+                    db.rollback()
+                    flash(str(e), "error")
+                    return redirect(url_for("auth.login", next=next_url))
             db.commit()
             
             login_user(user_obj)
@@ -321,14 +367,19 @@ def verify_email():
             flash("Verification code expired. Please request a new one.", "error")
             return redirect(url_for("auth.verify_email"))
             
-        # Success
+        # Success: verify user, then claim matching agent identity in one transaction.
         db.execute("UPDATE users SET is_verified = %s, verification_code = NULL WHERE id = %s", (True, current_user.id))
-        
-        # [SECURITY] Link agents NOW that user is verified
-        db.execute(
-             "UPDATE agents SET user_id = %s WHERE lower(email) = lower(%s) AND user_id IS NULL",
-             (current_user.id, current_user.email)
-        )
+        try:
+            claim_agent_for_verified_user(
+                db,
+                current_user.id,
+                current_user.email,
+                default_name=dict(user_row).get("full_name"),
+            )
+        except PermissionError as e:
+            db.rollback()
+            flash(str(e), "error")
+            return redirect(url_for("auth.verify_email"))
         
         db.commit()
         

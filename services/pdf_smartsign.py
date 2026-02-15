@@ -8,6 +8,7 @@ from reportlab.lib.utils import ImageReader
 from reportlab.lib.colors import HexColor
 import io
 import os
+import logging
 from constants import SIGN_SIZES, DEFAULT_SIGN_SIZE
 from utils.pdf_generator import draw_qr
 from utils.storage import get_storage
@@ -15,6 +16,8 @@ from config import BASE_URL, PUBLIC_BASE_URL
 from services.print_catalog import BANNER_COLOR_PALETTE
 import services.printing.layout_utils as lu
 import urllib.parse
+
+logger = logging.getLogger(__name__)
 
 # Preset CTA texts (Benefit Driven Check)
 CTA_MAP = {
@@ -238,9 +241,11 @@ COLORS = {
 def _read(asset, key, default=None):
     if asset is None:
         return default
-    try: return asset[key]
-    except: pass
-    if isinstance(asset, dict): return asset.get(key, default)
+    try:
+        return asset[key]
+    except Exception:
+        if isinstance(asset, dict):
+            return asset.get(key, default)
     return getattr(asset, key, default)
 
 def hex_to_rgb(hex_color: str) -> tuple:
@@ -513,7 +518,8 @@ def _draw_modern_round(c, l, asset, user_id, base_url):
             img = ImageReader(img_data)
             c.drawImage(img, center_x - head_d/2, badge_y_center - head_d/2, width=head_d, height=head_d, mask='auto', preserveAspectRatio=True)
             c.restoreState()
-        except: pass
+        except Exception as e:
+            logger.warning("[SmartSignPDF] Headshot render failed for key=%s: %s", head_key, e)
         
     # 5. Header Text (Top)
     # "SCAN ME" or CTA
@@ -706,7 +712,7 @@ def _draw_elegant_serif(c, l, asset, user_id, base_url):
             c.setLineWidth(1)
             c.circle(center_x, head_y, head_dia/2, stroke=1, fill=0)
         except Exception as e:
-            pass
+            logger.warning("[SmartSignPDF] Circular headshot render failed for key=%s: %s", head_key, e)
 
     # Agent Name
     name_text = _read(asset, 'agent_name') or "Agent Name"
@@ -1094,7 +1100,8 @@ def _draw_smart_v2_vertical_banner(c, l, asset, user_id, base_url):
             c.setStrokeColor(HexColor('#C5A065')) # Bronze-ish
             c.setLineWidth(3)
             c.circle(content_center_x, head_y_center, head_d/2, stroke=1, fill=0)
-        except:
+        except Exception as e:
+            logger.warning("[SmartSignPDF] Vertical banner headshot render failed for key=%s: %s", head_key, e)
             # Fallback circle
             c.setFillColor(HexColor('#333'))
             c.circle(content_center_x, head_y_center, head_d/2, fill=1, stroke=0)
@@ -1195,7 +1202,8 @@ def _draw_smart_v2_vertical_banner(c, l, asset, user_id, base_url):
                  draw_h = max_h
                  
              c.drawImage(l_img, content_center_x - draw_w/2, footer_y, width=draw_w, height=draw_h, mask='auto', preserveAspectRatio=True)
-        except: pass
+        except Exception as e:
+            logger.warning("[SmartSignPDF] Vertical banner logo render failed for key=%s: %s", logo_key, e)
 
 def format_phone_local(raw):
     # Quick inline formatter if layout_utils isn't available

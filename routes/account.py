@@ -7,6 +7,7 @@ from database import get_db
 from models import User
 from config import AGENT_PHOTOS_KEY_PREFIX
 from utils.uploads import save_image_upload
+from utils.agent_identity import normalize_agent_email, get_agent_by_normalized_email, claim_agent_for_verified_user
 
 account_bp = Blueprint("account", __name__)
 
@@ -83,14 +84,43 @@ def _handle_profile_update(db, agent):
                 (name, phone, brokerage, photo_key, scheduling_url, agent['id'])
             )
         else:
-            # Create new agent record if none exists for this user
-            db.execute(
-                """
-                INSERT INTO agents (user_id, email, name, phone, brokerage, photo_filename, scheduling_url)
-                VALUES (%s, %s, %s, %s, %s, %s, %s)
-                """,
-                (current_user.id, current_user.email, name, phone, brokerage, photo_key, scheduling_url)
-            )
+            email_norm = normalize_agent_email(current_user.email)
+            if bool(getattr(current_user, "is_verified", False)):
+                claim = claim_agent_for_verified_user(
+                    db,
+                    current_user.id,
+                    email_norm,
+                    default_name=name,
+                )
+                db.execute(
+                    """
+                    UPDATE agents
+                    SET name = %s, phone = %s, brokerage = %s, photo_filename = %s, scheduling_url = %s, email = %s
+                    WHERE id = %s
+                    """,
+                    (name, phone, brokerage, photo_key, scheduling_url, email_norm, claim["agent_id"]),
+                )
+            else:
+                existing = get_agent_by_normalized_email(db, email_norm)
+                if existing and existing["user_id"] is not None and int(existing["user_id"]) != int(current_user.id):
+                    raise PermissionError("This agent email is already claimed by another account.")
+                if existing:
+                    db.execute(
+                        """
+                        UPDATE agents
+                        SET name = %s, phone = %s, brokerage = %s, photo_filename = %s, scheduling_url = %s, email = %s
+                        WHERE id = %s
+                        """,
+                        (name, phone, brokerage, photo_key, scheduling_url, email_norm, existing["id"]),
+                    )
+                else:
+                    db.execute(
+                        """
+                        INSERT INTO agents (user_id, email, name, phone, brokerage, photo_filename, scheduling_url)
+                        VALUES (NULL, %s, %s, %s, %s, %s, NULL)
+                        """,
+                        (email_norm, name, phone, brokerage, photo_key),
+                    )
         
         db.commit()
         flash("Profile updated successfully.", "success")

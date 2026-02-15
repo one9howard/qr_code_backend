@@ -660,7 +660,8 @@ def _draw_brand_layout(c, layout, address, beds, baths, sqft, price,
             c.drawImage(img, logo_x, logo_y, width=logo_size, height=logo_size, preserveAspectRatio=True, mask='auto', anchorAtXY=True)
             cursor_y -= (logo_size + layout.margin * 0.5)
             has_logo = True
-        except: pass
+        except Exception as e:
+            logger.warning("[PDF] Failed to draw logo_key=%s in centered logo layout: %s", logo_key, e)
         
     if not has_logo:
         # Fallback text
@@ -696,7 +697,9 @@ def _draw_brand_layout(c, layout, address, beds, baths, sqft, price,
         
     try:
         draw_qr(c, qr_url, qr_x, qr_y, qr_size, user_id=user_id)
-    except: pass
+    except Exception as e:
+        logger.exception("[PDF] Failed to draw QR in agent-brand layout: %s", e)
+        raise RuntimeError("QR rendering failed in agent-brand layout.") from e
 
     # 6. Agent Info (In Footer, White Text)
     c.setFillColorRGB(1, 1, 1)
@@ -751,7 +754,9 @@ def _draw_landscape_minimal(c, layout, address, beds, baths, sqft, price,
         c.setFont("Helvetica-Bold", layout.features_font * 0.8)
         c.setFillColorRGB(*COLOR_TEXT)
         c.drawCentredString(qr_x + qr_size/2, qr_y - (layout.features_font * 1.5), "SCAN FOR PHOTOS")
-    except: pass
+    except Exception as e:
+        logger.exception("[PDF] Failed to draw QR in landscape-minimal layout: %s", e)
+        raise RuntimeError("QR rendering failed in landscape-minimal layout.") from e
     
     # Right Block: Info (starts at 45%)
     right_x = layout.width * 0.45
@@ -835,7 +840,8 @@ def _draw_landscape_brand(c, layout, address, beds, baths, sqft, price,
             img = ImageReader(logo_data)
             c.drawImage(img, logo_x, logo_y, width=logo_size, height=logo_size, preserveAspectRatio=True, mask='auto', anchorAtXY=True)
             has_logo = True
-        except: pass
+        except Exception as e:
+            logger.warning("[PDF] Failed to draw logo_key=%s in brand sidebar layout: %s", logo_key, e)
         
     if not has_logo:
         # Text fallback
@@ -894,7 +900,9 @@ def _draw_landscape_brand(c, layout, address, beds, baths, sqft, price,
         c.setFillColorRGB(*COLOR_TEXT)
         c.setFont("Helvetica-Bold", layout.features_font)
         c.drawCentredString(qr_x + qr_size/2, qr_y - (layout.features_font * 1.2), "SCAN FOR PHOTOS")
-    except: pass
+    except Exception as e:
+        logger.exception("[PDF] Failed to draw QR in landscape-brand layout: %s", e)
+        raise RuntimeError("QR rendering failed in landscape-brand layout.") from e
 
 
 def _draw_modern_round_layout(

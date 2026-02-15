@@ -1,5 +1,51 @@
 # CHANGELOG_FIXES
 
+## 2026-02-14 Agent Identity + Output Integrity Patch
+
+- `migrations/versions/043_enforce_unique_agent_email_ci.py`
+  - Added a case-insensitive uniqueness guard for `agents.email` via `UNIQUE INDEX uq_agents_email_ci ON lower(email)`.
+  - Canonicalizes existing emails with `lower(trim(email))`.
+  - Detects duplicates before adding the index and fails with a clear admin remediation SQL snippet (no silent data deletion).
+
+- `utils/agent_identity.py`
+  - Added shared agent identity helpers:
+    - email normalization (`strip + lower`)
+    - deterministic lookup by normalized email
+    - explicit verified-claim flow that prevents cross-user reassignment.
+
+- `routes/auth.py`
+  - Registration now uses normalized, case-insensitive email checks.
+  - Replaced blind `INSERT INTO agents` with deterministic lookup/create/update logic.
+  - Prevents duplicate/hostile reassignment when an agent row is already claimed by a different user.
+  - Verify/login claim behavior now routes through shared verified claim helper.
+
+- `routes/agent.py`
+  - Submit flow now resolves agent identity deterministically by normalized email.
+  - Blocks reassignment if email is already claimed by another user.
+  - Preserves unclaimed records without creating duplicate agent rows.
+  - Replaced silent upload failure with explicit `logger.exception(...)`.
+
+- `routes/account.py`
+  - Replaced implicit direct linking with explicit verified claim helper.
+  - Avoids creating claimed duplicates when agent identity already exists.
+
+- `routes/dashboard.py`
+  - Property creation path now uses explicit claim behavior and normalized identity lookup to avoid duplicate agent rows.
+
+- `services/printing/layout_utils.py`
+- `services/fulfillment.py`
+- `services/pdf_smartsign.py`
+- `utils/pdf_generator.py`
+  - Removed/limited output-integrity `except: pass` patterns in rendering/fulfillment paths.
+  - Added explicit logging (`warning/exception`) and raising behavior where broken output must fail fast.
+
+- `tests/test_agent_identity_integrity.py`
+  - Added regression coverage for:
+    - no duplicate agent row after registration
+    - no duplicate agent row after submit with same email
+    - cross-user claim conflict is rejected
+    - case-insensitive email maps to a single agent identity.
+
 - `RELEASE_MANIFEST.json`
   - Added explicit release allowlist (`files`, `dirs`, `exclude_paths`, `optional_top_level`) used as source-of-truth for packaging/validation.
 

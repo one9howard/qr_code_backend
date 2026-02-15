@@ -11,6 +11,7 @@ from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.lib.utils import ImageReader
 from reportlab.lib.colors import HexColor
+import logging
 
 # 1. Font Registration
 FONTS_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "static", "fonts")
@@ -248,7 +249,8 @@ def draw_identity_block(c, x, y, w, h, asset, storage, theme='dark', cta_text=No
             c.setLineWidth(1)
             c.circle(head_x + head_size/2, head_y + head_size/2, head_size/2, stroke=1, fill=0)
             
-        except Exception: pass
+        except Exception as e:
+            logging.getLogger(__name__).warning("[IdentityBlock] Headshot render failed: %s", e)
 
     if not has_head:
         # Initials Fallback
@@ -310,7 +312,8 @@ def draw_identity_block(c, x, y, w, h, asset, storage, theme='dark', cta_text=No
              # Right Align
              c.drawImage(l_img, right_margin - draw_w, head_y + (safe_h - draw_h)/2, width=draw_w, height=draw_h, mask='auto')
              drawn_logo = True
-        except: pass
+        except Exception as e:
+            logging.getLogger(__name__).warning("[IdentityBlock] Logo render failed: %s", e)
         
     if not drawn_logo:
         # Brokerage Text Fallback

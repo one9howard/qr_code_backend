@@ -259,26 +259,33 @@ def _generate_smartsign_pdf(db, order, storage):
     # Merge payload into asset only when DB fields are missing.
     # This supports orders created before migration or if DB load failed to capture fields.
     if not asset.get('agent_name'):
-         payload = order.get('design_payload') or {}
-         if isinstance(payload, str):
-             import json
-             try: payload = json.loads(payload)
-             except: payload = {}
-             
-         if payload.get('agent_name'):
-             asset['agent_name'] = payload.get('agent_name')
-         if payload.get('agent_phone'):
-             asset['agent_phone'] = payload.get('agent_phone')
-         
-         # Also merge license fields if missing
-         if not asset.get('state') and payload.get('state'):
-              asset['state'] = payload.get('state')
-         if not asset.get('license_number') and payload.get('license_number'):
-              asset['license_number'] = payload.get('license_number')
-         if not asset.get('show_license_option') and payload.get('show_license_option'):
-              asset['show_license_option'] = payload.get('show_license_option')
-         if not asset.get('license_label_override') and payload.get('license_label_override'):
-              asset['license_label_override'] = payload.get('license_label_override')
+        payload = order.get('design_payload') or {}
+        if isinstance(payload, str):
+            import json
+            try:
+                payload = json.loads(payload)
+            except Exception as e:
+                logger.warning(
+                    "[Fulfillment] Could not parse design_payload JSON for order %s: %s",
+                    order_id,
+                    e,
+                )
+                payload = {}
+        
+        if payload.get('agent_name'):
+            asset['agent_name'] = payload.get('agent_name')
+        if payload.get('agent_phone'):
+            asset['agent_phone'] = payload.get('agent_phone')
+        
+        # Also merge license fields if missing
+        if not asset.get('state') and payload.get('state'):
+            asset['state'] = payload.get('state')
+        if not asset.get('license_number') and payload.get('license_number'):
+            asset['license_number'] = payload.get('license_number')
+        if not asset.get('show_license_option') and payload.get('show_license_option'):
+            asset['show_license_option'] = payload.get('show_license_option')
+        if not asset.get('license_label_override') and payload.get('license_label_override'):
+            asset['license_label_override'] = payload.get('license_label_override')
     
     
     # generate_smartsign_pdf returns storage key
@@ -358,7 +365,12 @@ def _build_shipping_data(db, order):
             import json
             try:
                 shipping_payload = json.loads(shipping_payload)
-            except: pass
+            except Exception as e:
+                logger.warning(
+                    "[Fulfillment] Could not parse shipping_address JSON for order %s: %s",
+                    order['id'],
+                    e,
+                )
             
         if isinstance(shipping_payload, dict):
             # Stripe format: { 'name': '...', 'address': { 'line1': ... } }

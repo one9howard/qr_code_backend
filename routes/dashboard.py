@@ -20,6 +20,7 @@ from services.gating import can_create_property
 from constants import PAID_STATUSES
 from datetime import datetime, timezone, timedelta
 from services.subscriptions import is_subscription_active
+from utils.agent_identity import normalize_agent_email, get_agent_by_normalized_email, claim_agent_for_verified_user
 
 dashboard_bp = Blueprint('dashboard', __name__, url_prefix='/dashboard')
 
@@ -847,14 +848,27 @@ def new_property():
         # Fetch Agent ID
         agent = db.execute("SELECT id FROM agents WHERE user_id = %s", (current_user.id,)).fetchone()
         if not agent:
-            # Create Default Agent Profile if missing (required for property)
-            cursor = db.cursor()
-            cursor.execute(
-                "INSERT INTO agents (user_id, name, email) VALUES (%s, %s, %s) RETURNING id",
-                (current_user.id, current_user.display_name, current_user.email)
-            )
-            agent_id = cursor.fetchone()['id']
-            db.commit()
+            email_norm = normalize_agent_email(current_user.email)
+            if bool(getattr(current_user, "is_verified", False)):
+                claim = claim_agent_for_verified_user(
+                    db,
+                    current_user.id,
+                    email_norm,
+                    default_name=current_user.display_name,
+                )
+                agent_id = claim["agent_id"]
+            else:
+                existing = get_agent_by_normalized_email(db, email_norm)
+                if existing:
+                    agent_id = existing["id"]
+                else:
+                    cursor = db.cursor()
+                    cursor.execute(
+                        "INSERT INTO agents (user_id, name, email, brokerage) VALUES (NULL, %s, %s, %s) RETURNING id",
+                        (current_user.display_name, email_norm, ""),
+                    )
+                    agent_id = cursor.fetchone()['id']
+                    db.commit()
         else:
             agent_id = agent['id']
             

@@ -25,6 +25,11 @@ from utils.uploads import save_image_upload
 from utils.pdf_preview import render_pdf_to_web_preview
 from utils.sign_options import normalize_sign_size, validate_sign_color
 from utils.storage import get_storage
+from utils.agent_identity import (
+    normalize_agent_email,
+    get_agent_by_normalized_email,
+    claim_agent_for_verified_user,
+)
 
 agent_bp = Blueprint("agent", __name__)
 
@@ -43,8 +48,11 @@ def submit():
 
             agent_name = request.form["agent_name"]
             brokerage = request.form["brokerage"]
-            agent_email = request.form["email"].strip().lower()
+            agent_email = normalize_agent_email(request.form.get("email"))
             agent_phone = request.form["phone"]
+            if not agent_email:
+                flash("Agent email is required.", "error")
+                return render_template("submit.html", agent_data=None), 400
 
             # URL Inputs & Validation
             from utils.urls import normalize_https_url
@@ -112,89 +120,90 @@ def submit():
                         flash(f"Logo upload error: {str(e)}", "error")
                         return render_template("submit.html", agent_data=None)
 
-            # Find existing agent
-            # Find existing agent
-            # [SECURITY] Case-insensitive lookup
-            cursor.execute("SELECT id, user_id, email, photo_filename, logo_filename FROM agents WHERE lower(email) = lower(%s)", (agent_email,))
-            agent = cursor.fetchone()
-
             snapshot_photo_key = agent_photo_key
             snapshot_logo_key = logo_key
             can_update_agent = False
             agent_id = None
 
-            if agent:
-                agent_id = agent["id"]
-                existing_user_id = agent["user_id"]
-                
-                # Check current values if no new upload
-                if not snapshot_photo_key: snapshot_photo_key = agent["photo_filename"]
-                if not snapshot_logo_key: snapshot_logo_key = agent["logo_filename"]
+            should_claim_for_verified_user = (
+                current_user.is_authenticated
+                and bool(getattr(current_user, "is_verified", False))
+                and normalize_agent_email(current_user.email) == agent_email
+            )
 
-                # [SECURITY] Ownership & Blocking Rules
-                if existing_user_id is not None:
-                     # Agent IS CLAIMED
-                     if not current_user.is_authenticated or current_user.id != existing_user_id:
-                         # HIJACK ATTEMPT or mismatch -> BLOCK
-                         flash("This agent email is already claimed by another user. Please log in as that agent to create listings.", "error")
-                         return render_template("submit.html", agent_data=None), 403
-                     else:
-                         # Owner -> Allow update
-                         can_update_agent = True
-                
-                elif current_user.is_authenticated:
-                     # Agent IS UNCLAIMED
-                     # Allow claim ONLY if Verified AND Email matches
-                     if hasattr(current_user, 'is_verified') and current_user.is_verified and current_user.email.lower() == agent_email.lower():
-                         can_update_agent = True
-                         cursor.execute("UPDATE agents SET user_id=%s WHERE id=%s", (current_user.id, agent_id))
-                     else:
-                         # Unverified or Guest or Mismatched Email -> DO NOT CLAIM
-                         # Allow creating property but do not touch agent record
-                         can_update_agent = False
-
-                if can_update_agent:
-                    updates = []
-                    params = []
-                    
-                    updates.extend(["name=%s", "brokerage=%s", "phone=%s"])
-                    params.extend([agent_name, brokerage, agent_phone])
-                    
-                    if agent_photo_key:
-                        updates.append("photo_filename=%s")
-                        params.append(agent_photo_key)
-                    if logo_key:
-                        updates.append("logo_filename=%s")
-                        params.append(logo_key)
-                    
-                    # Update scheduling link only if provided and valid (owner can always update)
-                    if scheduling_url:
-                        updates.append("scheduling_url=%s")
-                        params.append(scheduling_url)
-                    
-                    params.append(agent_id)
-                    cursor.execute(f"UPDATE agents SET {', '.join(updates)} WHERE id=%s", tuple(params))
+            if should_claim_for_verified_user:
+                # Explicit verified claim path (idempotent and guarded).
+                try:
+                    claim = claim_agent_for_verified_user(
+                        db,
+                        current_user.id,
+                        agent_email,
+                        default_name=agent_name,
+                    )
+                except PermissionError as e:
+                    flash(str(e), "error")
+                    return render_template("submit.html", agent_data=None), 403
+                agent_id = claim["agent_id"]
+                can_update_agent = True
+                agent = db.execute(
+                    "SELECT id, user_id, email, photo_filename, logo_filename FROM agents WHERE id = %s",
+                    (agent_id,),
+                ).fetchone()
             else:
-                # Create New Agent
-                # [SECURITY] Link if authenticated (Staging often unverified)
-                user_id = None
-                if current_user.is_authenticated:
-                    user_id = current_user.id
+                agent = get_agent_by_normalized_email(db, agent_email)
+                if agent:
+                    agent_id = agent["id"]
+                    existing_user_id = agent["user_id"]
 
-                # SECURITY: Do NOT persist scheduling_url for unclaimed/unverified agent rows.
-                scheduling_url_to_store = scheduling_url if user_id else None
-                    
-                cursor.execute(
-                    """
-                    INSERT INTO agents (user_id, name, brokerage, email, phone, photo_filename, logo_filename, scheduling_url)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-                    RETURNING id
-                    """,
-                    (user_id, agent_name, brokerage, agent_email, agent_phone, agent_photo_key, logo_key, scheduling_url_to_store),
-                )
-                agent_id = cursor.fetchone()['id']
-                snapshot_photo_key = agent_photo_key
-                snapshot_logo_key = logo_key
+                    # Check current values if no new upload
+                    if not snapshot_photo_key:
+                        snapshot_photo_key = agent["photo_filename"]
+                    if not snapshot_logo_key:
+                        snapshot_logo_key = agent["logo_filename"]
+
+                    # Ownership guard: claimed agent cannot be used by another user.
+                    if existing_user_id is not None:
+                        if not current_user.is_authenticated or int(current_user.id) != int(existing_user_id):
+                            flash(
+                                "This agent email is already claimed by another user. Please log in as that agent to create listings.",
+                                "error",
+                            )
+                            return render_template("submit.html", agent_data=None), 403
+                        can_update_agent = True
+                else:
+                    # Create unclaimed agent identity (claim is separate and verified-only).
+                    cursor.execute(
+                        """
+                        INSERT INTO agents (user_id, name, brokerage, email, phone, photo_filename, logo_filename, scheduling_url)
+                        VALUES (NULL, %s, %s, %s, %s, %s, %s, NULL)
+                        RETURNING id
+                        """,
+                        (agent_name, brokerage, agent_email, agent_phone, agent_photo_key, logo_key),
+                    )
+                    agent_id = cursor.fetchone()['id']
+                    snapshot_photo_key = agent_photo_key
+                    snapshot_logo_key = logo_key
+
+            if can_update_agent:
+                updates = []
+                params = []
+
+                updates.extend(["name=%s", "brokerage=%s", "phone=%s", "email=%s"])
+                params.extend([agent_name, brokerage, agent_phone, agent_email])
+
+                if agent_photo_key:
+                    updates.append("photo_filename=%s")
+                    params.append(agent_photo_key)
+                if logo_key:
+                    updates.append("logo_filename=%s")
+                    params.append(logo_key)
+
+                if scheduling_url:
+                    updates.append("scheduling_url=%s")
+                    params.append(scheduling_url)
+
+                params.append(agent_id)
+                cursor.execute(f"UPDATE agents SET {', '.join(updates)} WHERE id=%s", tuple(params))
 
             # ... [Property Creation Logic remains same] ...
 
@@ -258,7 +267,12 @@ def submit():
                             base_name = f"property_{property_id}"
                             safe_key = save_image_upload(photo, PROPERTY_PHOTOS_KEY_PREFIX, base_name, validate_image=True)
                             cursor.execute("INSERT INTO property_photos (property_id, filename) VALUES (%s, %s)", (property_id, safe_key))
-                         except: pass
+                         except Exception as e:
+                            current_app.logger.exception(
+                                "[Agent Submit] Failed to save property photo for property_id=%s: %s",
+                                property_id,
+                                e,
+                            )
 
             full_url = property_scan_url(PUBLIC_BASE_URL, qr_code)
             
