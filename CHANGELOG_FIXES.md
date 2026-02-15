@@ -1,5 +1,48 @@
 # CHANGELOG_FIXES
 
+## 2026-02-15 Test Suite Consolidation (Low-Value/Redundant Trim)
+
+- `tests/test_events_csrf_runtime.py` (deleted)
+  - Removed duplicate runtime/code-inspection coverage already present in `tests/test_events_csrf_exempt.py`.
+  - Why: redundant assertions for the same CSRF exemption behavior.
+
+- `tests/test_import.py` (deleted)
+- `tests/test_repro_500.py` (deleted)
+- `tests/test_placeholder.py` (deleted)
+  - Removed import-only/placeholder/repro overlap tests.
+  - Why: low-signal checks duplicated by stronger integration tests (`test_property_creation_flow.py`, existing route/service tests).
+
+- `tests/test_guest_security.py` (deleted)
+  - Removed weak/placeholder security checks (`status != 403`, placeholder `pass`) that were not producing actionable failures.
+  - Why: coverage already represented by stronger guest/linking and auth tests.
+
+- `tests/test_listing_kits_imports.py`
+  - Replaced `assert True` import smoke with callable entrypoint checks (`start_kit`, `download_kit`, `generate_kit`).
+  - Why: keeps import/entrypoint protection while making failures actionable.
+
+- `tests/test_agent_claiming_security.py`
+  - Removed duplicated hijack test overlapping with `tests/test_agent_identity_integrity.py` claim-conflict coverage.
+  - Why: avoid duplicate setup and assertions for same security rule.
+
+- `tests/test_printing_atomic.py`
+  - Removed duplicate PDF download test already covered in `tests/test_print_jobs.py`.
+  - Why: keep endpoint behavior coverage without duplicating essentially identical assertions.
+
+- `tests/test_onboarding_activation.py`
+  - Removed low-signal dashboard presence tests and a placeholder `pass` test.
+  - Why: retained scenario tests with concrete behavior assertions (active dashboard, first scan banner, first lead rendering).
+
+- `tests/test_strategy_alignment.py`
+  - Removed placeholder and source-inspection-only tests.
+  - Why: prefer runtime behavior tests over brittle source-string checks.
+
+- `tests/test_pro_features.py` (rewritten)
+  - Replaced broad `unittest` assertions with 3 focused pytest checks:
+    - free lead limit constant
+    - CSV export auth gate
+    - analytics rollup for unknown user
+  - Why: tighter, deterministic assertions with clearer failure modes.
+
 ## 2026-02-14 Agent Identity + Output Integrity Patch
 
 - `migrations/versions/043_enforce_unique_agent_email_ci.py`

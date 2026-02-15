@@ -1,7 +1,4 @@
 import pytest
-import os
-import io
-from unittest.mock import patch, MagicMock
 
 # --- Fixtures ---
 
@@ -95,21 +92,3 @@ def test_mark_downloaded_transition(client, db, atomic_data):
     assert resp.status_code == 200
     assert resp.json.get('note') == 'already_processed' or resp.json['success'] is True
 
-
-def test_download_pdf(client, db, atomic_data):
-    """Test PDF download endpoint."""
-    from config import PRINT_JOBS_TOKEN
-    headers = {'Authorization': f"Bearer {PRINT_JOBS_TOKEN}"}
-    job_id = atomic_data['job_id']
-
-    # Mock storage
-    with patch('routes.printing.get_storage') as mock_storage:
-        mock_backend = MagicMock()
-        mock_storage.return_value = mock_backend
-
-        mock_backend.exists.return_value = True
-        mock_backend.get_file.return_value = io.BytesIO(b'%PDF-1.4 test')
-
-        resp = client.get(f'/api/print-jobs/{job_id}/pdf', headers=headers)
-        assert resp.status_code == 200
-        assert resp.mimetype == 'application/pdf'

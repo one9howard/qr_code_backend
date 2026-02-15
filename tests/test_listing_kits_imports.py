@@ -1,13 +1,16 @@
 
 from unittest.mock import patch, MagicMock
-import pytest
 import io
 
-def test_listing_kits_import():
-    """Ensure routes and services can be imported without error."""
-    import routes.listing_kits
-    import services.listing_kits
-    assert True
+
+def test_listing_kits_entrypoints_exist():
+    """Ensure key listing-kit entrypoints remain importable/callable."""
+    import routes.listing_kits as listing_kits_routes
+    import services.listing_kits as listing_kits_service
+
+    assert callable(getattr(listing_kits_routes, "start_kit", None))
+    assert callable(getattr(listing_kits_routes, "download_kit", None))
+    assert callable(listing_kits_service.generate_kit)
 
 def test_kit_zip_builder_structure():
     """Test kit generation zip structure using mocks."""

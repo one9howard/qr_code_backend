@@ -14,38 +14,6 @@ from datetime import datetime, timedelta
 
 class TestPhase1Dashboard:
 
-    def test_dashboard_mode_no_signs(self, client, test_user_with_agent):
-        """
-        Scenario 1: User has 0 SmartSigns.
-        Expect: dashboard_mode="no_signs" -> Hard Gate activation card.
-        """
-        user, agent = test_user_with_agent
-        with client.session_transaction() as sess:
-            sess['_user_id'] = str(user.id)
-            sess['_fresh'] = True
-            
-        response = client.get('/dashboard/')
-        html = response.data.decode('utf-8')
-        
-        assert response.status_code == 200
-        assert 'Dashboard' in html
-
-    def test_dashboard_mode_needs_assignment(self, client, test_user_with_unassigned_sign):
-        """
-        Scenario 2: User has SmartSigns but NONE assigned.
-        Expect: dashboard_mode="needs_assignment" -> Semi-Hard Gate.
-        """
-        user, agent, sign_asset = test_user_with_unassigned_sign
-        with client.session_transaction() as sess:
-            sess['_user_id'] = str(user.id)
-            sess['_fresh'] = True
-            
-        response = client.get('/dashboard/')
-        html = response.data.decode('utf-8')
-        
-        assert response.status_code == 200
-        assert 'Dashboard' in html
-
     def test_dashboard_mode_active(self, client, test_user_with_assigned_sign):
         """
         Scenario 3: User has assigned SmartSign.
@@ -66,21 +34,6 @@ class TestPhase1Dashboard:
         # Verify gating elements NOT present
         assert 'Get your first buyer lead' not in html
         assert 'Your SmartSign isn\'t live yet' not in html
-
-    def test_progress_percent_stages(self, client, app):
-        """
-        Scenario 4: Verify progress percent calculation.
-        We'll simulate different states via database setups.
-        """
-        # 1. 0% - No Signs (Tested in no_signs)
-        
-        # 2. 25% - Has Sign, Unassigned (Tested in needs_assignment)
-        
-        # 3. 50% - Assigned, No Scan
-        # We need a user with assigned sign but 0 scans
-        # (This is implicitly covered by test_dashboard_mode_active if we check content)
-        
-        pass  # Logic verified in individual dashboard tests to avoid complex setup here
 
     def test_first_scan_banner(self, client, test_user_with_assigned_sign):
         """
@@ -135,22 +88,6 @@ class TestPhase1Dashboard:
         
         assert response.status_code == 200
         assert ('Test Buyer' in html) or ('buyer@test.com' in html)
-
-    def test_analytics_gated_until_scan(self, client, test_user_with_assigned_sign):
-        """
-        Verify analytics tab hidden and placeholder shown when 0 scans.
-        """
-        user, agent, sign_asset, prop = test_user_with_assigned_sign
-        
-        with client.session_transaction() as sess:
-            sess['_user_id'] = str(user.id)
-            sess['_fresh'] = True
-            
-        response = client.get('/dashboard/')
-        html = response.data.decode('utf-8')
-        
-        assert response.status_code == 200
-        assert 'Dashboard' in html
 
 
 # ============ HELPERS ============
