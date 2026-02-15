@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+
+{% block title %}Property Workspace | {{ property.address }}{% endblock %}
+
+{% block content %}
+<div class="glass-card" style="max-width: 1100px; margin: 24px auto; padding: 24px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap;">
+        <div>
+            <h1 style="margin: 0;">Property Workspace</h1>
+            <p style="margin: 6px 0 0; color: var(--text-muted);">
+                {{ property.address }} | Team: {{ team.name }} | Role: {{ membership.role|title }}
+            </p>
+        </div>
+        <a class="btn-secondary" href="{{ url_for('teams.team_dashboard', team_id=team.id) }}">Back to Team</a>
+    </div>
+
+    <div id="comments" style="margin-top: 26px;">
+        <h2 style="margin-bottom: 10px;">Comments</h2>
+        {% if membership.role in ["member", "admin"] %}
+        <form method="post" action="{{ url_for('teams.create_comment', team_id=team.id, property_id=property.id) }}" style="margin-bottom: 14px;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <textarea
+                name="body"
+                required
+                rows="3"
+                placeholder="Add a note for your team"
+                style="width: 100%; margin-bottom: 8px;"
+            ></textarea>
+            <button class="btn-primary" type="submit">Add Comment</button>
+        </form>
+        {% endif %}
+
+        {% if comments %}
+            <div style="display: grid; gap: 10px;">
+                {% for comment in comments %}
+                <div class="glass-card" style="padding: 12px;">
+                    <div style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 6px;">
+                        {{ comment.author_name }} · {{ comment.created_at }}
+                    </div>
+                    <div>{{ comment.body }}</div>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="glass-card" style="padding: 12px; color: var(--text-muted);">
+                No comments yet.
+            </div>
+        {% endif %}
+    </div>
+
+    <div id="files" style="margin-top: 28px;">
+        <h2 style="margin-bottom: 10px;">Files</h2>
+
+        {% if membership.role in ["member", "admin"] %}
+        <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 14px;">
+            <form method="post" action="{{ url_for('teams.upload_property_file', team_id=team.id, property_id=property.id) }}" enctype="multipart/form-data">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="file" name="file" required>
+                <button class="btn-secondary" type="submit">Upload File</button>
+            </form>
+            <form method="post" action="{{ url_for('teams.export_property_leads', team_id=team.id, property_id=property.id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button class="btn-primary" type="submit">Generate Leads CSV</button>
+            </form>
+        </div>
+        {% endif %}
+
+        {% if files %}
+        <div class="glass-card" style="padding: 0; overflow: hidden;">
+            <table style="width: 100%; border-collapse: collapse;">
+                <thead>
+                    <tr style="text-align: left; background: rgba(255,255,255,0.04);">
+                        <th style="padding: 10px;">Name</th>
+                        <th style="padding: 10px;">Kind</th>
+                        <th style="padding: 10px;">Expires</th>
+                        <th style="padding: 10px;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for f in files %}
+                    <tr style="border-top: 1px solid rgba(255,255,255,0.08);">
+                        <td style="padding: 10px;">{{ f.original_filename }}</td>
+                        <td style="padding: 10px;">{{ f.kind }}</td>
+                        <td style="padding: 10px;">{{ f.expires_at }}</td>
+                        <td style="padding: 10px;">
+                            {% if membership.role != "viewer" or f.kind == "export" %}
+                            <a class="btn-secondary" href="{{ url_for('teams.download_file', team_id=team.id, file_id=f.id) }}">Download</a>
+                            {% else %}
+                            <span style="color: var(--text-muted); font-size: 0.85rem;">Export only</span>
+                            {% endif %}
+                            {% if membership.role == "admin" %}
+                            <form method="post" action="{{ url_for('teams.delete_file_route', team_id=team.id, file_id=f.id) }}" style="display: inline-block;">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button class="btn-secondary" type="submit">Delete</button>
+                            </form>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="glass-card" style="padding: 12px; color: var(--text-muted);">
+            No files yet.
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

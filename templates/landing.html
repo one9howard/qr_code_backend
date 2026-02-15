@@ -23,7 +23,11 @@
 
             <div class="nav-links" id="nav-links">
                 <a href="#signs">Products</a>
+                {% if current_user.is_authenticated %}
+                <a href="{{ url_for('teams.index') }}">Teams</a>
+                {% else %}
                 <a href="mailto:sales@insitesigns.com">Teams</a>
+                {% endif %}
                 <a href="#plans">Pricing</a>
                 <a href="{{ url_for('public.privacy') }}">Security</a>
 

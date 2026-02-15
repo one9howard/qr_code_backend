@@ -24,6 +24,7 @@ from routes.account import account_bp
 from routes.lead_management import lead_management_bp
 from routes.campaigns import campaigns_bp
 from routes.events import events_bp
+from routes.teams import teams_bp
 
 def create_app(test_config=None):
     logger.info("[App] create_app() called")
@@ -179,6 +180,7 @@ def create_app(test_config=None):
     app.register_blueprint(lead_management_bp)
     app.register_blueprint(campaigns_bp)
     app.register_blueprint(events_bp)
+    app.register_blueprint(teams_bp)
     
     from routes.printing import printing_bp
     app.register_blueprint(printing_bp)

@@ -1,5 +1,80 @@
 # CHANGELOG_FIXES
 
+## 2026-02-15 Teams Property Workspace Collaboration (Broker Teams)
+
+- `migrations/versions/044_teams_property_workspace_collaboration.py`
+  - Added collaboration schema: `teams`, `team_members`, `team_invites`, `property_comments`, `property_files`, `audit_events`.
+  - Added `properties.team_id` (nullable) with FK/index for team scoping.
+  - Added role/status/kind constraints and retention/cleanup-related indexes.
+  - Why: introduce team workspaces with role-based collaboration and file retention.
+
+- `services/teams_collab.py`
+  - Added core team workflows: create team, role enforcement, invites, invite acceptance, retention updates, team/member/invite listing.
+  - Added audit event writer with request metadata capture (IP/UA when available) and minimal metadata payloads.
+  - Added owner/invitee auto-assignment of unassigned properties (via agent ownership) when joining a team.
+  - Why: centralize permission + membership + retention logic and keep routes thin.
+
+- `services/team_files.py`
+  - Added property workspace file lifecycle:
+    - list files
+    - upload files (`upload` kind) with extension allowlist
+    - generate leads CSV export (`export` kind) with CSV formula-injection mitigation
+    - role-aware download control (viewer export-only)
+    - admin delete
+    - retention cleanup for expired files.
+  - Added audit events for upload/download/delete/export/cleanup actions.
+  - Why: enforce role rules and retention in one service surface.
+
+- `routes/teams.py`
+  - Added `/teams` blueprint with endpoints for:
+    - team list/create
+    - invite acceptance
+    - dashboard + property workspace
+    - comments
+    - file upload/export/download/delete
+    - admin settings (retention + invites).
+  - Enforced role gates:
+    - viewer: read-only + export download only
+    - member: comments/uploads/exports/download-all
+    - admin: settings + file delete.
+  - Why: deliver end-user Team → Property Workspace flow.
+
+- `templates/teams/index.html`
+- `templates/teams/team_dashboard.html`
+- `templates/teams/property_workspace.html`
+- `templates/teams/settings.html`
+  - Added minimal functional UI for team creation, workspace navigation, comments/files panels, and admin settings/invites.
+  - Why: provide usable collaboration UX with existing style patterns.
+
+- `app.py`
+  - Registered `teams_bp`.
+  - Why: activate new team routes.
+
+- `templates/landing.html`
+  - Updated Teams header link: authenticated users go to `/teams`, unauthenticated users keep sales `mailto`.
+  - Why: make team workspace reachable from landing while preserving sales CTA for guests.
+
+- `templates/base.html`
+  - Added Teams link to authenticated drawer menu.
+  - Why: make workspace reachable from app navigation.
+
+- `scripts/cleanup_team_files.py`
+  - Added CLI cleanup entrypoint with `--dry-run`.
+  - Why: support cron/manual deletion of expired team attachments.
+
+- `tests/factories.py`
+  - Added `TeamFactory`, `create_team`, `add_member` helpers.
+  - Why: deterministic team setup in tests.
+
+- `tests/test_teams_collaboration.py`
+  - Added deterministic coverage for:
+    - team creation + owner membership + property auto-assignment
+    - viewer/member/admin permission boundaries
+    - invite acceptance constraints
+    - retention updates
+    - expired file cleanup behavior.
+  - Why: prevent regressions in role rules and retention lifecycle.
+
 ## 2026-02-15 Test Suite Consolidation (Low-Value/Redundant Trim)
 
 - `tests/test_events_csrf_runtime.py` (deleted)

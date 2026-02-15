@@ -172,3 +172,54 @@ class OrderFactory:
         order_id = cursor.fetchone()['id']
         db_session.commit()
         return order_id
+
+
+class TeamFactory:
+    """Factory for creating test teams and memberships."""
+
+    @classmethod
+    def create(cls, db_session, owner_user_id, name=None, retention_days=60):
+        team_name = name or f"Team {uuid.uuid4().hex[:6]}"
+        cursor = db_session.cursor()
+        cursor.execute(
+            """
+            INSERT INTO teams (name, owner_user_id, retention_days)
+            VALUES (%s, %s, %s)
+            RETURNING id
+            """,
+            (team_name, owner_user_id, retention_days),
+        )
+        team_id = cursor.fetchone()["id"]
+        cursor.execute(
+            """
+            INSERT INTO team_members (team_id, user_id, role, status)
+            VALUES (%s, %s, 'admin', 'active')
+            """,
+            (team_id, owner_user_id),
+        )
+        db_session.commit()
+        return team_id
+
+
+def create_team(db_session, owner_user_id, retention_days=60):
+    """Convenience helper required by collaboration tests."""
+    return TeamFactory.create(db_session, owner_user_id, retention_days=retention_days)
+
+
+def add_member(db_session, team_id, user_id, role):
+    """Convenience helper to insert active team membership."""
+    cursor = db_session.cursor()
+    cursor.execute(
+        """
+        INSERT INTO team_members (team_id, user_id, role, status)
+        VALUES (%s, %s, %s, 'active')
+        ON CONFLICT (team_id, user_id) DO UPDATE SET
+            role = EXCLUDED.role,
+            status = 'active'
+        RETURNING id
+        """,
+        (team_id, user_id, role),
+    )
+    member_id = cursor.fetchone()["id"]
+    db_session.commit()
+    return member_id

@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block title %}{{ team.name }} | Team Workspace{% endblock %}
+
+{% block content %}
+<div class="glass-card" style="max-width: 1100px; margin: 24px auto; padding: 24px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+        <div>
+            <h1 style="margin: 0;">{{ team.name }}</h1>
+            <p style="margin: 6px 0 0; color: var(--text-muted);">
+                Role: {{ membership.role|title }} | File retention: {{ team.retention_days }} days
+            </p>
+        </div>
+        {% if membership.role == "admin" %}
+        <a class="btn-secondary" href="{{ url_for('teams.team_settings', team_id=team.id) }}">Team Settings</a>
+        {% endif %}
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(3, minmax(140px, 1fr)); gap: 12px; margin: 22px 0;">
+        <div class="glass-card" style="padding: 12px;">
+            <div style="font-size: 0.85rem; color: var(--text-muted);">Comments (30d)</div>
+            <div style="font-size: 1.4rem; font-weight: 700;">{{ summary.comments_created }}</div>
+        </div>
+        <div class="glass-card" style="padding: 12px;">
+            <div style="font-size: 0.85rem; color: var(--text-muted);">Files Uploaded (30d)</div>
+            <div style="font-size: 1.4rem; font-weight: 700;">{{ summary.files_uploaded }}</div>
+        </div>
+        <div class="glass-card" style="padding: 12px;">
+            <div style="font-size: 0.85rem; color: var(--text-muted);">Files Downloaded (30d)</div>
+            <div style="font-size: 1.4rem; font-weight: 700;">{{ summary.files_downloaded }}</div>
+        </div>
+    </div>
+
+    <h2 style="margin-bottom: 12px;">Team properties</h2>
+    {% if properties %}
+        <div style="display: grid; gap: 10px;">
+            {% for prop in properties %}
+            <div class="glass-card" style="padding: 14px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap;">
+                    <div>
+                        <div style="font-weight: 600;">{{ prop.address }}</div>
+                        <div style="font-size: 0.85rem; color: var(--text-muted);">Property #{{ prop.id }}</div>
+                    </div>
+                    <a class="btn-primary" href="{{ url_for('teams.property_workspace', team_id=team.id, property_id=prop.id) }}">
+                        Open Property Workspace
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="glass-card" style="padding: 14px;">
+            <p style="margin: 0; color: var(--text-muted);">
+                No properties are assigned to this team yet.
+            </p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

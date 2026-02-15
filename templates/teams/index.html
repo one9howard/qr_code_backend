@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block title %}Teams | InSite Signs{% endblock %}
+
+{% block content %}
+<div class="glass-card" style="max-width: 980px; margin: 24px auto; padding: 24px;">
+    <h1 style="margin-top: 0;">Teams</h1>
+    <p style="color: var(--text-muted); margin-bottom: 20px;">
+        Create a broker team workspace and collaborate on properties.
+    </p>
+
+    <form method="post" action="{{ url_for('teams.create_team_route') }}" style="margin-bottom: 24px;">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <label for="name" style="display: block; margin-bottom: 8px;">Team name</label>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <input
+                id="name"
+                name="name"
+                type="text"
+                required
+                maxlength="255"
+                placeholder="Example: Acme Brokerage Team"
+                style="flex: 1; min-width: 280px;"
+            >
+            <button class="btn-primary" type="submit">Create Team</button>
+        </div>
+    </form>
+
+    <h2 style="margin-bottom: 12px;">Your teams</h2>
+    {% if teams %}
+        <div style="display: grid; gap: 12px;">
+            {% for team in teams %}
+            <div class="glass-card" style="padding: 16px;">
+                <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+                    <div>
+                        <div style="font-weight: 700;">{{ team.name }}</div>
+                        <div style="color: var(--text-muted); font-size: 0.9rem;">
+                            Role: {{ team.role|title }} | Retention: {{ team.retention_days }} days
+                        </div>
+                    </div>
+                    <a class="btn-secondary" href="{{ url_for('teams.team_dashboard', team_id=team.id) }}">Open Workspace</a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="glass-card" style="padding: 16px;">
+            <p style="margin: 0; color: var(--text-muted);">You are not on any team yet.</p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
