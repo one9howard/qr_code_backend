@@ -28,7 +28,7 @@ fi
 
 echo "[Acceptance] Running reset + migrate + pytest inside ${WEB_SERVICE}..."
 docker compose -p insite_signs run --rm \
-  -e DATABASE_URL="${TEST_DATABASE_URL}" -e TEST_DB_NAME="${TEST_DB_NAME}" -e LOAD_DOTENV=0 \
-  "${WEB_SERVICE}" bash -lc 'set -euo pipefail; echo "[Runner] Resetting test DB..."; python scripts/reset_test_db.py; echo "[Runner] Running migrations..."; python migrate.py; echo "[Runner] Running pytest..."; python scripts/check_pytest_fixtures.py; python -m pytest -q'
+  -e DATABASE_URL="${TEST_DATABASE_URL}" -e TEST_DB_NAME="${TEST_DB_NAME}" -e LOAD_DOTENV=0 -e PYTHONPATH=/app \
+  "${WEB_SERVICE}" bash -lc 'set -euo pipefail; echo "[Runner] Resetting test DB..."; python scripts/reset_test_db.py; echo "[Runner] Running migrations..."; python migrate.py; echo "[Runner] Running pytest..."; python scripts/check_pytest_fixtures.py; pytest -q -ra'
 
 echo "[Acceptance] OK"

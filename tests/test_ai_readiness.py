@@ -138,7 +138,6 @@ class TestAIReadiness(unittest.TestCase):
                 action_type='delete_db'
             )
 
-    @unittest.skip("Flask test client g object interaction issue - correlation tested via track_event")
     def test_request_correlation(self):
         """Part C: Headers and Cookies"""
         # Use client for full integration

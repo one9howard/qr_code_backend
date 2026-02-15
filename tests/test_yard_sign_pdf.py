@@ -10,7 +10,6 @@ from unittest.mock import patch, MagicMock
 
 class TestListingSignPDF:
     
-    @pytest.mark.skip(reason="Brittle mock DB setup")
     def test_generate_yard_sign_pdf_queries_schema_correctly(self, app, db):
         """
         Verify PDF generation uses correct schema columns.
@@ -48,18 +47,15 @@ class TestListingSignPDF:
              # Patching get_storage to return our mock
              with patch('services.printing.yard_sign.get_storage', return_value=mock_storage):
                 from services.printing.yard_sign import generate_yard_sign_pdf
-                
-                # Mock get_qr_code_svg to avoid network/DB calls for QR?
-                # The function calls get_valid_qr_code_svg
-                with patch('services.printing.yard_sign.get_valid_qr_code_svg', return_value='<svg>MOCK</svg>'):
-                    # Run it
-                    result = generate_yard_sign_pdf(order_dict)
-                    
-                    # Verify
-                    assert result is not None
-                    msg_args = mock_storage.put_file.call_args[0] 
-                    key = msg_args[1]
-                    assert 'pdfs/' in key or 'yard_sign' in key
+
+                # Run it
+                result = generate_yard_sign_pdf(order_dict)
+
+                # Verify
+                assert result is not None
+                msg_args = mock_storage.put_file.call_args[0] 
+                key = msg_args[1]
+                assert 'pdfs/' in key or 'yard_sign' in key
     
     def test_yard_sign_qr_value_is_r_path(self, app, db):
         """
@@ -188,7 +184,6 @@ class TestListingSignPDF:
         assert len(landscape_called) > 0, "Landscape layout should be called for 36x24"
         assert len(standard_called) == 0, "Standard layout should NOT be called for 36x24"
 
-    @pytest.mark.skip(reason="Brittle mock DB setup interaction with get_val")
     def test_standard_layout_used_for_18x24(self, app, db):
         """
         Verify 18x24 (portrait) uses _draw_standard_layout.
@@ -215,20 +210,20 @@ class TestListingSignPDF:
             'print_size': '18x24'
         }
         
-        mock_standard = MagicMock()
+        mock_modern_round = MagicMock()
         mock_landscape = MagicMock()
         mock_storage = MagicMock()
         
         with app.app_context():
             with patch('services.printing.yard_sign.get_storage', return_value=mock_storage):
                 with patch('services.printing.yard_sign._draw_landscape_split_layout', mock_landscape):
-                    with patch('services.printing.yard_sign._draw_standard_layout', mock_standard):
+                    with patch('services.printing.yard_sign._draw_modern_round_layout', mock_modern_round):
                         from services.printing.yard_sign import generate_yard_sign_pdf
                         
                         generate_yard_sign_pdf(order_dict)
                         
-                        # Verify standard layout was called
-                        mock_standard.assert_called_once()
+                        # Two-sided PDF should draw the chosen layout twice (front/back).
+                        assert mock_modern_round.call_count == 2
                         mock_landscape.assert_not_called()
 
     # Redundant test_landscape_layout_selection removed (covered by test_landscape_layout_used_for_36x24)

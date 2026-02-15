@@ -9,6 +9,7 @@ services:
       - DATABASE_URL=postgresql://postgres:postgres@db:5432/insite_test
       - FLASK_ENV=testing
       - APP_STAGE=test
+      - PYTHONPATH=/app
       - BASE_URL=${BASE_URL:-http://localhost:8080}
       - PORT=5000 # Match the port we are actually using
       - PUBLIC_BASE_URL=${PUBLIC_BASE_URL:-http://localhost:8080}

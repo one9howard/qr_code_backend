@@ -1175,7 +1175,19 @@ def _draw_modern_round_landscape(c, layout, address, beds, baths, sqft, price,
     qr_center_x = right_x + (right_col_w / 2)
     qr_center_y = (body_top + body_bottom) / 2
     
-    qr_size = min(right_col_w, content_h * 0.7)
+    available_qr_w = max(right_col_w - (2 * SPACING['sm']), QR_MIN_SIZE)
+    available_qr_h = max(content_h - (2 * SPACING['sm']), QR_MIN_SIZE)
+    qr_size = min(available_qr_w, available_qr_h)
+    if os.environ.get("DEBUG_LAYOUT") == "1":
+        logger.info(
+            "[LayoutDebug] yard_modern_round_landscape size=%sx%s qr_size_pt=%.2f qr_size_in=%.2f avail_w_pt=%.2f avail_h_pt=%.2f",
+            round(layout.width / inch, 2),
+            round(layout.height / inch, 2),
+            qr_size,
+            qr_size / inch,
+            available_qr_w,
+            available_qr_h,
+        )
     
     # Accent Ring
     c.setFillColorRGB(*COLOR_ACCENT)
