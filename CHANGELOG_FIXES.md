@@ -1,5 +1,28 @@
 # CHANGELOG_FIXES
 
+## 2026-02-15 SmartSign Layout Catalog Unification
+
+- `services/print_catalog.py`
+  - Introduced a canonical `SMARTSIGN_LAYOUT_CATALOG` object derived from `SMARTSIGN_LAYOUT_IDS`.
+  - Added `is_valid_smartsign_layout()` and made `get_smartsign_layout_options()` read from catalog values.
+  - `validate_layout('smart_sign', ...)` now validates against the canonical catalog (single source).
+  - Why: remove layout drift between ordering, UI options, and downstream rendering.
+
+- `routes/smart_signs.py`
+  - Switched order POST layout validation to use `services.print_catalog.validate_layout(...)` and `SMART_SIGN_LAYOUTS`.
+  - Why: order create path now uses the same canonical validator as catalog consumers.
+
+- `services/pdf_smartsign.py`
+  - Removed local hardcoded `valid_layouts` list.
+  - Added canonical layout validation via `services.print_catalog.validate_layout(...)`.
+  - PDF generator now **raises** on unknown layout IDs instead of silently falling back to `smart_v1_minimal`.
+  - Dispatch now uses explicit layout->drawer mapping with hard failure on missing renderer.
+  - Why: PDF rendering now enforces the same contract as order POST.
+
+- `tests/test_smoke.py`
+  - Added regression test: unknown SmartSign layout IDs are rejected by `generate_smartsign_pdf`.
+  - Why: prevents future reintroduction of silent fallback drift.
+
 ## 2026-02-15 Release-Hardening Pass (Contract, Privacy, Layout, Runtime)
 
 - `services/specs.py`

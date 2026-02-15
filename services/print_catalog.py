@@ -31,11 +31,16 @@ YARD_SIGN_VALID_SIZES = {
     'aluminum_040': ('18x24', '24x36', '36x24')
 }
 
-SMART_SIGN_LAYOUTS = tuple(SMARTSIGN_LAYOUT_IDS)
+def _layout_id_to_title(layout_id: str) -> str:
+    # Fallback: strip product prefix and version markers
+    s = (layout_id or "").strip()
+    s = re.sub(r"^smart_", "", s)
+    s = re.sub(r"^v\d+_", "", s)
+    return " ".join([w.capitalize() for w in s.split("_") if w])
 
-# Layout display metadata (used by UI). This is intentionally optional:
-# If a layout ID is added to SMARTSIGN_LAYOUT_IDS but missing here, the UI will still show it
-# with a reasonable fallback name/description to avoid drift.
+
+# Optional display metadata (used by UI). If metadata is missing for an ID that exists
+# in SMARTSIGN_LAYOUT_IDS, we still generate a safe fallback name/description.
 SMARTSIGN_LAYOUT_META = {
     "smart_v1_photo_banner": {
         "name": "Photo Banner",
@@ -79,12 +84,31 @@ SMARTSIGN_LAYOUT_META = {
     },
 }
 
-def _layout_id_to_title(layout_id: str) -> str:
-    # Fallback: strip product prefix and version markers
-    s = (layout_id or "").strip()
-    s = re.sub(r"^smart_", "", s)
-    s = re.sub(r"^v\d+_", "", s)
-    return " ".join([w.capitalize() for w in s.split("_") if w])
+
+def _build_smartsign_layout_catalog():
+    catalog = {}
+    for layout_id in SMARTSIGN_LAYOUT_IDS:
+        meta = SMARTSIGN_LAYOUT_META.get(layout_id, {})
+        name = meta.get("name") or _layout_id_to_title(layout_id) or layout_id
+        desc = meta.get("desc") or ""
+        tier = meta.get("tier") or ("Premium" if layout_id.startswith("smart_v2_") else "Standard")
+        catalog[layout_id] = {
+            "id": layout_id,
+            "name": name,
+            "desc": desc,
+            "tier": tier,
+            "is_premium": (tier.lower() == "premium"),
+        }
+    return catalog
+
+
+# Canonical SmartSign layout catalog: single source for UI + validation.
+SMARTSIGN_LAYOUT_CATALOG = _build_smartsign_layout_catalog()
+SMART_SIGN_LAYOUTS = tuple(SMARTSIGN_LAYOUT_CATALOG.keys())
+
+
+def is_valid_smartsign_layout(layout_id):
+    return layout_id in SMARTSIGN_LAYOUT_CATALOG
 
 def get_smartsign_layout_options():
     """Return SmartSign layout options for UI, driven by canonical specs.
@@ -94,20 +118,7 @@ def get_smartsign_layout_options():
     - Optional display metadata comes from SMARTSIGN_LAYOUT_META.
     - If metadata is missing, we still return a usable option to prevent template drift.
     """
-    opts = []
-    for layout_id in SMARTSIGN_LAYOUT_IDS:
-        meta = SMARTSIGN_LAYOUT_META.get(layout_id, {})
-        name = meta.get("name") or _layout_id_to_title(layout_id) or layout_id
-        desc = meta.get("desc") or ""
-        tier = meta.get("tier") or ("Premium" if layout_id.startswith("smart_v2_") else "Standard")
-        opts.append({
-            "id": layout_id,
-            "name": name,
-            "desc": desc,
-            "tier": tier,
-            "is_premium": (tier.lower() == "premium"),
-        })
-    return opts
+    return list(SMARTSIGN_LAYOUT_CATALOG.values())
 YARD_SIGN_LAYOUTS = (
     'yard_standard',
     'yard_modern_round',
@@ -256,7 +267,7 @@ def get_all_required_lookup_keys() -> list[str]:
 
 def validate_layout(print_product, layout_id):
     if print_product == 'smart_sign':
-        if layout_id not in SMART_SIGN_LAYOUTS:
+        if not is_valid_smartsign_layout(layout_id):
             return False, f"Invalid SmartSign layout: {layout_id}"
         return True, ""
     elif print_product == 'yard_sign':

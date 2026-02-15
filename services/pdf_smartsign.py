@@ -13,7 +13,7 @@ from constants import SIGN_SIZES, DEFAULT_SIGN_SIZE
 from utils.pdf_generator import draw_qr
 from utils.storage import get_storage
 from config import BASE_URL, PUBLIC_BASE_URL
-from services.print_catalog import BANNER_COLOR_PALETTE
+from services.print_catalog import BANNER_COLOR_PALETTE, SMART_SIGN_LAYOUTS, validate_layout
 import services.printing.layout_utils as lu
 import urllib.parse
 
@@ -411,13 +411,9 @@ def generate_smartsign_pdf(asset, order_id=None, user_id=None, override_base_url
     if size_key not in SIGN_SIZES: size_key = DEFAULT_SIGN_SIZE
 
     layout_id = _read(asset, 'layout_id', 'smart_v1_minimal')
-    valid_layouts = [
-        'smart_v1_minimal', 'smart_v1_agent_brand', 'smart_v1_photo_banner', 
-        'smart_v2_vertical_banner', 'smart_v2_modern_round',
-        'smart_v2_modern_split', 'smart_v2_elegant_serif', 'smart_v2_bold_frame'
-    ]
-    if layout_id not in valid_layouts:
-        layout_id = 'smart_v1_minimal'
+    ok_layout, layout_reason = validate_layout('smart_sign', layout_id)
+    if not ok_layout:
+        raise ValueError(f"{layout_reason}. Supported: {list(SMART_SIGN_LAYOUTS)}")
 
     layout = SmartSignLayout(size_key, layout_id)
     
@@ -431,22 +427,20 @@ def generate_smartsign_pdf(asset, order_id=None, user_id=None, override_base_url
     
     # Dispatch
     active_base_url = override_base_url or PUBLIC_BASE_URL
-    if layout_id == 'smart_v1_photo_banner':
-        _draw_photo_banner(c, layout, asset, user_id, active_base_url)
-    elif layout_id == 'smart_v1_agent_brand':
-        _draw_agent_brand(c, layout, asset, user_id, active_base_url)
-    elif layout_id == 'smart_v2_vertical_banner':
-        _draw_smart_v2_vertical_banner(c, layout, asset, user_id, active_base_url)
-    elif layout_id == 'smart_v2_modern_round':
-        _draw_modern_round(c, layout, asset, user_id, active_base_url)
-    elif layout_id == 'smart_v2_modern_split':
-        _draw_modern_split(c, layout, asset, user_id, active_base_url)
-    elif layout_id == 'smart_v2_elegant_serif':
-        _draw_elegant_serif(c, layout, asset, user_id, active_base_url)
-    elif layout_id == 'smart_v2_bold_frame':
-        _draw_bold_frame(c, layout, asset, user_id, active_base_url)
-    else:
-        _draw_modern_minimal(c, layout, asset, user_id, active_base_url)
+    drawer_by_layout = {
+        'smart_v1_photo_banner': _draw_photo_banner,
+        'smart_v1_minimal': _draw_modern_minimal,
+        'smart_v1_agent_brand': _draw_agent_brand,
+        'smart_v2_vertical_banner': _draw_smart_v2_vertical_banner,
+        'smart_v2_modern_round': _draw_modern_round,
+        'smart_v2_modern_split': _draw_modern_split,
+        'smart_v2_elegant_serif': _draw_elegant_serif,
+        'smart_v2_bold_frame': _draw_bold_frame,
+    }
+    drawer = drawer_by_layout.get(layout_id)
+    if drawer is None:
+        raise ValueError(f"No PDF drawer registered for SmartSign layout: {layout_id}")
+    drawer(c, layout, asset, user_id, active_base_url)
         
     c.showPage()
     c.save()

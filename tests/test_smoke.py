@@ -56,3 +56,23 @@ def test_smartsign_pdf_generation(app):
         buffer = args[0]
         content = buffer.getvalue()
         assert content.startswith(b'%PDF')
+
+
+def test_smartsign_pdf_rejects_unknown_layout(app):
+    """SmartSign PDF must reject unknown layout IDs (no silent fallback)."""
+    from services.pdf_smartsign import generate_smartsign_pdf
+
+    with patch('services.pdf_smartsign.get_storage') as mock_get_storage:
+        mock_storage = MagicMock()
+        mock_get_storage.return_value = mock_storage
+
+        payload = {
+            'agent_name': 'Test Agent',
+            'agent_phone': '555-0123',
+            'agent_email': 'test@example.com',
+            'brokerage_name': 'Test Brokerage',
+            'layout_id': 'smart_v9_not_real'
+        }
+
+        with pytest.raises(ValueError, match="Invalid SmartSign layout"):
+            generate_smartsign_pdf(payload)
