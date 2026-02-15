@@ -7,8 +7,9 @@ Single source of truth for:
 - Resolution of Price IDs via StripePriceResolver
 """
 import logging
+import re
 from services import stripe_price_resolver
-from services.specs import PRODUCT_SIZE_MATRIX, SMARTSIGN_SIZES, YARD_SIGN_SIZES, SMART_RISER_SIZES
+from services.specs import PRODUCT_SIZE_MATRIX, SMARTSIGN_SIZES, YARD_SIGN_SIZES, SMART_RISER_SIZES, SMARTSIGN_LAYOUT_IDS
 
 logger = logging.getLogger(__name__)
 
@@ -30,17 +31,83 @@ YARD_SIGN_VALID_SIZES = {
     'aluminum_040': ('18x24', '24x36', '36x24')
 }
 
-SMART_SIGN_LAYOUTS = (
-    'smart_v1_photo_banner',
-    'smart_v1_minimal',
-    'smart_v1_agent_brand',
-    'smart_v2_vertical_banner',
-    'smart_v2_modern_round',
-    'smart_v2_modern_split',
-    'smart_v2_elegant_serif',
-    'smart_v2_bold_frame',
-)
+SMART_SIGN_LAYOUTS = tuple(SMARTSIGN_LAYOUT_IDS)
 
+# Layout display metadata (used by UI). This is intentionally optional:
+# If a layout ID is added to SMARTSIGN_LAYOUT_IDS but missing here, the UI will still show it
+# with a reasonable fallback name/description to avoid drift.
+SMARTSIGN_LAYOUT_META = {
+    "smart_v1_photo_banner": {
+        "name": "Photo Banner",
+        "desc": "Professional bottom banner with headshot.",
+        "tier": "Standard",
+    },
+    "smart_v1_minimal": {
+        "name": "Modern Minimal",
+        "desc": "Clean white, focus on QR code.",
+        "tier": "Standard",
+    },
+    "smart_v1_agent_brand": {
+        "name": "Agent Brand",
+        "desc": "Logo-centric with dark footer.",
+        "tier": "Standard",
+    },
+    "smart_v2_vertical_banner": {
+        "name": "Vertical Banner",
+        "desc": "Script typography, side status rail.",
+        "tier": "Premium",
+    },
+    "smart_v2_modern_round": {
+        "name": "Modern Round",
+        "desc": "Circular aesthetic, friendly & bold.",
+        "tier": "Premium",
+    },
+    "smart_v2_modern_split": {
+        "name": "Modern Split",
+        "desc": "Clean split grid, big QR panel.",
+        "tier": "Premium",
+    },
+    "smart_v2_elegant_serif": {
+        "name": "Elegant Serif",
+        "desc": "Gold border, classic typography.",
+        "tier": "Premium",
+    },
+    "smart_v2_bold_frame": {
+        "name": "Bold Frame",
+        "desc": "Heavy frame, high-contrast CTA.",
+        "tier": "Premium",
+    },
+}
+
+def _layout_id_to_title(layout_id: str) -> str:
+    # Fallback: strip product prefix and version markers
+    s = (layout_id or "").strip()
+    s = re.sub(r"^smart_", "", s)
+    s = re.sub(r"^v\d+_", "", s)
+    return " ".join([w.capitalize() for w in s.split("_") if w])
+
+def get_smartsign_layout_options():
+    """Return SmartSign layout options for UI, driven by canonical specs.
+
+    Contract:
+    - IDs come from services.specs.SMARTSIGN_LAYOUT_IDS (single source of truth).
+    - Optional display metadata comes from SMARTSIGN_LAYOUT_META.
+    - If metadata is missing, we still return a usable option to prevent template drift.
+    """
+    opts = []
+    for layout_id in SMARTSIGN_LAYOUT_IDS:
+        meta = SMARTSIGN_LAYOUT_META.get(layout_id, {})
+        name = meta.get("name") or _layout_id_to_title(layout_id) or layout_id
+        desc = meta.get("desc") or ""
+        tier = meta.get("tier") or ("Premium" if layout_id.startswith("smart_v2_") else "Standard")
+        opts.append({
+            "id": layout_id,
+            "name": name,
+            "desc": desc,
+            "tier": tier,
+            "is_premium": (tier.lower() == "premium"),
+        })
+    return opts
 YARD_SIGN_LAYOUTS = (
     'yard_standard',
     'yard_modern_round',

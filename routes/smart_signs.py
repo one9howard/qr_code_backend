@@ -275,12 +275,22 @@ def order_start():
     if asset_id:
         # If ordering for existing asset (replacement?), prefill
         pass
-        
+    # Layout options are driven by the canonical spec/catalog so templates never drift.
+    from services.print_catalog import get_smartsign_layout_options
+    layout_options = get_smartsign_layout_options()
+
+    # Default layout (fallback to Modern Round if present, else first option)
+    default_layout_id = current_app.config.get('DEFAULT_SMARTSIGN_LAYOUT_ID', 'smart_v2_modern_round')
+    if layout_options and default_layout_id not in [o.get('id') for o in layout_options]:
+        default_layout_id = layout_options[0].get('id')
+
     return render_template(
         'smart_signs/order_form.html',
         colors=colors,
         asset_id=asset_id,
         property_prefill=property_prefill,
+        layout_options=layout_options,
+        default_layout_id=default_layout_id,
     )
 
 
@@ -300,7 +310,7 @@ def create_smart_order():
     size = request.form.get('size')
     layout_id = request.form.get('layout_id')
     
-    from services.specs import SMARTSIGN_SIZES
+    from services.specs import SMARTSIGN_SIZES, SMARTSIGN_LAYOUT_IDS
     
     if not size or not layout_id:
         flash("Size and Layout are required.", "error")
@@ -308,6 +318,10 @@ def create_smart_order():
         
     if size not in SMARTSIGN_SIZES:
         flash(f"Invalid size: {size}. Supported: {SMARTSIGN_SIZES}", "error")
+        return redirect(url_for('smart_signs.order_start'))
+
+    if layout_id not in SMARTSIGN_LAYOUT_IDS:
+        flash(f"Invalid layout: {layout_id}. Supported: {SMARTSIGN_LAYOUT_IDS}", "error")
         return redirect(url_for('smart_signs.order_start'))
 
     # Strict Product Rules

@@ -59,10 +59,8 @@
 
                     <div class="layout-grid"
                         style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px;">
-                        <!-- Option 1 -->
-                        <label class="layout-card">
-                            <input type="radio" name="layout_id" value="smart_v1_photo_banner">
-                            <div class="preview-box">
+                        {% macro _smartsign_preview(layout_id) -%}
+                            {% if layout_id == 'smart_v1_photo_banner' %}
                                 <div class="mini-sign banner-style">
                                     <div class="mini-content">
                                         <div class="mini-details">
@@ -75,15 +73,7 @@
                                         <div class="mini-photo"></div>
                                     </div>
                                 </div>
-                            </div>
-                            <span class="layout-name">Photo Banner</span>
-                            <span class="layout-desc">Professional bottom banner with headshot.</span>
-                        </label>
-
-                        <!-- Option 2 -->
-                        <label class="layout-card">
-                            <input type="radio" name="layout_id" value="smart_v1_minimal">
-                            <div class="preview-box">
+                            {% elif layout_id == 'smart_v1_minimal' %}
                                 <div class="mini-sign minimal-style">
                                     <div class="mini-content centered">
                                         <div class="mini-qr large"></div>
@@ -91,15 +81,7 @@
                                         <div class="line short"></div>
                                     </div>
                                 </div>
-                            </div>
-                            <span class="layout-name">Modern Minimal</span>
-                            <span class="layout-desc">Clean white, focus on QR code.</span>
-                        </label>
-
-                        <!-- Option 3 -->
-                        <label class="layout-card">
-                            <input type="radio" name="layout_id" value="smart_v1_agent_brand">
-                            <div class="preview-box">
+                            {% elif layout_id == 'smart_v1_agent_brand' %}
                                 <div class="mini-sign brand-style">
                                     <div class="mini-content centered">
                                         <div class="mini-logo">LOGO</div>
@@ -107,61 +89,39 @@
                                         <div class="line"></div>
                                     </div>
                                 </div>
-                            </div>
-                            <span class="layout-name">Agent Brand</span>
-                            <span class="layout-desc">Logo-centric with dark footer.</span>
-                        </label>
-
-                        <!-- Option 4: Vertical Banner (Premium) -->
-                        <label class="layout-card">
-                            <input type="radio" name="layout_id" value="smart_v2_vertical_banner">
-                            <div class="preview-box">
+                            {% elif layout_id == 'smart_v2_vertical_banner' %}
                                 <div class="mini-sign premium-style">
                                     <div class="mini-content" style="display:flex;">
-                                        <div
-                                            style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center;">
+                                        <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center;">
                                             <div class="mini-qr"></div>
                                             <div class="line short"></div>
                                         </div>
-                                        <div
-                                            style="width: 20%; background: linear-gradient(to bottom, #1a1a1a, #333); display:flex; align-items:center; justify-content:center;">
-                                            <span style="writing-mode: vertical-rl; color:#fff; font-size:8px;">FOR
-                                                SALE</span>
+                                        <div style="width: 20%; background: linear-gradient(to bottom, #1a1a1a, #333); display:flex; align-items:center; justify-content:center;">
+                                            <span style="writing-mode: vertical-rl; color:#fff; font-size:8px;">FOR SALE</span>
                                         </div>
                                     </div>
                                 </div>
-                            </div>
-                            <span class="layout-name">Vertical Banner (Premium)</span>
-                            <span class="layout-desc">Script typography, side status rail.</span>
-                        </label>
-
-                        <!-- Option 5: Modern Round (NEW) -->
-                        <label class="layout-card">
-                            <input type="radio" name="layout_id" value="smart_v2_modern_round" checked>
-                            <div class="preview-box">
-                                <div class="mini-sign round-style"
-                                    style="background: white; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden;">
+                            {% elif layout_id == 'smart_v2_modern_round' %}
+                                <div class="mini-sign round-style" style="background: white; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden;">
                                     <div class="mini-content" style="text-align: center; width: 100%;">
-                                        <div
-                                            style="width: 50px; height: 50px; background: #eee; border-radius: 50%; margin: 0 auto 8px; border: 2px solid var(--accent-blue);">
-                                        </div>
+                                        <div style="width: 50px; height: 50px; background: #eee; border-radius: 50%; margin: 0 auto 8px; border: 2px solid var(--accent-blue);"></div>
                                         <div class="line" style="margin: 4px auto; width: 60%;"></div>
                                         <div class="line short" style="margin: 4px auto; width: 40%;"></div>
                                     </div>
-                                    <!-- Decorative Arc -->
-                                    <div
-                                        style="position: absolute; top: -20px; right: -20px; width: 60px; height: 60px; background: var(--accent-blue); border-radius: 50%; opacity: 0.1;">
+                                    <div style="position: absolute; top: -20px; right: -20px; width: 60px; height: 60px; background: var(--accent-blue); border-radius: 50%; opacity: 0.1;"></div>
+                                </div>
+                            {% elif layout_id == 'smart_v2_modern_split' %}
+                                <div class="mini-sign" style="background:#fff; display:flex; overflow:hidden;">
+                                    <div style="flex:1; padding:8px; display:flex; flex-direction:column; justify-content:space-between;">
+                                        <div class="line" style="width:70%;"></div>
+                                        <div class="line short" style="width:55%;"></div>
+                                        <div class="line" style="width:45%; opacity:0.7;"></div>
+                                    </div>
+                                    <div style="width:34%; background: rgba(0,122,255,0.10); display:flex; align-items:center; justify-content:center;">
+                                        <div class="mini-qr"></div>
                                     </div>
                                 </div>
-                            </div>
-                            <span class="layout-name">Modern Round</span>
-                            <span class="layout-desc">Circular aesthetic, friendly & bold.</span>
-                        </label>
-
-                        <!-- Option 6: Elegant Serif (NEW) -->
-                        <label class="layout-card">
-                            <input type="radio" name="layout_id" value="smart_v2_elegant_serif">
-                            <div class="preview-box">
+                            {% elif layout_id == 'smart_v2_elegant_serif' %}
                                 <div class="mini-sign elegant-serif-style">
                                     <div class="mini-content">
                                         <div class="status-text">FOR SALE</div>
@@ -169,10 +129,40 @@
                                         <div class="agent-name">Agent Name</div>
                                     </div>
                                 </div>
+                            {% elif layout_id == 'smart_v2_bold_frame' %}
+                                <div class="mini-sign" style="background:#fff; border: 3px solid #111; box-sizing:border-box;">
+                                    <div class="mini-content centered" style="padding:10px;">
+                                        <div class="mini-qr"></div>
+                                        <div class="line" style="margin-top:8px;"></div>
+                                        <div class="line short"></div>
+                                    </div>
+                                </div>
+                            {% else %}
+                                <div class="mini-sign minimal-style">
+                                    <div class="mini-content centered">
+                                        <div class="mini-qr"></div>
+                                        <div class="line"></div>
+                                        <div class="line short"></div>
+                                    </div>
+                                </div>
+                            {% endif %}
+                        {%- endmacro %}
+
+                        {% for layout in layout_options %}
+                        <label class="layout-card">
+                            <input type="radio" name="layout_id" value="{{ layout.id }}" {% if layout.id == default_layout_id %}checked{% endif %}>
+                            <div class="preview-box">
+                                {{ _smartsign_preview(layout.id) }}
                             </div>
-                            <span class="layout-name">Elegant Serif</span>
-                            <span class="layout-desc">Gold border, classic typography.</span>
+                            <span class="layout-name">
+                                {{ layout.name }}
+                                {% if layout.is_premium %}
+                                <span class="badge" style="margin-left:6px; font-size: 11px; padding:2px 6px; border-radius:999px; background: rgba(0,0,0,0.06);">Premium</span>
+                                {% endif %}
+                            </span>
+                            {% if layout.desc %}<span class="layout-desc">{{ layout.desc }}</span>{% endif %}
                         </label>
+                        {% endfor %}
                     </div>
 
                     <div class="input-group">
