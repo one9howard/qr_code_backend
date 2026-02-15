@@ -1,6 +1,7 @@
 import os
 import sys
 import argparse
+import fnmatch
 
 
 def check_release_clean(root: str) -> None:
@@ -35,6 +36,8 @@ def check_release_clean(root: str) -> None:
         ".mypy_cache",
         ".ruff_cache",
     ]
+    forbidden_root_helpers = {"get_code.py", "get_docker_logs.py"}
+    forbidden_root_globs = ["test_manual_import*.py", "*manual_import*"]
 
     for dirpath, dirnames, filenames in os.walk(root):
         # Exclude common dev/system dirs completely from traversal
@@ -57,6 +60,14 @@ def check_release_clean(root: str) -> None:
         # 2) Check filenames for banned patterns
         for f in filenames:
             path = os.path.join(dirpath, f)
+            rel_file = os.path.relpath(path, root)
+
+            # Root-level debug helper bans (must never ship).
+            if os.path.dirname(rel_file) in {"", "."}:
+                if f in forbidden_root_helpers:
+                    errors.append(f"Found forbidden root debug helper: {path}")
+                if any(fnmatch.fnmatch(f, pat) for pat in forbidden_root_globs):
+                    errors.append(f"Found forbidden root manual-import helper: {path}")
 
             # PDFs only allowed in tests fixtures/data
             if f.endswith(".pdf"):

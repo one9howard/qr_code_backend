@@ -134,13 +134,10 @@ def test_submit_cannot_claim_other_email(client, db):
     agent = db.execute("SELECT user_id FROM agents WHERE email=%s", (victim_email,)).fetchone()
     assert agent['user_id'] is None, "SECURITY FAIL: Attacker claimed victim agent via /submit!"
     
-    # Either the flow blocked it (recommended 403) OR it created a property but didn't claim the agent.
-    # We check if the response indicates blocking or just no-claim.
-    if resp.status_code == 403:
-        pass # Good blocking
-    else:
-        # If it allowed property creation, ensure agent integrity remains
-        pass
+    # Either the flow blocks with 403 or allows submit flow but without ownership transfer.
+    assert resp.status_code in {200, 302, 303, 403}, (
+        f"Unexpected response status for submit flow: {resp.status_code}"
+    )
 
 def test_submit_blocked_when_agent_claimed_by_other_user(client, db):
     """

@@ -37,39 +37,7 @@ DEFAULT_PROJECT_ROOT = SCRIPT_DIR.parent
 
 
 # --- CONFIGURATION ---
-
-# Directories to recursively include
-INCLUDE_DIRS = [
-    "routes",
-    "services",
-    "templates",
-    "static",
-    "utils",
-    "tests",   # Include tests for end-to-end verification artifacts
-    "scripts",  # Include scripts for operational tasks
-    "migrations", # DB Migrations
-]
-
-# Root files (glob patterns) to include
-ROOT_PATTERNS = [
-    "*.py",          # All python files (app.py, config.py, extensions.py, etc)
-    "migrate.py",      # Canonical migration runner
-    "Procfile",        # Heroku/Railway entrypoint
-    "Dockerfile",      # Container build spec
-    ".dockerignore",   # Docker build context exclusions
-    "docker-compose.yml", # Local orchestration spec
-    "README*",         # Docs entrypoint
-    "SPECS.md",        # Canonical generated specs snapshot (release gate requires it)
-    "alembic.ini",     # DB Config
-    "runtime.txt",     # Runtime pin for deploy parity
-    ".python-version", # Runtime pin parity for tooling
-    "requirements.txt", # Depencies
-    "requirements-test.txt", # Test deps for Docker build
-    "requirements.in",
-    "requirements-test.in",
-    ".env.example",
-    ".env.local.example",
-]
+MANIFEST_FILENAME = "RELEASE_MANIFEST.json"
 
 # Patterns to ALWAYS EXCLUDE (even if in allowlist)
 GLOBAL_EXCLUDES = [
@@ -97,6 +65,91 @@ GLOBAL_EXCLUDES = [
     "*.zip",  # Don't include other zips
     "static/*.pdf", # Generated previews
 ]
+
+
+def _normalize_relpath(path: str) -> str:
+    rel = path.replace("\\", "/").strip().strip("/")
+    return rel
+
+
+def _is_valid_relpath(path: str) -> bool:
+    if not path:
+        return False
+    p = Path(path)
+    if p.is_absolute():
+        return False
+    parts = [_normalize_relpath(str(x)) for x in p.parts if str(x)]
+    if any(part in {".", ".."} for part in parts):
+        return False
+    return True
+
+
+def load_release_allowlist(project_root: str) -> dict:
+    manifest_path = os.path.join(project_root, MANIFEST_FILENAME)
+    if not os.path.isfile(manifest_path):
+        raise RuntimeError(f"[ALLOWLIST] Missing {MANIFEST_FILENAME} at repo root.")
+
+    try:
+        with open(manifest_path, "r", encoding="utf-8") as f:
+            manifest = json.load(f)
+    except Exception as e:
+        raise RuntimeError(f"[ALLOWLIST] Could not parse {MANIFEST_FILENAME}: {e}")
+
+    allowlist = manifest.get("allowlist")
+    if not isinstance(allowlist, dict):
+        raise RuntimeError(
+            f"[ALLOWLIST] {MANIFEST_FILENAME} must contain top-level object 'allowlist'."
+        )
+
+    files = allowlist.get("files", [])
+    dirs = allowlist.get("dirs", [])
+    exclude_paths = allowlist.get("exclude_paths", [])
+    optional_top_level = allowlist.get("optional_top_level", [])
+
+    for field_name, values in (
+        ("allowlist.files", files),
+        ("allowlist.dirs", dirs),
+        ("allowlist.exclude_paths", exclude_paths),
+        ("allowlist.optional_top_level", optional_top_level),
+    ):
+        if not isinstance(values, list) or not all(isinstance(v, str) for v in values):
+            raise RuntimeError(f"[ALLOWLIST] {field_name} must be a list of strings.")
+        for v in values:
+            if not _is_valid_relpath(v):
+                raise RuntimeError(f"[ALLOWLIST] Invalid relative path in {field_name}: {v!r}")
+
+    files = sorted({_normalize_relpath(p) for p in files})
+    dirs = sorted({_normalize_relpath(p) for p in dirs})
+    exclude_paths = sorted({_normalize_relpath(p) for p in exclude_paths})
+    optional_top_level = sorted({_normalize_relpath(p) for p in optional_top_level})
+
+    if MANIFEST_FILENAME not in files:
+        files.append(MANIFEST_FILENAME)
+
+    return {
+        "files": files,
+        "dirs": dirs,
+        "exclude_paths": exclude_paths,
+        "optional_top_level": optional_top_level,
+    }
+
+
+def _matches_global_exclude(rel_path: str) -> bool:
+    rel = _normalize_relpath(rel_path)
+    base = os.path.basename(rel)
+    for pattern in GLOBAL_EXCLUDES:
+        if fnmatch.fnmatch(base, pattern) or fnmatch.fnmatch(rel, pattern):
+            return True
+    return False
+
+
+def _is_path_excluded(rel_path: str, exclude_paths: list[str]) -> bool:
+    rel = _normalize_relpath(rel_path)
+    for ex in exclude_paths:
+        exn = _normalize_relpath(ex)
+        if rel == exn or rel.startswith(f"{exn}/"):
+            return True
+    return False
 
 def run_command(cmd, cwd=None, env=None):
     """Run a shell command and fail hard if it errors."""
@@ -157,38 +210,90 @@ def ensure_specs_synced(project_root: str) -> None:
     subprocess.check_call([sys.executable, "scripts/check_specs_sync.py"], cwd=project_root)
 
 
-def clean_tree(src_root, dest_root):
-    """Copy allowlisted files from src to dest."""
+def clean_tree(src_root: str, dest_root: str, allowlist: dict) -> None:
+    """Copy only manifest-allowlisted files/dirs from src to dest."""
     if os.path.exists(dest_root):
         shutil.rmtree(dest_root)
     os.makedirs(dest_root)
 
-    # 1. Copy Directories
-    for d in INCLUDE_DIRS:
-        src_path = os.path.join(src_root, d)
-        if not os.path.exists(src_path):
-             print(f"Warning: Directory not found: {d}")
-             continue
-        
-        dest_path = os.path.join(dest_root, d)
-        shutil.copytree(src_path, dest_path, dirs_exist_ok=True, ignore=shutil.ignore_patterns(*GLOBAL_EXCLUDES))
+    # 1) Copy allowlisted files (top-level or nested).
+    for rel_file in allowlist["files"]:
+        if rel_file == MANIFEST_FILENAME:
+            # Manifest is regenerated after staging to include fresh hashes.
+            continue
+        if _is_path_excluded(rel_file, allowlist["exclude_paths"]):
+            continue
+        if _matches_global_exclude(rel_file):
+            continue
 
-    # 2. Copy Root Files matched by patterns
-    # Get all files in root
-    all_root_files = [f for f in os.listdir(src_root) if os.path.isfile(os.path.join(src_root, f))]
-    
-    for pat in ROOT_PATTERNS:
-        # Filter files by pattern
-        matching = fnmatch.filter(all_root_files, pat)
-        for f in matching:
-            # Check excludes
-            if any(fnmatch.fnmatch(f, ex) for ex in GLOBAL_EXCLUDES):
+        src_file = os.path.join(src_root, rel_file)
+        if not os.path.isfile(src_file):
+            raise RuntimeError(f"[ALLOWLIST] Required file is missing: {rel_file}")
+
+        dest_file = os.path.join(dest_root, rel_file)
+        os.makedirs(os.path.dirname(dest_file), exist_ok=True)
+        shutil.copy2(src_file, dest_file)
+
+    # 2) Copy allowlisted directories recursively.
+    for rel_dir in allowlist["dirs"]:
+        src_dir = os.path.join(src_root, rel_dir)
+        if not os.path.isdir(src_dir):
+            raise RuntimeError(f"[ALLOWLIST] Required directory is missing: {rel_dir}")
+
+        for root, dirnames, filenames in os.walk(src_dir):
+            rel_root = _normalize_relpath(os.path.relpath(root, src_root))
+            if _is_path_excluded(rel_root, allowlist["exclude_paths"]):
+                dirnames[:] = []
                 continue
-                
-            src = os.path.join(src_root, f)
-            dest = os.path.join(dest_root, f)
-            shutil.copy2(src, dest)
-            # print(f"Included: {f}")
+
+            # Prune excluded subdirs in-place.
+            pruned = []
+            for d in dirnames:
+                child_rel = _normalize_relpath(os.path.join(rel_root, d))
+                if _is_path_excluded(child_rel, allowlist["exclude_paths"]):
+                    continue
+                if _matches_global_exclude(child_rel):
+                    continue
+                pruned.append(d)
+            dirnames[:] = pruned
+
+            for name in filenames:
+                rel_file = _normalize_relpath(os.path.join(rel_root, name))
+                if _is_path_excluded(rel_file, allowlist["exclude_paths"]):
+                    continue
+                if _matches_global_exclude(rel_file):
+                    continue
+
+                src_file = os.path.join(src_root, rel_file)
+                dest_file = os.path.join(dest_root, rel_file)
+                os.makedirs(os.path.dirname(dest_file), exist_ok=True)
+                shutil.copy2(src_file, dest_file)
+
+    # Guardrail: nothing outside allowlist should have been copied.
+    disallowed = []
+    for root, _, filenames in os.walk(dest_root):
+        for name in filenames:
+            rel_file = _normalize_relpath(os.path.relpath(os.path.join(root, name), dest_root))
+            if rel_file == MANIFEST_FILENAME:
+                continue
+            if _is_path_excluded(rel_file, allowlist["exclude_paths"]):
+                disallowed.append(rel_file)
+                continue
+            is_allowed_file = rel_file in {_normalize_relpath(f) for f in allowlist["files"]}
+            is_allowed_under_dir = any(
+                rel_file == d or rel_file.startswith(f"{d}/")
+                for d in {_normalize_relpath(d) for d in allowlist["dirs"]}
+            )
+            if not (is_allowed_file or is_allowed_under_dir):
+                disallowed.append(rel_file)
+
+    if disallowed:
+        preview = "\n".join(sorted(disallowed)[:50])
+        raise RuntimeError(
+            "[ALLOWLIST] Staging produced files outside RELEASE_MANIFEST allowlist:\n"
+            + preview
+            + ("\n..." if len(disallowed) > 50 else "")
+        )
 
 def create_zip(source_dir, zip_path):
     """Zips the source_dir into zip_path, enforcing global excludes."""
@@ -295,7 +400,7 @@ def _sha256_file(path: str) -> str:
             h.update(chunk)
     return h.hexdigest()
 
-def write_release_manifest(stage_dir: str, project_root: str, zip_path: str) -> None:
+def write_release_manifest(stage_dir: str, project_root: str, zip_path: str, allowlist: dict) -> None:
     """Write RELEASE_MANIFEST.json into the staging directory."""
     built_at_utc = datetime.now(UTC).replace(microsecond=0).isoformat().replace("+00:00", "Z")
 
@@ -335,6 +440,12 @@ def write_release_manifest(stage_dir: str, project_root: str, zip_path: str) -> 
             "file_count": len(files),
             "total_bytes": total_bytes,
             "sha256": tree_hash.hexdigest(),
+        },
+        "allowlist": {
+            "files": sorted(allowlist.get("files", [])),
+            "dirs": sorted(allowlist.get("dirs", [])),
+            "exclude_paths": sorted(allowlist.get("exclude_paths", [])),
+            "optional_top_level": sorted(allowlist.get("optional_top_level", [])),
         },
         "files": files,
     }
@@ -515,6 +626,7 @@ def main():
     project_root = str(pr)
     assert_repo_root(project_root)
     ensure_specs_synced(project_root)
+    allowlist = load_release_allowlist(project_root)
 
     # SAFETY CHECK
     if args.no_validate:
@@ -549,9 +661,9 @@ def main():
     # Use a temp dir for staging
     with tempfile.TemporaryDirectory() as staging_dir:
         print(f"[INFO] Staging files to {staging_dir}...")
-        clean_tree(project_root, staging_dir)
+        clean_tree(project_root, staging_dir, allowlist)
         assert_hard_hygiene(staging_dir)
-        write_release_manifest(staging_dir, project_root, zip_path)
+        write_release_manifest(staging_dir, project_root, zip_path, allowlist)
         
         print(f"[INFO] Zipping to {zip_path}...")
         create_zip(staging_dir, zip_path)

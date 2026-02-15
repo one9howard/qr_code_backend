@@ -63,13 +63,6 @@ class TestSmartSignsPhase1:
         db.commit()
         
         # Create asset (activated param removed)
-        try:
-            asset = SmartSignsService.create_asset(user_id=user_id)
-        except TypeError:
-            # If accidentally passed, it might raise TypeError depending on how it's called
-            # but here we test the correct call produces unactivated asset
-            pass
-            
         # Verify unactivated
         asset = SmartSignsService.create_asset(user_id=user_id)
         row = db.execute("SELECT activated_at FROM sign_assets WHERE id=%s", (asset['id'],)).fetchone()

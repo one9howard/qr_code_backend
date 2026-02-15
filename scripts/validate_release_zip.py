@@ -18,6 +18,89 @@ def fail(msg: str) -> None:
     sys.exit(1)
 
 
+def _normalize_relpath(path: str) -> str:
+    return path.replace("\\", "/").strip().strip("/")
+
+
+def _is_valid_relpath(path: str) -> bool:
+    if not path:
+        return False
+    if os.path.isabs(path):
+        return False
+    parts = [p for p in _normalize_relpath(path).split("/") if p]
+    return not any(part in {".", ".."} for part in parts)
+
+
+def _load_allowlist_from_manifest(manifest_path: str) -> dict:
+    try:
+        with open(manifest_path, "r", encoding="utf-8") as f:
+            manifest = json.load(f)
+    except Exception as e:
+        fail(f"Could not parse RELEASE_MANIFEST.json: {e}")
+
+    allowlist = manifest.get("allowlist")
+    if not isinstance(allowlist, dict):
+        fail("RELEASE_MANIFEST.json missing required 'allowlist' object.")
+
+    files = allowlist.get("files", [])
+    dirs = allowlist.get("dirs", [])
+    exclude_paths = allowlist.get("exclude_paths", [])
+    optional_top_level = allowlist.get("optional_top_level", [])
+
+    for field_name, values in (
+        ("allowlist.files", files),
+        ("allowlist.dirs", dirs),
+        ("allowlist.exclude_paths", exclude_paths),
+        ("allowlist.optional_top_level", optional_top_level),
+    ):
+        if not isinstance(values, list) or not all(isinstance(v, str) for v in values):
+            fail(f"{field_name} must be a list of strings.")
+        for v in values:
+            if not _is_valid_relpath(v):
+                fail(f"Invalid relative path in {field_name}: {v!r}")
+
+    files = sorted({_normalize_relpath(p) for p in files})
+    dirs = sorted({_normalize_relpath(p) for p in dirs})
+    exclude_paths = sorted({_normalize_relpath(p) for p in exclude_paths})
+    optional_top_level = sorted({_normalize_relpath(p) for p in optional_top_level})
+
+    if "RELEASE_MANIFEST.json" not in files:
+        files.append("RELEASE_MANIFEST.json")
+
+    return {
+        "files": files,
+        "dirs": dirs,
+        "exclude_paths": exclude_paths,
+        "optional_top_level": optional_top_level,
+    }
+
+
+def _validate_allowlist_enforcement(root_dir: str, allowlist: dict) -> None:
+    top_entries = sorted(
+        name for name in os.listdir(root_dir) if name not in {".DS_Store"}
+    )
+    allowed_top = {
+        _normalize_relpath(p).split("/")[0] for p in allowlist["files"] + allowlist["dirs"] + allowlist["optional_top_level"]
+    }
+    allowed_top.add("RELEASE_MANIFEST.json")
+
+    extras = [name for name in top_entries if name not in allowed_top]
+    if extras:
+        fail("Top-level entries not allowed by RELEASE_MANIFEST allowlist: " + ", ".join(extras))
+
+    missing = []
+    for rel_file in allowlist["files"]:
+        if rel_file == "RELEASE_MANIFEST.json":
+            continue
+        if not os.path.isfile(os.path.join(root_dir, rel_file)):
+            missing.append(rel_file)
+    for rel_dir in allowlist["dirs"]:
+        if not os.path.isdir(os.path.join(root_dir, rel_dir)):
+            missing.append(rel_dir)
+    if missing:
+        fail("Allowlisted entries missing from artifact: " + ", ".join(missing))
+
+
 def _extract_python_version_from_docker_tag(tag: str) -> str | None:
     match = re.match(r"^(\d+\.\d+(?:\.\d+)?)(?:[.-].*)?$", tag.strip())
     return match.group(1) if match else None
@@ -118,18 +201,26 @@ def main() -> None:
             fail("Missing required files: " + ", ".join(missing))
 
         manifest_path = os.path.join(td, "RELEASE_MANIFEST.json")
-        if os.path.isfile(manifest_path):
-            print("[CHECK] RELEASE_MANIFEST.json includes critical files...")
-            try:
-                with open(manifest_path, "r", encoding="utf-8") as f:
-                    manifest = json.load(f)
-            except Exception as e:
-                fail(f"Could not parse RELEASE_MANIFEST.json: {e}")
-            manifest_paths = {entry.get("path") for entry in manifest.get("files", []) if isinstance(entry, dict)}
-            for required in ("SPECS.md", ".python-version", "Dockerfile", "runtime.txt"):
-                if required not in manifest_paths:
-                    fail(f"RELEASE_MANIFEST.json missing required file entry: {required}")
-            print("[CHECK] RELEASE_MANIFEST.json coverage OK.")
+        if not os.path.isfile(manifest_path):
+            fail("Missing RELEASE_MANIFEST.json")
+
+        print("[CHECK] RELEASE_MANIFEST.json includes critical files...")
+        allowlist = _load_allowlist_from_manifest(manifest_path)
+
+        try:
+            with open(manifest_path, "r", encoding="utf-8") as f:
+                manifest = json.load(f)
+        except Exception as e:
+            fail(f"Could not parse RELEASE_MANIFEST.json: {e}")
+        manifest_paths = {entry.get("path") for entry in manifest.get("files", []) if isinstance(entry, dict)}
+        for required in ("SPECS.md", ".python-version", "Dockerfile", "runtime.txt"):
+            if required not in manifest_paths:
+                fail(f"RELEASE_MANIFEST.json missing required file entry: {required}")
+        print("[CHECK] RELEASE_MANIFEST.json coverage OK.")
+
+        print("[CHECK] Allowlist enforcement (no extras beyond manifest)...")
+        _validate_allowlist_enforcement(td, allowlist)
+        print("[CHECK] Allowlist enforcement passed.")
 
         print("[CHECK] Runtime pin consistency...")
         docker_tag = _read_docker_python_tag(os.path.join(td, "Dockerfile"))

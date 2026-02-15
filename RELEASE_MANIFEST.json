@@ -1,0 +1,47 @@
+{
+  "schema_version": 2,
+  "purpose": "release_allowlist",
+  "allowlist": {
+    "files": [
+      ".dockerignore",
+      ".env.example",
+      ".env.local.example",
+      ".python-version",
+      "Dockerfile",
+      "README.md",
+      "alembic.ini",
+      "app.py",
+      "config.py",
+      "constants.py",
+      "database.py",
+      "docker-compose.yml",
+      "extensions.py",
+      "gunicorn.conf.py",
+      "migrate.py",
+      "models.py",
+      "pytest.ini",
+      "requirements.in",
+      "requirements-test.in",
+      "requirements-test.txt",
+      "requirements.txt",
+      "runtime.txt",
+      "SPECS.md"
+    ],
+    "dirs": [
+      "migrations",
+      "routes",
+      "scripts",
+      "services",
+      "static",
+      "templates",
+      "tests",
+      "utils"
+    ],
+    "exclude_paths": [
+      "scripts/devtools"
+    ],
+    "optional_top_level": [
+      ".gitignore"
+    ]
+  }
+}

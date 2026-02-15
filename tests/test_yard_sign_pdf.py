@@ -98,9 +98,6 @@ class TestListingSignPDF:
         
         captured_qr_value = []
         
-        # Patch draw_vector_qr to capture the qr_value
-        original_draw = None
-        
         def capture_qr(c, qr_value, *args, **kwargs):
             captured_qr_value.append(qr_value)
         
@@ -111,18 +108,14 @@ class TestListingSignPDF:
             with patch('services.printing.yard_sign.get_storage', return_value=mock_storage):
                 with patch('utils.pdf_generator.draw_vector_qr', side_effect=capture_qr):
                     from services.printing.yard_sign import generate_yard_sign_pdf
-                    
-                    try:
-                        generate_yard_sign_pdf(order_dict)
-                    except Exception:
-                        pass  # May fail due to incomplete PDF, that's OK
-        
+                    generate_yard_sign_pdf(order_dict)
+
         # Verify captured QR value
-        if captured_qr_value:
-            qr_url = captured_qr_value[0]
-            assert '/r/' in qr_url, f"QR URL should contain /r/, got: {qr_url}"
-            assert '/s/' not in qr_url, f"QR URL should NOT contain /s/, got: {qr_url}"
-            assert test_qr_code in qr_url, f"QR URL should contain qr_code, got: {qr_url}"
+        assert captured_qr_value, "Expected QR renderer to be called at least once"
+        qr_url = captured_qr_value[0]
+        assert '/r/' in qr_url, f"QR URL should contain /r/, got: {qr_url}"
+        assert '/s/' not in qr_url, f"QR URL should NOT contain /s/, got: {qr_url}"
+        assert test_qr_code in qr_url, f"QR URL should contain qr_code, got: {qr_url}"
     
     def test_landscape_layout_used_for_36x24(self, app, db):
         """

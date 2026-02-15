@@ -1,5 +1,6 @@
 # migrations/env.py
 from logging.config import fileConfig
+from pathlib import Path
 
 from sqlalchemy import engine_from_config
 from sqlalchemy import pool
@@ -8,8 +9,12 @@ from alembic import context
 import os
 import sys
 
-# Add project root to path
-sys.path.append(os.getcwd())
+# Add project root to path (stable regardless of cwd).
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
+from utils.redaction import redact_database_url
 
 config = context.config
 
@@ -20,21 +25,22 @@ DATABASE_URL = os.environ.get("DATABASE_URL", "").strip()
 if DATABASE_URL.startswith("postgres://"):
     DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
 
-if not DATABASE_URL.startswith("postgresql"):
-    # Never include credentials in errors/logs.
-    try:
-        from urllib.parse import urlparse
-        p = urlparse(DATABASE_URL)
-        got = f"{p.scheme}://{p.hostname}" if p.scheme else "INVALID_URL"
-    except Exception:
-        got = "INVALID_URL"
-    raise RuntimeError(f"Only Postgres is supported. Got: {got}")
+# Enforce postgres scheme ONLY when DATABASE_URL is explicitly provided.
+if DATABASE_URL and not DATABASE_URL.startswith("postgresql://"):
+    raise RuntimeError(
+        "Only Postgres is supported for DATABASE_URL. "
+        f"Got: {redact_database_url(DATABASE_URL)}"
+    )
 
 if DATABASE_URL:
     config.set_main_option("sqlalchemy.url", DATABASE_URL)
-elif not config.get_main_option("sqlalchemy.url"):
-    # Fail if no URL is available (neither in env nor ini)
-    raise RuntimeError("DATABASE_URL is not set and sqlalchemy.url is empty; cannot run offline migrations.")
+else:
+    ini_url = (config.get_main_option("sqlalchemy.url") or "").strip()
+    if ini_url.startswith("postgres://"):
+        ini_url = ini_url.replace("postgres://", "postgresql://", 1)
+        config.set_main_option("sqlalchemy.url", ini_url)
+    if not ini_url:
+        raise RuntimeError("DATABASE_URL is not set and sqlalchemy.url is empty; cannot run migrations.")
 
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)

@@ -1,5 +1,4 @@
 
-import pytest
 from routes.webhook import handle_payment_checkout
 
 def test_smart_riser_webhook_behavior(app, mocker):
@@ -29,24 +28,14 @@ def test_smart_riser_webhook_behavior(app, mocker):
         'payment_status': 'paid'
     }
     
-    # Mock generate_unique_code to fail if called (assert strictness)
-    mocker.patch('routes.webhook.generate_unique_code', side_effect=Exception("Should not be called!"))
-    
-    # Run
-    # This calls handle_payment_checkout
-    # We expect it to proceed as 'sign' order (enqueue fulfillment) 
-    # but NOT call SmartSign activation logic (which uses generate_unique_code)
-    try:
-        handle_payment_checkout(mock_db, session)
-    except Exception as e:
-        if "Should not be called" in str(e):
-            pytest.fail("SmartSign activation was triggered for SmartRiser 'sign' order!")
-        # Ignore other errors (like enqueue missing) as we just want to verify logic path
-        pass
+    # If called, this should fail the test immediately.
+    mock_generate_code = mocker.patch(
+        'routes.webhook.generate_unique_code',
+        side_effect=Exception("Should not be called!")
+    )
+    mock_process_paid_order = mocker.patch('services.orders.process_paid_order')
 
-def test_admin_drift_grep():
-    """
-    Logic test for drift: check if PAID_STATUSES is used.
-    Since we can't grep in unit tests easily, we rely on the external verification script.
-    """
-    pass
+    handle_payment_checkout(mock_db, session)
+
+    mock_process_paid_order.assert_called_once_with(mock_db, session)
+    assert not mock_generate_code.called, "SmartSign activation path should not run for order_type='sign'"

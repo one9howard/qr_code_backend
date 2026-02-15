@@ -1,30 +1,69 @@
 # CHANGELOG_FIXES
 
-- `scripts/run_tests_in_docker.sh`
-  - Kept a single `docker compose run --rm ... bash -lc 'set -euo pipefail; ...'` chain.
-  - Ensured explicit phase banners and ordered steps: reset DB, migrate, fixture gate, `pytest -q -ra`.
-  - Ensures non-zero exit on any failure.
+- `RELEASE_MANIFEST.json`
+  - Added explicit release allowlist (`files`, `dirs`, `exclude_paths`, `optional_top_level`) used as source-of-truth for packaging/validation.
 
-- `docker-compose.yml`
-  - Added `PYTHONPATH=/app` for the `web` service so direct `docker compose run --rm web pytest ...` resolves app imports reliably.
+- `scripts/build_release_zip.py`
+  - Enforced allowlist-only staging from `RELEASE_MANIFEST.json`.
+  - Added hard failure on missing allowlisted paths.
+  - Added guardrail to fail if anything outside the allowlist is copied to staging.
+  - Preserved generated `RELEASE_MANIFEST.json` in artifact with allowlist metadata + file hashes.
 
+- `scripts/validate_release_zip.py`
+  - Added strict allowlist validation for extracted artifacts.
+  - Fails if top-level extras appear beyond allowlist.
+  - Fails if allowlisted entries are missing.
+  - Added runtime pin consistency check (`Dockerfile`, `runtime.txt`, `.python-version`).
+  - Enforced required `SPECS.md` presence and SPECS sync validation.
+
+- `scripts/check_release_clean.py`
+  - Added explicit root-level bans for debug helpers:
+    - `get_code.py`
+    - `get_docker_logs.py`
+    - `test_manual_import*.py`
+    - `*manual_import*` at repo root.
+
+- `scripts/devtools/get_code.py`
+- `scripts/devtools/get_docker_logs.py`
+- `scripts/devtools/test_manual_import.py`
+- `scripts/devtools/test_manual_import_v2.py`
+  - Relocated root debug helper scripts into `scripts/devtools/`.
+
+- `migrations/env.py`
+  - Fixed env handling so Postgres scheme enforcement runs only when `DATABASE_URL` is provided.
+  - Added fallback to `alembic.ini` URL when `DATABASE_URL` is unset.
+  - Added clear error when both env + ini URL are missing.
+  - Added credential redaction in error paths.
+
+- `database.py`
+  - Restricted SQL statement logging to non-secure environments only:
+    - log SQL only when not production and not staging.
+
+- `app.py`
+  - Enabled `ProxyFix` in staging and production when `TRUST_PROXY_HEADERS=true`.
+
+- `requirements-test.in`
+- `requirements-test.txt`
 - `Dockerfile`
-  - Added `PYTHONPATH=/app` at image level to keep CLI/module import behavior consistent in containers.
+  - Removed Playwright test dependency and browser install path (unused in test suite).
+  - Kept Python runtime aligned to 3.14.3.
 
-- `tests/test_lead_attribution.py`
-  - Replaced skip-based tests with deterministic data seeding helpers.
-  - Tests now create their own users/agents/properties/assets and run end-to-end without `pytest.skip(...)`.
-  - Updated Flask test-client cookie API usage for current Werkzeug signature.
+- `scripts/release_gate.py`
+  - Stabilized gate behavior by avoiding false failures on transient local bytecode artifacts while still enforcing real forbidden files.
+  - Kept acceptance runner invocation canonical (`scripts/release_acceptance.sh`).
 
-- `tests/test_ai_readiness.py`
-  - Removed hard skip from request-correlation test so it runs in default suite.
+- `tests/test_qr_logo_rendering.py`
+  - Removed module-level skip pattern; tests run with real imports.
 
 - `tests/test_yard_sign_pdf.py`
-  - Removed two hard skips.
-  - Fixed outdated/invalid mocks to match current yard-sign generation behavior.
-  - Updated assertions for two-page front/back rendering.
+  - Removed exception-swallow behavior and replaced with explicit assertions.
 
-- `utils/pdf_generator.py`
-  - Removed artificial QR cap in modern-round landscape sizing path.
-  - QR size now uses available body area (width/height after margins).
-  - Added `DEBUG_LAYOUT=1` logging for computed QR size and available area.
+- `tests/test_dashboard_smartsigns_phase1.py`
+  - Removed `try/except TypeError` suppression in activation test.
+
+- `tests/test_fix_cleanup.py`
+  - Replaced exception-swallowing test logic with explicit mocks/assertions.
+  - Removed no-op placeholder test.
+
+- `tests/test_agent_claiming_security.py`
+  - Replaced pass-only branch with explicit response-status assertion for clearer failure reporting.

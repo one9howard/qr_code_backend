@@ -38,7 +38,7 @@ def close_connection(exception=None):
         db.close()
 
 import logging
-from config import IS_PRODUCTION
+from config import IS_PRODUCTION, IS_STAGING
 
 logger = logging.getLogger(__name__)
 
@@ -60,7 +60,7 @@ class PostgresDB:
              # Provide better context for debugging
              # In PROD, do NOT log raw SQL (PII Risk)
              logger.error(f"[DB] Query Failed: {e}")
-             if not IS_PRODUCTION:
+             if not (IS_PRODUCTION or IS_STAGING):
                  logger.error(f"[DB] SQL: {sql}")
              raise e
 

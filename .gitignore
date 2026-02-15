@@ -29,5 +29,4 @@ test_run.log
 test_failures*.log
 
 # Generated release/debug artifacts
-RELEASE_MANIFEST.json
 static/generated/

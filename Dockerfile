@@ -4,7 +4,6 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
   PYTHONUNBUFFERED=1 \
   PIP_DISABLE_PIP_VERSION_CHECK=1 \
   PIP_NO_CACHE_DIR=1 \
-  PLAYWRIGHT_BROWSERS_PATH=/ms-playwright \
   PYTHONPATH=/app
 
 WORKDIR /app
@@ -25,10 +24,7 @@ RUN python -m pip install --upgrade pip setuptools wheel \
   && pip install -r /app/requirements.txt \
   && if [ "$INSTALL_DEV" = "true" ]; then \
   echo "Installing test dependencies..." \
-  && pip install -r /app/requirements-test.txt \
-  && mkdir -p ${PLAYWRIGHT_BROWSERS_PATH} \
-  && python -m playwright install --with-deps chromium \
-  && chown -R insite:insite ${PLAYWRIGHT_BROWSERS_PATH}; \
+  && pip install -r /app/requirements-test.txt; \
   else \
   echo "Skipping test dependencies (INSTALL_DEV=$INSTALL_DEV)"; \
   fi

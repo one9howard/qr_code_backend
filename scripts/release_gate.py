@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 import os
 import sys
+import subprocess
+
+sys.dont_write_bytecode = True
+os.environ.setdefault("PYTHONDONTWRITEBYTECODE", "1")
 
 def _normalize_stage(raw):
     raw = (raw or "").strip().lower()
@@ -15,27 +19,41 @@ def _normalize_stage(raw):
 def check_forbidden_files():
     forbidden_exact = ["dump.sql", "dump.wkr"]
     found = []
+    tracked_files = set()
+
+    # Treat transient local bytecode as noise, but still catch truly committed artifacts.
+    try:
+        result = subprocess.run(
+            ["git", "ls-files"],
+            capture_output=True,
+            text=True,
+            check=False,
+            cwd=os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+        )
+        if result.returncode == 0:
+            tracked_files = {line.strip().replace("\\", "/") for line in result.stdout.splitlines() if line.strip()}
+    except Exception:
+        tracked_files = set()
     
     for root, dirs, files in os.walk("."):
         # Prune known safe dirs
         if ".git" in dirs: dirs.remove(".git")
         if "venv" in dirs: dirs.remove("venv")
         if "node_modules" in dirs: dirs.remove("node_modules")
-        
-        # Check directories
-        for d in dirs:
-            if d == "__pycache__":
-                found.append(os.path.join(root, d))
+        dirs[:] = [d for d in dirs if d != "__pycache__"]
         
         # Check files
         for f in files:
+            rel = os.path.relpath(os.path.join(root, f), ".").replace("\\", "/")
             is_forbidden = False
             if f in forbidden_exact: is_forbidden = True
             elif f.endswith(".dump"): is_forbidden = True
-            elif f.endswith(".pyc"): is_forbidden = True
+            elif f.endswith(".pyc"):
+                # Only fail if bytecode artifacts are actually committed.
+                is_forbidden = rel in tracked_files if tracked_files else True
             elif f.startswith("debug_") and (f.endswith(".json") or f.endswith(".html")):
                 is_forbidden = True
-            
+
             if is_forbidden:
                 found.append(os.path.join(root, f))
                          
@@ -91,11 +109,14 @@ def check_config():
 def check_specs_sync():
     """Run SPECS sync check via subprocess."""
     import subprocess
+    env = os.environ.copy()
+    env["PYTHONDONTWRITEBYTECODE"] = "1"
     result = subprocess.run(
         ["python", "scripts/check_specs_sync.py"],
         capture_output=True,
         text=True,
-        cwd=os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        cwd=os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+        env=env,
     )
     if result.returncode != 0:
         print("CRITICAL FAILURE: SPECS.md is out of sync.")
@@ -124,13 +145,10 @@ if __name__ == "__main__":
     from pathlib import Path
     acceptance_script = Path(__file__).resolve().parent / "release_acceptance.sh"
     if acceptance_script.exists():
-        # Convert Windows path to Unix-style for bash
-        script_path = str(acceptance_script)
-        if os.name == 'nt':
-            script_path = script_path.replace('\\', '/')
-            if len(script_path) >= 2 and script_path[1] == ':':
-                script_path = '/' + script_path[0].lower() + script_path[2:]
-        result = subprocess.run(["bash", script_path], cwd=os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        result = subprocess.run(
+            ["bash", "scripts/release_acceptance.sh"],
+            cwd=os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+        )
         if result.returncode != 0:
             print("[Release Gate] FAILED: Acceptance tests did not pass.")
             sys.exit(1)

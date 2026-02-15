@@ -61,7 +61,7 @@ def create_app(test_config=None):
         return {"status": "ok"}, 200
 
     # ProxyFix
-    if IS_PRODUCTION and TRUST_PROXY_HEADERS:
+    if (IS_PRODUCTION or IS_STAGING) and TRUST_PROXY_HEADERS:
         from werkzeug.middleware.proxy_fix import ProxyFix
         n = PROXY_FIX_NUM_PROXIES
         app.wsgi_app = ProxyFix(app.wsgi_app, x_for=n, x_proto=n, x_host=n, x_port=n)
