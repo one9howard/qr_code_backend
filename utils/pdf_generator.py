@@ -1033,25 +1033,33 @@ def _draw_modern_round_portrait(c, layout, address, beds, baths, sqft, price,
     footer_top = layout.footer_height + SAFE_MARGIN
     qr_area_top = price_y - SPACING['lg']
     qr_center_y = (qr_area_top + footer_top) / 2
-    
-    # Compute QR from actual available body area (no artificial upper cap).
-    available_qr_w = max(layout.width - (2 * SAFE_MARGIN) - (2 * SPACING['sm']), QR_MIN_SIZE)
-    available_qr_h = max(qr_area_top - footer_top - SPACING['md'], QR_MIN_SIZE)
-    qr_size = min(available_qr_w, available_qr_h)
+
+    # Account for decorative ring footprint when sizing QR so the ring never
+    # crowds the identity band CTA or adjacent content.
+    ring_outer_multiplier = 1.15  # outer ring diameter = qr_size * multiplier
+
+    # Keep a minimum ring-safe footprint baseline while still fitting available body area.
+    min_ring_footprint = QR_MIN_SIZE * ring_outer_multiplier
+    available_qr_w = max(layout.width - (2 * SAFE_MARGIN) - (2 * SPACING['sm']), min_ring_footprint)
+    available_qr_h = max(qr_area_top - footer_top - SPACING['md'], min_ring_footprint)
+
+    # Ring-aware QR size: compute from available footprint, not raw QR square.
+    qr_size = min(available_qr_w, available_qr_h) / ring_outer_multiplier
     if os.environ.get("DEBUG_LAYOUT") == "1":
         logger.info(
-            "[LayoutDebug] yard_modern_round size=%sx%s qr_size_pt=%.2f qr_size_in=%.2f avail_w_pt=%.2f avail_h_pt=%.2f",
+            "[LayoutDebug] yard_modern_round size=%sx%s qr_size_pt=%.2f qr_size_in=%.2f ring_dia_pt=%.2f avail_w_pt=%.2f avail_h_pt=%.2f",
             round(layout.width / inch, 2),
             round(layout.height / inch, 2),
             qr_size,
             qr_size / inch,
+            qr_size * ring_outer_multiplier,
             available_qr_w,
             available_qr_h,
         )
     
     # Ring
     c.setFillColorRGB(*COLOR_ACCENT)
-    c.circle(layout.width / 2, qr_center_y, (qr_size/2) * 1.15, fill=1, stroke=0)
+    c.circle(layout.width / 2, qr_center_y, (qr_size/2) * ring_outer_multiplier, fill=1, stroke=0)
     c.setFillColorRGB(1, 1, 1)
     c.circle(layout.width / 2, qr_center_y, (qr_size/2) * 1.05, fill=1, stroke=0)
     

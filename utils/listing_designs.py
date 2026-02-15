@@ -11,9 +11,13 @@ import services.printing.layout_utils as lu
 import utils.pdf_text as pdf_text
 from utils.pdf_generator import hex_to_rgb, draw_qr, LayoutSpec
 from utils.storage import get_storage
-from config import BASE_URL
-import os
+from config import PUBLIC_BASE_URL
+import logging
+import re
 from utils.yard_tokens import SAFE_MARGIN, BLEED, TYPE_SCALE_SERIF, SPACING, QR_MIN_SIZE
+
+logger = logging.getLogger(__name__)
+_QR_TOKEN_RE = re.compile(r"^[A-Za-z0-9_-]{6,128}$")
 
 def _draw_yard_phone_qr_premium(c, layout, address, beds, baths, sqft, price,
                                      agent_name, brokerage, agent_email, agent_phone,
@@ -350,9 +354,14 @@ def _draw_open_house_gold(c, layout, address, beds, baths, sqft, price,
 # --- Helpers ---
 
 def _resolve_qr_url(val, key):
-    if val: return val
+    if val:
+        return val
     if key:
-        return f"{BASE_URL.rstrip('/')}/r/{os.path.basename(key).split('.')[0]}"
+        token = str(key).strip()
+        # Only accept a canonical QR token here; do not derive from storage keys/paths.
+        if _QR_TOKEN_RE.fullmatch(token):
+            return f"{PUBLIC_BASE_URL.rstrip('/')}/r/{token}"
+        logger.warning("[ListingDesigns] Ignoring non-token qr_key fallback input.")
     return "https://example.com"
 
 def _draw_qr_safe(c, url, x, y, size, uid):

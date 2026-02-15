@@ -8,7 +8,8 @@ logger = logging.getLogger(__name__)
 JOB_STATUS_QUEUED = 'queued'
 JOB_STATUS_PROCESSING = 'processing'
 JOB_STATUS_DONE = 'done'
-JOB_STATUS_FAILED = 'failed'
+JOB_STATUS_DEAD = 'dead'
+MAX_RETRY_ATTEMPTS = 5
 
 def enqueue(job_type, payload):
     """
@@ -53,7 +54,7 @@ def claim_batch(job_types=None, limit=10):
 
     query = f"""
         UPDATE async_jobs
-        SET status = 'processing',
+        SET status = '{JOB_STATUS_PROCESSING}',
             locked_at = NOW(),
             attempts = attempts + 1,
             updated_at = NOW(),
@@ -62,9 +63,8 @@ def claim_batch(job_types=None, limit=10):
             SELECT id
             FROM async_jobs
             WHERE (
-                (status = 'queued' AND (next_run_at IS NULL OR next_run_at <= NOW()))
-                OR (status = 'processing' AND locked_at < NOW() - INTERVAL '5 minutes')
-                OR (status = 'failed' AND attempts < 5 AND next_run_at <= NOW())
+                (status = '{JOB_STATUS_QUEUED}' AND (next_run_at IS NULL OR next_run_at <= NOW()))
+                OR (status = '{JOB_STATUS_PROCESSING}' AND locked_at < NOW() - INTERVAL '5 minutes')
             )
             {type_clause}
             ORDER BY next_run_at NULLS FIRST, created_at ASC
@@ -92,7 +92,7 @@ def claim_batch(job_types=None, limit=10):
 def mark_done(job_id):
     db = get_db()
     db.execute(
-        "UPDATE async_jobs SET status='done', updated_at=NOW() WHERE id=%s",
+        f"UPDATE async_jobs SET status='{JOB_STATUS_DONE}', updated_at=NOW() WHERE id=%s",
         (job_id,)
     )
     db.commit()
@@ -103,60 +103,39 @@ def mark_failed(job_id, error, can_retry=True):
     Mark job failed, scheduling retry if applicable.
     """
     db = get_db()
-    
-    # Exponential backoff: 30s, 2m, 10m, etc.
-    # attempts is incremented on claim.
-    # If currently attempts < 5, queue it for retry.
-    
-    # We rely on the current DB state invalidating attempts if concurrent? 
-    # No, we just blindly set status based on attempts count from DB context or blindly update.
-    # Let's do logic in SQL.
-    
-    sql = """
-        UPDATE async_jobs 
-        SET status = CASE 
-                WHEN attempts < 5 THEN 'failed' -- Will be picked up by claim_batch 'failed' clause
-                ELSE 'failed' -- Terminal state if max attempts ('dead' if we want distinction, user said 'dead')
-            END,
-            status = CASE WHEN attempts < 5 THEN 'failed' ELSE 'dead' END,
+
+    # Exponential backoff: 60s, 120s, 240s, 480s...
+    # attempts is incremented in claim_batch before processing starts.
+    retry_case = f"""
+        CASE
+            WHEN %s AND attempts < {MAX_RETRY_ATTEMPTS} THEN '{JOB_STATUS_QUEUED}'
+            ELSE '{JOB_STATUS_DEAD}'
+        END
+    """
+    sql = f"""
+        UPDATE async_jobs
+        SET status = {retry_case},
             last_error = %s,
             updated_at = NOW(),
-            next_run_at = CASE 
-                WHEN attempts < 5 THEN NOW() + (power(2, attempts) * interval '30 seconds')
-                ELSE NULL 
+            next_run_at = CASE
+                WHEN %s AND attempts < {MAX_RETRY_ATTEMPTS}
+                    THEN NOW() + (power(2, GREATEST(attempts - 1, 0)) * interval '60 seconds')
+                ELSE NULL
             END
         WHERE id = %s
-        RETURNING status, next_run_at
+        RETURNING status, next_run_at, attempts
     """
-    # Wait, user said: "set status='queued' if attempts < MAX"
-    # But my claim logic picks up 'failed' too: OR (status = 'failed' AND attempts < 5 ...)
-    # If I set it to 'queued', it's standard.
-    # Let's stick to user request: "set status='queued' if attempts < MAX"
-    # Terminal status='dead'.
-    
-    sql = """
-        UPDATE async_jobs 
-        SET status = CASE 
-                WHEN attempts < 5 THEN 'queued' 
-                ELSE 'dead'
-            END,
-            last_error = %s,
-            updated_at = NOW(),
-            next_run_at = CASE 
-                WHEN attempts < 5 THEN NOW() + (power(2, attempts) * interval '30 seconds')
-                ELSE NULL 
-            END
-        WHERE id = %s
-        RETURNING status, next_run_at
-    """
-    
-    row = db.execute(sql, (str(error), job_id)).fetchone()
+
+    row = db.execute(sql, (can_retry, str(error), can_retry, job_id)).fetchone()
     db.commit()
-    
+
     if row:
         new_status = row['status']
         next_run = row['next_run_at']
-        if new_status == 'queued':
-            logger.warning(f"[Async] Job {job_id} failed (will retry at {next_run}): {error}")
+        attempts = row['attempts']
+        if new_status == JOB_STATUS_QUEUED:
+            logger.warning(
+                f"[Async] Job {job_id} failed (attempt={attempts}, retry_at={next_run}): {error}"
+            )
         else:
-            logger.error(f"[Async] Job {job_id} DIED (Max attempts): {error}")
+            logger.error(f"[Async] Job {job_id} marked DEAD (attempt={attempts}): {error}")

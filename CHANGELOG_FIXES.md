@@ -1,5 +1,46 @@
 # CHANGELOG_FIXES
 
+## 2026-02-15 Release-Hardening Pass (Contract, Privacy, Layout, Runtime)
+
+- `services/specs.py`
+- `SPECS.md`
+- `services/print_catalog.py`
+  - Aligned SmartSign contract to include all implemented layouts:
+    - `smart_v2_modern_split`
+    - `smart_v2_elegant_serif`
+    - `smart_v2_bold_frame`
+  - Why: remove spec drift between contract, renderer, and print validation.
+
+- `routes/leads.py`
+  - Removed raw IP values from honeypot and rate-limit warning logs.
+  - Why: avoid PII leakage in logs while preserving existing rate-limit behavior.
+
+- `services/cleanup.py`
+  - Removed property address from cleanup logs; log property ID only.
+  - Why: avoid leaking sensitive listing details to logs.
+
+- `utils/pdf_generator.py`
+  - Updated modern-round portrait QR sizing to be ring-footprint aware (`1.15x` outer ring factor).
+  - Added `ring_dia_pt` to `DEBUG_LAYOUT=1` diagnostics.
+  - Why: prevent ring/CTA crowding by sizing QR based on true rendered footprint.
+
+- `utils/listing_designs.py`
+  - Switched fallback URL source from `BASE_URL` to `PUBLIC_BASE_URL`.
+  - Hardened `_resolve_qr_url` fallback to accept only canonical QR tokens (regex-validated), refusing storage-key/path style inputs.
+  - Why: prevent unsafe URL derivation and align URL generation with public routing config.
+
+- `services/async_jobs.py`
+  - Removed contradictory `failed` status path and dead duplicate SQL in `mark_failed`.
+  - Standardized retry flow:
+    - retryable failures -> `queued` with exponential backoff
+    - terminal failures -> `dead`
+  - Simplified `claim_batch` to claim `queued` and stale `processing` jobs only.
+  - Why: make async status transitions deterministic and maintainable.
+
+- `scripts/railway_start.sh`
+  - Standardized web startup path through `scripts/docker-entrypoint.sh` and matching Gunicorn flags.
+  - Why: remove conflicting boot behavior and avoid migration/startup drift across environments.
+
 ## 2026-02-15 Teams Property Workspace Collaboration (Broker Teams)
 
 - `migrations/versions/044_teams_property_workspace_collaboration.py`

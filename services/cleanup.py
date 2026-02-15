@@ -54,7 +54,7 @@ def cleanup_expired_properties(dry_run=False):
             # What if status is 'pending_payment'? 
             # If expired and pending_payment -> Delete. (User abandoned checkout > 24h ago).
             
-            logger.info(f"[Cleanup] Deleting expired property {pid} ({row['address']})")
+            logger.info(f"[Cleanup] Deleting expired property {pid}")
             
             if dry_run:
                 continue

@@ -62,7 +62,8 @@ def submit_lead():
     """
     db = get_db()
     
-    # Use helper for ProxyFix compatibility
+    # Use helper for ProxyFix compatibility. Persist for rate limiting and lead record,
+    # but do not log raw IP values.
     from utils.net import get_client_ip
     ip_address = get_client_ip()
     
@@ -73,13 +74,13 @@ def submit_lead():
     
     # Honeypot check - reject if filled (bot detection)
     if data.get("website"):  # Hidden honeypot field
-        current_app.logger.warning(f"[Leads] Honeypot triggered from IP {ip_address}")
+        current_app.logger.warning("[Leads] Honeypot triggered")
         # Return success to not alert bots, but don't save
         return jsonify({"success": True, "message": "Thank you for your request!"})
     
     # Rate limiting
     if not check_rate_limit(ip_address):
-        current_app.logger.warning(f"[Leads] Rate limit exceeded for IP {ip_address}")
+        current_app.logger.warning("[Leads] Rate limit exceeded")
         return jsonify({
             "success": False, 
             "error": "rate_limited",
